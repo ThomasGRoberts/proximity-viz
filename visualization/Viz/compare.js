@@ -620,12 +620,9 @@ const formatDate = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", mon
 const toInputValue = ms => new Date(ms).toISOString().slice(0, 16);
 const fromInputValue = text => Date.parse(text + ":00Z");
 
-// "3.2 days after epoch" / "5.0 hours before epoch"
 function describeAge(ageMs) {
-  const totalHours = Math.floor(Math.abs(ageMs) / 3600000);
-  const days = Math.floor(totalHours / 24), hours = totalHours % 24;
-  const amount = days ? `${days} ${days === 1 ? "day" : "days"}${hours ? ` ${hours} ${hours === 1 ? "hour" : "hours"}` : ""}` : `${totalHours} ${totalHours === 1 ? "hour" : "hours"}`;
-  return `${amount} ${ageMs >= 0 ? "after" : "before"} epoch`;
+  const hours = Math.floor(Math.abs(ageMs) / 3600000);
+  return `${hours === 0 ? "" : ageMs < 0 ? "−" : "+"}${hours} ${hours === 1 ? "hour" : "hours"}`;
 }
 
 
@@ -1079,7 +1076,8 @@ function updateIdentity() {
     card.dataset.sourceRetrieval = provenance.retrieval;
     card.dataset.sourceHref = provenance.href;
     const summary = card.querySelector(".sourceSummary");
-    summary.replaceChildren(document.createTextNode("Data Source: CelesTrak SATCAT"));
+    const conciseSource = provenance.dataSource.startsWith("CelesTrak") ? "CelesTrak" : provenance.dataSource.startsWith("Space-Track") ? "Space-Track.org" : provenance.dataSource === "Amateur observers" ? "SeeSat-L" : provenance.dataSource;
+    summary.replaceChildren(document.createTextNode(conciseSource));
     summary.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><path d="M9.25 2.75h6v6M8 10l7.25-7.25"/></svg>');
     card.dispatchEvent(new Event("tlechange", { bubbles: true }));
   }

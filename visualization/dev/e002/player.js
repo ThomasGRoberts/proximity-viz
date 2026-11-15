@@ -9,8 +9,8 @@ const $ = id => document.getElementById(id);
 const mini = document.body.classList.contains("mini");
 const sgp4 = window.satellite;
 const episode = await fetch(new URL("episode.json", import.meta.url)).then(response => response.json());
-const EARTH_KM = 6378.137, MAX_AGE = episode.maximumDisplayTleAgeHours * 3600000, TRAIL_MS = 45 * 60000;
-const RATE = 90 * 1000; // 90 simulated seconds per real second; each window lasts one minute.
+const EARTH_KM = 6378.137, MAX_AGE = episode.maximumDisplayTleAgeHours * 3600000, TRAIL_MS = (mini ? 65 : 45) * 60000;
+const RATE = (mini ? 150 : 90) * 1000; // Fixed elements throughout each short playback window.
 const RADIUS = 5.55;
 const craft = episode.participants.map(item => ({ ...item, color: MARKER[item.slot] }));
 const windows = episode.windows;
@@ -217,6 +217,11 @@ function selectWindow(windowId, initial = false) {
   if (mini && data.preferredView) {
     camera.position.fromArray(data.preferredView.position);
     controls.target.fromArray(data.preferredView.target);
+    // A small orbit around the saved target gives the three fixed-size sprite
+    // marks a less compressed projection while retaining the orbital plane.
+    const eye = camera.position.clone().sub(controls.target);
+    eye.applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(8));
+    camera.position.copy(controls.target).add(eye);
     camera.up.set(0, 1, 0);
     camera.fov = data.preferredView.fieldOfViewDeg; camera.zoom = data.preferredView.zoom; camera.updateProjectionMatrix();
     seedRelativeCamera(orbitFrameAt(data.current));
@@ -362,7 +367,10 @@ function animate(now) {
   }
   const overlap = screen.A && screen.C && Math.hypot(screen.A.x - screen.C.x, screen.A.y - screen.C.y) < 22;
   // Concentric marks communicate projected overlap without moving either orbit.
-  markers.C.scale.set(data.markerScale * (overlap ? 1.42 : 1), data.markerScale * (overlap ? 1.42 : 1), 1);
+  // A small outline reveals both coincident marks without implying a second
+  // location. Their centers remain at their propagated coordinates.
+  const cScale = data.markerScale * (mini && overlap ? 1.2 : 1);
+  markers.C.scale.set(cScale, cScale, 1);
   markers.C.renderOrder = overlap ? 9 : 10;
   if (!mini) {
     labels.A.textContent = overlap ? 'A + C · projected overlap' : 'A · Kosmos 2542';
@@ -413,6 +421,12 @@ async function load() {
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), byte => byte.toString(16).padStart(2, '0')).join('');
     if (digest !== record.sha256) throw new Error(`Dated elements for ${item.name} changed; provenance review required`);
     data.libraries[item.slot] = JSON.parse(new TextDecoder().decode(bytes));
+    // The preserved USA 245 file identifies the SeeSat-L collection but does
+    // not identify an original post for each element. Store the most specific
+    // verified URL on each TLE; a matched post can replace it individually.
+    for (const tle of data.libraries[item.slot].tles) {
+      if (tle.source === 'seesat' && !tle.sourceUrl) tle.sourceUrl = record.url;
+    }
   }));
   resize(); selectWindow(mini ? 'dec8' : 'dec31', true);
   if ($('timeline')) { $('timeline').min = String(Date.parse(data.window.start)); $('timeline').max = String(Date.parse(data.window.end)); }

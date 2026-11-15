@@ -427,7 +427,6 @@ function sourceCard(group, data) {
 function expandedContent(row, data) {
   const episodeId = field(row, "ID");
   const wrap = el("div", `expanded-inner${["E-001", "E-002"].includes(episodeId) ? " has-visual" : ""}`);
-  if (["E-001", "E-002"].includes(episodeId)) import("./globe-backdrop.js?v=2").then(module => module.mountGlobeBackdrop(wrap)).catch(console.warn);
   if (state.usePreview) wrap.append(el("p", "caution", data.source === "local-verification-candidates" ? "Verification worklist entry. The possible counterpart is not a confirmed episode participant." : "Local preview includes unpublished records. This is not the public selection."));
   const overview = el("div", "detail-overview");
   const context = el("section", "context-block"); context.setAttribute("aria-label", "Episode description");
@@ -507,11 +506,22 @@ function proximityNode(row, key) {
   return cell;
 }
 let previewScene = null, previewToken = 0;
-function stopPreview() { previewToken++; previewScene?.dispose(); previewScene = null; }
+function stopPreview() { previewToken++; previewScene?.dispose(); previewScene = null; document.querySelector(".table-wrap > .orbital-preview")?.remove(); }
 function startPreview(row) {
   const episodeId = field(row, "ID");
   if (!["E-001", "E-002"].includes(episodeId)) return;
   const host = document.querySelector(".expanded-row .orbital-preview"); if (!host) return;
+  // One live scene spans the header, overview, and records. The link remains
+  // the interaction target while the canvas is a clipped background layer.
+  const tableWrap = document.querySelector(".table-wrap"), header = document.querySelector(".episode-row.selected"), expanded = document.querySelector(".expanded-row");
+  if (tableWrap && header && expanded) {
+    const origin = tableWrap.getBoundingClientRect(), heading = header.getBoundingClientRect(), detail = expanded.getBoundingClientRect();
+    host.style.top = `${heading.top - origin.top}px`;
+    host.style.left = `${heading.left - origin.left}px`;
+    host.style.width = `${heading.width}px`;
+    host.style.height = `${Math.min(650, heading.height + detail.height)}px`;
+    tableWrap.append(host);
+  }
   if (episodeId === "E-002") {
     const frame = el("iframe", "e002-mini");
     frame.src = new URL("../visualization/dev/e002/mini.html", location.href).href;

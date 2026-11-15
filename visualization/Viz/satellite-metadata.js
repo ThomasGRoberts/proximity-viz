@@ -58,7 +58,7 @@ async function render(card) {
   dateLine.textContent = Number.isNaN(selectedEpoch.getTime()) ? "Unavailable in this window" : new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(selectedEpoch);
   timeLine.textContent = Number.isNaN(selectedEpoch.getTime()) ? "" : `at ${new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }).format(selectedEpoch)} UTC`;
   epochValue.append(dateLine, timeLine); epochRow.append(epochLabel, epochValue); orbital.append(epochRow);
-  row(orbital, "Current TLE age", card.dataset.tleAge || "Calculating…");
+  row(orbital, "TLE Age", card.dataset.tleAge || "Calculating…");
   orbital.lastElementChild.querySelector("dd").className = "tleAgeValue";
   const line2 = card.dataset.tleLine2 || "";
   const inclination = line2 ? Number(line2.slice(8, 16)) : NaN;
@@ -73,7 +73,11 @@ async function render(card) {
     const sourceLink = link(card.dataset.sourceData, card.dataset.sourceQueryHref);
     sourceLink.title = "Space-Track historical elements for this satellite and UTC date; sign-in required. The query may include other element sets from the same date.";
     dd.append(sourceLink);
-  } else if (card.dataset.sourceHref && card.dataset.sourceData !== "Source unverified") dd.append(link(card.dataset.sourceData, card.dataset.sourceHref));
+  } else if (card.dataset.sourceHref && card.dataset.sourceData !== "Source unverified") {
+    const sourceLink = link(card.dataset.sourceData, card.dataset.sourceHref);
+    if (card.dataset.sourceLinkTitle) sourceLink.title = card.dataset.sourceLinkTitle;
+    dd.append(sourceLink);
+  }
   else dd.textContent = card.dataset.sourceData || "Source unverified";
   sourceRow.append(dt, dd); orbital.append(sourceRow);
 }

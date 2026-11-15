@@ -4,7 +4,7 @@ Static publication of Engineering Space Policy Laboratory interfaces:
 
 - `dynamic-table/` browses the public Episodes of Concern records.
 - `visualization/` presents the E-001 Luch (Olymp-K) and Athena-Fidus historical orbital reconstruction.
-- `visualization/Viz/compare.html?episode=E-002` loads the same page shell with a provisional E-002 three-spacecraft scene, pair-specific charts, thresholds, and playback. Add `&dev=1` to open its in-page camera keyframe editor. The table miniature at `visualization/dev/e002/mini.html` uses a December 8 co-moving orbital frame and the saved “This one please” camera view. The original development playback and camera explorer remain available at `visualization/dev/e002/`.
+- `visualization/Viz/compare.html?episode=E-002` loads the shared page shell with four historical chapters and parallel A–B/C–B charts, where B is USA 245. Pairwise one-minute dwell counts use a 12-hour element-age gate; January USA 245 statistics are unavailable. Add `&dev=1` to open its in-page camera keyframe editor. The table miniature at `visualization/dev/e002/mini.html` uses a December 8 co-moving orbital frame and the saved “This one please” camera view. The original development playback and camera explorer remain available at `visualization/dev/e002/`.
 
 Open `index.html` for navigation. All application paths are relative, so the site works at `https://thomasgroberts.github.io/proximity-viz/`.
 

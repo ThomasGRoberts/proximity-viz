@@ -1,5 +1,5 @@
-/* E-002 development adapter: the E-001 page supplies the panel, charts,
-   thresholds, and playback; the vetted E-002 scene supplies orbital states. */
+/* E-002 uses the established episode shell. Each chapter fixes one dated
+   element per spacecraft; charts use the stricter statistical age gate. */
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=2";
 
 const $ = id => document.getElementById(id);
@@ -7,14 +7,15 @@ const episode = await fetch(new URL("../dev/e002/episode.json", import.meta.url)
 const names = Object.fromEntries(episode.participants.map(item => [item.slot, item.name]));
 const cospar = Object.fromEntries(episode.participants.map(item => [item.slot, item.cospar]));
 const norad = Object.fromEntries(episode.participants.map(item => [item.slot, item.norad]));
-const pairs = episode.pairOptions;
-let pair = pairs[0], series = [], lastWindow = "", lastPair = "";
+const comparisons = [{ slots: ["A", "B"], color: "#eaaa00", short: "2542 / USA 245" }, { slots: ["C", "B"], color: "#707070", short: "2543 / USA 245" }];
+let series = [], lastWindow = "";
 const icon = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><path d="M9.25 2.75h6v6M8 10l7.25-7.25"/></svg>';
 const formatTime = ms => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
-const sourceLabel = tle => tle?.source === "space-track" ? "Space-Track.org" : tle ? "Amateur observers" : "No nearby element";
+const signedAge = ms => { const hours = Math.floor(Math.abs(ms) / 3600000); return `${hours === 0 ? "" : ms < 0 ? "−" : "+"}${hours} ${hours === 1 ? "hour" : "hours"}`; };
+const sourceLabel = tle => tle?.source === "space-track" ? "Space-Track.org" : tle?.source === "seesat" ? "SeeSat-L" : tle ? "Source unverified" : "No nearby element";
 
 document.body.classList.add("e002-shared");
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css?v=3">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css?v=4">');
 const scene = document.createElement("div"); scene.id = "scene"; document.body.prepend(scene);
 const labels = document.createElement("div"); labels.id = "labels"; document.body.append(labels);
 const scaffold = document.createElement("div"); scaffold.className = "e002-player-scaffold";
@@ -24,29 +25,35 @@ for (const id of ["play", "timeline", "frameMode", "autoFrame", "timestamp", "st
 }
 document.body.append(scaffold);
 const status = document.createElement("div"); status.id = "sceneStatus"; status.className = "e002-scene-status"; status.textContent = "Loading E-002 dated elements…"; document.body.append(status);
-const note = $("dataStatusSection"); note.hidden = false;
-note.replaceChildren();
-const windowLabel = document.createElement("label"); windowLabel.textContent = "Supported reconstruction window";
-const moment = document.createElement("select"); moment.id = "moment"; windowLabel.append(moment);
-const momentNote = document.createElement("p"); momentNote.id = "momentNote"; momentNote.className = "methodNote";
-const pairLabel = document.createElement("label"); pairLabel.textContent = "Statistics for pair";
-const pairSelect = document.createElement("select"); pairSelect.id = "e002Pair";
-for (const [first, second] of pairs) { const option = document.createElement("option"); option.value = `${first}-${second}`; option.textContent = `${names[first]} / ${names[second]}`; pairSelect.append(option); }
-pairLabel.append(pairSelect);
-const periodNote = document.createElement("p"); periodNote.className = "methodNote"; periodNote.textContent = "Historical episode: November 2019–February 2020. Charts cover only the selected short reconstruction window.";
-note.append(windowLabel, momentNote, pairLabel, periodNote);
+const note = $("dataStatusSection"); note.hidden = false; note.replaceChildren();
+const context = document.createElement("p"); context.className = "e002-story-note";
+const coverage = document.createElement("details"); coverage.className = "e002-coverage";
+const coverageSummary = document.createElement("summary"); coverageSummary.textContent = "Reconstruction coverage";
+const coverageBody = document.createElement("p"); coverageBody.className = "methodNote";
+coverage.append(coverageSummary, coverageBody); note.append(context, coverage);
 $("episodeTitle").textContent = `${episode.episodeId} · ${episode.title}`;
-$("viewNote").textContent = "Development reconstruction · Dated elements are propagated with SGP4; separation and speed are estimates, not measured encounters.";
+$("separationTitle").textContent = "Both Russian spacecraft relative to USA 245";
 $("separationTitle").hidden = false;
-$("thresholdRangeNote").textContent = "Sampled dwell is reported only for the selected supported window and selected pair.";
-$("dwellLabel").textContent = "Sampled dwell in window";
+$("thresholdRangeNote").textContent = "Pairwise one-minute samples within 12 hours of each selected TLE epoch; no values are inferred between chapters.";
+$("dwellLabel").textContent = "Sampled dwell by pair";
+
+const chapterNav = document.createElement("div"); chapterNav.className = "e002-chapters";
+const chapterHeading = document.createElement("span"); chapterHeading.textContent = "Chapters";
+const chapterGroup = document.createElement("div"); chapterGroup.className = "e002-segmented"; chapterGroup.setAttribute("role", "group"); chapterGroup.setAttribute("aria-label", "Historical chapters");
+const chapterButtons = new Map();
+for (const window of [...episode.windows].sort((a, b) => Date.parse(a.start) - Date.parse(b.start))) {
+  const button = document.createElement("button"); button.type = "button"; button.textContent = window.chapterShort; button.title = `${window.chapterTitle} · ${formatTime(Date.parse(window.start))}–${formatTime(Date.parse(window.end))}`;
+  button.setAttribute("aria-label", `Chapter: ${window.chapterTitle}`); button.dataset.window = window.id;
+  chapterGroup.append(button); chapterButtons.set(window.id, button);
+}
+chapterNav.append(chapterHeading, chapterGroup); $("playbackDock").prepend(chapterNav);
 
 for (const slot of ["A", "B", "C"]) {
   const card = document.createElement("details"); card.className = "satCard"; card.dataset.slot = slot; card.dataset.cospar = cospar[slot];
   const summary = document.createElement("summary"); summary.className = "satCardName";
   const dot = document.createElement("span"); dot.className = `sourceDot slot${slot}`;
   const name = document.createElement("span"); name.className = "satName"; name.textContent = names[slot];
-  const source = document.createElement("span"); source.className = "sourceSummary"; source.textContent = "Data Source: CelesTrak SATCAT"; source.insertAdjacentHTML("beforeend", icon);
+  const source = document.createElement("span"); source.className = "sourceSummary"; source.textContent = "Loading"; source.insertAdjacentHTML("beforeend", icon);
   const chevron = document.createElement("span"); chevron.className = "satChevron"; chevron.setAttribute("aria-hidden", "true"); chevron.innerHTML = '<span class="disclosureGlyph">‹</span>';
   summary.append(dot, name, source, chevron);
   const metadata = document.createElement("div"); metadata.className = "satMetaDetails";
@@ -54,90 +61,136 @@ for (const slot of ["A", "B", "C"]) {
 }
 $("nowSummary").textContent = "Three spacecraft";
 
-const { episodeModel: model } = await import("../dev/e002/player.js?v=13");
-function validSample(ms) {
-  // The 36-hour display gate admits geometry; statistics need both elements
-  // within the stricter 12-hour gate, including the A/C deployment window.
-  if (pair.some(slot => Math.abs(ms - Date.parse(model.selected[slot]?.epoch)) > episode.maximumStatisticTleAgeHours * 3600000)) return null;
-  return model.samplePair(...pair, ms);
+for (const groupId of ["distanceChartGroup", "speedChartGroup"]) {
+  const group = $(groupId), legend = document.createElement("div"); legend.className = "e002-chart-legend";
+  for (const comparison of comparisons) {
+    const item = document.createElement("span"), swatch = document.createElement("i"); swatch.style.background = comparison.color;
+    item.append(swatch, document.createTextNode(comparison.short)); legend.append(item);
+  }
+  group.prepend(legend);
+  const overflow = document.createElement("div"); overflow.className = "e002-chart-overflow"; group.append(overflow);
+}
+$("separationChart").setAttribute("aria-label", "Separation from USA 245: Kosmos 2542 in gold and Kosmos 2543 in dark gray; unsupported intervals have no line");
+$("speedChart").setAttribute("aria-label", "Relative speed from USA 245: Kosmos 2542 in gold and Kosmos 2543 in dark gray; unsupported intervals have no line");
+
+const { episodeModel: model } = await import("../dev/e002/player.js?v=14");
+function validSample(comparison, ms) {
+  if (comparison.slots.some(slot => !model.selected[slot] || Math.abs(ms - Date.parse(model.selected[slot].epoch)) > episode.maximumStatisticTleAgeHours * 3600000)) return null;
+  return model.samplePair(...comparison.slots, ms);
 }
 function updateCards() {
   for (const slot of ["A", "B", "C"]) {
     const card = $("identity").querySelector(`[data-slot="${slot}"]`), tle = model.selected[slot];
+    const previousEpoch = card.dataset.epoch, previousSource = card.dataset.sourceData;
     card.dataset.norad = norad[slot]; card.dataset.epoch = tle?.epoch || "";
-    const ageHours = tle ? Math.floor(Math.abs(model.current - Date.parse(tle.epoch)) / 3600000) : 0;
-    const days = Math.floor(ageHours / 24), hours = ageHours % 24;
-    const amount = days ? `${days} ${days === 1 ? "day" : "days"}${hours ? ` ${hours} ${hours === 1 ? "hour" : "hours"}` : ""}` : `${ageHours} ${ageHours === 1 ? "hour" : "hours"}`;
-    card.dataset.tleAge = tle ? `${amount} ${model.current >= Date.parse(tle.epoch) ? "after" : "before"} epoch` : "Unavailable";
+    card.dataset.tleAge = tle ? signedAge(model.current - Date.parse(tle.epoch)) : "Unavailable";
     card.dataset.tleLine2 = tle?.line2 || "";
     card.dataset.sourceData = sourceLabel(tle);
     card.dataset.sourceQueryHref = tle?.source === "space-track" ? spaceTrackHistoryUrl(norad[slot], tle.epoch) : "";
     card.dataset.sourceHref = tle?.sourceUrl || "";
-    card.dispatchEvent(new Event("tlechange", { bubbles: true }));
+    card.dataset.sourceLinkTitle = tle?.source === "seesat" ? "Published project copy of this SeeSat-L element; the original observer message has not been matched." : "";
+    const summary = card.querySelector(".sourceSummary");
+    if (summary.firstChild?.textContent !== card.dataset.sourceData) summary.firstChild.textContent = card.dataset.sourceData;
+    if (previousEpoch !== card.dataset.epoch || previousSource !== card.dataset.sourceData) card.dispatchEvent(new Event("tlechange", { bubbles: true }));
     const age = card.querySelector(".tleAgeValue"); if (age && age.textContent !== card.dataset.tleAge) age.textContent = card.dataset.tleAge;
+  }
+}
+function minimumNote(id, key, unit) {
+  const node = $(id); node.replaceChildren();
+  for (const comparison of comparisons) {
+    const values = series.filter(item => Number.isFinite(item[comparison.slots[0]]?.[key]));
+    const line = document.createElement("div"); line.className = "e002-minimum-line";
+    const dot = document.createElement("i"); dot.style.background = comparison.color; line.append(dot);
+    if (!values.length) line.append(`${comparison.short}: unavailable in this chapter`);
+    else {
+      const minimum = values.reduce((best, item) => item[comparison.slots[0]][key] < best[comparison.slots[0]][key] ? item : best);
+      line.append(`${comparison.short}: minimum sampled ${minimum[comparison.slots[0]][key].toFixed(1)} ${unit} on `);
+      const jump = document.createElement("a"); jump.href = "#"; jump.textContent = formatTime(minimum.ms); jump.title = "Jump playback to this sampled time";
+      jump.addEventListener("click", event => { event.preventDefault(); model.setTime(minimum.ms); }); line.append(jump);
+    }
+    node.append(line);
   }
 }
 function buildSeries() {
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end);
-  series = []; for (let ms = start; ms <= end; ms += 60000) series.push({ ms, ...validSample(ms) });
-  if (series.at(-1).ms !== end) series.push({ ms: end, ...validSample(end) });
-  const valid = series.filter(item => Number.isFinite(item.distanceKm) && Number.isFinite(item.speedMs));
-  const enough = valid.length >= 2;
-  for (const [id, key, unit] of [["distanceMinimum", "distanceKm", "km"], ["speedMinimum", "speedMs", "m/s"]]) {
-    const node = $(id); node.replaceChildren();
-    if (!enough) { node.textContent = "Unavailable for this pair and window"; continue; }
-    const minimum = valid.reduce((best, item) => item[key] < best[key] ? item : best, valid[0]);
-    node.append(document.createTextNode(`Minimum sampled in this window: ${minimum[key].toFixed(1)} ${unit} on `));
-    const jump = document.createElement("a"); jump.href = "#"; jump.textContent = formatTime(minimum.ms); jump.title = "Jump playback to this sampled time";
-    jump.addEventListener("click", event => { event.preventDefault(); model.setTime(minimum.ms); }); node.append(jump);
-  }
+  series = [];
+  for (let ms = start; ms <= end; ms += 60000) series.push({ ms, ...Object.fromEntries(comparisons.map(comparison => [comparison.slots[0], validSample(comparison, ms)])) });
+  if (series.at(-1).ms !== end) series.push({ ms: end, ...Object.fromEntries(comparisons.map(comparison => [comparison.slots[0], validSample(comparison, end)])) });
+  minimumNote("distanceMinimum", "distanceKm", "km"); minimumNote("speedMinimum", "speedMs", "m/s");
   updateCharts();
 }
 function drawChart(id, key, threshold, current) {
   const canvas = $(id), context = canvas.getContext("2d"), width = Math.max(200, canvas.clientWidth), height = Math.max(90, canvas.clientHeight);
   const ratio = devicePixelRatio || 1; canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); context.setTransform(ratio, 0, 0, ratio, 0, 0);
   context.clearRect(0, 0, width, height); context.fillStyle = "#fff"; context.fillRect(0, 0, width, height);
-  const left = 36, right = width - 6, top = 8, bottom = height - 20;
+  const left = 42, right = width - 8, top = 12, bottom = height - 22;
   context.strokeStyle = "#e6e6e6"; context.lineWidth = 1; context.beginPath(); context.moveTo(left, bottom); context.lineTo(right, bottom); context.stroke();
-  const valid = series.filter(item => Number.isFinite(item[key]));
-  if (valid.length < 2) { context.fillStyle = "#999"; context.font = "11px sans-serif"; context.fillText("Unavailable in this window", left + 5, (top + bottom) / 2); return; }
+  const byPair = comparisons.map(comparison => series.map(item => item[comparison.slots[0]]?.[key]).filter(Number.isFinite));
+  const eligible = byPair.filter(values => values.length > 1);
+  const overflowNote = canvas.parentElement.querySelector(".e002-chart-overflow"); overflowNote.replaceChildren();
+  if (!eligible.length) { context.fillStyle = "#999"; context.font = "11px sans-serif"; context.fillText("USA 245 unavailable in this chapter", left + 5, (top + bottom) / 2); return; }
+  const maxima = eligible.map(values => Math.max(...values)).sort((a,b) => a-b);
+  const max = Math.max(threshold * 1.2, maxima.length === 2 && maxima[1] > maxima[0] * 2.5 ? maxima[0] * 1.2 : maxima.at(-1) * 1.08, 1);
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end);
-  const max = Math.max(threshold * 1.2, ...valid.map(item => item[key])) * 1.08;
-  const x = ms => left + (ms - start) / (end - start) * (right - left), y = value => bottom - value / max * (bottom - top);
+  const x = ms => left + (ms - start) / (end - start) * (right - left), y = value => bottom - Math.min(value, max) / max * (bottom - top);
   context.setLineDash([3, 3]); context.strokeStyle = "#b8a875"; context.beginPath(); context.moveTo(left, y(threshold)); context.lineTo(right, y(threshold)); context.stroke(); context.setLineDash([]);
-  context.strokeStyle = key === "distanceKm" ? "#c39722" : "#767676"; context.lineWidth = 1.6; context.beginPath();
-  let drawing = false; series.forEach(item => { if (!Number.isFinite(item[key])) { drawing = false; return; } if (drawing) context.lineTo(x(item.ms), y(item[key])); else context.moveTo(x(item.ms), y(item[key])); drawing = true; }); context.stroke();
-  context.fillStyle = "#777"; context.font = "9px sans-serif"; context.fillText("0", 18, bottom + 2); context.fillText(Math.round(max).toLocaleString(), 3, top + 6);
+  for (const comparison of comparisons) {
+    const slot = comparison.slots[0]; context.strokeStyle = comparison.color; context.lineWidth = 1.8; context.setLineDash(slot === "C" ? [4, 4] : []); context.beginPath();
+    let drawing = false, firstOverflow = null, highest = 0;
+    for (const item of series) {
+      const value = item[slot]?.[key];
+      if (!Number.isFinite(value)) { drawing = false; continue; }
+      if (drawing) context.lineTo(x(item.ms), y(value)); else context.moveTo(x(item.ms), y(value));
+      drawing = true;
+      if (value > max) { firstOverflow ??= item.ms; highest = Math.max(highest, value); }
+    }
+    context.stroke(); context.setLineDash([]);
+    if (firstOverflow !== null) {
+      const arrowX = Math.max(left + 4, Math.min(right - 4, x(firstOverflow)));
+      context.fillStyle = comparison.color; context.beginPath(); context.moveTo(arrowX, top - 3); context.lineTo(arrowX - 4, top + 5); context.lineTo(arrowX + 4, top + 5); context.fill();
+      const span = document.createElement("span"); span.style.color = comparison.color; span.textContent = `↑ ${comparison.short} exceeds ${Math.round(max).toLocaleString()} ${key === "distanceKm" ? "km" : "m/s"} (up to ${Math.round(highest).toLocaleString()})`;
+      overflowNote.append(span);
+    }
+  }
+  context.fillStyle = "#777"; context.font = "9px sans-serif"; context.fillText("0", 20, bottom + 2); context.fillText(Math.round(max).toLocaleString(), 3, top + 6);
   context.fillStyle = "#666"; context.fillText(formatTime(start).replace(" UTC", ""), left, height - 5);
   context.textAlign = "right"; context.fillText(formatTime(end).replace(" UTC", ""), right, height - 5); context.textAlign = "left";
   context.strokeStyle = "#555"; context.beginPath(); context.moveTo(x(current), top); context.lineTo(x(current), bottom); context.stroke();
 }
 function updateCharts() {
-  drawChart("separationChart", "distanceKm", Number($("distanceThresholdSlider").value), model.current);
-  drawChart("speedChart", "speedMs", Number($("speedThresholdSlider").value), model.current);
   const distance = Number($("distanceThresholdSlider").value), speed = Number($("speedThresholdSlider").value);
+  drawChart("separationChart", "distanceKm", distance, model.current);
+  drawChart("speedChart", "speedMs", speed, model.current);
   $("distanceThresholdOutput").textContent = `${distance} km`; $("speedThresholdOutput").textContent = `${speed} m/s`;
   $("thresholdSummary").textContent = `${distance} km · ${speed} m/s`;
-  const valid = series.filter(item => Number.isFinite(item.distanceKm) && Number.isFinite(item.speedMs));
-  const qualifying = valid.filter(item => item.distanceKm <= distance && item.speedMs <= speed);
-  $("dwellStat").textContent = valid.length < 2 ? "—" : String(qualifying.length);
-  $("dwellUnit").textContent = "sampled min";
-  $("dwellMetric").querySelector(".dwellKey").textContent = "One-minute samples meeting both thresholds in this supported window. This is an approximate duration.";
+  const dwell = comparisons.map(comparison => {
+    const valid = series.filter(item => Number.isFinite(item[comparison.slots[0]]?.distanceKm) && Number.isFinite(item[comparison.slots[0]]?.speedMs));
+    return { label: comparison.short, color: comparison.color, count: valid.length < 2 ? null : valid.filter(item => item[comparison.slots[0]].distanceKm <= distance && item[comparison.slots[0]].speedMs <= speed).length };
+  });
+  $("dwellStat").textContent = ""; $("dwellUnit").textContent = "";
+  let rows = $("dwellMetric").querySelector(".e002-dwell-pairs");
+  if (!rows) { rows = document.createElement("div"); rows.className = "e002-dwell-pairs"; $("dwellMetric").querySelector(".dwellValue").after(rows); }
+  rows.replaceChildren(...dwell.map(item => { const row = document.createElement("div"), dot = document.createElement("i"), value = document.createElement("strong"); dot.style.background = item.color; value.textContent = item.count === null ? "unavailable" : `${item.count} sampled min`; row.append(dot, document.createTextNode(item.label), value); return row; }));
+  $("dwellMetric").querySelector(".dwellKey").textContent = "Each pair qualifies only when both thresholds are met at a supported one-minute sample. Values are approximate and remain separate.";
 }
 function tick() {
   if (!model.ready) { setTimeout(tick, 250); return; }
-  const key = `${model.window.id}:${pair.join("")}`;
-  if (key !== lastWindow + ":" + lastPair) { lastWindow = model.window.id; lastPair = pair.join(""); buildSeries(); }
+  if (model.window.id !== lastWindow) {
+    lastWindow = model.window.id; buildSeries();
+    for (const [id, button] of chapterButtons) { const active = id === lastWindow; button.classList.toggle("active", active); button.setAttribute("aria-pressed", String(active)); }
+    context.textContent = "Development reconstruction · " + model.window.chapterTitle + ". " + model.window.chapterNarrative;
+    coverageBody.textContent = `${model.window.note} Playback: ${formatTime(Date.parse(model.window.start))} to ${formatTime(Date.parse(model.window.end))}. Statistical comparisons require each selected element to be within 12 hours of its epoch.`;
+  }
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end), current = model.current;
   const slider = $("timelineSlider"); slider.min = String(start); slider.max = String(end); slider.value = String(current); slider.step = "1000";
   $("sliderNow").textContent = formatTime(current); $("timeDisplay").textContent = formatTime(current);
-  const currentValue = validSample(current);
-  $("rangeStat").textContent = currentValue ? `${currentValue.distanceKm.toFixed(1)} km` : "Unavailable";
-  $("speedStat").textContent = currentValue ? `${currentValue.speedMs.toFixed(1)} m/s` : "Unavailable";
+  const currentValues = comparisons.map(comparison => validSample(comparison, current));
+  const display = (key, unit) => comparisons.map((comparison, index) => `${comparison.slots[0]}–B ${currentValues[index] ? currentValues[index][key].toFixed(1) + " " + unit : "unavailable"}`).join(" · ");
+  $("rangeStat").textContent = display("distanceKm", "km"); $("speedStat").textContent = display("speedMs", "m/s");
   $("playBtn").setAttribute("aria-label", model.playing ? "Pause" : "Play");
   updateCards(); updateCharts(); setTimeout(tick, 500);
 }
-pairSelect.addEventListener("change", () => { pair = pairSelect.value.split("-"); $("separationTitle").textContent = `Separation between ${pair[0]} and ${pair[1]}`; buildSeries(); });
+chapterGroup.addEventListener("click", event => { const button = event.target.closest("button[data-window]"); if (button) model.selectWindow(button.dataset.window); });
 for (const id of ["distanceThresholdSlider", "speedThresholdSlider"]) $(id).addEventListener("input", updateCharts);
 $("timelineSlider").addEventListener("input", event => model.setTime(Number(event.target.value)));
 $("playBtn").addEventListener("click", () => model.setPlaying(!model.playing));

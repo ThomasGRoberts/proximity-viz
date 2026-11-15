@@ -1217,11 +1217,13 @@
     .thresholdBody #dwellMetric .statNumber{font-size:24px}
     .thresholdBody #dwellMetric .statLabel{font-size:11px}
     .thresholdBody #dwellMetric .dwellKey{margin-top:6px}
-    .satCard > summary{display:grid;grid-template-columns:12px minmax(0,1fr) 18px;grid-template-rows:auto auto;column-gap:7px;row-gap:1px;min-height:52px}
-    .satCard .sourceDot{grid-column:1;grid-row:1/3;align-self:center}
-    .satCard .satName{grid-column:2;grid-row:1;white-space:normal;overflow:visible;line-height:1.2}
-    .satCard .sourceSummary{grid-column:2;grid-row:2;margin:0;font-size:9px}
-    .satCard .satChevron{grid-column:3;grid-row:1/3;align-self:center;margin:0}
+    .satCard > summary{display:flex;align-items:center;gap:7px;min-height:42px}
+    .satCard .sourceDot{flex:0 0 auto;align-self:center}
+    .satCard .satName{flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+    .satCard .sourceSummary{flex:0 0 auto;margin-left:auto;font-size:9px}
+    .satCard .satChevron{flex:0 0 18px;align-self:center;margin:0}
+    .thresholdControls>summary{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:12px;font-weight:700}
+    #dwellMetric .statNumber{color:#b8860b}
     @media(prefers-reduced-motion:reduce){.thresholdChevron{transition:none}}
   </style>
 
@@ -1231,8 +1233,8 @@
   <script
     type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/","topojson-client":"./vendor/topojson/topojson-client.js"}}</script>
   <script type="module" src="project-flourish.js"></script>
-  <script type="module" src="satellite-metadata.js?v=9"></script>
-  <script type="module" src="episode-entry.js?v=3"></script>
+  <script type="module" src="satellite-metadata.js?v=10"></script>
+  <script type="module" src="episode-entry.js?v=4"></script>
   <script type="module" src="episode-ui.js?v=3"></script>
 </body>
 
