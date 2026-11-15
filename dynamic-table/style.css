@@ -151,11 +151,37 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .preview-sat-label{position:absolute;z-index:1;max-width:112px;padding:2px 4px;border-radius:3px;background:rgba(250,249,245,.86);color:#484848;font-size:10px;font-weight:650;line-height:1.2;white-space:nowrap;pointer-events:none}
 .preview-sat-0{color:#8a6200}
 .orbital-preview .visualization-still[hidden]{display:none}
-.preview-overlay{position:absolute;z-index:2;inset:auto 0 0;display:flex;align-items:center;gap:7px;min-height:44px;padding:8px 12px;background:linear-gradient(transparent,rgba(255,255,255,.93) 35%);color:#464646;font-size:11px;font-weight:650;opacity:0;transform:translateY(4px);transition:opacity .2s ease,transform .2s ease;pointer-events:none}
-.preview-polyhedron{width:22px;height:22px;object-fit:contain}.preview-arrow{margin-left:auto;font-size:15px}
-.visual-link:hover .preview-overlay,.visual-link:focus-visible .preview-overlay{opacity:1;transform:none}
 .visual-link:focus-visible{outline:2px solid #8d6a11;outline-offset:2px}
 .visual-link:hover .visualization-still,.visual-link:focus-visible .visualization-still{filter:none}
 @media(max-width:900px){.detail-overview{grid-template-columns:1fr;gap:10px}.context-block{padding-right:0}.visual-block{padding:9px 0 0;border-left:0;border-top:1px solid #e4e0d6}.orbital-preview{height:180px}}
 @media(max-width:650px){.orbital-preview{height:170px}}
-@media(prefers-reduced-motion:reduce){.preview-overlay{transition:none}}
+
+/* ESPL page width and a continuous selected episode accordion. */
+.component-wrap{width:100%;max-width:1200px;margin:24px auto;padding:0 clamp(16px,2.5vw,28px)}
+.episode-row.selected td{background:#fffcf6;border-bottom:1px solid #e9e1cf}
+.episode-row.selected td:first-child{box-shadow:inset 3px 0 var(--espl-gold)}
+.expanded-row>td{background:#fffcf6}
+.expanded-row .expanded-inner{border-top:0;border-left:3px solid var(--espl-gold)}
+
+/* The scene fills its pane; SBI's actual 3D model link unfurls over it. */
+.visual-block{padding-left:0}
+.visual-block h3{padding-left:14px}
+.visual-link.model-link{display:block;width:100%;min-height:0;margin:0;padding:0;position:relative}
+.orbital-preview{border:0;border-radius:0;background:#faf9f5}
+.model-action{position:absolute;z-index:3;right:9px;bottom:9px;display:block;width:46px;height:46px;color:#444;pointer-events:none}
+.model-action .model-icon{position:absolute;top:0;right:0;z-index:2;display:block;width:46px;height:46px}
+.model-action .model-static{display:block;width:36px;height:36px;margin:5px;object-fit:contain}
+.model-action .model-canvas{position:absolute;top:-6px;left:-6px;width:58px;height:58px;opacity:0;pointer-events:none;transition:opacity .24s ease}
+.model-action .model-canvas.model-canvas-ready{opacity:.9}
+.visual-link.is-open .model-action .model-canvas{opacity:1}
+.model-action .model-label{position:absolute;top:0;right:46px;display:flex;align-items:center;width:max-content;height:46px;padding-right:10px;white-space:nowrap;clip-path:inset(0 0 0 100%);opacity:0;color:#666;font-size:12px;font-weight:400;line-height:1.2;transition:clip-path .5s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
+.visual-link.is-open .model-action .model-label{clip-path:inset(0);opacity:1}
+.visual-link:focus-visible{outline:2px solid rgba(180,145,35,.9);outline-offset:2px}
+
+/* Each record moves on its own, with no shared card rotation. */
+.source-stack{transform:none!important;transition:none!important}
+.source-card{transform:none!important;transform-origin:center;transition:transform 160ms ease-out,box-shadow 160ms ease-out}
+.source-card:hover,.source-card:focus-visible{transform:translateY(-2px)!important;box-shadow:0 12px 26px rgba(0,0,0,.13)}
+@media(max-width:900px){.visual-block{padding:9px 0 0}.visual-block h3{padding-left:0}}
+@media(max-width:760px){.component-wrap{margin:10px auto;padding:0 8px}.episode-row.selected{position:relative;margin-bottom:0!important;border-bottom-left-radius:0!important;border-bottom-right-radius:0!important}.episode-row.selected::before{content:"";position:absolute;inset:0 auto 0 0;z-index:2;width:3px;background:var(--espl-gold);pointer-events:none}.episode-row.selected td:first-child{box-shadow:none}.expanded-row .expanded-inner{border-left:3px solid var(--espl-gold)}}
+@media(prefers-reduced-motion:reduce){.model-action .model-label,.model-action .model-canvas,.source-card{transition:none!important}}

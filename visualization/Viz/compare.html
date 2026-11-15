@@ -1102,9 +1102,9 @@
     #timelineSlider::-moz-range-track { background: transparent; }
     #timelineSlider { position: relative; z-index: 2; background: transparent; }
     /* The SBI chart's quiet right gutter: labels sit beside the data. */
-    .thresholdEdge, .currentValue { right: 0; display: block; width: 68px; min-width: 0; height: 17px; padding: 1px 2px; border: 0; border-radius: 0; background: transparent; color: #4b4b4b; font: 700 10px/15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; transform: translateY(-50%); }
-    .thresholdEdge { z-index: 2; color: #606060; }
-    .currentValue { z-index: 3; }
+    .thresholdEdge, .currentValue { display: block; min-width: 0; height: 17px; padding: 1px 2px; border: 0; border-radius: 0; color: #4b4b4b; font: 700 10px/15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; transform: translateY(-50%); }
+    .thresholdEdge { z-index: 2; right: 0; width: 62px; background: transparent; color: #606060; }
+    .currentValue { z-index: 3; right: 66px; width: 54px; background: rgba(255,255,255,.97); }
     .metricBlock .minimumNote strong { display: inline; color: #484848; font-size: inherit; font-weight: 750; }
     .satCardGrid { display: grid; gap: 7px; }
     .satCard, .satCard.isCentre, .satCard[open] { box-sizing: border-box; padding: 0; border: 1px solid #dedede; border-radius: 10px; background: #fafafa; box-shadow: none; overflow: visible; transform: none; }

@@ -1,13 +1,14 @@
-/* Compact E-001 scene adapted from Willa Madsen's Viz/compare.js. It uses the
-   same published TLE files, SGP4 propagation, ECI-to-Three coordinates, Earth
-   rotation, and orbital trajectories as the full Proximity-Viz. */
+/* Compact E-001 scene adapted from Willa Madsen's Viz/compare.js. The camera
+   follows the same Earth-fixed GEO reference used by the full relative view;
+   spacecraft and trails come from the same public TLEs and SGP4 propagation. */
 import * as THREE from "../visualization/Viz/vendor/three/three.module.js";
 import { feature } from "../visualization/Viz/vendor/topojson/topojson-client.js";
 
 const ROOT = "../visualization/Viz/";
 const EARTH_KM = 6378.137;
-const MINUTE = 60000;
 const DAY = 86400000;
+const GEO_KM = 42164;
+const earthAxis = new THREE.Vector3(0, 1, 0);
 const eci = vector => new THREE.Vector3(vector[0] / EARTH_KM, vector[2] / EARTH_KM, -vector[1] / EARTH_KM);
 const json = async path => {
   const response = await fetch(path);
@@ -34,9 +35,9 @@ function stateAt(lib, ms, sgp4, maxAgeMs, index = nearest(lib, ms)) {
   const state = sgp4.propagate(satrec(lib, index, sgp4), new Date(ms));
   return state.position && state.velocity ? { r: [state.position.x, state.position.y, state.position.z], v: [state.velocity.x, state.velocity.y, state.velocity.z] } : null;
 }
-function latLon(latitude, longitude) {
+function latLon(latitude, longitude, radius = 1.001) {
   const lat = THREE.MathUtils.degToRad(latitude), lon = THREE.MathUtils.degToRad(longitude);
-  return new THREE.Vector3(1.001 * Math.cos(lat) * Math.cos(lon), 1.001 * Math.sin(lat), -1.001 * Math.cos(lat) * Math.sin(lon));
+  return new THREE.Vector3(radius * Math.cos(lat) * Math.cos(lon), radius * Math.sin(lat), -radius * Math.cos(lat) * Math.sin(lon));
 }
 function dotTexture(color) {
   const canvas = document.createElement("canvas"); canvas.width = canvas.height = 96;
@@ -65,22 +66,21 @@ export async function mountE001Preview(host) {
   const validTimes = series.samples.filter(sample => Number.isFinite(sample.separationKm) && Number.isFinite(sample.relativeVelocityMps)).map(sample => sample.ms);
   if (!validTimes.length) throw new Error("No verified E-001 preview interval");
   const start = validTimes[0], end = validTimes.at(-1);
-  let current = Date.parse("2017-10-30T12:00:00Z");
+  let current = Date.parse(config.initialTime);
   if (!libs.every(lib => stateAt(lib, current, sgp4, maxAgeMs))) current = validTimes.reduce((best, ms) => Math.abs(ms - current) < Math.abs(best - current) ? ms : best, validTimes[0]);
+  const referenceAt = ms => latLon(0, config.geoReferenceLongitudeDeg, GEO_KM / EARTH_KM).applyAxisAngle(earthAxis, sgp4.gstime(new Date(ms)));
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0xfaf9f5);
   const camera = new THREE.PerspectiveCamera(35, 1, .01, 100);
-  const initialStates = libs.map(lib => stateAt(lib, current, sgp4, maxAgeMs));
-  const pairMid = eci(initialStates[0].r).add(eci(initialStates[1].r)).multiplyScalar(.5);
-  const target = pairMid.clone().multiplyScalar(.52);
-  const normals = initialStates.map(state => eci(state.r).cross(eci(state.v)).normalize());
-  if (normals[0].dot(normals[1]) < 0) normals[1].negate();
-  const normal = normals[0].add(normals[1]).normalize();
-  if (normal.z < 0) normal.negate();
-  camera.up.copy(normal.clone().cross(pairMid).normalize());
-  camera.position.copy(target).addScaledVector(normal, 9); camera.lookAt(target);
+  const setRelativeCamera = () => {
+    const target = referenceAt(current);
+    camera.position.copy(target).addScaledVector(target.clone().normalize(), .75).add(new THREE.Vector3(0, .08, 0));
+    camera.lookAt(target);
+  };
+  setRelativeCamera();
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.domElement.className = "preview-scene"; renderer.domElement.setAttribute("aria-hidden", "true");
+  host.dataset.previewFrame = "earth-fixed-relative";
   host.append(renderer.domElement); host.querySelector(".visualization-still")?.setAttribute("hidden", "");
   scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2));
   const earth = new THREE.Group(); earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 72, 48), new THREE.MeshBasicMaterial({ color: 0xf0f0ed }))); scene.add(earth);
@@ -93,7 +93,7 @@ export async function mountE001Preview(host) {
       borders.add(new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(18, ring.length * 2), .004, 4, true), new THREE.MeshBasicMaterial({ color: 0x828282, transparent: true, opacity: .85, depthWrite: false })));
     }
   }
-  const belt = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 180 }, (_, index) => latLon(0, index * 2 - 180).multiplyScalar(6.6108))), new THREE.LineBasicMaterial({ color: 0xb8aa84, transparent: true, opacity: .45 }));
+  const belt = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 180 }, (_, index) => latLon(0, index * 2 - 180, GEO_KM / EARTH_KM))), new THREE.LineBasicMaterial({ color: 0xb8aa84, transparent: true, opacity: .45 }));
   earth.add(belt);
   const dots = [], orbits = [], labels = [];
   for (const [index, color] of ["#eaaa00", "#8b8b8b"].entries()) {
@@ -109,27 +109,22 @@ export async function mountE001Preview(host) {
   function resize() { if (disposed) return; const width = Math.max(1, host.clientWidth), height = Math.max(1, host.clientHeight); camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); draw(); }
   function draw() {
     if (disposed) return;
+    setRelativeCamera();
     const currentStates = libs.map(lib => stateAt(lib, current, sgp4, maxAgeMs));
-    if (currentStates.every(Boolean)) {
-      const midpoint = eci(currentStates[0].r).add(eci(currentStates[1].r)).multiplyScalar(.5);
-      const focus = midpoint.clone().multiplyScalar(.52);
-      camera.up.copy(normal.clone().cross(midpoint).normalize());
-      camera.position.copy(focus).addScaledVector(normal, 9);
-      camera.lookAt(focus);
-    }
+    const earthAngle = sgp4.gstime(new Date(current));
     for (let index = 0; index < 2; index++) {
       const lib = libs[index], tleIndex = nearest(lib, current), state = currentStates[index];
       dots[index].visible = !!state; labels[index].hidden = !state;
       if (!state) continue;
       dots[index].position.copy(eci(state.r));
-      const record = satrec(lib, tleIndex, sgp4), orbitMs = 2 * Math.PI / record.no * MINUTE, points = [];
+      const orbitMs = 2 * DAY, points = [];
       for (let step = 0; step <= 120; step++) {
         const orbitalState = stateAt(lib, current - orbitMs * (1 - step / 120), sgp4, maxAgeMs, tleIndex);
-        if (orbitalState) points.push(eci(orbitalState.r));
+        if (orbitalState) points.push(eci(orbitalState.r).applyAxisAngle(earthAxis, earthAngle - sgp4.gstime(new Date(current - orbitMs * (1 - step / 120)))));
       }
       orbits[index].geometry.dispose(); orbits[index].geometry = new THREE.BufferGeometry().setFromPoints(points);
     }
-    earth.rotation.y = -sgp4.gstime(new Date(current));
+    earth.rotation.y = earthAngle;
     renderer.render(scene, camera);
     camera.updateMatrixWorld(true);
     for (let index = 0; index < 2; index++) {
@@ -143,7 +138,7 @@ export async function mountE001Preview(host) {
   function animate(now) {
     if (disposed || !host.isConnected) return;
     if (!document.hidden && now - last >= 110 && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      current += Math.min((now - last) / 1000, .2) * 21600 * 1000;
+      current += Math.min((now - last) / 1000, .2) * 2 * DAY;
       if (current > end) current = start;
       if (!libs.every(lib => stateAt(lib, current, sgp4, maxAgeMs))) current = validTimes.find(ms => ms >= current) || start;
       host.dataset.previewTime = new Date(current).toISOString();

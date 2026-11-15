@@ -131,12 +131,15 @@ function externalLink(label, url) {
   return a;
 }
 function visualizationLink(url, label = "Open orbital visualization") {
-  const link = el("a", "visual-link"); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.setAttribute("aria-label", label);
+  const link = el("a", "visual-link model-link"); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.setAttribute("aria-label", label);
   const preview = el("div", "orbital-preview"), image = el("img", "visualization-still"); image.src = "./assets/e001-visualization-preview.png"; image.alt = ""; preview.append(image);
-  const overlay = el("span", "preview-overlay"); overlay.setAttribute("aria-hidden", "true");
-  const icon = el("img", "preview-polyhedron"); icon.src = "./assets/polyhedron-icon.png"; icon.alt = "";
-  overlay.append(icon, el("span", "", "Explore the interactive model"), el("span", "preview-arrow", "↗"));
-  preview.append(overlay); link.append(preview);
+  const action = el("span", "model-action"), icon = el("span", "model-icon"), fallback = el("img", "model-static"), flourish = el("canvas", "model-canvas");
+  fallback.src = "./assets/polyhedron-icon.png"; fallback.alt = "";
+  flourish.width = flourish.height = 116; flourish.setAttribute("aria-hidden", "true");
+  icon.append(fallback, flourish);
+  action.append(el("span", "model-label", "Explore the interactive model"), icon);
+  preview.append(action); link.append(preview);
+  import("./model-link.js").then(module => module.decorateModelLink(link)).catch(() => link.classList.add("model-static-fallback"));
   return link;
 }
 

@@ -831,6 +831,25 @@ function renderDwellSegments() {
 }
 const chartGeometry = new Map();
 const hoveredChartLines = new Set();
+const visibleCharts = new Set();
+const chartCueStarts = new Map();
+const chartCueFinished = new Set();
+const reducedChartMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const chartVisibilityObserver = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) visibleCharts.add(entry.target);
+    else visibleCharts.delete(entry.target);
+  }
+  chartDirty = true;
+});
+for (const id of ["separationChart", "speedChart"]) chartVisibilityObserver.observe($(id));
+function thresholdCueOffset(canvas) {
+  if (reducedChartMotion.matches || chartCueFinished.has(canvas) || !visibleCharts.has(canvas) || !analysisSamples.length) return 0;
+  if (!chartCueStarts.has(canvas)) chartCueStarts.set(canvas, performance.now());
+  const elapsed = performance.now() - chartCueStarts.get(canvas);
+  if (elapsed >= 1600) { chartCueFinished.add(canvas); return 0; }
+  return Math.sin(elapsed * Math.PI / 400) * 5 * (1 - elapsed / 1600);
+}
 function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   const canvas = $(canvasId), ctx = canvas.getContext("2d");
   const w = Math.max(240, Math.round(canvas.getBoundingClientRect().width));
@@ -840,15 +859,17 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     canvas.width = Math.round(w * pixelRatio); canvas.height = Math.round(h * pixelRatio);
   }
   ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  const pad = { left: 57, right: 80, top: 13, bottom: 28 };
+  const pad = { left: 57, right: 112, top: 13, bottom: 28 };
   const bottom = h - pad.bottom, right = w - pad.right;
   const windowMs = 14 * 86400000;
   const windowStart = currentMs - windowMs;
   const x = ms => pad.left + (ms - windowStart) / windowMs * (right - pad.left);
   const y = value => bottom - Math.min(1, Math.max(0, value / yMax)) * (bottom - pad.top);
-  chartGeometry.set(canvas, { top: pad.top, bottom, left: pad.left, right, yMax, thresholdY: y(threshold) });
+  const cue = thresholdCueOffset(canvas), thresholdY = y(threshold) + cue;
+  canvas.dataset.thresholdCueOffset = cue.toFixed(2);
+  chartGeometry.set(canvas, { top: pad.top, bottom, left: pad.left, right, yMax, thresholdY });
   const edge = canvas.parentElement.querySelector(".thresholdEdge");
-  if (edge) { edge.style.top = `${canvas.offsetTop + Math.max(pad.top + 5, Math.min(bottom - 5, y(threshold)))}px`; edge.textContent = `${threshold} ${unit}`; }
+  if (edge) { edge.style.top = `${canvas.offsetTop + Math.max(pad.top + 5, Math.min(bottom - 5, thresholdY))}px`; edge.textContent = `${threshold} ${unit}`; }
   ctx.clearRect(0, 0, w, h); ctx.font = "10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.save(); ctx.translate(22, (pad.top + bottom) / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillStyle = "#555"; ctx.textAlign = "center";
@@ -872,7 +893,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     ctx.fillStyle = "#777"; ctx.textAlign = "right"; ctx.fillText(Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1), pad.left - 5, py + 3);
   }
   ctx.strokeStyle = hoveredChartLines.has(canvas) ? "#898989" : "#b8b8b8"; ctx.lineWidth = hoveredChartLines.has(canvas) ? 1.35 : 1;
-  ctx.beginPath(); ctx.moveTo(pad.left, y(threshold)); ctx.lineTo(right + 16, y(threshold)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad.left, thresholdY); ctx.lineTo(w - 66, thresholdY); ctx.stroke();
   ctx.strokeStyle = "#555"; ctx.lineWidth = 1.4; ctx.beginPath();
   let connected = false, clipped = false, previous = null;
   for (const sample of analysisSamples) {
@@ -911,11 +932,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
       if (Number.isFinite(current)) {
         label.textContent = `${current < 100 ? current.toFixed(1) : Math.round(current).toLocaleString()} ${unit}`;
         const position = Math.max(pad.top + 5, Math.min(bottom - 5, y(current)));
-        const thresholdPosition = Math.max(pad.top + 5, Math.min(bottom - 5, y(threshold)));
-        const currentLabelY = Math.abs(position - thresholdPosition) < 18
-          ? Math.max(pad.top + 5, Math.min(bottom - 5, thresholdPosition + (thresholdPosition < (pad.top + bottom) / 2 ? 20 : -20)))
-          : position;
-        label.style.top = `${canvas.offsetTop + currentLabelY}px`;
+        label.style.top = `${canvas.offsetTop + position}px`;
       }
     }
   }
@@ -1805,7 +1822,7 @@ for (const [canvasId, inputId, increment] of [["separationChart", "distanceThres
   const nearLine = event => {
     const chart = chartGeometry.get(canvas); if (!chart) return false;
     const point = local(event);
-    return point.x >= chart.left - 3 && point.x <= chart.right + 18 && Math.abs(point.y - chart.thresholdY) <= 9;
+    return point.x >= chart.left - 3 && point.x <= canvas.getBoundingClientRect().width - 66 && Math.abs(point.y - chart.thresholdY) <= 9;
   };
   const setHover = hovered => {
     if (hovered === hoveredChartLines.has(canvas)) return;
@@ -1822,7 +1839,7 @@ for (const [canvasId, inputId, increment] of [["separationChart", "distanceThres
   canvas.addEventListener("pointermove", event => { if (dragging) setFromPointer(event); else setHover(nearLine(event)); });
   canvas.addEventListener("pointerdown", event => {
     if (!nearLine(event)) return;
-    event.preventDefault(); dragging = true; canvas.setPointerCapture(event.pointerId); setHover(true); setFromPointer(event);
+    event.preventDefault(); dragging = true; chartCueFinished.add(canvas); canvas.setPointerCapture(event.pointerId); setHover(true); setFromPointer(event);
   });
   const endDrag = () => { dragging = false; setHover(false); };
   canvas.addEventListener("pointerup", endDrag);
@@ -1847,6 +1864,7 @@ if (!cameraDevTools.hidden) window.__proximityDebug = () => {
       label: screenLabelNodes[slot].getBoundingClientRect().toJSON() };
   };
   return { time: new Date(currentMs).toISOString(), view, autoZoom, cameraTween: !!cameraTween, initialCameraTransition, playing,
+    earthRotation: earthGroup.rotation.y, satelliteScene: { A: dots.A.position.toArray(), B: dots.B.position.toArray() },
     trailCounts: { A: trails.A.geometry.getAttribute("position")?.count || 0, B: trails.B.geometry.getAttribute("position")?.count || 0 },
     analysisSamples, analysisStepMs, analysisResult, camera: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov,
     markers: { A: marker("A"), B: marker("B") }, geoLabel: geoBeltLabel.getBoundingClientRect().toJSON() };
@@ -1949,6 +1967,10 @@ updateRendererLayout();
 // ---------------------------------------------------------------------------
 function animate(now) {
   requestAnimationFrame(animate);   // Ask to be called again on the next frame
+
+  if (analysisSamples.length && [...visibleCharts].some(canvas => !chartCueFinished.has(canvas)) && now - lastChartDraw > 50) {
+    drawEpisodeCharts(); lastChartDraw = now;
+  }
 
   if (playing && !initialCameraTransition && pair.A && library[pair.A] && library[pair.B]) {
     const secondsSinceLastFrame = Math.min((now - lastFrameTime) / 1000, 0.1);
