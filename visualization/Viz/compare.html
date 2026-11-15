@@ -74,8 +74,8 @@
       <div id="separationTitle" class="sectionTitle" hidden>Separation between A and B</div>
       <!-- Camera view: the whole Earth, or zoomed in with satellite A at the centre -->
       <div class="viewSwitch" aria-label="Camera view" hidden>
-        <button id="earthView" class="viewSwitchOption activeViewSwitch" type="button">Full Earth</button>
-        <button id="relativeView" class="viewSwitchOption" type="button">Relative motion</button>
+        <button id="earthView" class="viewSwitchOption" type="button">Earth-fixed</button>
+        <button id="relativeView" class="viewSwitchOption activeViewSwitch" type="button">Relative motion</button>
       </div>
       <!-- Relative motion only: which satellite sits at the centre -->
       <div id="centreSwitch" class="viewSwitch centreSwitch" aria-label="Centre the relative view on" hidden>
@@ -99,7 +99,6 @@
         </div>
       <div class="chartGroup" id="distanceChartGroup"><canvas id="separationChart" width="300" height="150" aria-label="Separation distance over time; drag the horizontal threshold line to adjust"></canvas><input id="distanceThreshold" type="hidden" value="200"><span class="thresholdEdge" aria-hidden="true">200</span><span class="currentValue" aria-hidden="true"></span></div>
       <div class="chartGroup" id="speedChartGroup"><canvas id="speedChart" width="300" height="150" aria-label="Relative velocity over time; drag the horizontal threshold line to adjust"></canvas><input id="speedThreshold" type="hidden" value="15"><span class="thresholdEdge" aria-hidden="true">15</span><span class="currentValue" aria-hidden="true"></span></div>
-      <div class="thresholdHint" id="thresholdHint">Drag threshold up or down</div>
       <div class="statBlock metricBlock dwellMetric" id="dwellMetric"><div class="dwellValue"><span id="dwellStat" class="statNumber">—</span><span id="dwellUnit" class="statNumber statUnit">days</span></div><div id="dwellLabel" class="statLabel">Dwell time</div></div>
     </div>
       <span id="timeDisplay" hidden>—</span>
@@ -157,9 +156,8 @@
         <button id="speedDownBtn" class="miniControl speedMini" aria-label="Slow down"><span class="doubleTriangle doubleTriangleLeft"></span></button>
         <button id="playBtn" class="miniControl playPauseMini" aria-label="Play / pause"><span class="playIcon"></span></button>
         <button id="speedUpBtn" class="miniControl speedMini" aria-label="Speed up"><span class="doubleTriangle doubleTriangleRight"></span></button>
-        <span id="speedLabel" class="speedLabel" aria-live="polite">Playback speed: 6 hours per second</span>
         <div class="sliderWrap"><div id="dwellSegments" class="dwellSegments" aria-hidden="true"></div><input id="timelineSlider" type="range" min="0" max="1" value="0" step="60000" aria-label="Playback time"></div>
-        <span id="sliderNow" class="sliderNow">—</span>
+        <span id="sliderNow" class="sliderNow" aria-label="Elapsed simulated days and hours since playback began">—</span>
         <span id="sliderStart" hidden>—</span><span id="sliderEnd" hidden>—</span>
         <!-- The speed menu is hidden: the arrow buttons step through its options, and compare.js reads its value -->
         <select id="speed" hidden>
@@ -1103,8 +1101,9 @@
     #timelineSlider { position: relative; z-index: 2; background: transparent; }
     /* The SBI chart's quiet right gutter: labels sit beside the data. */
     .thresholdEdge, .currentValue { display: block; min-width: 0; height: 17px; padding: 1px 2px; border: 0; border-radius: 0; color: #4b4b4b; font: 700 10px/15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; transform: translateY(-50%); }
-    .thresholdEdge { z-index: 2; right: 0; width: 62px; background: transparent; color: #606060; }
-    .currentValue { z-index: 3; right: 66px; width: 54px; background: rgba(255,255,255,.97); }
+    .thresholdEdge { z-index: 2; right: 0; width: 54px; background: transparent; color: #606060; }
+    .currentValue { z-index: 3; right: 56px; width: 48px; background: #fff; font-size: 9px; }
+    .chartGroup { margin-right: -8px; }
     .metricBlock .minimumNote strong { display: inline; color: #484848; font-size: inherit; font-weight: 750; }
     .satCardGrid { display: grid; gap: 7px; }
     .satCard, .satCard.isCentre, .satCard[open] { box-sizing: border-box; padding: 0; border: 1px solid #dedede; border-radius: 10px; background: #fafafa; box-shadow: none; overflow: visible; transform: none; }
@@ -1116,12 +1115,13 @@
     .satCard .sourceSummary svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
     .satCard[open] .sourceSummary { display: none; }
     .satMetaDetails, .satMetaDetails .object-meta, .satMetaDetails .object-meta div { border: 0; }
-    .playbackDock { padding: 7px 10px 6px; }
-    .playbackRow { grid-template-columns: 26px 30px 26px minmax(0,1fr); grid-template-rows: 30px 14px; gap: 1px 5px; }
+    .playbackDock { padding: 3px 8px; }
+    .playbackRow { grid-template-columns: 26px 30px 26px minmax(0,1fr) 39px; grid-template-rows: 24px; gap: 0 5px; }
+    .playbackRow .miniControl { height: 24px; }
     .playbackRow .sliderWrap { grid-column: 4; grid-row: 1; }
-    .playbackRow .speedLabel, .playbackRow .sliderNow { grid-column: 1 / -1; grid-row: 2; margin: 0; font-size: 9px; font-weight: 500; line-height: 14px; color: #727272; white-space: nowrap; }
-    .playbackRow .speedLabel { justify-self: start; text-align: left; }
-    .playbackRow .sliderNow { justify-self: end; text-align: right; }
+    .playbackRow .sliderNow { grid-column: 5; grid-row: 1; justify-self: end; min-width: 0; margin: 0; color: #727272; font-size: 10px; font-weight: 600; line-height: 12px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    #ui { max-height: calc(100vh - 112px); }
+    @media (max-width: 760px) { #ui { max-height: calc(52vh - 76px); } }
   </style>
 
   <!-- satellite.js does the SGP4 orbit math. It is a classic script that creates a global "satellite" object. -->

@@ -1,5 +1,7 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
+import { loadCurrentEpisodes, episodeUtcInterval } from "../shared/episode-feed.js";
+import { calculateE001 } from "../shared/e001-live-metrics.js";
 
 const $ = selector => document.querySelector(selector);
 const el = (tag, className = "", value) => { const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node; };
@@ -132,12 +134,12 @@ function externalLink(label, url) {
 }
 function visualizationLink(url, label = "Open orbital visualization") {
   const link = el("a", "visual-link model-link"); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.setAttribute("aria-label", label);
-  const preview = el("div", "orbital-preview"), image = el("img", "visualization-still"); image.src = "./assets/e001-visualization-preview.png"; image.alt = ""; preview.append(image);
+  const preview = el("div", "orbital-preview");
   const action = el("span", "model-action"), icon = el("span", "model-icon"), fallback = el("img", "model-static"), flourish = el("canvas", "model-canvas");
   fallback.src = "./assets/polyhedron-icon.png"; fallback.alt = "";
   flourish.width = flourish.height = 116; flourish.setAttribute("aria-hidden", "true");
   icon.append(fallback, flourish);
-  action.append(el("span", "model-label", "Explore the interactive model"), icon);
+  action.append(icon, el("span", "model-label", "Explore the interactive model"), el("span", "model-arrow", "→"));
   preview.append(action); link.append(preview);
   import("./model-link.js").then(module => module.decorateModelLink(link)).catch(() => link.classList.add("model-static-fallback"));
   return link;
@@ -424,11 +426,12 @@ function expandedContent(row, data) {
   if (description) context.append(formattedDescription(description));
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
-  const viz = el("section", "visual-block"); viz.append(el("h3", "", "Visualization"));
-  const target = field(row, "ID") === "E-001" ? new URL("../visualization/", location.href).href : safeUrl(field(row, "Visualization URL", "Visualization Link"));
-  if (field(row, "ID") === "E-001") viz.append(visualizationLink(target, `Explore the interactive model for ${title(row)}`));
-  else viz.append(el("p", "muted", "No verified Willa visualization link is recorded."));
-  overview.append(viz); wrap.append(overview);
+  if (field(row, "ID") === "E-001") {
+    const viz = el("section", "visual-block"), target = new URL("../visualization/", location.href).href;
+    viz.setAttribute("aria-label", "E-001 orbital visualization");
+    viz.append(visualizationLink(target, `Explore the interactive model for ${title(row)}`));
+    overview.append(viz);
+  } else overview.classList.add("no-visual");
   const evidence = el("section", "evidence-section"), found = linkedDescriptions(row, data), requested = descriptionIds(row), sources = sourceGroups(row, data);
   evidence.append(el("h3", "", `Records (${found.length})`));
   if (requested.length > found.length) evidence.append(el("p", "caution", `${requested.length - found.length} referenced description ID(s) could not be resolved.`));
@@ -449,7 +452,7 @@ function expandedContent(row, data) {
     evidence.append(grid);
     if (sources.length > 6) { const more = el("details", "more-records"), summary = el("summary", "", `Show ${sources.length - 6} more source cards`), moreGrid = el("div", "source-grid"); sources.slice(6).forEach(group => appendCard(group, moreGrid)); more.append(summary, moreGrid); evidence.append(more); }
   }
-  wrap.append(evidence); return wrap;
+  wrap.append(overview, evidence); return wrap;
 }
 function loadingDetail(row, data) {
   const wrap = el("div", "expanded-inner expanded-partial");
@@ -481,10 +484,13 @@ function startPreview(row) {
   if (field(row, "ID") !== "E-001") return;
   const host = document.querySelector(".expanded-row .orbital-preview"); if (!host) return;
   const token = ++previewToken;
-  import("./e001-preview.js").then(module => module.mountE001Preview(host)).then(scene => {
+  let interval;
+  try { interval = episodeUtcInterval(row); }
+  catch (error) { console.warn("E-001 dates invalid", error); return; }
+  import("./e001-preview.js").then(module => module.mountE001Preview(host, interval)).then(scene => {
     if (token !== previewToken || !host.isConnected) scene?.dispose();
     else previewScene = scene;
-  }).catch(error => { if (token === previewToken) console.warn("E-001 preview unavailable", error); });
+  }).catch(error => { if (token === previewToken) { console.warn("E-001 preview unavailable", error); host.append(el("span", "orbital-error", "Orbital preview unavailable")); } });
 }
 function newsIndicator(row, count) {
   const wrap = el(count ? "button" : "span", "news-indicator");
@@ -541,15 +547,15 @@ function render() {
   const empty = $("#empty"); empty.hidden = rows.length > 0;
   if (!rows.length) {
     const noFeed = !data || data.source === "unavailable", nonePublished = !state.usePreview && data?.source === "live" && data.publishedEpisodes === 0;
-    empty.replaceChildren(el("strong", "", noFeed ? "Published records are unavailable" : nonePublished ? "No episodes selected for public display" : "No matching episodes"), el("span", "", noFeed ? "The published workbook could not be read. Local preview remains available." : nonePublished ? "The Frontend publication flag controls this table." : "Try another search or reset the filters."));
+    empty.replaceChildren(el("strong", "", noFeed ? "Current records could not be verified" : nonePublished ? "No episodes selected for public display" : "No matching episodes"), el("span", "", noFeed ? "Check the live-sheet status above and reload after the source is corrected." : nonePublished ? "The Frontend publication flag controls this table." : "Try another search or reset the filters."));
   }
   if (data?.source === "live") scheduleDetailPrefetch();
 }
 function setStatus() {
   const status = $("#status"), live = state.live;
   if (state.usePreview) { status.dataset.kind = "preview"; status.textContent = currentData()?.source === "local-verification-candidates" ? "LOCAL PREVIEW: verification candidates from a worklist, not published episodes." : "LOCAL PREVIEW: all workbook episodes, including unpublished rows."; }
-  else if (live?.source === "live") { status.dataset.kind = "live"; status.textContent = `Published Google Sheet snapshot (${new Date(live.snapshotUtc).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}): ${live.publishedEpisodes} selected episode${live.publishedEpisodes === 1 ? "" : "s"}.`; }
-  else { status.dataset.kind = "error"; status.textContent = "Published sheet unavailable. No records are inferred for public display."; }
+  else if (live?.source === "live") { status.dataset.kind = "live"; status.textContent = `Live published Google Sheet checked ${new Date(live.snapshotUtc).toLocaleString("en-US")}: ${live.publishedEpisodes} selected episode${live.publishedEpisodes === 1 ? "" : "s"}.`; }
+  else { status.dataset.kind = "error"; status.textContent = `Current published sheet unavailable: ${live?.error || "unknown error"}. No stale episode dates are shown.`; }
 }
 async function init() {
   const local = ["localhost", "127.0.0.1"].includes(location.hostname);
@@ -558,9 +564,21 @@ async function init() {
   $("#orbit").addEventListener("change", event => { state.orbit = event.target.value; render(); });
   $("#reset").addEventListener("click", () => { state.query = ""; state.orbit = ""; state.sort = { key: "index", direction: "asc" }; $("#search").value = ""; render(); });
   document.querySelectorAll(".sort-head").forEach(button => button.addEventListener("click", () => { const key = button.dataset.sort; state.sort = { key, direction: state.sort.key === key ? (state.sort.direction === "desc" ? "asc" : "desc") : key === "title" || key === "orbit" ? "asc" : "desc" }; render(); }));
-  fetch("../shared/e001-series.json").then(r => r.ok ? r.json() : null).catch(() => fetch("./data/e001-series.json").then(r => r.ok ? r.json() : null)).then(data => { state.series = data; if (state.live) render(); });
-  state.live = await fetch("./data/table.json", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error(`Table request returned ${r.status}`); return r.json(); }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
+  state.live = await Promise.all([
+    fetch("./data/table.json", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error(`Table support data returned ${r.status}`); return r.json(); }),
+    loadCurrentEpisodes(),
+  ]).then(([snapshot, feed]) => {
+    const supporting = new Map(snapshot.episodes.map(row => [field(row, "ID"), row]));
+    const episodes = feed.episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || ""))
+      .map(row => ({ ...(supporting.get(row.ID) || {}), ...row }));
+    const e001 = episodes.find(row => field(row, "ID") === "E-001");
+    if (e001) episodeUtcInterval(e001);
+    return { ...snapshot, episodes, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc };
+  }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
   setStatus(); render();
+  const e001 = state.live.episodes?.find(row => field(row, "ID") === "E-001");
+  if (e001) calculateE001(episodeUtcInterval(e001)).then(series => { state.series = series; render(); })
+    .catch(error => { $("#status").dataset.kind = "error"; $("#status").textContent += ` E-001 reconstruction unavailable: ${error.message}.`; });
 }
 init().catch(error => { $("#status").textContent = `The table could not start: ${error.message}`; $("#status").dataset.kind = "error"; });
 

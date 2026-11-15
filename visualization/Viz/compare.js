@@ -32,6 +32,9 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as topojson from "topojson-client";
 import { sampleEpisode, analyzeEpisode } from "./e001-analysis.js";
+import { relativeCameraFrame, relativeFitDistance } from "./relative-camera.js";
+import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js";
+import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
 // "window" (the browser's global object). We give it a short name here.
@@ -59,15 +62,11 @@ const MINUTE_MS = 60 * 1000, DAY_MS = 24 * 60 * MINUTE_MS;   // Times in JavaScr
 const TLE_FLASH_MS = 600;           // how long an orbit line flashes when its satellite switches TLE
 const TLE_FLASH_DARKEN = 0.3;       // during a flash, lines are drawn at 30% of their usual brightness
 const CASE_PAD_DAYS = 7;            // "Reported period ± 1 week" adds this many days either side
-const DOT_SCREEN_SIZE = 0.022       // 0.032 = 3.2% of the screen height at any given moment
 const LABEL_SCREEN_SIZE = 0.03      // name labels are 4.2% of the screen height at any given moment
 const DASH_SCREEN_SIZE = 0.01;      // each dash (and gap) in a dashed orbit line is 1% of the screen height
 
 // Each "slot" (A or B) gets its own colors, no matter which satellite is in it.
-const SLOTS = {
-  A: { dot: "#eaaa00", line: 0xeaaa00 },   // Luch: gold marker and trail
-  B: { dot: "#7a7a7a", line: 0x7a7a7a },   // Athena-Fidus: gray marker and trail
-};
+const SLOTS = SATELLITE_STYLES;
 
 // A tiny helper so we can write $("playBtn") instead of document.getElementById("playBtn").
 const $ = id => document.getElementById(id);
@@ -103,7 +102,6 @@ let currentMs = 0;           // The moment currently shown
 let playing = false;
 let lastFrameTime = performance.now();
 let cameraTween = null;      // A smooth camera movement in progress, or null if none
-let initialCameraTransition = false;
 let lastIdentityKey = "";    // Used to avoid rebuilding the "Now modeling" panel every frame
 let episodeConfig = null;
 let episodeStartMs = 0, episodeEndMs = 0, analysisStepMs = 15 * MINUTE_MS;
@@ -381,7 +379,9 @@ function updateBorderDetail() {
   borderLayers.detailed.visible = detailed;
   // Subpixel political lines cannot stay continuous on a tiny globe. Fade them
   // in smoothly as the projected Earth becomes large enough to resolve them.
-  const opacity = .85 * THREE.MathUtils.smoothstep(diameter, 95, 190);
+  const opacity = view === "earth"
+    ? .85 * THREE.MathUtils.smoothstep(diameter, 65, 115)
+    : .85 * THREE.MathUtils.smoothstep(diameter, 95, 190);
   borderLayers.standard.material.opacity = opacity;
   borderLayers.detailed.material.opacity = opacity;
 }
@@ -452,46 +452,8 @@ const eciToScene = r => new THREE.Vector3(r[0] / EARTH_RADIUS_KM, r[2] / EARTH_R
 // 6. Create the two satellite dots and two orbit lines (one per slot)
 // ---------------------------------------------------------------------------
 // Draw a filled circle with a black outline onto a small image, to use as a dot.
-function dotTexture(fillColor) {
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = 128;
-  const ctx = canvas.getContext("2d");
-  ctx.beginPath();
-  ctx.arc(64, 64, 37, 0, Math.PI * 2);
-  ctx.fillStyle = fillColor;
-  ctx.fill();
-  ctx.lineWidth = 12;
-  ctx.strokeStyle = "#000";
-  ctx.stroke();
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;     // the colours were picked as normal screen colours
-  return texture;
-}
-
 const dots = {};    // dots.A and dots.B
 const trails = {};  // trails.A and trails.B
-function fadingTrailGeometry(points) {
-  const geometry = new THREE.BufferGeometry();
-  if (points.length < 2) return geometry;
-  const positions = [], previous = [], next = [], sides = [], ages = [], indices = [];
-  for (let i = 0; i < points.length; i++) {
-    for (const side of [-1, 1]) {
-      positions.push(...points[i].toArray());
-      previous.push(...points[Math.max(0, i - 1)].toArray());
-      next.push(...points[Math.min(points.length - 1, i + 1)].toArray());
-      sides.push(side);
-      ages.push(i / (points.length - 1));
-    }
-    if (i) { const n = i * 2; indices.push(n - 2, n - 1, n, n - 1, n + 1, n); }
-  }
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute("previous", new THREE.Float32BufferAttribute(previous, 3));
-  geometry.setAttribute("next", new THREE.Float32BufferAttribute(next, 3));
-  geometry.setAttribute("side", new THREE.Float32BufferAttribute(sides, 1));
-  geometry.setAttribute("age", new THREE.Float32BufferAttribute(ages, 1));
-  geometry.setIndex(indices);
-  return geometry;
-}
 for (const slot of ["A", "B"]) {
   const dot = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(SLOTS[slot].dot), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false })); // globe occludes far-side dots; stable overlay order prevents mutual flicker
   dot.scale.set(0.055, 0.055, 1);
@@ -499,28 +461,7 @@ for (const slot of ["A", "B"]) {
   scene.add(dot);
   dots[slot] = dot;
 
-  const material = new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(SLOTS[slot].line) }, uOpacity: { value: .82 }, uResolution: { value: new THREE.Vector2(1, 1) } },
-    vertexShader: `uniform vec2 uResolution; attribute vec3 previous; attribute vec3 next; attribute float side; attribute float age; varying float vAlpha;
-      void main() {
-        vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        vec4 a = projectionMatrix * modelViewMatrix * vec4(previous, 1.0);
-        vec4 b = projectionMatrix * modelViewMatrix * vec4(next, 1.0);
-        vec2 tangent = (b.xy / b.w - a.xy / a.w) * uResolution;
-        tangent = length(tangent) > 0.0001 ? normalize(tangent) : vec2(1.0, 0.0);
-        vec2 normal = vec2(-tangent.y, tangent.x);
-        clip.xy += normal * side * 1.1 * 2.0 / uResolution * clip.w;
-        gl_Position = clip;
-        vAlpha = pow(age, 1.4);
-      }`,
-    fragmentShader: `uniform vec3 uColor; uniform float uOpacity; varying float vAlpha;
-      void main() {
-        gl_FragColor = vec4(uColor, vAlpha * uOpacity);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`,
-    transparent: true, depthWrite: false, depthTest: true, side: THREE.DoubleSide
-  });
+  const material = fadingTrailMaterial(slot);
   const trail = new THREE.Mesh(new THREE.BufferGeometry(), material);
   scene.add(trail);
   trails[slot] = trail;
@@ -662,6 +603,11 @@ const version = ++labelVersion[slot];
 // 7. Formatting helpers
 // ---------------------------------------------------------------------------
 const formatTime = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
+const elapsedDuration = ms => {
+  const wholeHours = Math.max(0, Math.floor(ms / (60 * MINUTE_MS)));
+  const days = Math.floor(wholeHours / 24), hours = wholeHours % 24;
+  return { compact: `${days}:${String(hours).padStart(2, "0")}`, spoken: `${days} ${days === 1 ? "day" : "days"}, ${hours} ${hours === 1 ? "hour" : "hours"}` };
+};
 const formatDate = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(ms));
 
 // <input type="datetime-local"> uses text like "2020-01-02T10:16". We always treat it as UTC.
@@ -708,13 +654,17 @@ function updateScene() {
     positions[slot] = r;
 
     dots[slot].visible = r !== null;
-    if (r) dots[slot].position.copy(eciToScene(r));
+    if (r) {
+      dots[slot].position.copy(eciToScene(r));
+      if (view === "earth") dots[slot].position.applyAxisAngle(earthAxis, -earthAngle);
+    }
 
     if (!r) { trails[slot].geometry.dispose(); trails[slot].geometry = new THREE.BufferGeometry(); continue; }
     // The orbit line shows the last full orbit, all from the TLE in use right now
     // (so it doesn't jump when the nearest TLE changes partway along it).
     // satrec.no is the mean motion in radians per minute, so one orbit = 2π / no minutes.
-    const periodMs = view === "relative" ? 2 * DAY_MS : (2 * Math.PI / satrecFor(lib, tleIndex).no) * MINUTE_MS;
+    const periodMs = view === "relative" || (view === "earth" && Math.hypot(...r) > HIGH_ORBIT_KM)
+      ? 2 * DAY_MS : (2 * Math.PI / satrecFor(lib, tleIndex).no) * MINUTE_MS;
     const points = [];
     for (let i = 0; i <= TRAIL_POINTS; i++) {
       const trailTime = currentMs - periodMs * (1 - i / TRAIL_POINTS);
@@ -722,6 +672,7 @@ function updateScene() {
       if (p) {
         const point = eciToScene(p);
         if (view === "relative") point.applyAxisAngle(earthAxis, earthAngle - sgp4.gstime(new Date(trailTime)));
+        else point.applyAxisAngle(earthAxis, -sgp4.gstime(new Date(trailTime)));
         points.push(point);
       }
     }
@@ -740,17 +691,20 @@ function updateScene() {
   $("geoReference").hidden = view !== "relative";
   $("geoReference").textContent = `Camera reference: nominal GEO at ${geoReferenceLongitudeDeg.toFixed(1)}°E (Earth-fixed).`;
   $("timeDisplay").textContent = formatTime(currentMs).replace(" UTC", "");
-  $("sliderNow").textContent = formatTime(currentMs);
+  const elapsed = elapsedDuration(currentMs - startMs);
+  $("sliderNow").textContent = elapsed.compact;
+  $("sliderNow").title = `${elapsed.spoken} elapsed since playback began`;
+  $("sliderNow").setAttribute("aria-label", $("sliderNow").title);
   $("timelineSlider").value = currentMs;
   $("timelineSlider").style.setProperty("--progress", `${(currentMs - startMs) / (endMs - startMs) * 100}%`);   // gold "played so far" part of the time bar
 
   // Spin Earth to the right angle for this moment (Greenwich sidereal time).
   // latLonToPoint and eciToScene map positive longitude toward negative scene Z;
   // a positive sidereal rotation therefore carries Earth-fixed longitude into ECI.
-  earthGroup.rotation.y = earthAngle;
+  earthGroup.rotation.y = view === "earth" ? 0 : earthAngle;
 
-  // The GEO camera changes only the viewpoint. Both positions stay in Willa's
-  // inertial scene, so losing one TLE never removes Earth or the other object.
+  // Relative motion keeps Willa's ECI scene. The globe mode instead rotates
+  // each propagated ECI position into Earth-fixed coordinates above.
   earthGroup.visible = true;
 
   for (const slot of ["A", "B"]) {             // name labels follow their dots
@@ -847,8 +801,12 @@ function thresholdCueOffset(canvas) {
   if (reducedChartMotion.matches || chartCueFinished.has(canvas) || !visibleCharts.has(canvas) || !analysisSamples.length) return 0;
   if (!chartCueStarts.has(canvas)) chartCueStarts.set(canvas, performance.now());
   const elapsed = performance.now() - chartCueStarts.get(canvas);
-  if (elapsed >= 1600) { chartCueFinished.add(canvas); return 0; }
-  return Math.sin(elapsed * Math.PI / 400) * 5 * (1 - elapsed / 1600);
+  if (elapsed >= 1200) { chartCueFinished.add(canvas); return 0; }
+  const frames = [[0, 0], [.3, -8], [.65, 5], [1, 0]], fraction = elapsed / 1200;
+  const index = frames.findIndex((frame, i) => i && fraction <= frame[0]);
+  const [start, end] = [frames[index - 1], frames[index]];
+  const t = (fraction - start[0]) / (end[0] - start[0]), smooth = t * t * (3 - 2 * t);
+  return start[1] + (end[1] - start[1]) * smooth;
 }
 function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   const canvas = $(canvasId), ctx = canvas.getContext("2d");
@@ -859,7 +817,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     canvas.width = Math.round(w * pixelRatio); canvas.height = Math.round(h * pixelRatio);
   }
   ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  const pad = { left: 57, right: 112, top: 13, bottom: 28 };
+  const pad = { left: 57, right: 106, top: 13, bottom: 28 };
   const bottom = h - pad.bottom, right = w - pad.right;
   const windowMs = 14 * 86400000;
   const windowStart = currentMs - windowMs;
@@ -893,7 +851,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     ctx.fillStyle = "#777"; ctx.textAlign = "right"; ctx.fillText(Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1), pad.left - 5, py + 3);
   }
   ctx.strokeStyle = hoveredChartLines.has(canvas) ? "#898989" : "#b8b8b8"; ctx.lineWidth = hoveredChartLines.has(canvas) ? 1.35 : 1;
-  ctx.beginPath(); ctx.moveTo(pad.left, thresholdY); ctx.lineTo(w - 66, thresholdY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad.left, thresholdY); ctx.lineTo(w - 56, thresholdY); ctx.stroke();
   ctx.strokeStyle = "#555"; ctx.lineWidth = 1.4; ctx.beginPath();
   let connected = false, clipped = false, previous = null;
   for (const sample of analysisSamples) {
@@ -999,31 +957,26 @@ function updateIdentity() {
 // ---------------------------------------------------------------------------
 // 9. Camera
 // ---------------------------------------------------------------------------
-// Look straight down on the two orbits: average the two orbit-plane directions
-// ("normals" = position × velocity) and put the camera along that direction.
+// Frame the Earth and the nearby GEO arc from an oblique Earth-fixed angle.
+// The viewing direction follows the selected satellites' longitude, while
+// the Earth and both propagated positions determine the scale.
 function fullEarthFraming() {
-  const normals = [];
-  for (const slot of ["A", "B"]) {
-    if (!pair[slot]) continue;                  // empty slot
-    const state = stateAt(pair[slot], currentMs);
-    if (!state) continue;
-    const normal = eciToScene(state.r).cross(eciToScene(state.v)).normalize();
-    if (normals.length && normal.dot(normals[0]) < 0) normal.negate();
-    normals.push(normal);
-  }
-  const average = normals.reduce((sum, n) => sum.add(n), new THREE.Vector3()).normalize();
-  if (average.lengthSq() === 0) average.set(0, 0.4, 1).normalize();
-  if (average.z < 0) average.negate();
-   // Far enough back to fit Earth (10.2) or the highest satellite's orbit with some room around it
-  // (at GEO that's about 6.6 Earth radii out, well outside the Earth-sized picture)
-  let farthest = 1;
+  const earthAngle = sgp4.gstime(new Date(currentMs));
+  const positions = [];
   for (const slot of ["A", "B"]) {
     const state = pair[slot] && stateAt(pair[slot], currentMs);
-    if (state) farthest = Math.max(farthest, eciToScene(state.r).length());
+    if (!state) continue;
+    positions.push(eciToScene(state.r).applyAxisAngle(earthAxis, -earthAngle));
   }
-  const verticalHalfTan = Math.tan(THREE.MathUtils.degToRad(15.5 / 2));
-  const fitOrbits = 1.18 * Math.max(farthest, 6.61) / (verticalHalfTan * Math.min(1, camera.aspect));
-  return { position: average.multiplyScalar(Math.max(10.2, fitOrbits)), target: new THREE.Vector3(0, 0, 0) };
+  const radial = positions.length
+    ? positions.reduce((sum, point) => sum.add(point.clone().normalize()), new THREE.Vector3()).normalize()
+    : latLonToPoint(0, geoReferenceLongitudeDeg).normalize();
+  const radius = Math.max(1, ...positions.map(point => point.length()));
+  const target = radial.clone().multiplyScalar(radius * .47);
+  const direction = radial.clone().applyAxisAngle(earthAxis, THREE.MathUtils.degToRad(-55));
+  direction.y += .3; direction.normalize();
+  const distance = Math.max(10.2, radius * 2.8) * Math.max(1, 1 / camera.aspect);
+  return { position: target.clone().addScaledVector(direction, distance), target };
 }
 
 // Glide the camera to the framing over 0.9 seconds instead of jumping.
@@ -1086,7 +1039,7 @@ async function setPair(noradA, noradB, requestedStart = null, requestedEnd = nul
     drawCasePairs();
 
     if (failed || !pair.A || !pair.B) {                    // nothing to model yet
-    setView("earth");                                    // back to Full Earth
+    setView("earth");                                    // fallback until a pair is available
     clearScene();
     $("rangeNote").textContent = failed ? failed.reason.message
       : (pair.A || pair.B) ? `Now choose satellite ${pair.A ? "B" : "A"}.`
@@ -1096,6 +1049,7 @@ async function setPair(noradA, noradB, requestedStart = null, requestedEnd = nul
   applyLimits(requestedStart, requestedEnd);
   lastIdentityKey = "";
     setView(preferredView, centre, !!episodeConfig);
+    if (episodeConfig && preferredView === "relative") keepBothInFrame(true);
 }
 // The dates for the two "Reported period" menu choices, as text (null for any other choice).
 function caseWindow() {
@@ -1382,8 +1336,8 @@ const formatTimeSeconds = ms => new Intl.DateTimeFormat("en-US", { year: "numeri
 //   cross-track = sideways, out of A's orbit plane
 // Earth is drawn to scale underneath, and B leaves a fading trail of the last 4 hours.
 // ---------------------------------------------------------------------------
-let view = "earth";                  // "earth" (Full Earth) or "relative" (Relative motion)
-let preferredView = "earth";         // first show the whole Earth, then fly to the fixed GEO reference
+let view = "relative";               // "earth" (Earth-fixed globe) or "relative" (Relative motion)
+let preferredView = "relative";      // E-001 opens directly in Relative Motion
 let showAxes = false;                // direction axes on or off (the round button under the home button)
 let centre = "A";                    // which satellite sits at the centre of the relative view: "A" or "B"
 const otherSlot = () => centre === "A" ? "B" : "A";   // the satellite that moves around it
@@ -1514,7 +1468,7 @@ function setView(next, nextCentre = centre, immediate = false) {
   const relative = next === "relative";
   earthGroup.matrixAutoUpdate = true;
   earthGroup.visible = true;
-  geoBelt.visible = relative;
+  geoBelt.visible = true;
   relativeTrail.visible = false;
   relativeAxes.visible = false;
   trails.A.visible = trails.B.visible = true;
@@ -1522,24 +1476,24 @@ function setView(next, nextCentre = centre, immediate = false) {
   $("axesBtn").hidden = true;
   $("earthView").classList.toggle("activeViewSwitch", !relative);
   $("relativeView").classList.toggle("activeViewSwitch", relative);
-  $("modeBtn").title = relative ? "Switch to Full Earth" : "Switch to relative motion";
+  $("modeBtn").title = relative ? "Switch to Earth-fixed view" : "Switch to relative motion";
   $("modeBtn").setAttribute("aria-label", $("modeBtn").title);
   $("modeBtn").classList.toggle("isRelative", relative);
   $("modeBtn").innerHTML = relative
     ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c-3 3-3 13 0 16M12 4c3 3 3 13 0 16"/></svg>'
     : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="13" r="1" fill="currentColor"/><path d="M2 12h4m12 0h4M12 2v4m0 12v4"/></svg>';
-  $("viewNote").textContent = relative ? "Both spacecraft move around a fixed point on the nominal GEO belt." : "";
+  $("viewNote").textContent = relative ? "Both spacecraft move around a fixed point on the nominal GEO belt." : "Earth-fixed view: the globe stays still while the spacecraft drift over their longitudes.";
   const framing = relative ? relativeFraming() : fullEarthFraming();
   lastGeoReference = relative ? framing.target.clone() : null;
   if (immediate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     cameraTween = null;
     camera.position.copy(framing.position); controls.target.copy(framing.target);
-    camera.fov = relative ? 35 : 15.5; camera.updateProjectionMatrix(); sizeSceneSprites();
+    camera.fov = 35; camera.updateProjectionMatrix(); sizeSceneSprites();
   } else {
     cameraTween = { start: performance.now(), duration: relative ? 2300 : 1500,
       fromPosition: camera.position.clone(), toPosition: framing.position,
       fromTarget: controls.target.clone(), toTarget: framing.target,
-      fromFov: camera.fov, toFov: relative ? 35 : 15.5 };
+      fromFov: camera.fov, toFov: 35 };
   }
   updateScene();
 }
@@ -1572,15 +1526,7 @@ function relativeViewDirection() {
 // satellites (so one can't hide behind the other), and stand far enough back that the other
 // satellite sits comfortably inside the frame, however close they are.
 function relativeFraming() {
-  const target = geoReferenceWorld(currentMs);
-  if (!preferredCameraReference) return { position: target.clone().addScaledVector(target.clone().normalize(), .15), target };
-  const sourceTarget = new THREE.Vector3(...preferredCameraReference.target);
-  const sourceOffset = new THREE.Vector3(...preferredCameraReference.position).sub(sourceTarget);
-  const rotation = new THREE.Quaternion().setFromUnitVectors(sourceTarget.clone().normalize(), target.clone().normalize());
-  sourceOffset.applyQuaternion(rotation);
-  // Keep the captured vertical scale; add room on narrower viewports.
-  sourceOffset.multiplyScalar(Math.max(1, preferredCameraReference.aspect / camera.aspect));
-  return { position: target.clone().add(sourceOffset), target };
+  return relativeCameraFrame(THREE, geoReferenceWorld(currentMs), preferredCameraReference, camera.aspect);
 }
 // Auto-zoom: in the relative view, the camera's distance follows the distance between the two
 // satellites, so the zoom always matches how close they are: twice as far apart = camera twice as
@@ -1601,20 +1547,9 @@ function keepBothInFrame(snapOut = false) {
   if (!visible.length) return;
   const offset = camera.position.clone().sub(controls.target);
   const distance = offset.length();
-  const direction = offset.clone().normalize();
-  const right = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
-  const up = new THREE.Vector3().crossVectors(direction, right).normalize();
-  const halfTan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const base = preferredCameraReference
-    ? new THREE.Vector3(...preferredCameraReference.position).sub(new THREE.Vector3(...preferredCameraReference.target)).length() * Math.max(1, preferredCameraReference.aspect / camera.aspect)
-    : .15;
-  const fit = Math.max(...visible.map(dot => {
-    const delta = dot.position.clone().sub(controls.target);
-    const lateral = Math.abs(delta.dot(right)) / (halfTan * camera.aspect * .72);
-    const vertical = Math.abs(delta.dot(up)) / (halfTan * .72);
-    return delta.dot(direction) + Math.max(lateral, vertical);
-  }));
-  const goal = THREE.MathUtils.clamp(Math.max(base, fit), controls.minDistance, 50);
+  const goal = relativeFitDistance(THREE, { positions: visible.map(dot => dot.position), target: controls.target,
+    offset, up: camera.up, fov: camera.fov, aspect: camera.aspect, reference: preferredCameraReference,
+    minDistance: controls.minDistance, maxDistance: 50 });
   // Ignore small orbital variation and ease larger changes to avoid visible zoom pumping.
   const next = snapOut && goal > distance ? goal
     : Math.abs(goal - distance) / Math.max(distance, .001) < .06 ? distance : distance + (goal - distance) * (goal > distance ? .12 : .02);
@@ -1746,7 +1681,7 @@ $("loadAsB").addEventListener("click", () => {
   setPair(a, b);
 });
 
-// Full Earth / Relative motion switch
+// Earth-fixed / Relative motion switch
 $("earthView").addEventListener("click", () => { preferredView = "earth"; setView("earth"); });
 $("relativeView").addEventListener("click", () => { preferredView = "relative"; setView("relative"); });
 $("modeBtn").addEventListener("click", () => { preferredView = view === "earth" ? "relative" : "earth"; setView(preferredView); });
@@ -1783,7 +1718,9 @@ $("caViewBtn").addEventListener("click", () => {
 // Slower / faster arrows: step through the hidden speed menu's options and show the chosen speed
 function updateSpeedLabel() {
   const menu = $("speed");
-  $("speedLabel").textContent = `Playback speed: ${{ 60: "1 minute", 900: "15 minutes", 3600: "1 hour", 21600: "6 hours", 86400: "1 day" }[menu.value] || menu.selectedOptions[0].textContent} per second`;
+  const speed = `${{ 60: "1 minute", 900: "15 minutes", 3600: "1 hour", 21600: "6 hours", 86400: "1 day" }[menu.value] || menu.selectedOptions[0].textContent} per second`;
+  $("speedDownBtn").setAttribute("aria-label", `Slow down; current speed ${speed}`);
+  $("speedUpBtn").setAttribute("aria-label", `Speed up; current speed ${speed}`);
   $("speedDownBtn").disabled = menu.selectedIndex === 0;                      // already slowest
   $("speedUpBtn").disabled = menu.selectedIndex === menu.options.length - 1;  // already fastest
 }
@@ -1815,14 +1752,14 @@ $("timelineSlider").addEventListener("input", event => {
   }
 });
 for (const id of ["distanceThreshold", "speedThreshold"]) $(id).addEventListener("input", updateThresholds);
-for (const [canvasId, inputId, increment] of [["separationChart", "distanceThreshold", 1], ["speedChart", "speedThreshold", .1]]) {
+for (const [canvasId, inputId, increment] of [["separationChart", "distanceThreshold", 25], ["speedChart", "speedThreshold", 5]]) {
   const canvas = $(canvasId), input = $(inputId);
   let dragging = false;
   const local = event => { const rect = canvas.getBoundingClientRect(); return { x: event.clientX - rect.left, y: event.clientY - rect.top }; };
   const nearLine = event => {
     const chart = chartGeometry.get(canvas); if (!chart) return false;
     const point = local(event);
-    return point.x >= chart.left - 3 && point.x <= canvas.getBoundingClientRect().width - 66 && Math.abs(point.y - chart.thresholdY) <= 9;
+    return point.x >= chart.left - 3 && point.x <= canvas.getBoundingClientRect().width - 56 && Math.abs(point.y - chart.thresholdY) <= 9;
   };
   const setHover = hovered => {
     if (hovered === hoveredChartLines.has(canvas)) return;
@@ -1834,7 +1771,7 @@ for (const [canvasId, inputId, increment] of [["separationChart", "distanceThres
     const chart = chartGeometry.get(canvas); if (!chart) return;
     const raw = (chart.bottom - local(event).y) / (chart.bottom - chart.top) * chart.yMax;
     const next = Math.max(increment, Math.min(chart.yMax, Math.round(raw / increment) * increment));
-    if (Number(input.value) !== next) { input.value = String(Number(next.toFixed(increment === 1 ? 0 : 1))); updateThresholds(); }
+    if (Number(input.value) !== next) { input.value = String(next); updateThresholds(); }
   };
   canvas.addEventListener("pointermove", event => { if (dragging) setFromPointer(event); else setHover(nearLine(event)); });
   canvas.addEventListener("pointerdown", event => {
@@ -1863,7 +1800,7 @@ if (!cameraDevTools.hidden) window.__proximityDebug = () => {
     return { visible: dots[slot].visible, x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2,
       label: screenLabelNodes[slot].getBoundingClientRect().toJSON() };
   };
-  return { time: new Date(currentMs).toISOString(), view, autoZoom, cameraTween: !!cameraTween, initialCameraTransition, playing,
+  return { time: new Date(currentMs).toISOString(), view, autoZoom, cameraTween: !!cameraTween, playing,
     earthRotation: earthGroup.rotation.y, satelliteScene: { A: dots.A.position.toArray(), B: dots.B.position.toArray() },
     trailCounts: { A: trails.A.geometry.getAttribute("position")?.count || 0, B: trails.B.geometry.getAttribute("position")?.count || 0 },
     analysisSamples, analysisStepMs, analysisResult, camera: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov,
@@ -1972,7 +1909,7 @@ function animate(now) {
     drawEpisodeCharts(); lastChartDraw = now;
   }
 
-  if (playing && !initialCameraTransition && pair.A && library[pair.A] && library[pair.B]) {
+  if (playing && pair.A && library[pair.A] && library[pair.B]) {
     const secondsSinceLastFrame = Math.min((now - lastFrameTime) / 1000, 0.1);
     currentMs += secondsSinceLastFrame * Number($("speed").value) * 1000;   // speed = simulated seconds per real second
     if (currentMs > endMs) currentMs = startMs;   // Loop back to the start
@@ -1986,7 +1923,7 @@ function animate(now) {
     controls.target.lerpVectors(cameraTween.fromTarget, cameraTween.toTarget, eased);
     camera.fov = cameraTween.fromFov + (cameraTween.toFov - cameraTween.fromFov) * eased;
     camera.updateProjectionMatrix(); sizeSceneSprites();
-    if (raw >= 1) { cameraTween = null; if (initialCameraTransition) { initialCameraTransition = false; lastGeoReference = geoReferenceWorld(currentMs); } }
+    if (raw >= 1) cameraTween = null;
   }
 
   // Orbit lines darken for a moment when their satellite switches to a new TLE
@@ -2076,9 +2013,15 @@ try {
     if (!response.ok) throw new Error("E-001 configuration unavailable");
     return response.json();
   });
+  const feed = await loadCurrentEpisodes();
+  const liveEpisode = feed.episodes.find(row => row.ID === "E-001");
+  if (!liveEpisode) throw new Error("E-001 is missing from the current published Episodes sheet");
+  const interval = episodeUtcInterval(liveEpisode);
+  episodeConfig.researchWindow = { start: interval.start, end: interval.end };
+  episodeConfig.playbackWindow = { start: new Date(interval.startMs).toISOString(), end: new Date(interval.endMs).toISOString() };
   preferredCameraReference = await fetch("../local/camera-references/E-001-2017-10-30.json").then(response => response.ok ? response.json() : null);
-  episodeStartMs = Date.parse(`${episodeConfig.researchWindow.start}T00:00:00Z`);
-  episodeEndMs = Date.parse(`${episodeConfig.researchWindow.end}T23:59:59Z`);
+  episodeStartMs = interval.startMs;
+  episodeEndMs = interval.endMs;
   analysisStepMs = episodeConfig.analysisStepMinutes * MINUTE_MS;
   geoReferenceLongitudeDeg = episodeConfig.geoReferenceLongitudeDeg;
   $("distanceThreshold").value = episodeConfig.defaultThresholds.separationKm;
@@ -2087,21 +2030,9 @@ try {
   caseNorads = episodeConfig.participants.map(participant => participant.norad);
   await setPair(caseNorads[0], caseNorads[1]);
   if (analysisSamples.length && pair.A && pair.B) { playing = true; $("playBtn").innerHTML = '<span class="pauseIcon"></span>'; }
-  setTimeout(() => $("thresholdHint")?.classList.add("faded"), 5500);
   $("devTime").min = new Date(startMs).toISOString().slice(0, 16);
   $("devTime").max = new Date(endMs).toISOString().slice(0, 16);
   $("devTime").value = new Date(currentMs).toISOString().slice(0, 16);
-  const beginInitialTransition = () => {
-    if (view !== "earth" || !pair.A || !pair.B) return;
-    if (!trails.A.geometry.getAttribute("position")?.count || !trails.B.geometry.getAttribute("position")?.count) {
-      setTimeout(beginInitialTransition, 120); return;
-    }
-    initialCameraTransition = true;
-    preferredView = "relative"; setView("relative");
-    if (!cameraTween) initialCameraTransition = false;
-  };
-  setTimeout(beginInitialTransition, 1100);
-
 } catch (error) {
   $("rangeNote").textContent = error.message;
   console.error(error);
