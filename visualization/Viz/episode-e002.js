@@ -1,23 +1,42 @@
 /* E-002 uses the established episode shell. Each chapter fixes one dated
    element per spacecraft; charts use the stricter statistical age gate. */
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=2";
+import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js";
+import { E002_TITLE_MARKUP } from "../../shared/episode-copy.js";
+import { safeEpisodeName } from "../../shared/episode-name.js";
 
 const $ = id => document.getElementById(id);
 const episode = await fetch(new URL("../dev/e002/episode.json", import.meta.url)).then(response => response.json());
-const names = Object.fromEntries(episode.participants.map(item => [item.slot, item.name]));
-const cospar = Object.fromEntries(episode.participants.map(item => [item.slot, item.cospar]));
-const norad = Object.fromEntries(episode.participants.map(item => [item.slot, item.norad]));
-const comparisons = [{ slots: ["A", "B"], color: "#eaaa00", short: "2542 / USA 245" }, { slots: ["C", "B"], color: "#707070", short: "2543 / USA 245" }];
+const sheet = await loadCurrentEpisodes().catch(error => {
+  const notice = $("dataStatusSection"); notice.hidden = false;
+  notice.textContent = `Current E-002 spacecraft selection unavailable: ${error.message}`;
+  throw error;
+});
+const published = sheet.episodes.find(row => row.ID === episode.episodeId && /^(true|yes|1)$/i.test(row.Frontend || ""));
+if (!published) throw new Error("E-002 is absent from the published Episodes sheet");
+const plotted = plottedObjects(published);
+const participants = plotted.map(({ slot, cospar }) => {
+  const item = episode.participants.find(candidate => candidate.slot === slot && candidate.cospar === cospar);
+  if (!item) throw new Error(`No reviewed data match published object ${slot}: ${cospar}`);
+  return item;
+});
+if (!participants.some(item => item.slot === "B") || !participants.some(item => item.slot === "A")) throw new Error("E-002 requires Kosmos 2542 and USA 245 for this comparison");
+const names = Object.fromEntries(participants.map(item => [item.slot, item.name]));
+const cospar = Object.fromEntries(participants.map(item => [item.slot, item.cospar]));
+const norad = Object.fromEntries(participants.map(item => [item.slot, item.norad]));
+const comparisons = participants.filter(item => item.slot !== "B").map(item => ({ slots: [item.slot, "B"], color: item.slot === "A" ? "#eaaa00" : "#707070", short: `${item.name} / USA 245` }));
 let series = [], lastWindow = "";
+const chartScales = new Map();
 const icon = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><path d="M9.25 2.75h6v6M8 10l7.25-7.25"/></svg>';
 const formatTime = ms => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const signedAge = ms => { const hours = Math.floor(Math.abs(ms) / 3600000); return `${hours === 0 ? "" : ms < 0 ? "−" : "+"}${hours} ${hours === 1 ? "hour" : "hours"}`; };
 const sourceLabel = tle => tle?.source === "space-track" ? "Space-Track.org" : tle?.source === "seesat" ? "SeeSat-L" : tle ? "Source unverified" : "No nearby element";
 
 document.body.classList.add("e002-shared");
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css?v=4">');
+document.body.classList.toggle("e002-multi-pair", comparisons.length > 1);
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css?v=5">');
 const scene = document.createElement("div"); scene.id = "scene"; document.body.prepend(scene);
-const labels = document.createElement("div"); labels.id = "labels"; document.body.append(labels);
+const labels = document.createElement("div"); labels.id = "satelliteScreenLabels"; document.body.append(labels);
 const scaffold = document.createElement("div"); scaffold.className = "e002-player-scaffold";
 for (const id of ["play", "timeline", "frameMode", "autoFrame", "timestamp", "startLabel", "endLabel", "coverageRows"]) {
   const element = document.createElement(["play", "frameMode", "autoFrame"].includes(id) ? "button" : id === "timeline" ? "input" : "div");
@@ -31,24 +50,23 @@ const coverage = document.createElement("details"); coverage.className = "e002-c
 const coverageSummary = document.createElement("summary"); coverageSummary.textContent = "Reconstruction coverage";
 const coverageBody = document.createElement("p"); coverageBody.className = "methodNote";
 coverage.append(coverageSummary, coverageBody); note.append(context, coverage);
-$("episodeTitle").textContent = `${episode.episodeId} · ${episode.title}`;
-$("separationTitle").textContent = "Both Russian spacecraft relative to USA 245";
-$("separationTitle").hidden = false;
-$("thresholdRangeNote").textContent = "Pairwise one-minute samples within 12 hours of each selected TLE epoch; no values are inferred between chapters.";
-$("dwellLabel").textContent = "Sampled dwell by pair";
+$("episodeTitle").replaceChildren(safeEpisodeName(E002_TITLE_MARKUP));
+$("separationTitle").textContent = "Kosmos 2542 relative to USA 245";
+$("separationTitle").hidden = true;
+$("thresholdRangeNote").textContent = "Statistics use one-minute samples within 12 hours of both selected TLE epochs.";
+$("dwellLabel").textContent = "Dwell Time";
 
 const chapterNav = document.createElement("div"); chapterNav.className = "e002-chapters";
-const chapterHeading = document.createElement("span"); chapterHeading.textContent = "Chapters";
 const chapterGroup = document.createElement("div"); chapterGroup.className = "e002-segmented"; chapterGroup.setAttribute("role", "group"); chapterGroup.setAttribute("aria-label", "Historical chapters");
 const chapterButtons = new Map();
-for (const window of [...episode.windows].sort((a, b) => Date.parse(a.start) - Date.parse(b.start))) {
-  const button = document.createElement("button"); button.type = "button"; button.textContent = window.chapterShort; button.title = `${window.chapterTitle} · ${formatTime(Date.parse(window.start))}–${formatTime(Date.parse(window.end))}`;
+for (const window of [...episode.windows].filter(item => item.id !== "jan24").sort((a, b) => Date.parse(a.start) - Date.parse(b.start))) {
+  const button = document.createElement("button"); button.type = "button"; button.textContent = formatTime(Date.parse(window.start)).split(",")[0]; button.title = `${window.chapterTitle} · ${formatTime(Date.parse(window.start))}–${formatTime(Date.parse(window.end))}`;
   button.setAttribute("aria-label", `Chapter: ${window.chapterTitle}`); button.dataset.window = window.id;
   chapterGroup.append(button); chapterButtons.set(window.id, button);
 }
-chapterNav.append(chapterHeading, chapterGroup); $("playbackDock").prepend(chapterNav);
+chapterNav.append(chapterGroup); $("playbackDock").prepend(chapterNav);
 
-for (const slot of ["A", "B", "C"]) {
+for (const slot of participants.map(item => item.slot)) {
   const card = document.createElement("details"); card.className = "satCard"; card.dataset.slot = slot; card.dataset.cospar = cospar[slot];
   const summary = document.createElement("summary"); summary.className = "satCardName";
   const dot = document.createElement("span"); dot.className = `sourceDot slot${slot}`;
@@ -59,7 +77,7 @@ for (const slot of ["A", "B", "C"]) {
   const metadata = document.createElement("div"); metadata.className = "satMetaDetails";
   card.append(summary, metadata); $("identity").append(card);
 }
-$("nowSummary").textContent = "Three spacecraft";
+$("nowSummary").textContent = `${participants.length} spacecraft`;
 
 for (const groupId of ["distanceChartGroup", "speedChartGroup"]) {
   const group = $(groupId), legend = document.createElement("div"); legend.className = "e002-chart-legend";
@@ -67,19 +85,19 @@ for (const groupId of ["distanceChartGroup", "speedChartGroup"]) {
     const item = document.createElement("span"), swatch = document.createElement("i"); swatch.style.background = comparison.color;
     item.append(swatch, document.createTextNode(comparison.short)); legend.append(item);
   }
-  group.prepend(legend);
+  if (comparisons.length > 1) group.prepend(legend);
   const overflow = document.createElement("div"); overflow.className = "e002-chart-overflow"; group.append(overflow);
 }
-$("separationChart").setAttribute("aria-label", "Separation from USA 245: Kosmos 2542 in gold and Kosmos 2543 in dark gray; unsupported intervals have no line");
-$("speedChart").setAttribute("aria-label", "Relative speed from USA 245: Kosmos 2542 in gold and Kosmos 2543 in dark gray; unsupported intervals have no line");
+$("separationChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 separation; gaps indicate unsupported samples");
+$("speedChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 relative speed; gaps indicate unsupported samples");
 
-const { episodeModel: model } = await import("../dev/e002/player.js?v=14");
+const { episodeModel: model } = await import("../dev/e002/player.js?v=15");
 function validSample(comparison, ms) {
   if (comparison.slots.some(slot => !model.selected[slot] || Math.abs(ms - Date.parse(model.selected[slot].epoch)) > episode.maximumStatisticTleAgeHours * 3600000)) return null;
   return model.samplePair(...comparison.slots, ms);
 }
 function updateCards() {
-  for (const slot of ["A", "B", "C"]) {
+  for (const slot of participants.map(item => item.slot)) {
     const card = $("identity").querySelector(`[data-slot="${slot}"]`), tle = model.selected[slot];
     const previousEpoch = card.dataset.epoch, previousSource = card.dataset.sourceData;
     card.dataset.norad = norad[slot]; card.dataset.epoch = tle?.epoch || "";
@@ -100,12 +118,12 @@ function minimumNote(id, key, unit) {
   for (const comparison of comparisons) {
     const values = series.filter(item => Number.isFinite(item[comparison.slots[0]]?.[key]));
     const line = document.createElement("div"); line.className = "e002-minimum-line";
-    const dot = document.createElement("i"); dot.style.background = comparison.color; line.append(dot);
-    if (!values.length) line.append(`${comparison.short}: unavailable in this chapter`);
+    if (!values.length) line.append("Minimum value this chapter: unavailable");
     else {
       const minimum = values.reduce((best, item) => item[comparison.slots[0]][key] < best[comparison.slots[0]][key] ? item : best);
-      line.append(`${comparison.short}: minimum sampled ${minimum[comparison.slots[0]][key].toFixed(1)} ${unit} on `);
-      const jump = document.createElement("a"); jump.href = "#"; jump.textContent = formatTime(minimum.ms); jump.title = "Jump playback to this sampled time";
+      const strong = document.createElement("strong"); strong.textContent = `${minimum[comparison.slots[0]][key].toFixed(1)} ${unit}`;
+      line.append("Minimum value this chapter: ", strong, " on ");
+      const jump = document.createElement("a"); jump.href = "#playbackDock"; jump.textContent = formatTime(minimum.ms); jump.title = "Jump playback to this sampled time";
       jump.addEventListener("click", event => { event.preventDefault(); model.setTime(minimum.ms); }); line.append(jump);
     }
     node.append(line);
@@ -116,6 +134,10 @@ function buildSeries() {
   series = [];
   for (let ms = start; ms <= end; ms += 60000) series.push({ ms, ...Object.fromEntries(comparisons.map(comparison => [comparison.slots[0], validSample(comparison, ms)])) });
   if (series.at(-1).ms !== end) series.push({ ms: end, ...Object.fromEntries(comparisons.map(comparison => [comparison.slots[0], validSample(comparison, end)])) });
+  for (const [key, sliderId] of [["distanceKm", "distanceThresholdSlider"], ["speedMs", "speedThresholdSlider"]]) {
+    const values = series.flatMap(sample => comparisons.map(comparison => sample[comparison.slots[0]]?.[key])).filter(Number.isFinite);
+    if (values.length) $(sliderId).max = String(Math.max(Number($(sliderId).max), Math.ceil(Math.max(...values) * 1.25 / 1000) * 1000));
+  }
   minimumNote("distanceMinimum", "distanceKm", "km"); minimumNote("speedMinimum", "speedMs", "m/s");
   updateCharts();
 }
@@ -133,6 +155,13 @@ function drawChart(id, key, threshold, current) {
   const max = Math.max(threshold * 1.2, maxima.length === 2 && maxima[1] > maxima[0] * 2.5 ? maxima[0] * 1.2 : maxima.at(-1) * 1.08, 1);
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end);
   const x = ms => left + (ms - start) / (end - start) * (right - left), y = value => bottom - Math.min(value, max) / max * (bottom - top);
+  chartScales.set(id, { max, top, bottom });
+  const edge = canvas.parentElement.querySelector(".thresholdEdge");
+  edge.style.top = `${canvas.offsetTop + y(threshold)}px`; edge.textContent = key === "distanceKm" ? `${threshold} km` : `${threshold} m/s`; edge.setAttribute("aria-valuenow", String(threshold)); edge.setAttribute("aria-valuemax", key === "distanceKm" ? $("distanceThresholdSlider").max : $("speedThresholdSlider").max);
+  const currentValue = canvas.parentElement.querySelector(".currentValue");
+  const selected = validSample(comparisons[0], current)?.[key];
+  currentValue.hidden = !Number.isFinite(selected);
+  if (Number.isFinite(selected)) { currentValue.style.top = `${canvas.offsetTop + y(selected)}px`; currentValue.textContent = selected.toFixed(1); }
   context.setLineDash([3, 3]); context.strokeStyle = "#b8a875"; context.beginPath(); context.moveTo(left, y(threshold)); context.lineTo(right, y(threshold)); context.stroke(); context.setLineDash([]);
   for (const comparison of comparisons) {
     const slot = comparison.slots[0]; context.strokeStyle = comparison.color; context.lineWidth = 1.8; context.setLineDash(slot === "C" ? [4, 4] : []); context.beginPath();
@@ -164,41 +193,77 @@ function updateCharts() {
   $("distanceThresholdOutput").textContent = `${distance} km`; $("speedThresholdOutput").textContent = `${speed} m/s`;
   $("thresholdSummary").textContent = `${distance} km · ${speed} m/s`;
   const dwell = comparisons.map(comparison => {
-    const valid = series.filter(item => Number.isFinite(item[comparison.slots[0]]?.distanceKm) && Number.isFinite(item[comparison.slots[0]]?.speedMs));
-    return { label: comparison.short, color: comparison.color, count: valid.length < 2 ? null : valid.filter(item => item[comparison.slots[0]].distanceKm <= distance && item[comparison.slots[0]].speedMs <= speed).length };
+    const slot = comparison.slots[0];
+    const valid = series.filter(item => Number.isFinite(item[slot]?.distanceKm) && Number.isFinite(item[slot]?.speedMs));
+    let minutes = 0;
+    for (let index = 1; index < series.length; index++) {
+      const before = series[index - 1], after = series[index];
+      if (before[slot]?.distanceKm <= distance && before[slot]?.speedMs <= speed && after[slot]?.distanceKm <= distance && after[slot]?.speedMs <= speed)
+        minutes += (after.ms - before.ms) / 60000;
+    }
+    return { label: comparison.short, color: comparison.color, count: valid.length < 2 ? null : minutes };
   });
-  $("dwellStat").textContent = ""; $("dwellUnit").textContent = "";
-  let rows = $("dwellMetric").querySelector(".e002-dwell-pairs");
-  if (!rows) { rows = document.createElement("div"); rows.className = "e002-dwell-pairs"; $("dwellMetric").querySelector(".dwellValue").after(rows); }
-  rows.replaceChildren(...dwell.map(item => { const row = document.createElement("div"), dot = document.createElement("i"), value = document.createElement("strong"); dot.style.background = item.color; value.textContent = item.count === null ? "unavailable" : `${item.count} sampled min`; row.append(dot, document.createTextNode(item.label), value); return row; }));
-  $("dwellMetric").querySelector(".dwellKey").textContent = "Each pair qualifies only when both thresholds are met at a supported one-minute sample. Values are approximate and remain separate.";
+  const count = dwell[0]?.count;
+  $("dwellStat").textContent = count === null || count === undefined ? "—" : count.toFixed(0);
+  $("dwellUnit").textContent = "min";
+  const explanation = $("dwellMetric").querySelector(".dwellKey");
+  explanation.textContent = "Approximate chapter duration between consecutive supported one-minute samples that meet both thresholds.";
+  if (comparisons.length > 1) {
+    let rows = $("dwellMetric").querySelector(".e002-dwell-pairs");
+    if (!rows) { rows = document.createElement("div"); rows.className = "e002-dwell-pairs"; explanation.after(rows); }
+    rows.replaceChildren(...dwell.map(item => { const row = document.createElement("div"), dot = document.createElement("i"), value = document.createElement("strong"); dot.style.background = item.color; value.textContent = item.count === null ? "unavailable" : `${item.count.toFixed(0)} min`; row.append(dot, document.createTextNode(item.label), value); return row; }));
+  }
 }
 function tick() {
   if (!model.ready) { setTimeout(tick, 250); return; }
   if (model.window.id !== lastWindow) {
     lastWindow = model.window.id; buildSeries();
     for (const [id, button] of chapterButtons) { const active = id === lastWindow; button.classList.toggle("active", active); button.setAttribute("aria-pressed", String(active)); }
-    context.textContent = "Development reconstruction · " + model.window.chapterTitle + ". " + model.window.chapterNarrative;
+    context.textContent = model.window.chapterTitle;
     coverageBody.textContent = `${model.window.note} Playback: ${formatTime(Date.parse(model.window.start))} to ${formatTime(Date.parse(model.window.end))}. Statistical comparisons require each selected element to be within 12 hours of its epoch.`;
   }
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end), current = model.current;
   const slider = $("timelineSlider"); slider.min = String(start); slider.max = String(end); slider.value = String(current); slider.step = "1000";
   $("sliderNow").textContent = formatTime(current); $("timeDisplay").textContent = formatTime(current);
   const currentValues = comparisons.map(comparison => validSample(comparison, current));
-  const display = (key, unit) => comparisons.map((comparison, index) => `${comparison.slots[0]}–B ${currentValues[index] ? currentValues[index][key].toFixed(1) + " " + unit : "unavailable"}`).join(" · ");
+  const display = (key, unit) => comparisons.length === 1 ? (currentValues[0] ? `${currentValues[0][key].toFixed(1)} ${unit}` : "—") : comparisons.map((comparison, index) => `${comparison.short}: ${currentValues[index] ? currentValues[index][key].toFixed(1) + " " + unit : "unavailable"}`).join(" · ");
   $("rangeStat").textContent = display("distanceKm", "km"); $("speedStat").textContent = display("speedMs", "m/s");
   $("playBtn").setAttribute("aria-label", model.playing ? "Pause" : "Play");
   updateCards(); updateCharts(); setTimeout(tick, 500);
 }
 chapterGroup.addEventListener("click", event => { const button = event.target.closest("button[data-window]"); if (button) model.selectWindow(button.dataset.window); });
 for (const id of ["distanceThresholdSlider", "speedThresholdSlider"]) $(id).addEventListener("input", updateCharts);
+for (const [groupId, chartId, sliderId] of [["distanceChartGroup", "separationChart", "distanceThresholdSlider"], ["speedChartGroup", "speedChart", "speedThresholdSlider"]]) {
+  const edge = $(groupId).querySelector(".thresholdEdge"), chart = $(chartId), slider = $(sliderId);
+  const change = clientY => {
+    const scale = chartScales.get(chartId); if (!scale) return;
+    const y = clientY - chart.getBoundingClientRect().top;
+    const value = (scale.bottom - y) / (scale.bottom - scale.top) * scale.max;
+    const step = Number(slider.step) || 1;
+    slider.value = String(Math.round(Math.max(Number(slider.min), Math.min(Number(slider.max), value)) / step) * step);
+    updateCharts();
+  };
+  edge.addEventListener("pointerdown", event => { edge.setPointerCapture(event.pointerId); change(event.clientY); });
+  edge.addEventListener("pointermove", event => { if (edge.hasPointerCapture(event.pointerId)) change(event.clientY); });
+  edge.addEventListener("keydown", event => {
+    if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
+    event.preventDefault(); slider.value = String(Number(slider.value) + (event.key === "ArrowUp" ? 1 : -1) * Number(slider.step)); updateCharts();
+  });
+}
 $("timelineSlider").addEventListener("input", event => model.setTime(Number(event.target.value)));
 $("playBtn").addEventListener("click", () => model.setPlaying(!model.playing));
 $("modeBtn").addEventListener("click", () => model.toggleFrame());
 $("resetBtn").hidden = false; $("resetBtn").addEventListener("click", () => model.resetCamera());
 $("zoomInBtn").addEventListener("click", () => model.zoom(1.12));
 $("zoomOutBtn").addEventListener("click", () => model.zoom(1 / 1.12));
-$("speedDownBtn").hidden = $("speedUpBtn").hidden = true;
+const speeds = [15, 30, 60, 90, 180, 360, 720];
+let speedIndex = speeds.indexOf(model.rate);
+const speedLabel = document.createElement("span"); speedLabel.className = "e002-speed-label"; $("playbackDock").append(speedLabel);
+function updateSpeed() { model.setRate(speeds[speedIndex]); speedLabel.textContent = `${speeds[speedIndex]}×`; $("speedDownBtn").disabled = speedIndex === 0; $("speedUpBtn").disabled = speedIndex === speeds.length - 1; }
+$("speedDownBtn").addEventListener("click", () => { speedIndex = Math.max(0, speedIndex - 1); updateSpeed(); });
+$("speedUpBtn").addEventListener("click", () => { speedIndex = Math.min(speeds.length - 1, speedIndex + 1); updateSpeed(); });
+updateSpeed();
+new ResizeObserver(() => document.body.style.setProperty("--e002-dock-height", `${Math.ceil($("playbackDock").getBoundingClientRect().height)}px`)).observe($("playbackDock"));
 $("cameraControls").append(makeCameraEditor(model));
 tick();
 

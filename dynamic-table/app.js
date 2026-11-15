@@ -1,8 +1,9 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
-import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval } from "../shared/episode-feed.js";
+import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, cleanCospar } from "../shared/episode-feed.js";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
+import { E002_TITLE_MARKUP, E002_DESCRIPTION } from "../shared/episode-copy.js";
 import { applyMarkerCssVariables } from "../shared/marker-spec.js?v=3";
 
 applyMarkerCssVariables();
@@ -15,7 +16,7 @@ const field = (row, ...names) => {
 };
 const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
 const EARTH_COLORS = { warm: 0xe8e5df, stone: 0xe6e6e1, taupe: 0xe6e1db, neutral: 0xedeae5 };
-const state = { live: null, preview: null, series: null, seriesPromise: null, usePreview: false, selected: null, query: "", orbit: "", earthColor: "neutral", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
+const state = { live: null, preview: null, series: null, seriesPromise: null, usePreview: false, selected: null, query: "", earthColor: "neutral", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -97,7 +98,7 @@ function ownerIndicators(info, compact = false) {
 }
 function objectInfo(row, role, data) {
   const raw = field(row, `Object ${role}`);
-  if (!raw || /^(?:not applicable|not assigned|none|—|-)(?:\b|$)/i.test(raw)) return null;
+  if (!cleanCospar(raw)) return null;
   const record = data.celestrak?.objects?.[raw.toUpperCase()] || null;
   const satcat = record?.status === "resolved" ? record.satcat : null;
   const compact = data.compactObjects?.[raw.toUpperCase()] || currentData()?.compactObjects?.[raw.toUpperCase()] || {};
@@ -107,9 +108,9 @@ function objectInfo(row, role, data) {
     ownerName: record?.ownerName || "", launchSite: data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE] || data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "",
     launchSiteFromCsis: !!data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE], csisSourceUrl: data.celestrak?.csisSourceUrl || "" };
 }
-function titleMarkup(row) { return field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
+function titleMarkup(row) { return field(row, "ID") === "E-002" ? E002_TITLE_MARKUP : field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
 function title(row) { return episodeNameText(titleMarkup(row)); }
-function episodeDescription(row) { return field(row, "Episode Description"); }
+function episodeDescription(row) { return field(row, "ID") === "E-002" ? E002_DESCRIPTION : field(row, "Episode Description"); }
 function formattedDescription(value) {
   const fragment = document.createDocumentFragment();
   const parsed = new DOMParser().parseFromString(`<div>${value}</div>`, "text/html").body.firstElementChild;
@@ -177,7 +178,7 @@ function buildObjectPopover(info) {
   if (info.launchSite) addMetadata(dl, "Launch site", `${info.launchSite.replace(/\s*\(/g, " (")}${(launchFlagEmoji[s.LAUNCH_SITE] || []).map(flag => ` ${flag}`).join("")}`);
   popover.append(dl);
   const sourceRow = el("div", "object-source-row"), sourceValue = el("dd");
-  sourceRow.append(el("dt", "", "Data Source"));
+  sourceRow.append(el("dt", "", "Data source"));
   sourceValue.append(externalLink("CelesTrak SATCAT", info.record?.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(s.NORAD_CAT_ID)}`));
   sourceRow.append(sourceValue); dl.append(sourceRow);
 }
@@ -265,9 +266,8 @@ function visibleRows() {
   const publicRows = state.usePreview ? data.episodes : data.episodes.filter(row => approved.size ? approved.has(field(row, "ID")) : false);
   const query = state.query.toLocaleLowerCase();
   const rows = publicRows.filter(row => {
-    if (state.orbit && regime(row) !== state.orbit) return false;
     if (!query) return true;
-    const terms = [field(row, "ID"), title(row), episodeDescription(row), account(row), regime(row), ...["A", "B", "C"].flatMap(role => { const info = objectInfo(row, role, data); return info ? [info.name, info.cospar, info.norad] : []; })];
+    const terms = [field(row, "ID"), title(row), episodeDescription(row), account(row), regime(row), regimeShort(row), ...["A", "B", "C"].flatMap(role => { const info = objectInfo(row, role, data); return info ? [info.name, info.cospar, info.norad, info.owner, ownerDisplay(info)] : []; })];
     return terms.join(" ").toLocaleLowerCase().includes(query);
   });
   const { key, direction } = state.sort, sign = direction === "asc" ? 1 : -1;
@@ -287,13 +287,6 @@ function visibleRows() {
     return sign * compare || field(a, "ID").localeCompare(field(b, "ID"), undefined, { numeric: true });
   });
   return rows;
-}
-function updateOrbitOptions() {
-  const select = $("#orbit"), data = currentData();
-  const approved = new Set(data?.approvedEpisodeIds || []);
-  const values = [...new Set((data?.episodes || []).filter(row => state.usePreview || approved.has(field(row, "ID"))).map(regime))].sort();
-  select.replaceChildren(new Option("All regimes", ""), ...values.map(x => new Option(x, x)));
-  if (!values.includes(state.orbit)) state.orbit = ""; select.value = state.orbit;
 }
 function updateSortHeaders() {
   for (const button of document.querySelectorAll(".sort-head")) {
@@ -514,7 +507,7 @@ function startPreview(row) {
   // One live scene spans the header, overview, and records. The link remains
   // the interaction target while the canvas is a clipped background layer.
   const tableWrap = document.querySelector(".table-wrap"), header = document.querySelector(".episode-row.selected"), expanded = document.querySelector(".expanded-row");
-  if (tableWrap && header && expanded) {
+  if (episodeId === "E-002" && tableWrap && header && expanded) {
     const origin = tableWrap.getBoundingClientRect(), heading = header.getBoundingClientRect(), detail = expanded.getBoundingClientRect();
     host.style.top = `${heading.top - origin.top}px`;
     host.style.left = `${heading.left - origin.left}px`;
@@ -549,10 +542,10 @@ function newsIndicator(row, count) {
   wrap.title = `${count} linked ${count === 1 ? "record" : "records"}`; wrap.append(stack); return wrap;
 }
 function render() {
-  stopPreview(); closeObject(); updateOrbitOptions(); updateSortHeaders();
+  stopPreview(); closeObject(); updateSortHeaders();
   const data = currentData(), rows = visibleRows();
   if (state.selected && !rows.includes(state.selected)) state.selected = null;
-  $("#count").textContent = `${rows.length} ${state.usePreview ? "preview records" : "published episodes"}`;
+  $("#count").textContent = `${data?.publishedEpisodes ?? rows.length} episodes`;
   const body = $("#rows"); body.replaceChildren();
   for (const [index, row] of rows.entries()) {
     const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);
@@ -562,7 +555,7 @@ function render() {
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");
     const badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row);
     const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
-    heading.append(name, badge, el("span", "episode-id", field(row, "ID")));
+    heading.append(name, el("span", "episode-id", field(row, "ID")), badge);
     episode.append(heading); tr.append(episode);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
     const periodCell = el("td", "period-cell"); periodCell.append(periodNode(row)); tr.append(periodCell);
@@ -573,7 +566,7 @@ function render() {
     tr.addEventListener("keydown", event => { if (event.target === tr && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleRow(row); } });
     body.append(tr);
     if (open) {
-      const detailRow = el("tr", "expanded-row"), td = el("td"); detailRow.id = `episode-detail-${field(row, "ID")}`; td.colSpan = 6; detailRow.append(td); body.append(detailRow);
+      const detailRow = el("tr", "expanded-row"), td = el("td"); detailRow.id = `episode-detail-${field(row, "ID")}`; detailRow.dataset.episodeId = field(row, "ID"); td.colSpan = 6; detailRow.append(td); body.append(detailRow);
       const id = field(row, "ID"), cached = state.details.get(id);
       if (data.source === "local-verification-candidates") td.append(expandedContent(row, { source: data.source, descriptions: [], sourceMetadata: {} }));
       else if (cached) { td.append(expandedContent(cached.row, cached)); requestAnimationFrame(() => { if (td.isConnected) startPreview(cached.row); }); }
@@ -594,15 +587,15 @@ function render() {
   const empty = $("#empty"); empty.hidden = rows.length > 0;
   if (!rows.length) {
     const noFeed = !data || data.source === "unavailable", nonePublished = !state.usePreview && data?.source === "live" && data.publishedEpisodes === 0;
-    empty.replaceChildren(el("strong", "", noFeed ? "Current records could not be verified" : nonePublished ? "No episodes selected for public display" : "No matching episodes"), el("span", "", noFeed ? "Check the live-sheet status above and reload after the source is corrected." : nonePublished ? "The Frontend publication flag controls this table." : "Try another search or reset the filters."));
+    empty.replaceChildren(el("strong", "", noFeed ? "Current records could not be verified" : nonePublished ? "No episodes selected for public display" : "No matching episodes"), el("span", "", noFeed ? "Reload after the source is available." : nonePublished ? "The Frontend publication flag controls this table." : "Try another search."));
   }
   if (data?.source === "live") scheduleDetailPrefetch();
 }
 function setStatus() {
   const status = $("#status"), live = state.live;
-  if (state.usePreview) { status.dataset.kind = "preview"; status.textContent = currentData()?.source === "local-verification-candidates" ? "LOCAL PREVIEW: verification candidates from a worklist, not published episodes." : "LOCAL PREVIEW: all workbook episodes, including unpublished rows."; }
-  else if (live?.source === "live") { status.dataset.kind = live.descriptionError ? "error" : "live"; status.textContent = `Live published Google Sheet checked ${new Date(live.snapshotUtc).toLocaleString("en-US")}: ${live.publishedEpisodes} selected episode${live.publishedEpisodes === 1 ? "" : "s"}.${live.descriptionError ? ` Source records unavailable: ${live.descriptionError}.` : ""}`; }
-  else { status.dataset.kind = "error"; status.textContent = `Current published sheet unavailable: ${live?.error || "unknown error"}. No stale episode dates are shown.`; }
+  if (state.usePreview) { status.hidden = false; status.dataset.kind = "preview"; status.textContent = currentData()?.source === "local-verification-candidates" ? "LOCAL PREVIEW: verification candidates from a worklist, not published episodes." : "LOCAL PREVIEW: all workbook episodes, including unpublished rows."; }
+  else if (live?.source === "live") { status.dataset.kind = live.descriptionError ? "error" : "live"; status.textContent = live.descriptionError ? `Source records unavailable: ${live.descriptionError}.` : ""; status.hidden = !live.descriptionError; }
+  else { status.hidden = false; status.dataset.kind = "error"; status.textContent = `Current published sheet unavailable: ${live?.error || "unknown error"}. No stale episode dates are shown.`; }
 }
 async function init() {
   if (["localhost", "127.0.0.1"].includes(location.hostname)) {
@@ -616,10 +609,8 @@ async function init() {
       previewScene?.setEarthColor(color);
     });
   }
-  $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; state.orbit = ""; setStatus(); render(); });
+  $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; setStatus(); render(); });
   $("#search").addEventListener("input", event => { state.query = event.target.value.trim(); render(); });
-  $("#orbit").addEventListener("change", event => { state.orbit = event.target.value; render(); });
-  $("#reset").addEventListener("click", () => { state.query = ""; state.orbit = ""; state.sort = { key: "index", direction: "asc" }; $("#search").value = ""; render(); });
   document.querySelectorAll(".sort-head").forEach(button => button.addEventListener("click", () => { const key = button.dataset.sort; state.sort = { key, direction: state.sort.key === key ? (state.sort.direction === "desc" ? "asc" : "desc") : key === "title" || key === "orbit" ? "asc" : "desc" }; render(); }));
   state.live = await Promise.all([
     fetch("./data/table.json", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error(`Table support data returned ${r.status}`); return r.json(); }),

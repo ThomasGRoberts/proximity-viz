@@ -4,16 +4,26 @@ import { feature } from "../../Viz/vendor/topojson/topojson-client.js";
 import { DOT_SCREEN_SIZE, dotTexture } from "../../Viz/relative-rendering.js?v=3";
 import { MARKER } from "../../../shared/marker-spec.js?v=3";
 import { spaceTrackHistoryUrl } from "../../../shared/tle-provenance.js?v=2";
+import { loadCurrentEpisodes, plottedObjects } from "../../../shared/episode-feed.js";
 
 const $ = id => document.getElementById(id);
 const mini = document.body.classList.contains("mini");
 const sgp4 = window.satellite;
 const episode = await fetch(new URL("episode.json", import.meta.url)).then(response => response.json());
 const EARTH_KM = 6378.137, MAX_AGE = episode.maximumDisplayTleAgeHours * 3600000, TRAIL_MS = (mini ? 65 : 45) * 60000;
-const RATE = (mini ? 150 : 90) * 1000; // Fixed elements throughout each short playback window.
+let rate = (mini ? 150 : 90) * 1000; // Simulated milliseconds per wall second.
 const RADIUS = 5.55;
-const craft = episode.participants.map(item => ({ ...item, color: MARKER[item.slot] }));
-const windows = episode.windows;
+const sheet = await loadCurrentEpisodes();
+const row = sheet.episodes.find(item => item.ID === episode.episodeId && /^(true|yes|1)$/i.test(item.Frontend || ""));
+if (!row) throw new Error("E-002 is absent from the published Episodes sheet");
+const selectedObjects = plottedObjects(row);
+if (selectedObjects.length < 2) throw new Error("E-002 needs two valid spacecraft identifiers in the published sheet");
+const craft = selectedObjects.map(({ slot, cospar }) => {
+  const item = episode.participants.find(candidate => candidate.slot === slot && candidate.cospar === cospar);
+  if (!item) throw new Error(`No reviewed orbital data match published object ${slot}: ${cospar}`);
+  return { ...item, color: MARKER[item.slot] };
+});
+const windows = episode.windows.filter(item => item.id !== "jan24");
 const formatUtc = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const formatShort = ms => new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const toScene = point => new THREE.Vector3(point.x / EARTH_KM, point.z / EARTH_KM, -point.y / EARTH_KM);
@@ -54,8 +64,8 @@ for (const item of craft) {
   const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false }));
   marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
   if (!mini) {
-    const label = document.createElement("span"); label.className = `sat-label slot-${item.slot}`; label.textContent = `${item.slot} · ${item.name}`;
-    $("labels").append(label); labels[item.slot] = label;
+    const label = document.createElement("span"); label.className = `satelliteScreenLabel slot${item.slot}`; label.textContent = item.name;
+    ($("satelliteScreenLabels") || $("labels")).append(label); labels[item.slot] = label;
   }
 }
 
@@ -223,7 +233,7 @@ function selectWindow(windowId, initial = false) {
     eye.applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(8));
     camera.position.copy(controls.target).add(eye);
     camera.up.set(0, 1, 0);
-    camera.fov = data.preferredView.fieldOfViewDeg; camera.zoom = data.preferredView.zoom; camera.updateProjectionMatrix();
+    camera.fov = data.preferredView.fieldOfViewDeg; camera.zoom = data.preferredView.zoom * Math.min(1, Math.max(.38, $("scene").clientWidth / 800)); camera.updateProjectionMatrix();
     seedRelativeCamera(orbitFrameAt(data.current));
     $("scene").dataset.preferredView = data.preferredView.name;
   }
@@ -305,7 +315,7 @@ function renderFrame(immediate = false, seconds = .016) {
   if ($('timestamp')) $('timestamp').textContent = formatUtc(ms);
   if ($('timeline')) { $('timeline').value = String(ms); $('timeline').style.setProperty('--progress', `${(ms - Date.parse(data.window.start)) / (Date.parse(data.window.end) - Date.parse(data.window.start)) * 100}%`); }
   const unavailable = craft.filter(item => !data.available[item.slot]).map(item => item.name);
-  if ($('sceneStatus')) $('sceneStatus').textContent = unavailable.length ? `${unavailable.join(' and ')} unavailable in this window; no position or trail is shown.` : 'Three dated elements support this short viewing window. Geometry is reconstructed.';
+  if ($('sceneStatus')) $('sceneStatus').textContent = unavailable.length ? `${unavailable.join(' and ')} unavailable in this window; no position or trail is shown.` : '';
   if ($('coverageRows') && (immediate || Math.abs(ms - data.lastCoverageMs) >= 30000)) {
     data.lastCoverageMs = ms;
     $('coverageRows').replaceChildren(...craft.map(item => {
@@ -329,7 +339,11 @@ function renderFrame(immediate = false, seconds = .016) {
 }
 function resize() {
   const width = Math.max(1, $('scene').clientWidth), height = Math.max(1, $('scene').clientHeight);
-  camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  if (mini && data.preferredView) camera.zoom = data.preferredView.zoom * Math.min(1, Math.max(.38, width / 800));
+  if (mini) camera.setViewOffset(width, height, width > 900 ? -Math.min(100, width * .09) : 0, Math.min(110, height * .18), width, height);
+  else camera.clearViewOffset();
+  camera.updateProjectionMatrix(); renderer.setSize(width, height, false);
   const markerScale = DOT_SCREEN_SIZE * 2.85 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 275 / height * MARKER.diameterPx / 12;
   data.markerScale = markerScale;
   for (const marker of Object.values(markers)) marker.scale.set(markerScale, markerScale, 1);
@@ -340,7 +354,7 @@ function animate(now) {
   requestAnimationFrame(animate);
   const seconds = Math.min(.1, (now - last) / 1000); last = now;
   if (data.playing) {
-    data.current = Math.min(Date.parse(data.window.end), data.current + seconds * RATE);
+    data.current = Math.min(Date.parse(data.window.end), data.current + seconds * rate);
     if (data.current >= Date.parse(data.window.end)) {
       data.playing = false;
       if (mini) {
@@ -349,7 +363,16 @@ function animate(now) {
           data.current = Date.parse(data.window.start); renderFrame(true);
           requestAnimationFrame(() => { document.querySelector('.viewer').classList.remove('loop-reset'); data.playing = true; });
         }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 360);
-      } else setPlaybackButton();
+      } else {
+        const next = windows[windows.findIndex(item => item.id === data.window.id) + 1];
+        if (next) {
+          $("scene").classList.remove("chapter-transition");
+          selectWindow(next.id);
+          void $("scene").offsetWidth;
+          $("scene").classList.add("chapter-transition");
+          $("scene").dispatchEvent(new CustomEvent("chapterchange", { detail: { id: next.id } }));
+        } else setPlaybackButton();
+      }
     }
   }
   renderFrame(false, seconds);
@@ -360,26 +383,37 @@ function animate(now) {
     const projected = data.positions[item.slot].clone().project(camera);
     const x = (projected.x + 1) * rect.width / 2, y = (1 - projected.y) * rect.height / 2;
     const label = labels[item.slot]; screen[item.slot] = { x, y };
-    if (label) { const shared = document.body.classList.contains('e002-shared'); label.style.left = `${x + (shared ? rect.left : 0)}px`; label.style.top = `${y + (shared ? rect.top : 0)}px`; }
+    if (label) { const shared = document.body.classList.contains('e002-shared'); label.style.left = `${x + (shared ? rect.left : 0) + 9}px`; label.style.top = `${y + (shared ? rect.top : 0)}px`; }
     const occluded = earthOccludes(data.positions[item.slot], camera.position);
+    screen[item.slot].earthOccluded = occluded;
+    screen[item.slot].inside = x > 12 && x < rect.width - 12 && y > 12 && y < rect.height - 12;
+    if (mini && window.parent !== window) {
+      const iframe = window.frameElement?.getBoundingClientRect();
+      const px = iframe.left + x, py = iframe.top + y;
+      screen[item.slot].sourceOccluded = [...parent.document.querySelectorAll('.expanded-row .source-card')].some(card => {
+        const box = card.getBoundingClientRect(); return px >= box.left && px <= box.right && py >= box.top && py <= box.bottom;
+      });
+    }
     if (label) label.style.visibility = Math.abs(projected.x) > .92 || Math.abs(projected.y) > .84 || occluded ? 'hidden' : 'visible';
     markers[item.slot].visible = !occluded;
   }
   const overlap = screen.A && screen.C && Math.hypot(screen.A.x - screen.C.x, screen.A.y - screen.C.y) < 22;
+  if (mini) {
+    const points = Object.values(screen), distinguishable = points.every((point, index) => points.slice(index + 1).every(other => Math.hypot(point.x - other.x, point.y - other.y) >= DOT_SCREEN_SIZE));
+    $("scene").dataset.previewVisibility = JSON.stringify({ utc: new Date(data.current).toISOString(), markers: screen, distinguishable });
+  }
   // Concentric marks communicate projected overlap without moving either orbit.
   // A small outline reveals both coincident marks without implying a second
   // location. Their centers remain at their propagated coordinates.
   const cScale = data.markerScale * (mini && overlap ? 1.2 : 1);
-  markers.C.scale.set(cScale, cScale, 1);
-  markers.C.renderOrder = overlap ? 9 : 10;
+  if (markers.C) { markers.C.scale.set(cScale, cScale, 1); markers.C.renderOrder = overlap ? 9 : 10; }
   if (!mini) {
-    labels.A.textContent = overlap ? 'A + C · projected overlap' : 'A · Kosmos 2542';
-    labels.A.style.borderRight = overlap ? `2px solid ${MARKER.C}` : '';
-    labels.B.textContent = 'B · USA 245'; labels.C.textContent = 'C · Kosmos 2543';
-    labels.C.style.display = overlap ? 'none' : '';
+    if (labels.A) labels.A.textContent = overlap ? 'Kosmos 2542 / 2543' : 'Kosmos 2542';
+    if (labels.B) labels.B.textContent = 'USA 245';
+    if (labels.C) { labels.C.textContent = 'Kosmos 2543'; labels.C.style.display = overlap ? 'none' : ''; }
     const abCollide = screen.A && screen.B && Math.abs(screen.A.y - screen.B.y) < 22 && Math.abs(screen.B.x - screen.A.x) < 110;
-    labels.A.style.transform = abCollide ? 'translate(10px,calc(-100% - 7px))' : 'translate(10px,-50%)';
-    labels.B.style.transform = abCollide ? 'translate(10px,6px)' : 'translate(10px,-50%)';
+    if (labels.A) labels.A.style.transform = abCollide ? 'translateY(calc(-100% - 7px))' : 'translateY(-50%)';
+    if (labels.B) labels.B.style.transform = abCollide ? 'translateY(6px)' : 'translateY(-50%)';
   }
   renderer.render(scene, camera);
 }
@@ -428,7 +462,7 @@ async function load() {
       if (tle.source === 'seesat' && !tle.sourceUrl) tle.sourceUrl = record.url;
     }
   }));
-  resize(); selectWindow(mini ? 'dec8' : 'dec31', true);
+  resize(); selectWindow(mini ? 'dec8' : 'dec7', true);
   if ($('timeline')) { $('timeline').min = String(Date.parse(data.window.start)); $('timeline').max = String(Date.parse(data.window.end)); }
   // Main view starts moving immediately; Play/Pause remains visible throughout.
   data.playing = true; setPlaybackButton(); data.ready = true; requestAnimationFrame(animate);
@@ -443,6 +477,8 @@ export const episodeModel = {
   get window() { return data.window; },
   get current() { return data.current; },
   get playing() { return data.playing; },
+  get rate() { return rate / 1000; },
+  setRate(value) { rate = THREE.MathUtils.clamp(value, 15, 720) * 1000; },
   get selected() { return data.selected; },
   get frameMode() { return data.frameMode; },
   get craft() { return craft; },

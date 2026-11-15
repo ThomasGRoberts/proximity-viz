@@ -2,6 +2,16 @@
 export const EPISODES_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera/pub?output=csv&gid=0&single=true";
 export const DESCRIPTIONS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera/pub?output=csv&gid=541287173&single=true";
 
+// Only entire spacecraft cells, never identifiers embedded in notes, select plotted objects.
+export function cleanCospar(value) {
+  const text = String(value ?? "").trim();
+  return /^(?:19|20)\d{2}-\d{3}[A-Z]{1,3}$/.test(text) ? text : "";
+}
+
+export function plottedObjects(row) {
+  return ["A", "B", "C"].map(slot => ({ slot, cospar: cleanCospar(row?.[`Object ${slot}`]) })).filter(item => item.cospar);
+}
+
 export function parseCsv(text, requiredHeaders = ["ID", "Start Date", "End Date"]) {
   const rows = []; let row = [], cell = "", quoted = false;
   for (let i = 0; i < text.length; i++) {

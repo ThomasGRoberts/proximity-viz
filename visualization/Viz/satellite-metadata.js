@@ -46,7 +46,7 @@ async function render(card) {
   row(satellite, "Launch date", dateText(satcat.LAUNCH_DATE));
   row(satellite, "Launch site", `${data.launchSites?.names?.[satcat.LAUNCH_SITE] || satcat.LAUNCH_SITE}${siteFlags(satcat.LAUNCH_SITE)}`);
   const identitySource = document.createElement("div"), identityLabel = document.createElement("dt"), identityValue = document.createElement("dd");
-  identityLabel.textContent = "Data Source";
+  identityLabel.textContent = "Data source";
   identityValue.append(link("CelesTrak SATCAT", record.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(satcat.NORAD_CAT_ID)}`));
   identitySource.append(identityLabel, identityValue); satellite.append(identitySource);
   const orbital = section("Orbital Details");
@@ -58,7 +58,7 @@ async function render(card) {
   dateLine.textContent = Number.isNaN(selectedEpoch.getTime()) ? "Unavailable in this window" : new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(selectedEpoch);
   timeLine.textContent = Number.isNaN(selectedEpoch.getTime()) ? "" : `at ${new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }).format(selectedEpoch)} UTC`;
   epochValue.append(dateLine, timeLine); epochRow.append(epochLabel, epochValue); orbital.append(epochRow);
-  row(orbital, "TLE Age", card.dataset.tleAge || "Calculating…");
+  row(orbital, "TLE age", card.dataset.tleAge || "Calculating…");
   orbital.lastElementChild.querySelector("dd").className = "tleAgeValue";
   const line2 = card.dataset.tleLine2 || "";
   const inclination = line2 ? Number(line2.slice(8, 16)) : NaN;
@@ -68,7 +68,7 @@ async function render(card) {
   if (Number.isFinite(eccentricity)) row(orbital, "Eccentricity", eccentricity.toFixed(7));
   if (Number.isFinite(meanMotion)) row(orbital, "Mean motion", `${meanMotion.toFixed(5)} rev/day`);
   const sourceRow = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd");
-  dt.textContent = "Data Source";
+  dt.textContent = "Data source";
   if (card.dataset.sourceQueryHref) {
     const sourceLink = link(card.dataset.sourceData, card.dataset.sourceQueryHref);
     sourceLink.title = "Space-Track historical elements for this satellite and UTC date; sign-in required. The query may include other element sets from the same date.";
