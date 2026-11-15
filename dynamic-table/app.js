@@ -1,0 +1,599 @@
+import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
+import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
+
+const $ = selector => document.querySelector(selector);
+const el = (tag, className = "", value) => { const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node; };
+const field = (row, ...names) => {
+  const cells = Object.fromEntries(Object.entries(row || {}).map(([key, value]) => [key.toLowerCase().replace(/[^a-z0-9]/g, ""), String(value ?? "").trim()]));
+  return names.map(name => cells[name.toLowerCase().replace(/[^a-z0-9]/g, "")]).find(Boolean) || "";
+};
+const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
+const state = { live: null, preview: null, series: null, usePreview: false, selected: null, query: "", orbit: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
+const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+reducedMotion.addEventListener("change", () => { if (reducedMotion.matches) pausePlayback(); else resumePlayback(); });
+
+function dateText(value) {
+  if (!value) return "Date not recorded";
+  const iso = String(value).match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (!iso) return value;
+  const date = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(date.valueOf()) ? value : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(date) + value.slice(iso.length);
+}
+function fullDate(value) {
+  const iso = String(value || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+  const date = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== iso ? "" :
+    new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(date);
+}
+function compactDate(value) {
+  const iso = String(value || "");
+  if (!fullDate(iso)) return "";
+  const date = new Date(`${iso}T00:00:00Z`);
+  const month = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" }).format(date).toUpperCase();
+  return `${month}. ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+}
+function periodInfo(row) {
+  const start = field(row, "Start Date", "Date"), end = field(row, "End Date");
+  const first = fullDate(start), last = fullDate(end);
+  const partial = value => {
+    if (fullDate(value)) return fullDate(value);
+    if (/^\d{4}-\d{2}$/.test(value)) {
+      const date = new Date(`${value}-01T00:00:00Z`);
+      if (!Number.isNaN(date.valueOf())) return `${new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(date)} ${date.getUTCFullYear()}`;
+    }
+    if (/^\d{4}$/.test(value)) return value;
+    const approx = value.match(/^(\d{4}-\d{2}-\d{2})\s*\(approx\.\)$/i);
+    if (approx && fullDate(approx[1])) return `${fullDate(approx[1])} (approx.)`;
+    return value.replace(/\s*[—–]\s*/g, "; ");
+  };
+  if (!first || !last || end < start) {
+    const a = partial(start), b = partial(end);
+    return { label: !a && !b ? "Dates not recorded" : a === b || !b ? a : !a ? b : /not established/i.test(b) ? `${a}; end not established` : `${a} to ${b}`, days: null };
+  }
+  const label = start === end ? first : `${first} to ${last}`;
+  return { label, days: Math.round((Date.parse(end) - Date.parse(start)) / 86400000) + 1 };
+}
+function period(row) { return periodInfo(row).label; }
+function dateKey(row) { return field(row, "Start Date", "Date").match(/^\d{4}(?:-\d{2})?(?:-\d{2})?/)?.[0] || ""; }
+function descriptionIds(row) { return field(row, "Descriptions").split(/[,;\n]/).map(x => x.trim()).filter(Boolean); }
+function linkedDescriptions(row, data) {
+  const lookup = new Map((data.descriptions || []).map(d => [field(d, "ID", "Description ID").toUpperCase(), d]));
+  const episode = field(row, "ID").toUpperCase();
+  return descriptionIds(row).map(id => ({ id, row: lookup.get(id.toUpperCase()) })).filter(item => item.row && (!field(item.row, "Episode", "Episode ID") || field(item.row, "Episode", "Episode ID").toUpperCase() === episode));
+}
+function sourceGroups(row, data) {
+  const groups = new Map();
+  for (const item of linkedDescriptions(row, data)) {
+    const ref = field(item.row, "Source URL", "URL", "Link", "Source link");
+    const url = safeUrl(ref);
+    const key = ref || `record:${item.id}`;
+    if (!groups.has(key)) groups.set(key, { url, ref, items: [] });
+    groups.get(key).items.push(item);
+  }
+  return [...groups.values()];
+}
+function organizationKind(info) {
+  if (/^INTELSAT\b/i.test(info.name)) return "Intelsat";
+  if (info.owner === "ESA" || /^(?:ESA |ESA-)/i.test(info.name)) return "ESA";
+  if (/^(?:EUTELSAT|INMARSAT|SES\b)/i.test(info.name)) return "International operator";
+  return "";
+}
+function ownerDisplay(info) {
+  if (info.owner === "CIS") return "Russia (CIS)";
+  if (info.owner === "FRIT") return "France / Italy";
+  return info.ownerName || info.owner;
+}
+function ownerIndicators(info, compact = false) {
+  const org = organizationKind(info);
+  if (org && compact) { const badge = el("span", "organization-badge", org === "Intelsat" ? "Intelsat" : org === "ESA" ? "ESA" : "Intl."); badge.title = `${org} text indicator`; badge.setAttribute("aria-label", `${org} text indicator`); return [badge]; }
+  const flags = flagsForOwner(info.owner);
+  if (flags.length) return flags;
+  if (org) { const badge = el("span", "organization-badge", org === "Intelsat" ? "Intelsat" : org === "ESA" ? "ESA" : "Intl."); badge.title = `${org} text indicator`; return [badge]; }
+  return [];
+}
+function objectInfo(row, role, data) {
+  const raw = field(row, `Object ${role}`);
+  if (!raw || /^(?:not applicable|not assigned|none|—|-)(?:\b|$)/i.test(raw)) return null;
+  const record = data.celestrak?.objects?.[raw.toUpperCase()] || null;
+  const satcat = record?.status === "resolved" ? record.satcat : null;
+  const compact = data.compactObjects?.[raw.toUpperCase()] || currentData()?.compactObjects?.[raw.toUpperCase()] || {};
+  return { role, raw, record, satcat, gp: record?.gp || null,
+    cospar: satcat?.OBJECT_ID || compact.cospar || raw, norad: satcat?.NORAD_CAT_ID || compact.norad || "",
+    name: satcat?.OBJECT_NAME || compact.name || raw, owner: satcat?.OWNER || "",
+    ownerName: record?.ownerName || "", launchSite: data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE] || data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "" };
+}
+function title(row) { return field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
+function episodeDescription(row) { return field(row, "Episode Description"); }
+function formattedDescription(value) {
+  const fragment = document.createDocumentFragment();
+  const parsed = new DOMParser().parseFromString(`<div>${value}</div>`, "text/html").body.firstElementChild;
+  const allowed = new Set(["P", "EM", "I", "STRONG", "B", "BR"]);
+  function copy(source, target) {
+    for (const child of source.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) target.append(document.createTextNode(child.textContent.replace(/(\p{L})'(\p{L})/gu, "$1’$2")));
+      else if (child.nodeType === Node.ELEMENT_NODE && !["SCRIPT", "STYLE", "IFRAME", "SVG"].includes(child.tagName)) {
+        const next = allowed.has(child.tagName) ? document.createElement(child.tagName.toLowerCase()) : target;
+        if (next !== target) { if (next.tagName === "P") next.className = "episode-description"; target.append(next); }
+        copy(child, next);
+      }
+    }
+  }
+  if (parsed.querySelector("p")) copy(parsed, fragment);
+  else { const paragraph = el("p", "episode-description"); copy(parsed, paragraph); fragment.append(paragraph); }
+  return fragment;
+}
+function account(row) { return field(row, "Reported behavior", "Short Description", "Summary", "Context", "Description"); }
+function regime(row) { return field(row, "Orbital Regime", "Orbit Regime", "Orbit", "Regime") || "Not recorded"; }
+function regimeShort(row) { const full = regime(row), match = full.match(/\b(LEO|MEO|GEO|HEO|GTO|SSO)\b/i); return match ? match[1].toUpperCase() : /sun[ -]?synchronous/i.test(full) ? "SSO" : full; }
+
+function externalLink(label, url) {
+  const a = el("a", "espl-external"); a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+  a.append(document.createTextNode(label));
+  a.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 18 18" aria-hidden="true" focusable="false"><path class="espl-news-external__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"></path><g class="espl-news-external__arrow"><path d="M9.25 2.75h6v6"></path><path d="m8 10 7.25-7.25"></path></g></svg>');
+  return a;
+}
+function visualizationLink(url, label = "Open orbital visualization") {
+  const link = el("a", "visual-link model-link"); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.setAttribute("aria-label", label);
+  const preview = el("div", "orbital-preview"), image = el("img", "visualization-still"); image.src = "./assets/e001-visualization-preview.png"; image.alt = "E-001 orbital reconstruction in Proximity-Viz"; preview.append(image);
+  const note = el("span", "willa-time-note", "E-001 reconstruction · Willa orbital model");
+  const icon = el("span", "model-icon"), canvas = el("canvas", "model-canvas"), fallback = el("img", "model-static");
+  canvas.width = 116; canvas.height = 116; canvas.setAttribute("aria-hidden", "true"); fallback.src = "./assets/polyhedron-icon.png"; fallback.alt = "";
+  icon.append(fallback, canvas);
+  const cta = el("span", "model-cta"); cta.append(icon, el("span", "model-label", "Explore the interactive model"), el("span", "model-arrow", "→"));
+  link.append(preview, note, cta);
+  import("./model-link.js").then(module => module.decorateModelLink(link)).catch(() => link.classList.add("model-static-fallback"));
+  return link;
+}
+
+const popover = el("div", "object-popover"); popover.id = "object-popover"; popover.hidden = true; popover.setAttribute("role", "dialog"); popover.setAttribute("aria-label", "Space object metadata"); document.body.append(popover);
+let activeObject = null, pinnedObject = false, hideTimer = null, showTimer = null;
+function closeObject() { clearTimeout(hideTimer); clearTimeout(showTimer); if (activeObject) activeObject.setAttribute("aria-expanded", "false"); activeObject = null; pinnedObject = false; popover.hidden = true; }
+function scheduleObjectClose() { clearTimeout(hideTimer); clearTimeout(showTimer); if (!pinnedObject) hideTimer = setTimeout(() => { if (!popover.matches(":hover") && !popover.contains(document.activeElement)) closeObject(); }, 320); }
+function addMetadata(dl, label, value) { if (!value) return; const item = el("div"); item.append(el("dt", "", label), el("dd", "", value)); dl.append(item); }
+const launchFlagEmoji = { AFETR:["🇺🇸"], AFWTR:["🇺🇸"], DLS:["🇷🇺"], FRGUI:["🇫🇷"], JSC:["🇨🇳"], PLMSC:["🇷🇺"], RLLB:["🇳🇿"], SRILR:["🇮🇳"], TAISC:["🇨🇳"], TANSC:["🇯🇵"], TYMSC:["🇰🇿","🇷🇺"], WSC:["🇨🇳"], XICLF:["🇨🇳"] };
+function buildObjectPopover(info) {
+  popover.replaceChildren(); popover.append(el("strong", "object-popover-title", info.name));
+  if (!info.satcat) {
+    popover.append(el("p", "metadata-note", `No exact CelesTrak SATCAT match for ${info.raw}. Identity remains unresolved.`));
+    popover.append(externalLink("CelesTrak SATCAT search", `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(info.raw)}`));
+    return;
+  }
+  const s = info.satcat, dl = el("dl", "object-meta");
+  const objectTypes = { PAY:"Payload", "R/B":"Rocket body", DEB:"Debris", TBA:"To be assigned" };
+  addMetadata(dl, "COSPAR", s.OBJECT_ID);
+  addMetadata(dl, "NORAD", s.NORAD_CAT_ID);
+  const ownerRow = el("div"), ownerValue = el("dd"); ownerRow.append(el("dt", "", "Country / Org."));
+  ownerValue.append(document.createTextNode(ownerDisplay(info)));
+  if (!organizationKind(info)) for (const flag of emojiForOwner(info.owner)) ownerValue.append(document.createTextNode(` ${flag}`));
+  ownerRow.append(ownerValue); dl.append(ownerRow);
+  addMetadata(dl, "Object type", objectTypes[s.OBJECT_TYPE] || s.OBJECT_TYPE);
+  addMetadata(dl, "Launch date", fullDate(s.LAUNCH_DATE));
+  if (info.launchSite) addMetadata(dl, "Launch site", `${info.launchSite.replace(/\s*\(/g, " (")}${(launchFlagEmoji[s.LAUNCH_SITE] || []).map(flag => ` ${flag}`).join("")}`);
+  popover.append(dl);
+  const provenance = el("div", "object-provenance");
+  if (info.record?.recordUrl) provenance.append(externalLink("CelesTrak SATCAT record", info.record.recordUrl));
+  popover.append(provenance);
+}
+function positionObject() {
+  if (!activeObject || popover.hidden) return;
+  const trigger = activeObject.getBoundingClientRect(), width = popover.offsetWidth, height = popover.offsetHeight;
+  const left = Math.max(10, Math.min(trigger.left, innerWidth - width - 10));
+  const above = trigger.bottom + height + 12 > innerHeight && trigger.top > height + 12;
+  const top = above ? trigger.top - height - 8 : trigger.bottom + 8;
+  popover.style.left = `${left}px`; popover.style.top = `${Math.max(8, top)}px`;
+}
+function showObject(button, info, pin = false, row = null) {
+  clearTimeout(hideTimer);
+  if (activeObject && activeObject !== button) activeObject.setAttribute("aria-expanded", "false");
+  activeObject = button; pinnedObject = pin; button.setAttribute("aria-expanded", "true");
+  const cached = row && state.details.get(field(row, "ID"));
+  if (cached) buildObjectPopover(objectInfo(cached.row, info.role, cached));
+  else if (row && currentData()?.source === "live") {
+    popover.replaceChildren(el("span", "metadata-note", "Loading CelesTrak record…"));
+    ensureDetail(row).then(detail => {
+      if (activeObject !== button || !detail) return;
+      buildObjectPopover(objectInfo(detail.row, info.role, detail)); positionObject();
+    }).catch(() => { if (activeObject === button) popover.replaceChildren(el("span", "metadata-note", "Catalog details unavailable.")); });
+  } else buildObjectPopover(info);
+  popover.hidden = false; positionObject();
+}
+popover.addEventListener("pointerenter", () => clearTimeout(hideTimer));
+popover.addEventListener("pointerleave", scheduleObjectClose);
+document.addEventListener("pointerdown", event => { if (activeObject && !activeObject.contains(event.target) && !popover.contains(event.target)) closeObject(); });
+document.addEventListener("keydown", event => { if (event.key === "Escape") closeObject(); });
+window.addEventListener("resize", positionObject); window.addEventListener("scroll", positionObject, true);
+function objectNode(info, row) {
+  const line = el("div", "object-line"), button = el("button", "object-trigger", info.name);
+  button.type = "button"; button.setAttribute("aria-haspopup", "dialog"); button.setAttribute("aria-expanded", "false"); button.setAttribute("aria-label", `${info.name}, show object metadata`);
+  line.append(el("span", `dot ${info.role.toLowerCase()}`), button);
+  if (info.cospar) line.append(el("span", "object-id", info.cospar));
+  button.addEventListener("pointerenter", () => { if (matchMedia("(hover:hover)").matches) { clearTimeout(hideTimer); clearTimeout(showTimer); showTimer = setTimeout(() => showObject(button, info, false, row), 90); } });
+  button.addEventListener("pointerleave", scheduleObjectClose);
+  button.addEventListener("focus", () => showObject(button, info, false, row));
+  button.addEventListener("blur", () => { if (!popover.contains(document.activeElement)) scheduleObjectClose(); });
+  button.addEventListener("click", event => { event.stopPropagation(); if (activeObject === button && pinnedObject) closeObject(); else showObject(button, info, true, row); });
+  return line;
+}
+function objects(row, data) {
+  const wrap = el("div", "objects");
+  for (const role of ["A", "B", "C"]) { const info = objectInfo(row, role, data); if (info) wrap.append(objectNode(info, row)); }
+  if (!wrap.children.length) wrap.append(el("span", "muted", "Objects not recorded"));
+  return wrap;
+}
+
+function glossaryText(value) {
+  const fragment = document.createDocumentFragment();
+  const variants = state.glossary.flatMap(entry => [field(entry, "Term"), ...field(entry, "Acronym").split(";").map(x => x.trim())].filter(Boolean).map(label => ({ label, entry }))).sort((a, b) => b.label.length - a.label.length);
+  if (!variants.length) { fragment.append(document.createTextNode(value)); return fragment; }
+  const escaped = variants.map(item => item.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  let expression; try { expression = new RegExp(`(^|[^\\p{L}\\p{N}])(${escaped.join("|")})(?=$|[^\\p{L}\\p{N}])`, "giu"); } catch { fragment.append(document.createTextNode(value)); return fragment; }
+  let cursor = 0, match;
+  while ((match = expression.exec(value))) {
+    const start = match.index + match[1].length, label = match[2]; if (start < cursor) continue;
+    const entry = variants.find(item => item.label.toLocaleLowerCase() === label.toLocaleLowerCase())?.entry; if (!entry) continue;
+    fragment.append(document.createTextNode(value.slice(cursor, start)));
+    const term = el("span", "gterm", label); term.tabIndex = 0; term.setAttribute("aria-label", `${label}: ${field(entry, "Definition")}`); term.append(el("span", "gterm-tip", field(entry, "Definition")));
+    fragment.append(term); cursor = start + label.length;
+  }
+  fragment.append(document.createTextNode(value.slice(cursor))); return fragment;
+}
+
+function descriptionText(value) { return glossaryText(value); }
+export function episodeDescriptionText(value, row, data) {
+  return renderSatelliteShortcodes(value, descriptionText, id => {
+    const role = ["A", "B", "C"].find(candidate => field(row, `Object ${candidate}`).toUpperCase() === id);
+    if (!role) return null;
+    const info = objectInfo(row, role, data);
+    if (!info) return null;
+    const node = objectNode(info, row);
+    node.classList.add("sat-shortcode");
+    return node;
+  });
+}
+
+function currentData() { return state.usePreview && state.live?.source !== "live" ? state.preview : state.live; }
+function visibleRows() {
+  const data = currentData(); if (!data) return [];
+  const approved = new Set(data.approvedEpisodeIds || []);
+  const publicRows = state.usePreview ? data.episodes : data.episodes.filter(row => approved.size ? approved.has(field(row, "ID")) : false);
+  const query = state.query.toLocaleLowerCase();
+  const rows = publicRows.filter(row => {
+    if (state.orbit && regime(row) !== state.orbit) return false;
+    if (!query) return true;
+    const terms = [field(row, "ID"), title(row), episodeDescription(row), account(row), regime(row), ...["A", "B", "C"].flatMap(role => { const info = objectInfo(row, role, data); return info ? [info.name, info.cospar, info.norad] : []; })];
+    return terms.join(" ").toLocaleLowerCase().includes(query);
+  });
+  const { key, direction } = state.sort, sign = direction === "asc" ? 1 : -1;
+  if (key === "index") return rows;
+  rows.sort((a, b) => {
+    let av, bv;
+    if (key === "date") { av = dateKey(a); bv = dateKey(b); if (!av) return bv ? 1 : 0; if (!bv) return -1; }
+    else if (key === "sources") { av = data.recordCounts?.[field(a, "ID")] ?? 0; bv = data.recordCounts?.[field(b, "ID")] ?? 0; }
+    else if (key === "orbit") { av = regime(a); bv = regime(b); }
+    else { av = title(a); bv = title(b); }
+    const compare = typeof av === "number" ? av - bv : av.localeCompare(bv, undefined, { numeric: true });
+    return sign * compare || field(a, "ID").localeCompare(field(b, "ID"), undefined, { numeric: true });
+  });
+  return rows;
+}
+function updateOrbitOptions() {
+  const select = $("#orbit"), data = currentData();
+  const approved = new Set(data?.approvedEpisodeIds || []);
+  const values = [...new Set((data?.episodes || []).filter(row => state.usePreview || approved.has(field(row, "ID"))).map(regime))].sort();
+  select.replaceChildren(new Option("All regimes", ""), ...values.map(x => new Option(x, x)));
+  if (!values.includes(state.orbit)) state.orbit = ""; select.value = state.orbit;
+}
+function updateSortHeaders() {
+  for (const button of document.querySelectorAll(".sort-head")) {
+    const active = button.dataset.sort === state.sort.key, th = button.closest("th");
+    th.setAttribute("aria-sort", active ? (state.sort.direction === "desc" ? "descending" : "ascending") : "none");
+    button.querySelector(".sort-indicator").textContent = active ? (state.sort.direction === "desc" ? "↓" : "↑") : "";
+  }
+}
+function ensureDetail(row) {
+  const id = field(row, "ID");
+  if (state.details.has(id)) return Promise.resolve(state.details.get(id));
+  if (state.detailPending.has(id)) return state.detailPending.get(id);
+  const pending = Promise.resolve().then(() => {
+    const data = state.live;
+    const fullRow = data?.episodes?.find(item => field(item, "ID") === id);
+    if (!fullRow) throw new Error(`Episode ${id} is unavailable`);
+    const refs = new Set(descriptionIds(fullRow));
+    const descriptions = (data.descriptions || []).filter(item => refs.has(field(item, "ID", "Description ID")));
+    const urls = new Set(descriptions.map(item => field(item, "Source URL", "URL", "Link")));
+    const objectIds = new Set(["A", "B", "C"].map(role => field(fullRow, `Object ${role}`).toUpperCase()).filter(Boolean));
+    const detail = { source: data.source, row: fullRow, descriptions, sourceMetadata: Object.fromEntries(Object.entries(data.sourceMetadata || {}).filter(([url]) => urls.has(url))),
+      celestrak: { ...(data.celestrak || {}), objects: Object.fromEntries(Object.entries(data.celestrak?.objects || {}).filter(([key]) => objectIds.has(key.toUpperCase()))) }, glossary: data.glossary || [] };
+    state.details.set(id, detail); state.detailFailures.delete(id); state.glossary = detail.glossary || state.glossary;
+    prefetchDetailImages(detail);
+    return detail;
+  }).finally(() => state.detailPending.delete(id));
+  state.detailPending.set(id, pending); return pending;
+}
+function prefetchDetailImages(detail) {
+  for (const meta of Object.values(detail.sourceMetadata || {})) {
+    const path = meta.imagePath || meta.previewPath;
+    if (!path || prefetch.imageSeen.has(path)) continue;
+    prefetch.imageSeen.add(path); prefetch.images.push(path);
+  }
+  pumpImages();
+}
+function pumpImages() {
+  while (prefetch.imageActive < 2 && prefetch.images.length) {
+    const image = new Image(), path = prefetch.images.shift();
+    prefetch.imageActive++;
+    image.onload = image.onerror = () => { prefetch.imageActive--; pumpImages(); };
+    image.src = path;
+  }
+}
+function pumpDetails() {
+  while (prefetch.active < 3 && prefetch.queue.length) {
+    const row = prefetch.queue.shift(), id = field(row, "ID");
+    if (state.details.has(id) || state.detailPending.has(id) || state.detailFailures.has(id)) continue;
+    prefetch.active++;
+    ensureDetail(row).catch(error => { state.detailFailures.add(id); console.warn(`Background detail unavailable for ${id}:`, error); })
+      .finally(() => { prefetch.active--; pumpDetails(); });
+  }
+}
+function scheduleDetailPrefetch() {
+  if (prefetch.scheduled) return;
+  prefetch.scheduled = true;
+  requestAnimationFrame(() => {
+    prefetch.scheduled = false;
+    const rows = visibleRows(), visible = [], later = [];
+    const rowElements = new Map([...document.querySelectorAll("#rows tr.episode-row")].map(node => [node.dataset.episodeId, node]));
+    for (const row of rows) {
+      const tr = rowElements.get(field(row, "ID"));
+      const rect = tr?.getBoundingClientRect();
+      (rect && rect.bottom > 0 && rect.top < innerHeight ? visible : later).push(row);
+    }
+    const seen = new Set();
+    prefetch.queue = [...visible, ...later, ...prefetch.queue].filter(row => {
+      const id = field(row, "ID");
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return !state.details.has(id) && !state.detailPending.has(id) && !state.detailFailures.has(id);
+    });
+    pumpDetails();
+  });
+}
+function recordCategory(row) {
+  const type = field(row, "Description type", "Voice type").toUpperCase();
+  if (type.startsWith("T01")) return ["Official reaction", "announcement"];
+  if (type.startsWith("T03")) return ["Technical account", "document"];
+  if (type.startsWith("T04")) return ["Commentary", "press"];
+  if (type.startsWith("T05")) return ["Research analysis", "document"];
+  if (type.startsWith("T06")) return ["Technical observation", "press"];
+  return ["Source record", "document"];
+}
+function categoryIcon(kind) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", kind === "announcement" ? "M3 10h4l10-5v14L7 14H3z M7 14l2 5h3 M20 9c1 2 1 4 0 6" : kind === "press" ? "M4 4h14v16H5a2 2 0 0 1-2-2V4z M18 7h3v11a2 2 0 0 1-2 2 M7 8h8 M7 12h8 M7 16h5" : "M6 3h9l4 4v14H6z M15 3v5h4 M9 12h7 M9 16h7");
+  svg.append(path); return svg;
+}
+function sourceFallback(documentSource) {
+  const fallback = el("span", "source-fallback");
+  fallback.append(categoryIcon("document"), el("span", "", documentSource ? "Source document" : "Source image unavailable"));
+  return fallback;
+}
+function sourceCard(group, data) {
+  const { url, ref, items } = group, d = items[0].row, meta = data.sourceMetadata?.[ref] || {};
+  const card = el("article", `source-card${url ? " source-clickable" : ""}`);
+  if (url) {
+    card.tabIndex = 0; card.setAttribute("role", "link"); card.setAttribute("aria-label", `Open original source: ${meta.titleEnglish || meta.title || ref}`);
+    card.addEventListener("click", () => window.open(url, "_blank", "noopener,noreferrer"));
+    card.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); window.open(url, "_blank", "noopener,noreferrer"); } });
+  }
+  const [category, kind] = recordCategory(d), eyebrow = el("div", "source-eyebrow"); eyebrow.append(categoryIcon(kind), el("span", "", category)); card.append(eyebrow);
+  const media = el("div", `source-media${meta.kind === "document" ? " document-media" : ""}`);
+  const imageUrl = meta.imagePath || meta.previewPath || safeUrl(meta.imageUrl) || "";
+  if (imageUrl) {
+    const img = el("img"); img.src = imageUrl; img.alt = meta.imageAlt || (meta.kind === "document" ? "First page of source document" : "Publisher's featured image for this source"); img.loading = "lazy";
+    img.onerror = () => { img.remove(); media.append(sourceFallback(meta.kind === "document")); };
+    media.append(img);
+  } else media.append(sourceFallback(meta.kind === "document"));
+  card.append(media);
+  const content = el("div", "source-content");
+  const document = meta.kind === "document" || /\.pdf(?:$|[?#])/i.test(ref);
+  const needsTranslation = !meta.titleEnglish && meta.title && (/[\u0400-\u052f\u0600-\u06ff\u4e00-\u9fff]/u.test(meta.title) || (meta.language && !/^en(?:-|_|$)/i.test(meta.language)));
+  const headline = meta.titleEnglish || (needsTranslation ? `Untranslated title: ${meta.title}` : meta.title) || (document ? (/statement/i.test(field(d, "Voice type", "Description type")) ? "Official statement" : "Source document") : "Source page");
+  const heading = el("h4", "source-headline", headline);
+  if (meta.titleEnglish && meta.title) { heading.title = `Original title: ${meta.title}`; heading.append(el("span", "visually-hidden", ` Original title: ${meta.title}`)); }
+  content.append(heading);
+  if (meta.publishedDate) content.append(el("time", "source-date", fullDate(meta.publishedDate) || dateText(meta.publishedDate)));
+  else if (document && field(d, "Statement date")) content.append(el("span", "source-date", `Statement dated ${fullDate(field(d, "Statement date")) || dateText(field(d, "Statement date"))}`));
+  const source = meta.publisher || field(d, "Source", "Publisher", "Organization", "Outlet", "State / affiliation / joint signatories") || (url ? new URL(url).hostname.replace(/^www\./, "") : "Source unavailable");
+  const foot = el("div", "source-foot");
+  const sourceGroup = el("span", "source-link-group"); sourceGroup.append(el("span", "source-publisher", source));
+  if (url) { const arrow = el("span", "source-external-arrow"); arrow.setAttribute("aria-hidden", "true"); arrow.innerHTML = '<svg viewBox="0 0 18 18"><path d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><g class="arrow-tip"><path d="M9.25 2.75h6v6"/><path d="m8 10 7.25-7.25"/></g></svg>'; sourceGroup.append(arrow); }
+  foot.append(sourceGroup);
+  content.append(foot);
+  card.append(content); return card;
+}
+function expandedContent(row, data) {
+  const wrap = el("div", "expanded-inner");
+  if (state.usePreview) wrap.append(el("p", "caution", data.source === "local-verification-candidates" ? "Verification worklist entry. The possible counterpart is not a confirmed episode participant." : "Local preview includes unpublished records. This is not the public selection."));
+  const overview = el("div", "detail-overview");
+  const context = el("section", "context-block"); context.append(el("h3", "", "Episode description"));
+  const description = episodeDescription(row);
+  if (description) context.append(formattedDescription(description));
+  else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
+  overview.append(context);
+  const viz = el("section", "visual-block");
+  const target = field(row, "ID") === "E-001" ? new URL("../visualization/", location.href).href : safeUrl(field(row, "Visualization URL", "Visualization Link"));
+  if (field(row, "ID") === "E-001") viz.append(visualizationLink(target, `Explore the interactive model for ${title(row)}`));
+  else viz.append(el("p", "muted", "No verified Willa visualization link is recorded."));
+  overview.append(viz); wrap.append(overview);
+  const evidence = el("section", "evidence-section"), found = linkedDescriptions(row, data), requested = descriptionIds(row), sources = sourceGroups(row, data);
+  evidence.append(el("h3", "", `Records (${found.length})`));
+  if (requested.length > found.length) evidence.append(el("p", "caution", `${requested.length - found.length} referenced description ID(s) could not be resolved.`));
+  if (!found.length) evidence.append(el("p", "muted", "No linked sources are available."));
+  else {
+    const grid = el("div", "source-grid"); let index = 0;
+    const appendCard = (group, targetGrid) => {
+      const sheet = el("div", "source-stack"); sheet.style.setProperty("--card-angle", ["-1.2deg", "1.1deg", "-.7deg", ".8deg"][index++ % 4]);
+      sheet.append(sourceCard(group, data));
+      if (group.items.length > 1) {
+        const details = el("details", "source-records"), summary = el("summary", "", `${group.items.length} linked descriptions`); details.append(summary);
+        for (const item of group.items) { const excerpt = field(item.row, "Statement excerpt", "Excerpt", "Quotation", "Quote", "Summary", "Description", "Text"); details.append(el("p", "", `${item.id}${excerpt ? `: ${excerpt}` : ""}`)); }
+        sheet.append(details);
+      }
+      targetGrid.append(sheet);
+    };
+    sources.slice(0, 6).forEach(group => appendCard(group, grid));
+    evidence.append(grid);
+    if (sources.length > 6) { const more = el("details", "more-records"), summary = el("summary", "", `Show ${sources.length - 6} more source cards`), moreGrid = el("div", "source-grid"); sources.slice(6).forEach(group => appendCard(group, moreGrid)); more.append(summary, moreGrid); evidence.append(more); }
+  }
+  wrap.append(evidence); return wrap;
+}
+function loadingDetail(row, data) {
+  const wrap = el("div", "expanded-inner expanded-partial");
+  wrap.setAttribute("aria-busy", "true");
+  const context = el("section", "context-block");
+  context.append(el("h3", "", "Episode description"), el("p", "description-pending", "Loading description and source records…"));
+  context.append(el("p", "partial-period", period(row)), objects(row, data));
+  wrap.append(context, el("p", "partial-records", `${data.recordCounts?.[field(row, "ID")] || 0} linked records; details loading…`));
+  return wrap;
+}
+function animateIn(node) { if (!reducedMotion.matches) node.animate([{ opacity: 0, transform: "translateY(-5px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 190, easing: "ease-out" }); }
+function toggleRow(row) {
+  closeObject(); state.selected = state.selected === row ? null : row; render();
+  const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
+}
+function periodNode(row) { return el("span", "period-label", periodInfo(row).label); }
+function sparkline(samples, key, color) {
+  const values = samples.map(sample => sample[key]).filter(Number.isFinite), width = 104, height = 22;
+  const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
+  const coordinates = samples.map((sample, index) => Number.isFinite(sample[key]) ? [2 + index * (width - 4) / Math.max(1, samples.length - 1), height - 2 - (sample[key] - min) / span * (height - 4)] : null);
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("viewBox", `0 0 ${width} ${height}`); svg.setAttribute("aria-hidden", "true");
+  let run = [];
+  const addRun = () => { if (run.length < 2) { run = []; return; } const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline"); line.setAttribute("points", run.map(point => point.join(",")).join(" ")); line.setAttribute("fill", "none"); line.setAttribute("stroke", color); line.setAttribute("stroke-width", "1.8"); line.setAttribute("stroke-linecap", "round"); line.setAttribute("stroke-linejoin", "round"); svg.append(line); run = []; };
+  coordinates.forEach((point, index) => { if (!point || (index > 0 && (samples[index].tleA !== samples[index - 1].tleA || samples[index].tleB !== samples[index - 1].tleB))) addRun(); if (point) run.push(point); }); addRun();
+  const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle"); dot.setAttribute("r", "2.5"); dot.setAttribute("fill", color); dot.setAttribute("stroke", "white"); dot.setAttribute("stroke-width", "1"); svg.append(dot);
+  const wrap = el("div", "sparkline-compact"); wrap.coordinates = coordinates; wrap.append(svg, el("span", "sparkline-value")); return wrap;
+}
+function proximityNode(row, key) {
+  const cell = el("div", "proximity-cell"), fixture = field(row, "ID") === "E-001" ? state.series : null;
+  if (!fixture) { cell.append(el("span", "plot-pending", field(row, "ID") === "E-001" && !state.series ? "Loading plot…" : "Pending reconstruction")); return cell; }
+  cell.samples = fixture.samples; cell.dataset.key = key; cell.tabIndex = 0;
+  cell.setAttribute("aria-label", `${key === "separationKm" ? "Separation distance" : "Relative speed"}, E-001 reconstructed orbital series. Use arrow keys to inspect samples.`);
+  cell.append(sparkline(fixture.samples, key, "#737b82"));
+  cell.addEventListener("keydown", event => {
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+    event.preventDefault(); pausePlayback();
+    const row = cell.closest(".episode-row"), current = Number(row.dataset.sample || 0);
+    setRowSample(row, Math.max(0, Math.min(fixture.samples.length - 1, current + (event.key === "ArrowRight" ? 1 : -1))));
+  });
+  return cell;
+}
+function setRowSample(row, index) {
+  if (!row?.isConnected) return;
+  const cells = row.querySelectorAll(".proximity-cell"), samples = cells[0]?.samples;
+  if (!samples?.[index]) return;
+  row.dataset.sample = String(index);
+  for (const cell of cells) {
+    const chart = cell.querySelector(".sparkline-compact"), point = chart?.coordinates[index], dot = chart?.querySelector("circle"), value = chart?.querySelector(".sparkline-value");
+    if (!dot || !value) continue;
+    dot.hidden = !point;
+    if (point) { dot.setAttribute("cx", point[0]); dot.setAttribute("cy", point[1]); }
+    const current = samples[index][cell.dataset.key];
+    value.textContent = Number.isFinite(current) ? `${current.toFixed(1)} ${cell.dataset.key === "separationKm" ? "km" : "m/s"}` : "No data";
+  }
+}
+let playbackTimer = null, hoveredRow = null, playbackIndex = 0;
+function pausePlayback() { if (playbackTimer) clearInterval(playbackTimer); playbackTimer = null; }
+function resumePlayback() {
+  if (reducedMotion.matches || playbackTimer || !hoveredRow?.isConnected) return;
+  const count = hoveredRow.querySelector(".proximity-cell")?.samples?.length;
+  if (!count) return;
+  playbackTimer = setInterval(() => { playbackIndex = (playbackIndex + 1) % count; setRowSample(hoveredRow, playbackIndex); }, 560);
+}
+function stopPlayback(reset = true) { pausePlayback(); if (reset && hoveredRow?.isConnected) setRowSample(hoveredRow, 0); hoveredRow = null; playbackIndex = 0; }
+function startHover(row) { if (hoveredRow === row) return; stopPlayback(); hoveredRow = row; setRowSample(row, 0); resumePlayback(); }
+function stopPreview() {}
+function startPreview() {}
+function newsIndicator(row, count) {
+  const wrap = el(count ? "button" : "span", "news-indicator");
+  if (count) { wrap.type = "button"; wrap.setAttribute("aria-label", `Show ${count} linked ${count === 1 ? "record" : "records"} for ${title(row)}`); wrap.addEventListener("click", event => { event.stopPropagation(); toggleRow(row); }); }
+  else wrap.setAttribute("aria-label", "0 linked records");
+  const stack = el("span", `news-mini-stack cards-${Math.min(3, count)}`); stack.setAttribute("aria-hidden", "true");
+  for (let index = 0; index < Math.min(3, count); index++) stack.append(el("span", "news-mini"));
+  wrap.title = `${count} linked ${count === 1 ? "record" : "records"}`; wrap.append(stack); return wrap;
+}
+function render() {
+  stopPlayback(); stopPreview(); closeObject(); updateOrbitOptions(); updateSortHeaders();
+  const data = currentData(), rows = visibleRows();
+  if (state.selected && !rows.includes(state.selected)) state.selected = null;
+  $("#count").textContent = `${rows.length} ${state.usePreview ? "preview records" : "published episodes"}`;
+  const body = $("#rows"); body.replaceChildren();
+  for (const [index, row] of rows.entries()) {
+    const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);
+    tr.tabIndex = 0; tr.dataset.episodeId = field(row, "ID"); tr.setAttribute("aria-label", `${title(row)}, ${open ? "collapse" : "expand"} details`);
+    const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");
+    heading.append(el("span", "episode-title", title(row)), el("span", "episode-id", field(row, "ID")));
+    episode.append(heading); tr.append(episode);
+    const classification = el("td", "classification-cell"), badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row); classification.append(badge); tr.append(classification);
+    const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
+    const periodCell = el("td", "period-cell"); periodCell.append(periodNode(row)); tr.append(periodCell);
+    const separation = el("td", "separation-column"); separation.append(proximityNode(row, "separationKm")); tr.append(separation);
+    const speed = el("td", "speed-column"); speed.append(proximityNode(row, "relativeVelocityMps")); tr.append(speed);
+    const newsCell = el("td", "news-column"); newsCell.append(newsIndicator(row, data?.recordCounts?.[field(row, "ID")] || 0)); tr.append(newsCell);
+    const actionCell = el("td", "action-cell"), action = el("button", `accordion-toggle${open ? " open" : ""}`);
+    action.type = "button"; action.append(el("span", "accordion-icon")); action.setAttribute("aria-expanded", String(open));
+    action.setAttribute("aria-label", `${open ? "Collapse" : "Expand"} context for ${title(row)}`);
+    action.addEventListener("click", event => { event.stopPropagation(); toggleRow(row); }); actionCell.append(action); tr.append(actionCell);
+    tr.addEventListener("pointerenter", event => { if (event.pointerType === "mouse" || event.pointerType === "pen") startHover(tr); });
+    tr.addEventListener("pointerleave", () => { if (hoveredRow === tr) stopPlayback(); });
+    tr.addEventListener("click", event => { if (!event.target.closest("button, a, input, select, .gterm")) toggleRow(row); });
+    tr.addEventListener("keydown", event => { if (event.target === tr && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleRow(row); } });
+    body.append(tr); setRowSample(tr, 0);
+    if (open) {
+      const detailRow = el("tr", "expanded-row"), td = el("td"); td.colSpan = 8; detailRow.append(td); body.append(detailRow);
+      const id = field(row, "ID"), cached = state.details.get(id);
+      if (data.source === "local-verification-candidates") td.append(expandedContent(row, { source: data.source, descriptions: [], sourceMetadata: {} }));
+      else if (cached) { td.append(expandedContent(cached.row, cached)); requestAnimationFrame(() => { if (td.isConnected) startPreview(cached.row); }); }
+      else {
+        td.append(loadingDetail(row, data));
+        ensureDetail(row).then(detail => {
+          if (state.selected !== row || !td.isConnected) return;
+          td.replaceChildren(expandedContent(detail.row, detail)); startPreview(detail.row);
+        }).catch(error => {
+          if (state.selected !== row || !td.isConnected) return;
+          const notice = el("div", "expanded-loading", "Episode context is unavailable. "), retry = el("button", "text-action", "Retry");
+          retry.addEventListener("click", () => { state.detailFailures.delete(id); td.replaceChildren(loadingDetail(row, data)); ensureDetail(row).then(detail => { if (state.selected === row && td.isConnected) { td.replaceChildren(expandedContent(detail.row, detail)); startPreview(detail.row); } }).catch(() => { if (state.selected === row && td.isConnected) td.replaceChildren(notice); }); });
+          notice.append(retry); td.replaceChildren(notice); console.warn(error);
+        });
+      }
+    }
+  }
+  const empty = $("#empty"); empty.hidden = rows.length > 0;
+  if (!rows.length) {
+    const noFeed = !data || data.source === "unavailable", nonePublished = !state.usePreview && data?.source === "live" && data.publishedEpisodes === 0;
+    empty.replaceChildren(el("strong", "", noFeed ? "Published records are unavailable" : nonePublished ? "No episodes selected for public display" : "No matching episodes"), el("span", "", noFeed ? "The published workbook could not be read. Local preview remains available." : nonePublished ? "The Frontend publication flag controls this table." : "Try another search or reset the filters."));
+  }
+  if (data?.source === "live") scheduleDetailPrefetch();
+}
+function setStatus() {
+  const status = $("#status"), live = state.live;
+  if (state.usePreview) { status.dataset.kind = "preview"; status.textContent = currentData()?.source === "local-verification-candidates" ? "LOCAL PREVIEW: verification candidates from a worklist, not published episodes." : "LOCAL PREVIEW: all workbook episodes, including unpublished rows."; }
+  else if (live?.source === "live") { status.dataset.kind = "live"; status.textContent = `Published Google Sheet snapshot (${new Date(live.snapshotUtc).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}): ${live.publishedEpisodes} selected episode${live.publishedEpisodes === 1 ? "" : "s"}.`; }
+  else { status.dataset.kind = "error"; status.textContent = "Published sheet unavailable. No records are inferred for public display."; }
+}
+async function init() {
+  const local = ["localhost", "127.0.0.1"].includes(location.hostname);
+  $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; state.orbit = ""; setStatus(); render(); });
+  $("#search").addEventListener("input", event => { state.query = event.target.value.trim(); render(); });
+  $("#orbit").addEventListener("change", event => { state.orbit = event.target.value; render(); });
+  $("#reset").addEventListener("click", () => { state.query = ""; state.orbit = ""; state.sort = { key: "index", direction: "asc" }; $("#search").value = ""; render(); });
+  document.querySelectorAll(".sort-head").forEach(button => button.addEventListener("click", () => { const key = button.dataset.sort; state.sort = { key, direction: state.sort.key === key ? (state.sort.direction === "desc" ? "asc" : "desc") : key === "title" || key === "orbit" ? "asc" : "desc" }; render(); }));
+  fetch("../shared/e001-series.json").then(r => r.ok ? r.json() : null).catch(() => fetch("./data/e001-series.json").then(r => r.ok ? r.json() : null)).then(data => { state.series = data; if (state.live) render(); });
+  $("#demo-header").hidden = true;
+  state.live = await fetch("./data/table.json", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error(`Table request returned ${r.status}`); return r.json(); }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
+  setStatus(); render();
+}
+init().catch(error => { $("#status").textContent = `The table could not start: ${error.message}`; $("#status").dataset.kind = "error"; });
+
