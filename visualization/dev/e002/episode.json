@@ -1,0 +1,24 @@
+{
+  "episodeId": "E-002",
+  "title": "Kosmos 2542 and Kosmos 2543 near USA 245",
+  "historicalPeriod": "November 2019–February 2020",
+  "status": "Development reconstruction; supported windows are narrower than the historical episode",
+  "participants": [
+    { "slot": "A", "name": "Kosmos 2542", "cospar": "2019-079A", "norad": "44797", "color": "#eaaa00" },
+    { "slot": "B", "name": "USA 245", "cospar": "2013-043A", "norad": "39232", "color": "#a9a9a9" },
+    { "slot": "C", "name": "Kosmos 2543", "cospar": "2019-079D", "norad": "44835", "color": "#707070" }
+  ],
+  "defaultPair": ["A", "B"],
+  "pairOptions": [["A", "B"], ["C", "B"], ["A", "C"]],
+  "defaultThresholds": { "separationKm": 200, "relativeSpeedMps": 15 },
+  "maximumDisplayTleAgeHours": 36,
+  "maximumStatisticTleAgeHours": 12,
+  "cameraPresets": "camera-examples.json",
+  "elementProvenance": "data/provenance.json",
+  "windows": [
+    { "id": "dec31", "label": "December 31 · three spacecraft", "start": "2019-12-31T18:00:00Z", "end": "2019-12-31T19:30:00Z", "note": "All three spacecraft have nearby dated elements. USA 245's element is roughly 8–10 hours from this window; this is geometry, not a measured close approach." },
+    { "id": "dec7", "label": "December 7 · after deployment", "start": "2019-12-07T09:45:00Z", "end": "2019-12-07T11:15:00Z", "note": "USA 245 has a nearby amateur-derived element. The Russian spacecraft have dated elements within the display gate, but Kosmos 2542's is over 12 hours away." },
+    { "id": "dec8", "label": "December 8 · second observer window", "start": "2019-12-08T10:05:00Z", "end": "2019-12-08T11:35:00Z", "note": "The second December USA 245 element supports a short, separate reconstruction. No track is drawn across the gap from December 7." },
+    { "id": "jan24", "label": "January 24 · Russian spacecraft only", "start": "2020-01-24T12:00:00Z", "end": "2020-01-24T13:30:00Z", "note": "USA 245 has no nearby local element. Only Kosmos 2542 and Kosmos 2543 are rendered; no B position or B-pair statistic is inferred." }
+  ]
+}

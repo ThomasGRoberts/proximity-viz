@@ -358,3 +358,30 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
   .table-wrap tr.episode-row.selected td:first-child{box-shadow:none}
   .table-wrap tr.expanded-row .expanded-inner{border-radius:0 0 9px 9px}
 }
+
+/* Give the episode title and its expanded description the same additional room. */
+.component-wrap{max-width:1240px;padding-inline:clamp(20px,3vw,36px)}
+.table-wrap th:nth-child(1){width:31%}
+.table-wrap th:nth-child(2){width:19%}
+.table-wrap th:nth-child(6){width:7%}
+.news-indicator .news-mini-stack{transition:none}
+.news-indicator:is(button):hover .news-mini-stack,.news-indicator:is(button):focus-visible .news-mini-stack{transform:none;filter:none}
+.source-media,.source-media.document-media{box-sizing:border-box;border:1px solid #e7e7e7;border-radius:8px;background:#f6f6f6;box-shadow:none}
+.source-media.document-media img{width:100%;height:100%;border:0;border-radius:0;object-fit:contain;object-position:center;box-shadow:none}
+.object-meta .object-source-row{margin-top:10px;padding-top:0;border-top:0}
+@media(min-width:901px){
+  .expanded-inner.has-visual{grid-template-columns:minmax(0,31fr) minmax(0,69fr)}
+  .expanded-inner.has-visual .context-block{padding-left:14px}
+  .expanded-inner.has-visual .orbital-preview{left:calc(-44.9275% - 18px);width:calc(144.9275% + 18px)}
+}
+@media(max-width:760px){.component-wrap{padding-inline:12px}.expanded-inner.has-visual .context-block{padding-left:11px}}
+.table-wrap .episode-row.selected{position:relative;z-index:1}
+.table-wrap .episode-row.selected td,.table-wrap .episode-row.selected:hover td{background:rgba(255,246,223,.9)}
+.table-wrap .episode-row.selected td:nth-last-child(-n+3){background-image:radial-gradient(ellipse at 82% 130%,#d8d3c948,transparent 66%)}
+.table-wrap .episode-row.selected .globe-header-backdrop{position:absolute;top:min(0px,calc(var(--header-height) - 100px));right:-18px;width:min(690px,70%);height:auto;opacity:.1;pointer-events:none;clip-path:inset(max(0px,calc(100px - var(--header-height))) 18px calc(100% - max(100px,var(--header-height))) 0)}
+.table-wrap .episode-row.selected td:first-child>*:not(.globe-header-backdrop){position:relative;z-index:1}
+.expanded-inner.has-visual{position:relative;isolation:isolate;overflow:hidden}
+.expanded-inner.has-visual .globe-backdrop{position:absolute;z-index:-1;top:-100px;right:-18px;width:min(690px,70%);height:auto;opacity:.18;pointer-events:none;-webkit-mask-image:radial-gradient(circle,#000 40%,#0009 64%,transparent 83%);mask-image:radial-gradient(circle,#000 40%,#0009 64%,transparent 83%)}
+.expanded-inner.has-visual .visual-block{position:relative;z-index:2}
+.expanded-inner.has-visual .context-block,.expanded-inner.has-visual .evidence-section{position:relative;z-index:3}
+@media(max-width:900px){.expanded-inner.has-visual .globe-backdrop{top:90px;right:-18px;width:78%;opacity:.15}}

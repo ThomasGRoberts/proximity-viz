@@ -4,7 +4,7 @@ Static publication of Engineering Space Policy Laboratory interfaces:
 
 - `dynamic-table/` browses the public Episodes of Concern records.
 - `visualization/` presents the E-001 Luch (Olymp-K) and Athena-Fidus historical orbital reconstruction.
-- `visualization/dev/e002/` presents a provisional E-002 playback model. The table miniature at `visualization/dev/e002/mini.html` uses a December 8 co-moving orbital frame and the saved “This one please” camera view. Its advanced camera explorer remains at `visualization/dev/e002/camera-explorer.html`.
+- `visualization/Viz/compare.html?episode=E-002` loads the same page shell with a provisional E-002 three-spacecraft scene, pair-specific charts, thresholds, and playback. Add `&dev=1` to open its in-page camera keyframe editor. The table miniature at `visualization/dev/e002/mini.html` uses a December 8 co-moving orbital frame and the saved “This one please” camera view. The original development playback and camera explorer remain available at `visualization/dev/e002/`.
 
 Open `index.html` for navigation. All application paths are relative, so the site works at `https://thomasgroberts.github.io/proximity-viz/`.
 
@@ -19,6 +19,7 @@ This is a static site with no build step. In repository **Settings → Pages**, 
 - `https://thomasgroberts.github.io/proximity-viz/`
 - `https://thomasgroberts.github.io/proximity-viz/dynamic-table/`
 - `https://thomasgroberts.github.io/proximity-viz/visualization/`
+- `https://thomasgroberts.github.io/proximity-viz/visualization/Viz/compare.html?episode=E-002`
 - `https://thomasgroberts.github.io/proximity-viz/visualization/dev/e002/`
 
 Wait for the Pages deployment to finish, then open each address and check the E-001 visualization preview and the return link. Do not assume a URL is live until that check succeeds.
@@ -31,4 +32,6 @@ The table computes E-001 minimum separation, minimum relative velocity, and dwel
 
 The orbital visualization is adapted from [Willa Madsen's *How Close Is Too Close?*](https://github.com/willamadsen/How-Close-Is-Too-Close). Her historical orbital elements, Three.js scene structure, and scientific implementation are credited here; this repository does not replace or modify her upstream project. The E-001 configuration documents the public TLE sources and the analysis limitations. Satellite positions are reconstructed from dated orbital elements; times without supported data are not interpolated as verified positions. Original third-party notices are retained in `visualization/Viz/vendor/satellite/LICENSE` and `visualization/Viz/assets/flags/LICENSE-flag-icons.txt`.
 
-This repository contains only the two public E-001 TLE histories required for that reconstruction. E-002 retrieves checksum-pinned, already published historical subsets from Willa Madsen's project and commits no duplicate raw E-002 elements. Its static table snapshot and source thumbnails are public-facing data, with no credentials or local caches.
+This repository contains only the two public E-001 TLE histories required for that reconstruction. E-002 retrieves checksum-pinned, already published historical subsets from Willa Madsen's project and commits no duplicate raw E-002 elements. E-002's [`episode.json`](visualization/dev/e002/episode.json) defines participants, supported windows, pair choices, thresholds, and data gates. The E-002 route shares the E-001 page shell and panel components; its scene and pair-series adapters remain episode-specific. A future step is to consolidate those controllers into one data-driven engine. Its static table snapshot and source thumbnails are public-facing data, with no credentials or local caches.
+
+The currently bundled satellite identity fields were fetched from CelesTrak SATCAT, and the displayed launch-site names use the bundled CelesTrak lookup. The underlying snapshot retains CSIS name expansions for provenance, but they are not shown as if they were CelesTrak fields. Space-Track historical TLE queries use the selected element epoch and may require sign-in. Space-Track SATCAT identity attribution remains pending comparison against a verified export; the UI does not claim that unverified catalog provenance.

@@ -23,12 +23,15 @@ export function sanitizeEpisodeDescription(markup) {
 }
 
 const description = document.getElementById("episodeDescription");
+const episodeId = new URLSearchParams(location.search).get("episode") || "E-001";
 loadCurrentEpisodes().then(feed => {
-  const episode = feed.episodes.find(row => row.ID === "E-001");
-  if (!episode) throw new Error("E-001 missing from current Episodes sheet");
-  episodeUtcInterval(episode);
-  if (!episode["Episode Description"]) throw new Error("Episode description unavailable");
-  description.replaceChildren(sanitizeEpisodeDescription(episode["Episode Description"]));
+  const episode = feed.episodes.find(row => row.ID === episodeId);
+  if (!episode) throw new Error(`${episodeId} missing from current Episodes sheet`);
+  if (episodeId === "E-001") episodeUtcInterval(episode);
+  const e002Editorial = "After launching Kosmos 2542 in November 2019, Russia deployed the smaller Kosmos 2543 from it. The Russian spacecraft subsequently conducted proximity operations near USA 245, an American reconnaissance satellite, prompting public concern from U.S. officials in February 2020. Russia described the spacecraft as part of an inspection mission. Publicly reconstructed orbital data provide an opportunity to examine these encounters, although sparse observations of USA 245 complicate precise assessments of separation and relative motion.";
+  const text = episode["Episode Description"] || (episodeId === "E-002" ? e002Editorial : "");
+  if (!text) throw new Error("Episode description unavailable");
+  description.replaceChildren(sanitizeEpisodeDescription(text));
 }).catch(error => {
   description.textContent = `Current episode information unavailable: ${error.message}.`;
 });

@@ -8,20 +8,12 @@ import { spaceTrackHistoryUrl } from "../../../shared/tle-provenance.js?v=2";
 const $ = id => document.getElementById(id);
 const mini = document.body.classList.contains("mini");
 const sgp4 = window.satellite;
-const EARTH_KM = 6378.137, MAX_AGE = 36 * 3600000, TRAIL_MS = 45 * 60000;
+const episode = await fetch(new URL("episode.json", import.meta.url)).then(response => response.json());
+const EARTH_KM = 6378.137, MAX_AGE = episode.maximumDisplayTleAgeHours * 3600000, TRAIL_MS = 45 * 60000;
 const RATE = 90 * 1000; // 90 simulated seconds per real second; each window lasts one minute.
-const RADIUS = 6.2;
-const craft = [
-  { slot: "A", name: "Kosmos 2542", norad: "44797", color: MARKER.A },
-  { slot: "B", name: "USA 245", norad: "39232", color: MARKER.B },
-  { slot: "C", name: "Kosmos 2543", norad: "44835", color: MARKER.C }
-];
-const windows = [
-  { id: "dec31", label: "December 31 · three spacecraft", start: "2019-12-31T18:00:00Z", end: "2019-12-31T19:30:00Z", note: "All three spacecraft have nearby dated elements. USA 245's element is roughly 8–10 hours from this window; this is geometry, not a measured close approach." },
-  { id: "dec7", label: "December 7 · after deployment", start: "2019-12-07T09:45:00Z", end: "2019-12-07T11:15:00Z", note: "USA 245 has a nearby amateur-derived element. The Russian spacecraft have dated elements within the display gate, but Kosmos 2542's is over 12 hours away." },
-  { id: "dec8", label: "December 8 · second observer window", start: "2019-12-08T10:05:00Z", end: "2019-12-08T11:35:00Z", note: "The second December USA 245 element supports a short, separate reconstruction. No track is drawn across the gap from December 7." },
-  { id: "jan24", label: "January 24 · Russian spacecraft only", start: "2020-01-24T12:00:00Z", end: "2020-01-24T13:30:00Z", note: "USA 245 has no nearby local element. Only Kosmos 2542 and Kosmos 2543 are rendered; no B position or B-pair statistic is inferred." }
-];
+const RADIUS = 5.55;
+const craft = episode.participants.map(item => ({ ...item, color: MARKER[item.slot] }));
+const windows = episode.windows;
 const formatUtc = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const formatShort = ms => new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const toScene = point => new THREE.Vector3(point.x / EARTH_KM, point.z / EARTH_KM, -point.y / EARTH_KM);
@@ -33,13 +25,13 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mini ? 1.5 : 2)); renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.domElement.setAttribute("aria-hidden", "true"); $("scene").append(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = false; controls.minDistance = 2; controls.maxDistance = 12;
+controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = !mini && new URLSearchParams(location.search).get('dev') === '1'; controls.minDistance = 2; controls.maxDistance = 12;
 controls.addEventListener("start", () => { data.auto = false; $("scene").dataset.cameraMode = "manual"; });
 scene.add(new THREE.HemisphereLight(0xffffff, 0xdcd8cf, 1.6));
 const earth = new THREE.Group(); scene.add(earth);
 earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 96, 72), new THREE.MeshBasicMaterial({ color: 0xe9e6e0 })));
 const borders = new THREE.Group(); earth.add(borders);
-fetch("../../Viz/vendor/countries-110m.json").then(response => response.json()).then(topology => {
+fetch(new URL("../../Viz/vendor/countries-110m.json", import.meta.url)).then(response => response.json()).then(topology => {
   const coords = [], radius = 1.0015;
   for (const country of feature(topology, topology.objects.countries).features) {
     const geometry = country.geometry;
@@ -61,8 +53,10 @@ const markers = {}, labels = {};
 for (const item of craft) {
   const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false }));
   marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
-  const label = document.createElement("span"); label.className = `sat-label slot-${item.slot}`; label.textContent = `${item.slot} · ${item.name}`;
-  $("labels").append(label); labels[item.slot] = label;
+  if (!mini) {
+    const label = document.createElement("span"); label.className = `sat-label slot-${item.slot}`; label.textContent = `${item.slot} · ${item.name}`;
+    $("labels").append(label); labels[item.slot] = label;
+  }
 }
 
 function nearest(library, ms) {
@@ -119,24 +113,65 @@ function frameRelativeCamera(frame) {
   camera.lookAt(controls.target);
   $("scene").dataset.cameraRadius = camera.position.length().toFixed(3);
 }
+const relativeTrails = new THREE.Group(); scene.add(relativeTrails);
+function placeRelativeTrails(frame) {
+  if (!frame) return;
+  relativeTrails.position.copy(frame.origin);
+  relativeTrails.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(frame.radial, frame.along, frame.normal));
+}
 function clearTraces() {
-  for (const trace of data.traces) { scene.remove(trace.mesh); if (trace.dots) { scene.remove(trace.dots); trace.dots.material.dispose(); } trace.mesh.geometry.dispose(); trace.mesh.material.dispose(); }
+  for (const trace of data.traces) { trace.mesh.parent?.remove(trace.mesh); trace.mesh.geometry.dispose(); trace.mesh.material.dispose(); }
   data.traces = [];
 }
 function buildTraces() {
   clearTraces();
+  const firstMs = Date.parse(data.window.start) - TRAIL_MS, lastMs = Date.parse(data.window.end), stepMs = mini ? 30000 : 3 * 60000;
   for (const item of craft) {
     const tle = data.selected[item.slot]; if (!tle) continue;
-    const mesh = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: .8, depthWrite: false }));
-    mesh.renderOrder = 2; scene.add(mesh);
-    const dots = mini ? new THREE.Points(mesh.geometry, new THREE.PointsMaterial({ vertexColors: true, size: 2.4, sizeAttenuation: false, transparent: true, opacity: .9, depthTest: false, depthWrite: false })) : null;
-    if (dots) { dots.renderOrder = 3; scene.add(dots); }
-    data.traces.push({ mesh, dots, tle, color: new THREE.Color(item.color) });
+    if (mini) {
+      const times = [], positions = [], colorArray = [];
+      for (let ms = firstMs; ms <= lastMs; ms += stepMs) {
+        const state = stateAt(tle, ms), frame = orbitFrameAt(ms);
+        if (!state || !frame) continue;
+        times.push(ms); positions.push(...toLocal(state.position, frame).toArray()); colorArray.push(0, 0, 0);
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colorArray, 3));
+      geometry.setDrawRange(0, 0);
+      const mesh = new THREE.Line(geometry, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: .96, depthTest: false, depthWrite: false }));
+      mesh.renderOrder = 2; relativeTrails.add(mesh);
+      data.traces.push({ mesh, tle, times, color: new THREE.Color(item.color) });
+    } else {
+      const mesh = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: .8, depthWrite: false }));
+      mesh.renderOrder = 2; scene.add(mesh);
+      data.traces.push({ mesh, tle, color: new THREE.Color(item.color) });
+    }
   }
+  $("scene").dataset.trailBuilds = String(Number($("scene").dataset.trailBuilds || 0) + 1);
+  $("scene").dataset.trailGeometry = data.traces.map(trace => trace.mesh.geometry.uuid).join(',');
 }
 function updateTraces(ms) {
   const background = new THREE.Color(0xfffcf6);
   const currentFrame = data.frameMode === "relative" ? orbitFrameAt(ms) : null;
+  if (mini && currentFrame) {
+    for (const trace of data.traces) {
+      const first = trace.times.findIndex(time => time >= ms - TRAIL_MS);
+      let last = trace.times.findLastIndex(time => time <= ms);
+      if (first < 0 || last < first) { trace.mesh.visible = false; continue; }
+      trace.mesh.visible = last > first;
+      trace.mesh.geometry.setDrawRange(first, last - first + 1);
+      const colors = trace.mesh.geometry.getAttribute('color');
+      for (let i = first; i <= last; i++) {
+        const age = Math.max(0, Math.min(1, (ms - trace.times[i]) / TRAIL_MS));
+        const color = background.clone().lerp(trace.color, .22 + .78 * (1 - age));
+        colors.setXYZ(i, color.r, color.g, color.b);
+      }
+      colors.needsUpdate = true;
+    }
+    $("scene").dataset.trailFrame = "fixed sampled RTN path";
+    return;
+  }
   for (const trace of data.traces) {
     const points = [], colors = [];
     for (let sample = 15; sample >= 0; sample--) {
@@ -154,7 +189,6 @@ function updateTraces(ms) {
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     trace.mesh.geometry.dispose(); trace.mesh.geometry = geometry;
     trace.mesh.visible = points.length > 1;
-    if (trace.dots) { trace.dots.geometry = geometry; trace.dots.visible = points.length > 1; }
   }
   $("scene").dataset.trailFrame = currentFrame ? "historical RTN transformed to current RTN" : "inertial";
 }
@@ -164,7 +198,8 @@ function setPlaybackButton() {
   $('play').setAttribute('aria-label', data.playing ? 'Pause animation' : 'Play animation');
 }
 function selectWindow(windowId, initial = false) {
-  data.window = windows.find(item => item.id === windowId) || windows[0];
+  const selectedWindow = windows.find(item => item.id === windowId) || windows[0];
+  data.window = mini && selectedWindow.id === 'dec8' ? { ...selectedWindow, end: '2019-12-08T10:50:00Z' } : selectedWindow;
   data.current = Date.parse(data.window.start); data.playing = true; data.auto = true; data.nearer = "A";
   if (!mini) { data.frameMode = "inertial"; data.relativeSeed = null; updateFrameButton(); }
   const mid = (Date.parse(data.window.start) + Date.parse(data.window.end)) / 2;
@@ -251,13 +286,15 @@ function renderFrame(immediate = false, seconds = .016) {
     const tle = data.selected[item.slot], state = stateAt(tle, ms);
     data.available[item.slot] = !!state;
     markers[item.slot].visible = !!state;
-    labels[item.slot].hidden = !state;
+    if (labels[item.slot]) labels[item.slot].hidden = !state;
     if (state) { data.positions[item.slot] = state.position; data.velocities[item.slot] = state.velocity; markers[item.slot].position.copy(state.position); }
   }
+  const currentFrame = data.frameMode === "relative" ? orbitFrameAt(ms) : null;
   if (data.auto) {
-    if (data.frameMode === "relative") frameRelativeCamera(orbitFrameAt(ms));
+    if (data.frameMode === "relative") frameRelativeCamera(currentFrame);
     else frameCamera(immediate, seconds);
   }
+  if (mini) placeRelativeTrails(currentFrame);
   $("scene").dataset.frameMode = data.frameMode;
   if (immediate || performance.now() - data.lastTrailWall > 130) { updateTraces(ms); data.lastTrailWall = performance.now(); }
   if ($('timestamp')) $('timestamp').textContent = formatUtc(ms);
@@ -318,23 +355,24 @@ function animate(now) {
     const projected = data.positions[item.slot].clone().project(camera);
     const x = (projected.x + 1) * rect.width / 2, y = (1 - projected.y) * rect.height / 2;
     const label = labels[item.slot]; screen[item.slot] = { x, y };
-    label.style.left = `${x}px`; label.style.top = `${y}px`;
+    if (label) { const shared = document.body.classList.contains('e002-shared'); label.style.left = `${x + (shared ? rect.left : 0)}px`; label.style.top = `${y + (shared ? rect.top : 0)}px`; }
     const occluded = earthOccludes(data.positions[item.slot], camera.position);
-    label.style.visibility = Math.abs(projected.x) > .92 || Math.abs(projected.y) > .84 || occluded ? 'hidden' : 'visible';
+    if (label) label.style.visibility = Math.abs(projected.x) > .92 || Math.abs(projected.y) > .84 || occluded ? 'hidden' : 'visible';
     markers[item.slot].visible = !occluded;
   }
   const overlap = screen.A && screen.C && Math.hypot(screen.A.x - screen.C.x, screen.A.y - screen.C.y) < 22;
   // Concentric marks communicate projected overlap without moving either orbit.
   markers.C.scale.set(data.markerScale * (overlap ? 1.42 : 1), data.markerScale * (overlap ? 1.42 : 1), 1);
   markers.C.renderOrder = overlap ? 9 : 10;
-  labels.A.textContent = mini ? (overlap ? 'A+C' : 'A') : overlap ? 'A + C · projected overlap' : 'A · Kosmos 2542';
-  labels.A.style.borderRight = overlap ? `2px solid ${MARKER.C}` : '';
-  labels.B.textContent = mini ? 'B' : 'B · USA 245';
-  labels.C.textContent = mini ? 'C' : 'C · Kosmos 2543';
-  labels.C.style.display = overlap ? 'none' : '';
-  const abCollide = screen.A && screen.B && Math.abs(screen.A.y - screen.B.y) < 22 && Math.abs(screen.B.x - screen.A.x) < (mini ? 30 : 110);
-  labels.A.style.transform = abCollide && !mini ? 'translate(10px,calc(-100% - 7px))' : 'translate(10px,-50%)';
-  labels.B.style.transform = abCollide && !mini ? 'translate(10px,6px)' : 'translate(10px,-50%)';
+  if (!mini) {
+    labels.A.textContent = overlap ? 'A + C · projected overlap' : 'A · Kosmos 2542';
+    labels.A.style.borderRight = overlap ? `2px solid ${MARKER.C}` : '';
+    labels.B.textContent = 'B · USA 245'; labels.C.textContent = 'C · Kosmos 2543';
+    labels.C.style.display = overlap ? 'none' : '';
+    const abCollide = screen.A && screen.B && Math.abs(screen.A.y - screen.B.y) < 22 && Math.abs(screen.B.x - screen.A.x) < 110;
+    labels.A.style.transform = abCollide ? 'translate(10px,calc(-100% - 7px))' : 'translate(10px,-50%)';
+    labels.B.style.transform = abCollide ? 'translate(10px,6px)' : 'translate(10px,-50%)';
+  }
   renderer.render(scene, camera);
 }
 
@@ -363,13 +401,13 @@ if ($('moment')) {
 
 async function load() {
   if (!sgp4?.twoline2satrec) throw new Error('Orbital propagation library unavailable');
-  const [manifest, examples] = await Promise.all([fetch('data/provenance.json').then(response => response.json()), fetch('camera-examples.json').then(response => response.json())]);
+  const [manifest, examples] = await Promise.all([fetch(new URL('data/provenance.json', import.meta.url)).then(response => response.json()), fetch(new URL('camera-examples.json', import.meta.url)).then(response => response.json())]);
   data.preferredView = examples.views.find(view => view.name === 'This one please' && view.momentId === 'dec8');
   if (mini && !data.preferredView) throw new Error('Preferred December 8 camera view is unavailable');
   await Promise.all(craft.map(async item => {
     const record = manifest.datasets.find(dataset => dataset.object.norad === item.norad);
     if (!record) throw new Error(`Missing provenance for ${item.name}`);
-    const response = await fetch(record.url, { cache: 'no-store' });
+    const response = await fetch(new URL(record.url, import.meta.url), { cache: 'no-store' });
     if (!response.ok) throw new Error(`Dated elements for ${item.name} could not be retrieved`);
     const bytes = await response.arrayBuffer();
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), byte => byte.toString(16).padStart(2, '0')).join('');
@@ -377,9 +415,48 @@ async function load() {
     data.libraries[item.slot] = JSON.parse(new TextDecoder().decode(bytes));
   }));
   resize(); selectWindow(mini ? 'dec8' : 'dec31', true);
-  if (mini) data.window = { ...data.window, end: '2019-12-08T10:50:00Z' };
   if ($('timeline')) { $('timeline').min = String(Date.parse(data.window.start)); $('timeline').max = String(Date.parse(data.window.end)); }
   // Main view starts moving immediately; Play/Pause remains visible throughout.
   data.playing = true; setPlaybackButton(); data.ready = true; requestAnimationFrame(animate);
 }
 load().catch(error => { if ($('sceneStatus')) $('sceneStatus').textContent = error.message; else console.error(error); });
+
+// The shared episode shell uses this same scene and vetted element selection.
+// Its charts sample only the currently selected, supported viewing window.
+export const episodeModel = {
+  get config() { return episode; },
+  get ready() { return data.ready; },
+  get window() { return data.window; },
+  get current() { return data.current; },
+  get playing() { return data.playing; },
+  get selected() { return data.selected; },
+  get frameMode() { return data.frameMode; },
+  get craft() { return craft; },
+  get windows() { return windows; },
+  samplePair(first, second, ms) {
+    const a = stateAt(data.selected[first], ms), b = stateAt(data.selected[second], ms);
+    if (!a || !b) return null;
+    return { distanceKm: a.position.distanceTo(b.position) * EARTH_KM,
+      speedMs: a.velocity.distanceTo(b.velocity) * EARTH_KM * 1000 };
+  },
+  setTime(ms) { data.current = THREE.MathUtils.clamp(ms, Date.parse(data.window.start), Date.parse(data.window.end)); data.playing = false; setPlaybackButton(); renderFrame(true); },
+  setPlaying(value) { if (value && data.current >= Date.parse(data.window.end)) data.current = Date.parse(data.window.start); data.playing = !!value; setPlaybackButton(); },
+  selectWindow(id) { selectWindow(id); },
+  toggleFrame() { $('frameMode')?.click(); },
+  resetCamera() { $('autoFrame')?.click(); },
+  zoom(factor) { camera.zoom = THREE.MathUtils.clamp(camera.zoom * factor, .5, 3); camera.updateProjectionMatrix(); data.auto = false; $("scene").dataset.cameraMode = "manual"; },
+  captureCamera(name = 'Untitled view') { return { episodeId: 'E-002', name, momentId: data.window.id, timestampUtc: new Date(data.current).toISOString(), frameMode: data.frameMode,
+    position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), fieldOfViewDeg: camera.fov, zoom: camera.zoom }; },
+  applyCamera(view) { camera.position.fromArray(view.position); controls.target.fromArray(view.target); camera.up.fromArray(view.up || [0,1,0]); camera.fov = view.fieldOfViewDeg; camera.zoom = view.zoom; camera.updateProjectionMatrix(); data.auto = false; $("scene").dataset.cameraMode = "manual"; camera.lookAt(controls.target); },
+  previewCameraTransition(view, duration = 1100) {
+    const from = this.captureCamera('Transition start'), start = performance.now(); data.auto = false; $("scene").dataset.cameraMode = "manual";
+    const destination = new THREE.Vector3().fromArray(view.position), target = new THREE.Vector3().fromArray(view.target), up = new THREE.Vector3().fromArray(view.up || [0,1,0]);
+    const eye0 = new THREE.Vector3().fromArray(from.position), target0 = new THREE.Vector3().fromArray(from.target), up0 = new THREE.Vector3().fromArray(from.up);
+    const step = now => { const fraction = THREE.MathUtils.clamp((now - start) / duration, 0, 1), eased = fraction * fraction * (3 - 2 * fraction);
+      camera.position.copy(eye0).lerp(destination, eased); controls.target.copy(target0).lerp(target, eased); camera.up.copy(up0).lerp(up, eased).normalize();
+      camera.fov = THREE.MathUtils.lerp(from.fieldOfViewDeg, view.fieldOfViewDeg, eased); camera.zoom = THREE.MathUtils.lerp(from.zoom, view.zoom, eased); camera.updateProjectionMatrix(); camera.lookAt(controls.target);
+      if (fraction < 1) requestAnimationFrame(step);
+      else if (view.frameMode === 'relative') { data.frameMode = 'relative'; seedRelativeCamera(orbitFrameAt(data.current)); data.auto = !!data.relativeSeed; $("scene").dataset.cameraMode = data.auto ? "auto" : "manual"; updateFrameButton(); } };
+    requestAnimationFrame(step);
+  }
+};

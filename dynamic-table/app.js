@@ -104,7 +104,7 @@ function objectInfo(row, role, data) {
   return { role, raw, record, satcat, gp: record?.gp || null,
     cospar: satcat?.OBJECT_ID || compact.cospar || raw, norad: satcat?.NORAD_CAT_ID || compact.norad || "",
     name: satcat?.OBJECT_NAME || compact.name || raw, owner: satcat?.OWNER || "",
-    ownerName: record?.ownerName || "", launchSite: data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE] || data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "",
+    ownerName: record?.ownerName || "", launchSite: data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "",
     launchSiteFromCsis: !!data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE], csisSourceUrl: data.celestrak?.csisSourceUrl || "" };
 }
 function titleMarkup(row) { return field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
@@ -179,7 +179,6 @@ function buildObjectPopover(info) {
   const sourceRow = el("div", "object-source-row"), sourceValue = el("dd");
   sourceRow.append(el("dt", "", "Data Source"));
   sourceValue.append(externalLink("CelesTrak SATCAT", info.record?.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(s.NORAD_CAT_ID)}`));
-  if (info.launchSiteFromCsis && info.csisSourceUrl) sourceValue.append(document.createTextNode(" · "), externalLink("CSIS launch-site names", info.csisSourceUrl));
   sourceRow.append(sourceValue); dl.append(sourceRow);
 }
 function positionObject() {
@@ -428,6 +427,7 @@ function sourceCard(group, data) {
 function expandedContent(row, data) {
   const episodeId = field(row, "ID");
   const wrap = el("div", `expanded-inner${["E-001", "E-002"].includes(episodeId) ? " has-visual" : ""}`);
+  if (["E-001", "E-002"].includes(episodeId)) import("./globe-backdrop.js?v=2").then(module => module.mountGlobeBackdrop(wrap)).catch(console.warn);
   if (state.usePreview) wrap.append(el("p", "caution", data.source === "local-verification-candidates" ? "Verification worklist entry. The possible counterpart is not a confirmed episode participant." : "Local preview includes unpublished records. This is not the public selection."));
   const overview = el("div", "detail-overview");
   const context = el("section", "context-block"); context.setAttribute("aria-label", "Episode description");
@@ -436,7 +436,7 @@ function expandedContent(row, data) {
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
   if (["E-001", "E-002"].includes(episodeId)) {
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/" : "../visualization/dev/e002/", location.href).href;
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/" : "../visualization/Viz/compare.html?episode=E-002", location.href).href;
     viz.setAttribute("aria-label", `${episodeId} orbital visualization`);
     viz.append(visualizationLink(target, `Explore the interactive model for ${title(row)}`));
     overview.append(viz);
