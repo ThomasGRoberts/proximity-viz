@@ -1,6 +1,6 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
-import { loadCurrentEpisodes, episodeUtcInterval } from "../shared/episode-feed.js";
+import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval } from "../shared/episode-feed.js";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
 
@@ -11,7 +11,8 @@ const field = (row, ...names) => {
   return names.map(name => cells[name.toLowerCase().replace(/[^a-z0-9]/g, "")]).find(Boolean) || "";
 };
 const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
-const state = { live: null, preview: null, series: null, seriesPromise: null, usePreview: false, selected: null, query: "", orbit: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
+const EARTH_COLORS = { warm: 0xd4d0c8, stone: 0xc7c7c2, taupe: 0xc9c2b8, neutral: 0xd4d1cc };
+const state = { live: null, preview: null, series: null, seriesPromise: null, usePreview: false, selected: null, query: "", orbit: "", earthColor: "warm", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -60,7 +61,7 @@ function descriptionIds(row) { return field(row, "Descriptions").split(/[,;\n]/)
 function linkedDescriptions(row, data) {
   const lookup = new Map((data.descriptions || []).map(d => [field(d, "ID", "Description ID").toUpperCase(), d]));
   const episode = field(row, "ID").toUpperCase();
-  return descriptionIds(row).map(id => ({ id, row: lookup.get(id.toUpperCase()) })).filter(item => item.row && (!field(item.row, "Episode", "Episode ID") || field(item.row, "Episode", "Episode ID").toUpperCase() === episode));
+  return descriptionIds(row).map(id => ({ id, row: lookup.get(id.toUpperCase()) })).filter(item => item.row && field(item.row, "Episode", "Episode ID").toUpperCase() === episode);
 }
 function sourceGroups(row, data) {
   const groups = new Map();
@@ -142,7 +143,7 @@ function visualizationLink(url, label = "Open orbital visualization") {
   flourish.width = flourish.height = 116; flourish.setAttribute("aria-hidden", "true");
   icon.append(fallback, flourish);
   action.append(icon, el("span", "model-label", "Explore the interactive model"), el("span", "model-arrow", "→"));
-  preview.append(action); link.append(preview);
+  link.append(preview, action);
   import("./model-link.js").then(module => module.decorateModelLink(link)).catch(() => link.classList.add("model-static-fallback"));
   return link;
 }
@@ -306,7 +307,7 @@ function ensureDetail(row) {
     const fullRow = data?.episodes?.find(item => field(item, "ID") === id);
     if (!fullRow) throw new Error(`Episode ${id} is unavailable`);
     const refs = new Set(descriptionIds(fullRow));
-    const descriptions = (data.descriptions || []).filter(item => refs.has(field(item, "ID", "Description ID")));
+    const descriptions = (data.descriptions || []).filter(item => refs.has(field(item, "ID", "Description ID")) && field(item, "Episode", "Episode ID").toUpperCase() === id.toUpperCase());
     const urls = new Set(descriptions.map(item => field(item, "Source URL", "URL", "Link")));
     const objectIds = new Set(["A", "B", "C"].map(role => field(fullRow, `Object ${role}`).toUpperCase()).filter(Boolean));
     const detail = { source: data.source, row: fullRow, descriptions, sourceMetadata: Object.fromEntries(Object.entries(data.sourceMetadata || {}).filter(([url]) => urls.has(url))),
@@ -490,7 +491,7 @@ function startPreview(row) {
   try { interval = episodeUtcInterval(row); }
   catch (error) { console.warn("E-001 dates invalid", error); return; }
   Promise.all([import("./e001-preview.js"), state.seriesPromise?.catch(() => null) || Promise.resolve(state.series)])
-    .then(([module, metrics]) => module.mountE001Preview(host, interval, metrics?.minimumDistance?.ms)).then(scene => {
+    .then(([module, metrics]) => module.mountE001Preview(host, interval, metrics?.minimumDistance?.ms, EARTH_COLORS[state.earthColor])).then(scene => {
     if (token !== previewToken || !host.isConnected) scene?.dispose();
     else previewScene = scene;
   }).catch(error => { if (token === previewToken) { console.warn("E-001 preview unavailable", error); host.append(el("span", "orbital-error", "Orbital preview unavailable")); } });
@@ -556,10 +557,21 @@ function render() {
 function setStatus() {
   const status = $("#status"), live = state.live;
   if (state.usePreview) { status.dataset.kind = "preview"; status.textContent = currentData()?.source === "local-verification-candidates" ? "LOCAL PREVIEW: verification candidates from a worklist, not published episodes." : "LOCAL PREVIEW: all workbook episodes, including unpublished rows."; }
-  else if (live?.source === "live") { status.dataset.kind = "live"; status.textContent = `Live published Google Sheet checked ${new Date(live.snapshotUtc).toLocaleString("en-US")}: ${live.publishedEpisodes} selected episode${live.publishedEpisodes === 1 ? "" : "s"}.`; }
+  else if (live?.source === "live") { status.dataset.kind = live.descriptionError ? "error" : "live"; status.textContent = `Live published Google Sheet checked ${new Date(live.snapshotUtc).toLocaleString("en-US")}: ${live.publishedEpisodes} selected episode${live.publishedEpisodes === 1 ? "" : "s"}.${live.descriptionError ? ` Source records unavailable: ${live.descriptionError}.` : ""}`; }
   else { status.dataset.kind = "error"; status.textContent = `Current published sheet unavailable: ${live?.error || "unknown error"}. No stale episode dates are shown.`; }
 }
 async function init() {
+  if (["localhost", "127.0.0.1"].includes(location.hostname)) {
+    const selector = $("#earth-choice"), swatch = $("#earth-swatch");
+    $("#earth-controls").hidden = false;
+    swatch.style.backgroundColor = `#${EARTH_COLORS[state.earthColor].toString(16).padStart(6, "0")}`;
+    selector.addEventListener("change", () => {
+      state.earthColor = selector.value;
+      const color = EARTH_COLORS[state.earthColor];
+      swatch.style.backgroundColor = `#${color.toString(16).padStart(6, "0")}`;
+      previewScene?.setEarthColor(color);
+    });
+  }
   $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; state.orbit = ""; setStatus(); render(); });
   $("#search").addEventListener("input", event => { state.query = event.target.value.trim(); render(); });
   $("#orbit").addEventListener("change", event => { state.orbit = event.target.value; render(); });
@@ -568,13 +580,14 @@ async function init() {
   state.live = await Promise.all([
     fetch("./data/table.json", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error(`Table support data returned ${r.status}`); return r.json(); }),
     loadCurrentEpisodes(),
-  ]).then(([snapshot, feed]) => {
+    loadCurrentDescriptions().catch(error => ({ descriptions: [], error: error.message })),
+  ]).then(([snapshot, feed, descriptionFeed]) => {
     const supporting = new Map(snapshot.episodes.map(row => [field(row, "ID"), row]));
     const episodes = feed.episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || ""))
       .map(row => ({ ...(supporting.get(row.ID) || {}), ...row }));
     const e001 = episodes.find(row => field(row, "ID") === "E-001");
     if (e001) episodeUtcInterval(e001);
-    return { ...snapshot, episodes, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc };
+    return { ...snapshot, descriptions: descriptionFeed.descriptions, episodes, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc, descriptionsCheckedUtc: descriptionFeed.fetchedUtc, descriptionError: descriptionFeed.error || "" };
   }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
   setStatus(); render();
   const e001 = state.live.episodes?.find(row => field(row, "ID") === "E-001");

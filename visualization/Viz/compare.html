@@ -15,9 +15,9 @@
   <!-- The side panel. Everything with an id="..." is something compare.js reads or updates. -->
   <aside id="ui">
     <div class="episodeHeader">
+      <a class="backEpisodes" href="../../dynamic-table/"><svg class="libraryBackArrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m0 0 6-6m-6 6 6 6"/></svg><span>Choose a different episode</span><svg class="libraryBooks" viewBox="0 0 20 20" aria-hidden="true"><path class="libraryBookOne" d="M2.5 3.5h4v13h-4z"/><path class="libraryBookTwo" d="M8 3.5h4v13H8z"/><path class="libraryBookThree" d="M13.5 5l3.5-.8 2 11.8-3.5.8z"/></svg></a>
       <h1>Visualizing Proximity in Space</h1>
       <div class="titleEpisode" id="episodeTitle">Loading episode…</div>
-      <a class="backEpisodes" href="../../dynamic-table/"><svg class="libraryBackArrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m0 0 6-6m-6 6 6 6"/></svg><span>Choose a different episode</span><svg class="libraryBooks" viewBox="0 0 20 20" aria-hidden="true"><path class="libraryBookOne" d="M2.5 3.5h4v13h-4z"/><path class="libraryBookTwo" d="M8 3.5h4v13H8z"/><path class="libraryBookThree" d="M13.5 5l3.5-.8 2 11.8-3.5.8z"/></svg></a>
       <div id="episodeDescription" class="episodeDescription"></div>
     </div>
 
@@ -98,9 +98,9 @@
           <div class="statLabel">Relative velocity</div>
           <div id="speedMinimum" class="minimumNote">Minimum value this episode: calculating…</div>
         </div>
-      <div class="chartGroup" id="distanceChartGroup"><canvas id="separationChart" width="300" height="150" aria-label="Separation distance over time; drag the horizontal threshold line to adjust"></canvas><input id="distanceThreshold" type="hidden" value="200"><span class="thresholdEdge" aria-hidden="true">200</span><span class="currentValue" aria-hidden="true"></span></div>
-      <div class="chartGroup" id="speedChartGroup"><canvas id="speedChart" width="300" height="150" aria-label="Relative velocity over time; drag the horizontal threshold line to adjust"></canvas><input id="speedThreshold" type="hidden" value="15"><span class="thresholdEdge" aria-hidden="true">15</span><span class="currentValue" aria-hidden="true"></span></div>
-      <div class="statBlock metricBlock dwellMetric" id="dwellMetric"><div class="dwellValue"><span id="dwellStat" class="statNumber">—</span><span id="dwellUnit" class="statNumber statUnit">days</span></div><div id="dwellLabel" class="statLabel">Dwell time</div><div class="dwellKey">Moments in which one threshold is met are shown in <strong class="single">gray</strong>; those in which both thresholds are met are shown in <strong class="both">gold</strong>.</div></div>
+      <div class="chartGroup" id="distanceChartGroup"><canvas id="separationChart" width="300" height="150" aria-label="Separation distance over time; drag the horizontal threshold line to adjust"></canvas><input id="distanceThreshold" type="hidden" value="200"><span class="thresholdEdge" role="slider" tabindex="0" aria-label="Separation distance threshold" aria-valuemin="1" aria-valuenow="200">200</span><span class="currentValue" aria-hidden="true"></span></div>
+      <div class="chartGroup" id="speedChartGroup"><canvas id="speedChart" width="300" height="150" aria-label="Relative velocity over time; drag the horizontal threshold line to adjust"></canvas><input id="speedThreshold" type="hidden" value="15"><span class="thresholdEdge" role="slider" tabindex="0" aria-label="Relative velocity threshold" aria-valuemin="0.1" aria-valuenow="15">15</span><span class="currentValue" aria-hidden="true"></span></div>
+      <div class="statBlock metricBlock dwellMetric" id="dwellMetric"><div class="dwellValue"><span class="dwellAmount"><span id="dwellStat" class="statNumber">—</span><span id="dwellUnit" class="statNumber statUnit">days</span></span><span id="dwellLabel" class="statLabel">Dwell Time</span></div><div class="dwellKey">Moments in which one threshold is met are shown in <strong class="single">gray</strong>; those in which both thresholds are met are shown in <strong class="both">gold</strong>.</div></div>
     </div>
       <span id="timeDisplay" hidden>—</span>
       <div id="qualifyingIntervals" class="intervalNote" hidden></div>
@@ -1144,6 +1144,20 @@
     .timelineHoverTick { position: absolute; z-index: 5; top: 1px; bottom: 1px; width: 1px; background: #555; pointer-events: none; }
     .timelineHover { position: absolute; z-index: 6; bottom: calc(100% + 7px); padding: 3px 5px; border: 1px solid #d7d1c5; border-radius: 3px; background: #fffdfa; box-shadow: 0 2px 7px #0002; color: #4f4b43; font-size: 9px; font-weight: 600; line-height: 1.2; white-space: nowrap; pointer-events: none; }
     .timelineHover[hidden],.timelineHoverTick[hidden] { display: none; }
+    #ui .episodeHeader h1 { font-size: 22px; }
+    .episodeHeader .titleEpisode { margin-top: 6px; font-size: 13px; line-height: 1.32; transition: transform .22s ease, color .22s ease; }
+    .episodeHeader .backEpisodes { margin: 0 0 9px; }
+    .backEpisodes:hover ~ .titleEpisode,.backEpisodes:focus-visible ~ .titleEpisode { color: #54504a; transform: translateX(3px); }
+    #dwellMetric { display: block; }
+    .dwellValue { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+    .dwellAmount { display: inline-flex; align-items: baseline; gap: 8px; }
+    #dwellMetric .dwellKey { display: block; margin-top: 4px; }
+    #dwellMetric .dwellValue .statLabel { display: inline; margin: 0; color: #555; font-size: 10px; font-weight: 650; line-height: 1.2; }
+    .thresholdEdge { height: 27px; padding: 0 2px; line-height: 27px; cursor: ns-resize; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; }
+    .thresholdEdge::before { top: 1px; }
+    .thresholdEdge::after { bottom: 1px; }
+    .thresholdEdge:focus-visible { outline: 1px solid #9b7c2e; outline-offset: 2px; }
+    @media(prefers-reduced-motion:reduce){.episodeHeader .titleEpisode{transition:none!important;transform:none!important}}
   </style>
 
   <!-- satellite.js does the SGP4 orbit math. It is a classic script that creates a global "satellite" object. -->

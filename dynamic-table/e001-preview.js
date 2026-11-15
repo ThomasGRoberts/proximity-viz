@@ -52,7 +52,7 @@ function disposeScene(scene, renderer) {
   renderer.dispose(); renderer.forceContextLoss();
 }
 
-export async function mountE001Preview(host, interval, closestApproachMs) {
+export async function mountE001Preview(host, interval, closestApproachMs, initialEarthColor = 0xd4d0c8) {
   const [sgp4, config, cameraReference, topology, historyA, historyB] = await Promise.all([
     satelliteLibrary(), json("../visualization/local/episodes/E-001.json"),
     json("../visualization/local/camera-references/E-001-2017-10-30.json"),
@@ -92,7 +92,8 @@ export async function mountE001Preview(host, interval, closestApproachMs) {
   host.dataset.cameraReference = cameraReference.schema;
   host.append(renderer.domElement); host.querySelector(".visualization-still")?.setAttribute("hidden", "");
   scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2));
-  const earth = new THREE.Group(); earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: 0xada9a1 }))); scene.add(earth);
+  const earthMaterial = new THREE.MeshBasicMaterial({ color: initialEarthColor });
+  const earth = new THREE.Group(); earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), earthMaterial)); scene.add(earth);
   const borders = new THREE.Group(); earth.add(borders);
   const seenBorders = new Set(), borderPoints = [], borderRadius = 1.0017;
   const borderKey = point => `${point[0].toFixed(5)},${point[1].toFixed(5)}`;
@@ -126,7 +127,7 @@ export async function mountE001Preview(host, interval, closestApproachMs) {
   const centerAngle = sgp4.gstime(new Date(center));
   for (const [index, slot] of ["A", "B"].entries()) {
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(SATELLITE_STYLES[slot].dot), sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false }));
-    const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); sprite.scale.set(DOT_SCREEN_SIZE * 1.75 * lens, DOT_SCREEN_SIZE * 1.75 * lens, 1);
+    const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); sprite.scale.set(DOT_SCREEN_SIZE * 2.4 * lens, DOT_SCREEN_SIZE * 2.4 * lens, 1);
     sprite.renderOrder = index ? 8 : 9; scene.add(sprite); dots.push(sprite);
     // Build an actual 27-hour Earth-fixed track once. Rebuilding its GPU buffers
     // during playback caused brief blank frames on small WebGL canvases.
@@ -143,7 +144,15 @@ export async function mountE001Preview(host, interval, closestApproachMs) {
     trailRoot.add(orbit); orbits.push(orbit);
   }
   let disposed = false, frame = 0, last = performance.now(), lastRender = 0;
-  function resize() { if (disposed) return; const width = Math.max(1, host.clientWidth), height = Math.max(1, host.clientHeight); camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); draw(true); }
+  function resize() {
+    if (disposed) return;
+    const width = Math.max(1, host.clientWidth), height = Math.max(1, host.clientHeight);
+    camera.aspect = width / height;
+    // The canvas bleeds left behind the description. Keep both satellites in
+    // the primary pane while the GEO belt remains visible across the card.
+    camera.filmOffset = matchMedia("(min-width: 901px)").matches ? -125 / width * camera.getFilmWidth() : 0;
+    camera.updateProjectionMatrix(); renderer.setSize(width, height, false); draw(true);
+  }
   function draw(snapCamera = false) {
     if (disposed) return;
     const currentStates = libs.map((lib, index) => stateAt(lib, current, sgp4, maxAgeMs, fixedIndices[index]));
@@ -189,5 +198,8 @@ export async function mountE001Preview(host, interval, closestApproachMs) {
     frame = requestAnimationFrame(animate);
   }
   frame = requestAnimationFrame(animate);
-  return { dispose() { disposed = true; cancelAnimationFrame(frame); observer.disconnect(); renderer.domElement.remove(); disposeScene(scene, renderer); } };
+  return {
+    setEarthColor(color) { earthMaterial.color.setHex(color); renderer.render(scene, camera); },
+    dispose() { disposed = true; cancelAnimationFrame(frame); observer.disconnect(); renderer.domElement.remove(); disposeScene(scene, renderer); }
+  };
 }

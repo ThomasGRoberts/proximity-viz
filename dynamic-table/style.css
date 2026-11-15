@@ -268,3 +268,30 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .visual-link.is-open .model-action .model-label{width:auto;clip-path:inset(0)}
 .model-action .model-arrow{margin-left:0}
 .visual-link.is-open .model-action .model-arrow{width:12px}
+
+/* A faint extension of the actual GEO scene passes behind the description. */
+@media(min-width:901px){
+  .expanded-inner.has-visual .visual-block{z-index:0;overflow:visible}
+  .expanded-inner.has-visual .context-block{position:relative;z-index:1;background:linear-gradient(180deg,#fffcf6 0%,#fffcf6 46%,#fffcf6a8 64%,transparent 86%)}
+  .expanded-inner.has-visual .visual-link.model-link{overflow:visible}
+  .expanded-inner.has-visual .orbital-preview{position:absolute;left:calc(-38.8889% - 18px);width:calc(138.8889% + 18px);height:100%;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,#0009 0%,#000b 28%,#000 40%);mask-image:linear-gradient(90deg,#0009 0%,#000b 28%,#000 40%)}
+}
+.earth-controls{display:flex;align-items:center;gap:9px;padding:7px 18px;border-bottom:1px solid #eee3c9;background:#fffcf6;color:#655f52;font-size:11px}
+.earth-controls[hidden]{display:none!important}
+.earth-controls select{padding:4px 7px;border:1px solid #d9d3c5;border-radius:4px;background:white;color:#4c4a45;font:inherit}
+.earth-controls small{color:#928a7b;font-size:10px}
+.earth-swatch{width:18px;height:18px;border:1px solid #a49f96;border-radius:50%}
+@media(max-width:650px){.earth-controls{flex-wrap:wrap}}
+
+/* The scene link's pane stays the hover and click target for the SBI cue. */
+.model-action{top:9px;bottom:auto;left:12px;transform:translateY(-38px);transition:transform .24s cubic-bezier(.16,1,.3,1),opacity .12s ease}
+.visual-link.is-open .model-action{transform:translateY(0)}
+.visual-link.is-open .model-action .model-label{opacity:0;clip-path:inset(0 100% 0 0);transition-delay:0s}
+.visual-link[data-model-stage="text"] .model-action .model-label,.visual-link[data-model-stage="arrow"] .model-action .model-label{opacity:1;clip-path:inset(0)}
+.visual-link.is-open .model-action .model-arrow{width:0;opacity:0;transition-delay:0s}
+.visual-link[data-model-stage="arrow"] .model-action .model-arrow{width:12px;opacity:1;animation:model-arrow-nudge .28s ease-out both}
+.visual-link.model-static-fallback:hover .model-action,.visual-link.model-static-fallback:focus-visible .model-action{opacity:1;transform:translateY(0)}
+.visual-link.model-static-fallback:hover .model-label,.visual-link.model-static-fallback:focus-visible .model-label{opacity:1;clip-path:inset(0)}
+.visual-link.model-static-fallback:hover .model-arrow,.visual-link.model-static-fallback:focus-visible .model-arrow{width:12px;opacity:1}
+@keyframes model-arrow-nudge{0%{transform:translateX(-2px)}60%{transform:translateX(3px)}100%{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.model-action,.model-action .model-label,.model-action .model-arrow{transition:none!important;animation:none!important}}

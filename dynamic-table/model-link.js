@@ -1,5 +1,5 @@
-/* Adapted from SBI's polyhedron-model-link-reference.html, using its local
-   Three.js r160 module, geometry, lighting, orbit drawing, and reverse motion. */
+/* Polyhedron geometry, lighting, and ring drawing follow the ESPL SBI
+   Geneva Briefings Carousel Animations/model-link.js reference. */
 import * as THREE from "../visualization/Viz/vendor/three/three.module.js";
 
 export function decorateModelLink(link) {
@@ -46,37 +46,40 @@ export function decorateModelLink(link) {
     setOrbit(0); render();
     canvas.classList.add("model-canvas-ready");
     if (canvas.previousElementSibling) canvas.previousElementSibling.hidden = true;
-    let frame = 0, animation = null, progress = 0, open = false;
+    let frame = 0, open = false, started = 0;
     const restingRotation = globe.rotation.y;
     const ease = t => t * t * (3 - 2 * t);
+    const portion = (elapsed, start, duration) => ease(Math.max(0, Math.min(1, (elapsed - start) / duration)));
     function animate(now) {
-      if (!animation || !link.isConnected) return;
-      const t = Math.min(1, (now - animation.start) / animation.duration), eased = ease(t);
-      globe.rotation.y = animation.fromRotation + (animation.toRotation - animation.fromRotation) * eased;
-      progress = animation.fromOrbit + (animation.toOrbit - animation.fromOrbit) * eased;
-      setOrbit(progress); render();
-      if (t < 1) frame = requestAnimationFrame(animate);
-      else { progress = animation.toOrbit; animation = null; setOrbit(progress); render(); }
-    }
-    function startMotion(closing) {
-      cancelAnimationFrame(frame);
-      if (reducedMotion.matches) {
-        globe.rotation.y = restingRotation + (closing ? 0 : 1.05);
-        progress = closing ? 0 : 1; setOrbit(progress); render(); return;
-      }
-      animation = { start: performance.now(), duration: closing ? 700 : 950,
-        fromRotation: globe.rotation.y, toRotation: restingRotation + (closing ? 0 : 1.05),
-        fromOrbit: progress, toOrbit: closing ? 0 : 1 };
-      frame = requestAnimationFrame(animate);
+      if (!open || !link.isConnected) return;
+      const elapsed = now - started;
+      link.dataset.modelStage = elapsed < 240 ? "enter" : elapsed < 480 ? "spin" : elapsed < 760 ? "orbit" : elapsed < 1040 ? "text" : "arrow";
+      globe.rotation.y = restingRotation + 1.05 * portion(elapsed, 240, 240);
+      const orbitProgress = portion(elapsed, 480, 280);
+      setOrbit(orbitProgress);
+      link.dataset.orbitProgress = orbitProgress.toFixed(2);
+      render();
+      if (elapsed < 1180) frame = requestAnimationFrame(animate);
     }
     function setOpen(value) {
       if (open === value) return;
-      open = value; link.classList.toggle("is-open", value); startMotion(!value);
+      cancelAnimationFrame(frame);
+      open = value; link.classList.toggle("is-open", value);
+      globe.rotation.y = restingRotation; setOrbit(0); render();
+      link.dataset.orbitProgress = "0.00";
+      link.dataset.modelStage = value ? "enter" : "idle";
+      if (!value) return;
+      if (reducedMotion.matches) {
+        globe.rotation.y = restingRotation + 1.05; setOrbit(1); render();
+        link.dataset.orbitProgress = "1.00"; link.dataset.modelStage = "arrow";
+        return;
+      }
+      started = performance.now(); frame = requestAnimationFrame(animate);
     }
     link.addEventListener("pointerenter", () => setOpen(true));
-    link.addEventListener("pointerleave", () => setOpen(false));
+    link.addEventListener("pointerleave", () => { if (document.activeElement !== link) setOpen(false); });
     link.addEventListener("focus", () => setOpen(true));
-    link.addEventListener("blur", () => setOpen(false));
+    link.addEventListener("blur", () => { if (!link.matches(":hover")) setOpen(false); });
     const observer = new MutationObserver(() => {
       if (link.isConnected) return;
       observer.disconnect(); cancelAnimationFrame(frame);

@@ -861,7 +861,13 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   canvas.dataset.thresholdCueOffset = cue.toFixed(2);
   chartGeometry.set(canvas, { top: pad.top, bottom, left: pad.left, right, yMax, thresholdY });
   const edge = canvas.parentElement.querySelector(".thresholdEdge");
-  if (edge) { edge.style.top = `${canvas.offsetTop + Math.max(pad.top + 5, Math.min(bottom - 5, thresholdY))}px`; edge.textContent = `${threshold} ${unit}`; }
+  if (edge) {
+    edge.style.top = `${canvas.offsetTop + Math.max(pad.top + 5, Math.min(bottom - 5, thresholdY))}px`;
+    edge.textContent = `${threshold} ${unit}`;
+    edge.setAttribute("aria-valuenow", String(threshold));
+    edge.setAttribute("aria-valuemax", String(yMax));
+    edge.setAttribute("aria-valuetext", `${threshold} ${unit}`);
+  }
   ctx.clearRect(0, 0, w, h); ctx.font = "10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.save(); ctx.translate(22, (pad.top + bottom) / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillStyle = "#555"; ctx.textAlign = "center";
@@ -1801,8 +1807,8 @@ timelineWrap.addEventListener("pointermove", event => {
 timelineWrap.addEventListener("pointerleave", () => { timelineHover.hidden = timelineHoverTick.hidden = true; });
 for (const id of ["distanceThreshold", "speedThreshold"]) $(id).addEventListener("input", updateThresholds);
 for (const [canvasId, inputId, increment] of [["separationChart", "distanceThreshold", 25], ["speedChart", "speedThreshold", 5]]) {
-  const canvas = $(canvasId), input = $(inputId);
-  let dragging = false;
+  const canvas = $(canvasId), input = $(inputId), edge = canvas.parentElement.querySelector(".thresholdEdge");
+  let dragging = false, dragStartY = 0, dragStartValue = 0;
   const local = event => { const rect = canvas.getBoundingClientRect(); return { x: event.clientX - rect.left, y: event.clientY - rect.top }; };
   const nearLine = event => {
     const chart = chartGeometry.get(canvas); if (!chart) return false;
@@ -1815,24 +1821,38 @@ for (const [canvasId, inputId, increment] of [["separationChart", "distanceThres
     canvas.style.cursor = hovered ? "ns-resize" : "default";
     chartDirty = true;
   };
-  const setFromPointer = event => {
+  const choose = raw => {
     const chart = chartGeometry.get(canvas); if (!chart) return;
-    const raw = (chart.bottom - local(event).y) / (chart.bottom - chart.top) * chart.yMax;
     const preferred = Math.round(raw / increment) * increment;
     const tolerance = increment === 25 ? 3 : .65;
     const precise = increment === 25 ? Math.round(raw) : Math.round(raw * 10) / 10;
     const next = Math.max(increment === 25 ? 1 : .1, Math.min(chart.yMax, Math.abs(raw - preferred) <= tolerance ? preferred : precise));
     if (Number(input.value) !== next) { input.value = String(next); updateThresholds(); }
   };
-  canvas.addEventListener("pointermove", event => { if (dragging) setFromPointer(event); else setHover(nearLine(event)); });
-  canvas.addEventListener("pointerdown", event => {
-    if (!nearLine(event)) return;
-    event.preventDefault(); dragging = true; chartCueFinished.add(canvas); canvas.setPointerCapture(event.pointerId); setHover(true); setFromPointer(event);
+  const setFromPointer = event => {
+    const chart = chartGeometry.get(canvas); if (!chart) return;
+    choose(dragStartValue + (dragStartY - local(event).y) / (chart.bottom - chart.top) * chart.yMax);
+  };
+  for (const target of [canvas, edge]) {
+    target.addEventListener("pointermove", event => { if (dragging) setFromPointer(event); else setHover(target === edge || nearLine(event)); });
+    target.addEventListener("pointerdown", event => {
+      if (target === canvas && !nearLine(event)) return;
+      event.preventDefault();
+      dragging = true; dragStartY = local(event).y; dragStartValue = Number(input.value);
+      chartCueFinished.add(canvas); target.setPointerCapture(event.pointerId); setHover(true);
+    });
+    target.addEventListener("pointerup", () => { dragging = false; setHover(false); });
+    target.addEventListener("pointercancel", () => { dragging = false; setHover(false); });
+    target.addEventListener("pointerleave", () => { if (!dragging) setHover(false); });
+  }
+  edge.addEventListener("keydown", event => {
+    const step = increment === 25 ? 5 : 1;
+    const change = { ArrowUp: step, ArrowRight: step, ArrowDown: -step, ArrowLeft: -step, PageUp: increment, PageDown: -increment }[event.key];
+    if (change === undefined && event.key !== "Home" && event.key !== "End") return;
+    event.preventDefault();
+    const chart = chartGeometry.get(canvas); if (!chart) return;
+    choose(event.key === "Home" ? 0 : event.key === "End" ? chart.yMax : Number(input.value) + change);
   });
-  const endDrag = () => { dragging = false; setHover(false); };
-  canvas.addEventListener("pointerup", endDrag);
-  canvas.addEventListener("pointercancel", endDrag);
-  canvas.addEventListener("pointerleave", () => { if (!dragging) setHover(false); });
 }
 $("zoomInBtn").addEventListener("click", () => { autoZoom = false; cameraTween =null; camera.position.lerp(controls.target, 0.2); });
 $("zoomOutBtn").addEventListener("click", () => { autoZoom = false; cameraTween = null; camera.position.sub(controls.target).multiplyScalar(1.25).add(controls.target); });

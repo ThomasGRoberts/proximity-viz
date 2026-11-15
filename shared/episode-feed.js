@@ -1,7 +1,8 @@
 /* The public Episodes tab is the authority for episode metadata on every load. */
 export const EPISODES_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera/pub?output=csv&gid=0&single=true";
+export const DESCRIPTIONS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera/pub?output=csv&gid=541287173&single=true";
 
-export function parseCsv(text) {
+export function parseCsv(text, requiredHeaders = ["ID", "Start Date", "End Date"]) {
   const rows = []; let row = [], cell = "", quoted = false;
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
@@ -17,10 +18,10 @@ export function parseCsv(text) {
       row = []; cell = "";
     } else cell += char;
   }
-  if (quoted) throw new Error("Episodes sheet contains an unfinished CSV field");
+  if (quoted) throw new Error("Published sheet contains an unfinished CSV field");
   row.push(cell); if (row.some(value => value.trim())) rows.push(row);
   const headers = rows.shift()?.map(value => value.replace(/^\uFEFF/, "").trim());
-  if (!headers?.includes("ID") || !headers.includes("Start Date") || !headers.includes("End Date")) throw new Error("Episodes sheet headers could not be verified");
+  if (!headers || requiredHeaders.some(header => !headers.includes(header))) throw new Error(`Published sheet headers could not be verified: ${requiredHeaders.join(", ")}`);
   return rows.map(values => Object.fromEntries(headers.map((key, index) => [key, (values[index] || "").trim()]))).filter(record => record.ID);
 }
 
@@ -31,6 +32,19 @@ export function loadCurrentEpisodes() {
     .then(parseCsv).then(episodes => {
       if (!episodes.length) throw new Error("Episodes sheet returned no episode records");
       return { episodes, fetchedUtc: new Date().toISOString() };
+    });
+}
+
+let descriptionRequest;
+export function loadCurrentDescriptions() {
+  return descriptionRequest ||= fetch(`${DESCRIPTIONS_CSV}&_=${Date.now()}`, { cache: "no-store", credentials: "omit" })
+    .then(response => { if (!response.ok) throw new Error(`Descriptions sheet returned ${response.status}`); return response.text(); })
+    .then(text => parseCsv(text, ["ID", "Episode", "Source URL", "Description type"]))
+    .then(descriptions => {
+      if (!descriptions.length) throw new Error("Descriptions sheet returned no records");
+      const ids = descriptions.map(row => row.ID.toUpperCase());
+      if (new Set(ids).size !== ids.length) throw new Error("Descriptions sheet contains duplicate record IDs");
+      return { descriptions, fetchedUtc: new Date().toISOString() };
     });
 }
 
