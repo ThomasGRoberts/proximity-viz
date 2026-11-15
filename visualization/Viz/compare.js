@@ -38,7 +38,7 @@ import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fad
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
 import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js";
-import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=2";
+import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=3";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
 // "window" (the browser's global object). We give it a short name here.
@@ -1073,7 +1073,7 @@ function updateIdentity() {
     card.dataset.tleLine2 = tle.line2;
     card.dataset.sourceLabel = provenance.label;
     card.dataset.sourceData = provenance.dataSource;
-    card.dataset.sourceQueryHref = tle.source === "space-track" ? spaceTrackHistoryUrl(norad, tle.epoch) : "";
+    card.dataset.sourceQueryHref = ["space-track", "TLEs"].includes(tle.source) ? spaceTrackHistoryUrl(norad, tle.epoch) : "";
     card.dataset.sourceOrigin = provenance.origin;
     card.dataset.sourceRetrieval = provenance.retrieval;
     card.dataset.sourceHref = provenance.href;

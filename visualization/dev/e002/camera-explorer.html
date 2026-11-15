@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css">
   <script type="importmap">{"imports":{"three":"../../Viz/vendor/three/three.module.js","three/addons/":"../../Viz/vendor/three/addons/"}}</script>
   <script src="../../Viz/vendor/satellite/satellite.min.js"></script>
-  <script type="module" src="app.js?v=4"></script>
+  <script type="module" src="app.js?v=6"></script>
 </head>
 <body>
   <header class="page-header">
@@ -18,7 +18,7 @@
   <main>
     <aside class="controls">
       <section><h2>Historical moment</h2><label for="moment">Select a candidate</label><select id="moment"></select><p id="momentNote" class="note"></p><p id="momentTime" class="time"></p></section>
-      <section><h2>View</h2><label for="reference">Camera reference</label><select id="reference"><option value="A">A · Kosmos 2542</option><option value="B">B · USA 245</option><option value="C">C · Kosmos 2543</option></select><button id="reset" type="button">Auto frame this moment</button><p class="hint">Auto frame favors USA 245 and the nearer Russian craft, with a stable Earth scale. Drag to orbit · scroll to zoom · right drag or Shift drag to pan. Your three December views are available below as exact examples.</p></section>
+      <section><h2>Playback and view</h2><div class="button-row"><button id="play" type="button" aria-label="Play reconstruction">▶ Play</button><button id="reset" type="button">Auto Frame This Moment</button></div><label for="motionMode">Camera behavior</label><select id="motionMode"><option value="inertial">Inertial camera</option><option value="relative">Co-moving pair camera (RTN)</option></select><label for="reference">Camera reference</label><select id="reference"><option value="A">A · Kosmos 2542</option><option value="B">B · USA 245</option><option value="C">C · Kosmos 2543</option></select><p class="hint">Play advances 45 minutes from the selected moment using one element set per craft. The co-moving camera follows B and the nearer Russian craft. Auto Frame This Moment resets the view around the selected instant. Drag to orbit · scroll to zoom; Capture view saves the current moving frame.</p></section>
       <section><h2>Spacecraft and coverage</h2><div id="coverage" class="coverage"></div><p class="coverage-note">TLEs are fitted orbital elements, not continuous observations. Each displayed position uses its nearest dated element set within 36 hours. This display cutoff is not an accuracy bound.</p></section>
       <section><h2>Inspect a pair</h2><label for="pair">Pair for approximate values</label><select id="pair"><option value="AB">A · Kosmos 2542 / B · USA 245</option><option value="CB">C · Kosmos 2543 / B · USA 245</option><option value="AC">A · Kosmos 2542 / C · Kosmos 2543</option></select><div id="pairResult" class="pair-result"></div><p class="coverage-note">Instantaneous TLE-derived estimates require both elements within 12 hours. This cutoff is a screening rule, not a confidence interval. No dwell time or close-approach claim is inferred from one frame.</p></section>
       <section><h2>Camera examples and saved views</h2><label for="viewName">View name</label><input id="viewName" value="Candidate view"><div class="button-row"><button id="capture" type="button">Capture view</button><button id="download" type="button">Download JSON</button></div><div id="savedViews" class="saved-views"></div></section>

@@ -24,7 +24,7 @@ const moments = [
 const sgp4 = window.satellite;
 if (!sgp4?.twoline2satrec) throw new Error("SGP4 library unavailable");
 const toScene = position => new THREE.Vector3(position.x / EARTH_KM, position.z / EARTH_KM, -position.y / EARTH_KM);
-const state = { moment: moments[3], reference: "B", pair: "AB", libraries: {}, positions: {}, velocities: {}, availability: {}, trails: [], trailPoints: {}, saved: [], examples: [], cameraTween: null, preferredRussian: "A", poleSign: 1, cameraMode: "auto" };
+const state = { moment: moments[3], reference: "B", pair: "AB", libraries: {}, positions: {}, velocities: {}, availability: {}, trails: [], trailPoints: {}, saved: [], examples: [], cameraTween: null, preferredRussian: "A", poleSign: 1, cameraMode: "auto", motionMode: "inertial", playing: false, currentMs: Date.parse(moments[3].utc), playSelected: null, playPrimary: "A", relativeSeed: null, lastMotionDraw: 0 };
 const AUTO_RADIUS = 6.2;
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)");
 const formatUtc = value => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(value)) + " UTC";
@@ -40,7 +40,7 @@ controls.enableDamping = true; controls.dampingFactor = .08;
 controls.enablePan = true; controls.minDistance = .025; controls.maxDistance = 18;
 controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
 controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-controls.addEventListener("start", () => { state.cameraTween = null; state.cameraMode = "manual"; $("scene").dataset.cameraMode = "manual"; });
+controls.addEventListener("start", () => { state.cameraTween = null; state.cameraMode = "manual"; state.relativeSeed = null; state.motionMode = "inertial"; $("motionMode").value = "inertial"; $("scene").dataset.cameraMode = "manual"; });
 renderer.domElement.addEventListener("contextmenu", event => event.preventDefault());
 scene.add(new THREE.HemisphereLight(0xffffff, 0xddd9ce, 1.7));
 const earth = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 72), new THREE.MeshLambertMaterial({ color: 0xe9e6e0 }));
@@ -91,22 +91,52 @@ function nearestElement(craft, ms) {
 function propagate(tle, ms) {
   const satrec = tle.satrec ||= sgp4.twoline2satrec(tle.line1, tle.line2);
   const value = sgp4.propagate(satrec, new Date(ms));
-  return value.position && value.velocity ? { position: toScene(value.position), velocity: value.velocity } : null;
+  return value.position && value.velocity ? { position: toScene(value.position), velocity: toScene(value.velocity) } : null;
 }
+function motionFrame() {
+  const b = state.positions.B, other = state.positions[state.playPrimary], vb = state.velocities.B, vo = state.velocities[state.playPrimary];
+  if (!b || !other || !vb || !vo) return null;
+  const origin = b.clone().add(other).multiplyScalar(.5), radial = origin.clone().normalize();
+  const normal = origin.clone().cross(vb.clone().add(vo)).normalize();
+  return { origin, radial, along: normal.clone().cross(radial).normalize(), normal };
+}
+function localPoint(point, frame) { const d = point.clone().sub(frame.origin); return new THREE.Vector3(d.dot(frame.radial), d.dot(frame.along), d.dot(frame.normal)); }
+function worldPoint(point, frame) { return frame.origin.clone().addScaledVector(frame.radial, point.x).addScaledVector(frame.along, point.y).addScaledVector(frame.normal, point.z); }
+function localDirection(point, frame) { return new THREE.Vector3(point.dot(frame.radial), point.dot(frame.along), point.dot(frame.normal)); }
+function worldDirection(point, frame) { return frame.radial.clone().multiplyScalar(point.x).addScaledVector(frame.along, point.y).addScaledVector(frame.normal, point.z); }
+function seedMotionCamera() {
+  const b = state.positions.B, a = state.positions.A, c = state.positions.C;
+  state.playPrimary = b && c && (!a || c.distanceTo(b) < a.distanceTo(b)) ? "C" : "A";
+  const frame = motionFrame(); if (!frame) return false;
+  state.relativeSeed = { eye: localPoint(camera.position, frame), target: localPoint(controls.target, frame), up: localDirection(camera.up, frame) };
+  $("scene").dataset.motionReference = `B-${state.playPrimary}`;
+  return true;
+}
+function applyMotionCamera() {
+  const frame = motionFrame(), seed = state.relativeSeed;
+  if (!frame || !seed) return;
+  camera.position.copy(worldPoint(seed.eye, frame)); controls.target.copy(worldPoint(seed.target, frame));
+  camera.up.copy(worldDirection(seed.up, frame).normalize()); camera.lookAt(controls.target);
+}
+function setPlayButton() { $("play").textContent = state.playing ? "Ⅱ Pause" : "▶ Play"; $("play").setAttribute("aria-label", state.playing ? "Pause reconstruction" : "Play reconstruction"); }
 function clearTrails() {
   for (const trail of state.trails) { scene.remove(trail); trail.geometry.dispose(); trail.material.dispose(); }
   state.trails = []; state.trailPoints = {};
 }
-function showMoment(resetCamera = true) {
+function showMoment(resetCamera = true, ms = Date.parse(state.moment.utc)) {
   clearTrails();
-  const ms = Date.parse(state.moment.utc);
+  state.currentMs = ms;
   $("momentNote").textContent = state.moment.note;
   $("momentTime").textContent = new Date(ms).toLocaleString("en-US", { dateStyle: "full", timeStyle: "short", timeZone: "UTC" }) + " UTC";
-  $("stageDate").textContent = formatUtc(state.moment.utc);
+  $("stageDate").textContent = formatUtc(new Date(ms).toISOString());
   state.positions = {}; state.velocities = {}; state.availability = {};
   const coverage = $("coverage"); coverage.replaceChildren();
   for (const craft of spacecraft) {
-    const selection = nearestElement(craft, ms), propagated = selection.tle && propagate(selection.tle, ms);
+    const hasFixed = !!state.playSelected && Object.hasOwn(state.playSelected, craft.slot);
+    const fixed = state.playSelected?.[craft.slot];
+    const selection = hasFixed ? { tle: fixed, age: fixed ? Math.abs(ms - Date.parse(fixed.epoch)) : Infinity } : nearestElement(craft, ms);
+    if (selection.age > MAX_TLE_AGE_MS) selection.tle = null;
+    const propagated = selection.tle && propagate(selection.tle, ms);
     const available = !!propagated;
     state.availability[craft.slot] = { ...selection, available };
     markers[craft.slot].visible = available;
@@ -164,7 +194,7 @@ function updatePair() {
   }
   const distance = a.distanceTo(b) * EARTH_KM;
   const va = state.velocities[first], vb = state.velocities[second];
-  const relativeSpeed = Math.hypot(va.x - vb.x, va.y - vb.y, va.z - vb.z) * 1000;
+  const relativeSpeed = Math.hypot(va.x - vb.x, va.y - vb.y, va.z - vb.z) * EARTH_KM * 1000;
   const roundDistance = distance >= 1000 ? Math.round(distance / 100) * 100 : Math.round(distance / 10) * 10;
   const roundSpeed = Math.round(relativeSpeed / 100) * 100;
   $("pairResult").innerHTML = `<strong>~${roundDistance.toLocaleString()} km</strong> separation<br><strong>~${roundSpeed.toLocaleString()} m/s</strong> relative speed`;
@@ -212,8 +242,19 @@ function resize() {
   for (const trail of state.trails) trail.material.uniforms.uResolution.value.set(width, height);
 }
 const resizeObserver = new ResizeObserver(resize); resizeObserver.observe($("scene"));
-function animate() {
+let lastFrameTime = performance.now();
+function animate(now = performance.now()) {
   requestAnimationFrame(animate);
+  const elapsed = Math.min(.1, (now - lastFrameTime) / 1000); lastFrameTime = now;
+  if (state.playing) {
+    const end = Date.parse(state.moment.utc) + 45 * 60000;
+    const next = Math.min(end, state.currentMs + elapsed * 90000);
+    if (now - state.lastMotionDraw > 120 || next >= end) {
+      showMoment(false, next); state.lastMotionDraw = now;
+      if (state.motionMode === "relative") applyMotionCamera();
+    } else state.currentMs = next;
+    if (next >= end) { state.playing = false; setPlayButton(); }
+  }
   if (state.cameraTween) {
     const tween = state.cameraTween;
     const progress = Math.min(1, (performance.now() - tween.start) / tween.duration);
@@ -263,17 +304,31 @@ function displaySavedViews() {
 }
 function restoreView(index, example = false) {
   const view = (example ? state.examples : state.saved)[index]; if (!view) return;
+  state.playing = false; state.playSelected = null; state.motionMode = "inertial"; state.relativeSeed = null; $("motionMode").value = "inertial"; setPlayButton();
   state.moment = moments.find(moment => moment.id === view.momentId) || moments[0];
   state.reference = view.reference; $("moment").value = state.moment.id; $("reference").value = state.reference;
-  showMoment(false); state.cameraTween = null; state.cameraMode = "manual"; $("scene").dataset.cameraMode = "manual"; camera.position.fromArray(view.position); controls.target.fromArray(view.target);
+  showMoment(false, Date.parse(view.timestamp)); state.cameraTween = null; state.cameraMode = "manual"; $("scene").dataset.cameraMode = "manual"; camera.position.fromArray(view.position); controls.target.fromArray(view.target);
   camera.fov = view.fieldOfViewDeg || 35; camera.zoom = view.zoom; camera.updateProjectionMatrix(); controls.update();
 }
-$("moment").addEventListener("change", event => { state.moment = moments.find(moment => moment.id === event.target.value); state.reference = state.moment.reference; $("reference").value = state.reference; showMoment(); });
+$("moment").addEventListener("change", event => { state.playing = false; state.playSelected = null; state.motionMode = "inertial"; state.relativeSeed = null; $("motionMode").value = "inertial"; setPlayButton(); state.moment = moments.find(moment => moment.id === event.target.value); state.reference = state.moment.reference; $("reference").value = state.reference; showMoment(); });
 $("reference").addEventListener("change", event => { state.reference = event.target.value; resetView(); });
 $("pair").addEventListener("change", event => { state.pair = event.target.value; updatePair(); });
-$("reset").addEventListener("click", resetView);
+$("reset").addEventListener("click", () => { state.motionMode = "inertial"; state.relativeSeed = null; $("motionMode").value = "inertial"; resetView(); });
+$("motionMode").addEventListener("change", event => {
+  state.motionMode = event.target.value;
+  if (state.motionMode === "relative" && !seedMotionCamera()) { state.motionMode = "inertial"; event.target.value = "inertial"; }
+  if (state.motionMode === "relative") { state.cameraTween = null; state.cameraMode = "auto"; }
+  $("scene").dataset.motionMode = state.motionMode;
+});
+$("play").addEventListener("click", () => {
+  if (state.playing) { state.playing = false; setPlayButton(); return; }
+  const start = Date.parse(state.moment.utc), end = start + 45 * 60000;
+  if (state.currentMs >= end || state.currentMs < start) state.currentMs = start;
+  if (!state.playSelected) state.playSelected = Object.fromEntries(spacecraft.map(craft => [craft.slot, nearestElement(craft, start).tle]));
+  state.playing = true; setPlayButton();
+});
 $("capture").addEventListener("click", () => {
-  const view = { name: $("viewName").value.trim() || "Untitled view", momentId: state.moment.id, timestamp: state.moment.utc,
+  const view = { name: $("viewName").value.trim() || "Untitled view", momentId: state.moment.id, timestamp: new Date(state.currentMs).toISOString(),
     reference: state.reference, position: camera.position.toArray(), target: controls.target.toArray(), zoom: camera.zoom,
     fieldOfViewDeg: camera.fov, units: "Earth radii", coordinateFrame: "ECI [x,z,-y]" };
   state.saved.push(view); localStorage.setItem("espl-e002-camera-views-v1", JSON.stringify(state.saved)); displaySavedViews();

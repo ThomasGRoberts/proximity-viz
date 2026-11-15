@@ -45,6 +45,11 @@ async function render(card) {
   row(satellite, "Object type", satcat.OBJECT_TYPE === "PAY" ? "Payload" : satcat.OBJECT_TYPE);
   row(satellite, "Launch date", dateText(satcat.LAUNCH_DATE));
   row(satellite, "Launch site", `${data.launchSites?.names?.[satcat.LAUNCH_SITE] || satcat.LAUNCH_SITE}${siteFlags(satcat.LAUNCH_SITE)}`);
+  const identitySource = document.createElement("div"), identityLabel = document.createElement("dt"), identityValue = document.createElement("dd");
+  identityLabel.textContent = "Data Source";
+  identityValue.append(link("CelesTrak SATCAT", record.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(satcat.NORAD_CAT_ID)}`));
+  if (data.launchSites?.names?.[satcat.LAUNCH_SITE] && data.launchSites.sourceUrl) identityValue.append(document.createTextNode(" · "), link("CSIS launch-site names", data.launchSites.sourceUrl));
+  identitySource.append(identityLabel, identityValue); satellite.append(identitySource);
   const orbital = section("Orbital Details");
   const epochRow = document.createElement("div"), epochLabel = document.createElement("dt"), epochValue = document.createElement("dd");
   epochLabel.textContent = "Selected TLE epoch";
@@ -69,7 +74,8 @@ async function render(card) {
     const sourceLink = link(card.dataset.sourceData, card.dataset.sourceQueryHref);
     sourceLink.title = "Space-Track historical elements for this satellite and UTC date; sign-in required. The query may include other element sets from the same date.";
     dd.append(sourceLink);
-  } else dd.textContent = card.dataset.sourceData || "Source unverified";
+  } else if (card.dataset.sourceHref && card.dataset.sourceData !== "Source unverified") dd.append(link(card.dataset.sourceData, card.dataset.sourceHref));
+  else dd.textContent = card.dataset.sourceData || "Source unverified";
   sourceRow.append(dt, dd); orbital.append(sourceRow);
 }
 host.addEventListener("toggle", event => {

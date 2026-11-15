@@ -330,3 +330,31 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .episode-row.selected td{border-bottom:0}
 .expanded-row .expanded-inner{border:0;border-radius:9px;box-shadow:inset 3px 0 var(--espl-gold);overflow:visible}
 .expanded-row>td{background:#fff}
+/* The selected row and its expansion read as one two-tone card. */
+.table-wrap table{border-collapse:separate;border-spacing:0}
+.table-wrap{overflow-anchor:none}
+.table-wrap .episode-row.selected td,.table-wrap .episode-row.selected:hover td{background:#fff6df;border-bottom:0}
+.table-wrap .episode-row.selected td:first-child{border-top-left-radius:9px;box-shadow:inset 3px 0 var(--espl-gold)}
+.table-wrap .episode-row.selected td:last-child{border-top-right-radius:9px}
+.table-wrap .expanded-row>td{border-bottom:0;background:#fff}
+.table-wrap .expanded-row .expanded-inner{border-radius:0 0 9px 9px;background:#fffcf6;box-shadow:inset 3px 0 var(--espl-gold)}
+@media(min-width:901px){
+  .expanded-inner.has-visual{row-gap:6px}
+  .expanded-inner.has-visual .context-block{padding-top:3px}
+  .expanded-inner.has-visual .visual-link.model-link{height:235px;min-height:235px}
+  .expanded-inner.has-visual .source-grid{gap:18px;padding:5px 9px}
+  .expanded-inner.has-visual .source-stack{width:96%}
+  .expanded-inner.has-visual .source-stack:nth-child(n+2){margin-left:0}
+}
+.source-media.document-media{border:1px solid #d3cbb8;border-radius:8px;background:#f4efdf;box-shadow:inset 0 0 0 4px #faf6eb}
+.source-media.document-media img{width:calc(100% - 10px);height:calc(100% - 10px);border:1px solid #e4dfd3;border-radius:4px;object-fit:contain;object-position:center top;box-shadow:0 1px 4px #00000012}
+.object-meta div{border-top:0}
+.object-meta div+div{padding-top:5px}
+.object-meta .object-source-row{margin-top:9px;padding-top:9px;border-top:1px solid #e5e5e5}
+.object-source-row .espl-external{font-size:11px}
+@media(max-width:760px){
+  .table-wrap tr.episode-row.selected{border-bottom:0;border-radius:9px 9px 0 0;margin-bottom:0}
+  .table-wrap tr.episode-row.selected::before{border-radius:9px 0 0 0}
+  .table-wrap tr.episode-row.selected td:first-child{box-shadow:none}
+  .table-wrap tr.expanded-row .expanded-inner{border-radius:0 0 9px 9px}
+}

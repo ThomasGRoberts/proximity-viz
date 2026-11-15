@@ -11,7 +11,7 @@
       "elements": 1477,
       "epochRangeUtc": ["2015-01-02T02:37:37.574688Z", "2022-01-22T21:54:47.283264Z"],
       "sourceGroups": [
-        { "sourceLabelInFile": "TLEs", "elements": 1476, "originatingProvider": null, "immediateRetrievalSource": null, "retrievedUtc": null, "restrictionStatus": "Unknown; original acquisition and terms not documented in preserved records" },
+        { "sourceLabelInFile": "TLEs", "elements": 1476, "originatingProvider": "Space-Track.org", "providerEvidence": "User reports direct confirmation from Willa Madsen, original data supplier, on 2026-11-15", "individualArchiveMatch": false, "immediateRetrievalSource": "Historical project copy of Space-Track elements", "retrievedUtc": null, "restrictionStatus": "Basic SSA redistribution permitted with appropriate citation; original retrieval log unavailable" },
         { "sourceLabelInFile": "CelesTrak GEO via Internet Archive", "elements": 1, "originatingProvider": null, "immediateRetrievalSource": "CelesTrak GEO snapshot preserved by Internet Archive", "retrievedUtc": null, "archiveCaptureUtc": "2018-01-13T22:14:24Z", "sourceUrl": "https://web.archive.org/web/20180113221424id_/http://celestrak.com/NORAD/elements/geo.txt", "restrictionStatus": "Historical snapshot; upstream catalog origin not independently verified" }
       ]
     },
@@ -23,7 +23,7 @@
       "elements": 672,
       "epochRangeUtc": ["2017-01-01T14:43:00.025536Z", "2018-01-12T14:00:39.237408Z"],
       "sourceGroups": [
-        { "sourceLabelInFile": "TLEs", "elements": 671, "originatingProvider": null, "immediateRetrievalSource": null, "retrievedUtc": null, "restrictionStatus": "Unknown; original acquisition and terms not documented in preserved records" },
+        { "sourceLabelInFile": "TLEs", "elements": 671, "originatingProvider": "Space-Track.org", "providerEvidence": "User reports direct confirmation from Willa Madsen, original data supplier, on 2026-11-15", "individualArchiveMatch": false, "immediateRetrievalSource": "Historical project copy of Space-Track elements", "retrievedUtc": null, "restrictionStatus": "Basic SSA redistribution permitted with appropriate citation; original retrieval log unavailable" },
         { "sourceLabelInFile": "CelesTrak GEO via Internet Archive", "elements": 1, "originatingProvider": null, "immediateRetrievalSource": "CelesTrak GEO snapshot preserved by Internet Archive", "retrievedUtc": null, "archiveCaptureUtc": "2018-01-13T22:14:24Z", "sourceUrl": "https://web.archive.org/web/20180113221424id_/http://celestrak.com/NORAD/elements/geo.txt", "restrictionStatus": "Historical snapshot; upstream catalog origin not independently verified" }
       ]
     }

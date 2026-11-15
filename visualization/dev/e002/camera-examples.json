@@ -2,6 +2,18 @@
   "schema": "espl-e002-camera-views-v1",
   "views": [
     {
+      "name": "This one please",
+      "momentId": "dec8",
+      "timestamp": "2019-12-08T10:05:00Z",
+      "reference": "B",
+      "position": [-0.534417265356863, 1.2624438316874949, 0.6524807901537135],
+      "target": [-0.544675474646269, 0.7493181684354522, 0.6409615304120939],
+      "zoom": 1,
+      "fieldOfViewDeg": 35,
+      "units": "Earth radii",
+      "coordinateFrame": "ECI [x,z,-y]"
+    },
+    {
       "name": "Candidate view",
       "momentId": "dec7",
       "timestamp": "2019-12-07T09:45:00Z",

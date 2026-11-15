@@ -25,7 +25,7 @@ const windows = [
 const formatUtc = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const formatShort = ms => new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const toScene = point => new THREE.Vector3(point.x / EARTH_KM, point.z / EARTH_KM, -point.y / EARTH_KM);
-const data = { libraries: {}, window: windows[0], selected: {}, available: {}, positions: {}, velocities: {}, traces: [], playing: false, current: Date.parse(windows[0].start), auto: true, nearer: "A", ready: false, lastCoverageMs: 0 };
+const data = { libraries: {}, window: windows[0], selected: {}, available: {}, positions: {}, velocities: {}, traces: [], playing: false, current: Date.parse(windows[0].start), auto: true, nearer: "A", ready: false, lastCoverageMs: 0, frameMode: mini ? "relative" : "inertial", relativeSeed: null, relativePrimary: "A", preferredView: null, lastTrailWall: 0, markerScale: 0 };
 
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0xfffcf6);
 const camera = new THREE.PerspectiveCamera(35, 1, .01, 100);
@@ -39,11 +39,6 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0xdcd8cf, 1.6));
 const earth = new THREE.Group(); scene.add(earth);
 earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 96, 72), new THREE.MeshBasicMaterial({ color: 0xe9e6e0 })));
 const borders = new THREE.Group(); earth.add(borders);
-const equator = Array.from({ length: 181 }, (_, i) => {
-  const angle = i / 180 * Math.PI * 2;
-  return new THREE.Vector3(Math.cos(angle) * 1.003, 0, Math.sin(angle) * 1.003);
-});
-earth.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(equator), new THREE.LineBasicMaterial({ color: 0xb5a77c, transparent: true, opacity: .5 })));
 fetch("../../Viz/vendor/countries-110m.json").then(response => response.json()).then(topology => {
   const coords = [], radius = 1.0015;
   for (const country of feature(topology, topology.objects.countries).features) {
@@ -84,8 +79,48 @@ function stateAt(tle, ms) {
   const result = sgp4.propagate(satrec, new Date(ms));
   return result.position && result.velocity ? { position: toScene(result.position), velocity: toScene(result.velocity) } : null;
 }
+// RTN frame around the midpoint of B and the selected Russian spacecraft.
+// Its radial/along-track/normal axes follow actual SGP4 positions and velocities.
+function orbitFrameAt(ms) {
+  const first = stateAt(data.selected.B, ms) || stateAt(data.selected.A, ms);
+  const second = stateAt(data.selected[data.relativePrimary], ms);
+  if (!first || !second) return null;
+  const origin = first.position.clone().add(second.position).multiplyScalar(.5);
+  const velocity = first.velocity.clone().add(second.velocity).multiplyScalar(.5);
+  const radial = origin.clone().normalize();
+  const normal = origin.clone().cross(velocity).normalize();
+  if (normal.lengthSq() < .5) return null;
+  const along = normal.clone().cross(radial).normalize();
+  return { origin, radial, along, normal };
+}
+function toLocal(point, frame) {
+  const offset = point.clone().sub(frame.origin);
+  return new THREE.Vector3(offset.dot(frame.radial), offset.dot(frame.along), offset.dot(frame.normal));
+}
+function fromLocal(point, frame) {
+  return frame.origin.clone().addScaledVector(frame.radial, point.x).addScaledVector(frame.along, point.y).addScaledVector(frame.normal, point.z);
+}
+function directionToLocal(point, frame) {
+  return new THREE.Vector3(point.dot(frame.radial), point.dot(frame.along), point.dot(frame.normal));
+}
+function directionFromLocal(point, frame) {
+  return frame.radial.clone().multiplyScalar(point.x).addScaledVector(frame.along, point.y).addScaledVector(frame.normal, point.z);
+}
+function seedRelativeCamera(frame) {
+  if (!frame) return;
+  data.relativeSeed = { eye: toLocal(camera.position, frame), target: toLocal(controls.target, frame), up: directionToLocal(camera.up, frame) };
+  $("scene").dataset.relativeReference = `${data.selected.B ? "B" : "A"}-${data.relativePrimary}`;
+}
+function frameRelativeCamera(frame) {
+  if (!frame || !data.relativeSeed) return;
+  camera.position.copy(fromLocal(data.relativeSeed.eye, frame));
+  controls.target.copy(fromLocal(data.relativeSeed.target, frame));
+  camera.up.copy(directionFromLocal(data.relativeSeed.up, frame).normalize());
+  camera.lookAt(controls.target);
+  $("scene").dataset.cameraRadius = camera.position.length().toFixed(3);
+}
 function clearTraces() {
-  for (const trace of data.traces) { scene.remove(trace.mesh); trace.mesh.geometry.dispose(); trace.mesh.material.dispose(); }
+  for (const trace of data.traces) { scene.remove(trace.mesh); if (trace.dots) { scene.remove(trace.dots); trace.dots.material.dispose(); } trace.mesh.geometry.dispose(); trace.mesh.material.dispose(); }
   data.traces = [];
 }
 function buildTraces() {
@@ -94,26 +129,34 @@ function buildTraces() {
     const tle = data.selected[item.slot]; if (!tle) continue;
     const mesh = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: .8, depthWrite: false }));
     mesh.renderOrder = 2; scene.add(mesh);
-    data.traces.push({ mesh, tle, color: new THREE.Color(item.color) });
+    const dots = mini ? new THREE.Points(mesh.geometry, new THREE.PointsMaterial({ vertexColors: true, size: 2.4, sizeAttenuation: false, transparent: true, opacity: .9, depthTest: false, depthWrite: false })) : null;
+    if (dots) { dots.renderOrder = 3; scene.add(dots); }
+    data.traces.push({ mesh, dots, tle, color: new THREE.Color(item.color) });
   }
 }
 function updateTraces(ms) {
   const background = new THREE.Color(0xfffcf6);
+  const currentFrame = data.frameMode === "relative" ? orbitFrameAt(ms) : null;
   for (const trace of data.traces) {
     const points = [], colors = [];
     for (let sample = 15; sample >= 0; sample--) {
-      const state = stateAt(trace.tle, ms - sample * 3 * 60000);
+      const sampleMs = ms - sample * TRAIL_MS / 15;
+      const state = stateAt(trace.tle, sampleMs);
       if (!state) continue;
-      points.push(state.position);
+      const sampleFrame = currentFrame && orbitFrameAt(sampleMs);
+      if (currentFrame && !sampleFrame) continue;
+      points.push(sampleFrame ? fromLocal(toLocal(state.position, sampleFrame), currentFrame) : state.position);
       const fade = 1 - sample / 16;
-      const color = background.clone().lerp(trace.color, fade * fade);
+      const color = background.clone().lerp(trace.color, mini ? .18 + .82 * fade : fade * fade);
       colors.push(color.r, color.g, color.b);
     }
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     trace.mesh.geometry.dispose(); trace.mesh.geometry = geometry;
     trace.mesh.visible = points.length > 1;
+    if (trace.dots) { trace.dots.geometry = geometry; trace.dots.visible = points.length > 1; }
   }
+  $("scene").dataset.trailFrame = currentFrame ? "historical RTN transformed to current RTN" : "inertial";
 }
 function setPlaybackButton() {
   if (!$('play')) return;
@@ -123,6 +166,7 @@ function setPlaybackButton() {
 function selectWindow(windowId, initial = false) {
   data.window = windows.find(item => item.id === windowId) || windows[0];
   data.current = Date.parse(data.window.start); data.playing = true; data.auto = true; data.nearer = "A";
+  if (!mini) { data.frameMode = "inertial"; data.relativeSeed = null; updateFrameButton(); }
   const mid = (Date.parse(data.window.start) + Date.parse(data.window.end)) / 2;
   data.selected = {};
   for (const item of craft) {
@@ -130,6 +174,18 @@ function selectWindow(windowId, initial = false) {
     // One fixed element per craft for the whole short window: playback cannot
     // jump when a nearest-TLE boundary is crossed.
     data.selected[item.slot] = selection.tle && Math.abs(Date.parse(data.window.start) - Date.parse(selection.tle.epoch)) <= MAX_AGE && Math.abs(Date.parse(data.window.end) - Date.parse(selection.tle.epoch)) <= MAX_AGE ? selection.tle : null;
+  }
+  const firstB = stateAt(data.selected.B, data.current)?.position;
+  const firstA = stateAt(data.selected.A, data.current)?.position;
+  const firstC = stateAt(data.selected.C, data.current)?.position;
+  data.relativePrimary = !firstB ? "C" : firstC && (!firstA || firstC.distanceTo(firstB) < firstA.distanceTo(firstB)) ? "C" : "A";
+  if (mini && data.preferredView) {
+    camera.position.fromArray(data.preferredView.position);
+    controls.target.fromArray(data.preferredView.target);
+    camera.up.set(0, 1, 0);
+    camera.fov = data.preferredView.fieldOfViewDeg; camera.zoom = data.preferredView.zoom; camera.updateProjectionMatrix();
+    seedRelativeCamera(orbitFrameAt(data.current));
+    $("scene").dataset.preferredView = data.preferredView.name;
   }
   buildTraces(); renderFrame(initial); setPlaybackButton();
   if ($('moment')) { $('moment').value = data.window.id; $('momentNote').textContent = data.window.note; $('startLabel').textContent = formatShort(Date.parse(data.window.start)); $('endLabel').textContent = formatShort(Date.parse(data.window.end)); $('timeline').min = String(Date.parse(data.window.start)); $('timeline').max = String(Date.parse(data.window.end)); }
@@ -198,12 +254,16 @@ function renderFrame(immediate = false, seconds = .016) {
     labels[item.slot].hidden = !state;
     if (state) { data.positions[item.slot] = state.position; data.velocities[item.slot] = state.velocity; markers[item.slot].position.copy(state.position); }
   }
-  if (data.auto) frameCamera(immediate, seconds);
-  updateTraces(ms);
-  $('timestamp').textContent = formatUtc(ms);
+  if (data.auto) {
+    if (data.frameMode === "relative") frameRelativeCamera(orbitFrameAt(ms));
+    else frameCamera(immediate, seconds);
+  }
+  $("scene").dataset.frameMode = data.frameMode;
+  if (immediate || performance.now() - data.lastTrailWall > 130) { updateTraces(ms); data.lastTrailWall = performance.now(); }
+  if ($('timestamp')) $('timestamp').textContent = formatUtc(ms);
   if ($('timeline')) { $('timeline').value = String(ms); $('timeline').style.setProperty('--progress', `${(ms - Date.parse(data.window.start)) / (Date.parse(data.window.end) - Date.parse(data.window.start)) * 100}%`); }
   const unavailable = craft.filter(item => !data.available[item.slot]).map(item => item.name);
-  $('sceneStatus').textContent = unavailable.length ? `${unavailable.join(' and ')} unavailable in this window; no position or trail is shown.` : 'Three dated elements support this short viewing window. Geometry is reconstructed.';
+  if ($('sceneStatus')) $('sceneStatus').textContent = unavailable.length ? `${unavailable.join(' and ')} unavailable in this window; no position or trail is shown.` : 'Three dated elements support this short viewing window. Geometry is reconstructed.';
   if ($('coverageRows') && (immediate || Math.abs(ms - data.lastCoverageMs) >= 30000)) {
     data.lastCoverageMs = ms;
     $('coverageRows').replaceChildren(...craft.map(item => {
@@ -229,6 +289,7 @@ function resize() {
   const width = Math.max(1, $('scene').clientWidth), height = Math.max(1, $('scene').clientHeight);
   camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false);
   const markerScale = DOT_SCREEN_SIZE * 2.85 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 275 / height * MARKER.diameterPx / 12;
+  data.markerScale = markerScale;
   for (const marker of Object.values(markers)) marker.scale.set(markerScale, markerScale, 1);
 }
 new ResizeObserver(resize).observe($('scene'));
@@ -238,7 +299,16 @@ function animate(now) {
   const seconds = Math.min(.1, (now - last) / 1000); last = now;
   if (data.playing) {
     data.current = Math.min(Date.parse(data.window.end), data.current + seconds * RATE);
-    if (data.current >= Date.parse(data.window.end)) { data.playing = false; setPlaybackButton(); }
+    if (data.current >= Date.parse(data.window.end)) {
+      data.playing = false;
+      if (mini) {
+        document.querySelector('.viewer').classList.add('loop-reset');
+        setTimeout(() => {
+          data.current = Date.parse(data.window.start); renderFrame(true);
+          requestAnimationFrame(() => { document.querySelector('.viewer').classList.remove('loop-reset'); data.playing = true; });
+        }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 360);
+      } else setPlaybackButton();
+    }
   }
   renderFrame(false, seconds);
   if (!data.auto) controls.update();
@@ -254,7 +324,11 @@ function animate(now) {
     markers[item.slot].visible = !occluded;
   }
   const overlap = screen.A && screen.C && Math.hypot(screen.A.x - screen.C.x, screen.A.y - screen.C.y) < 22;
+  // Concentric marks communicate projected overlap without moving either orbit.
+  markers.C.scale.set(data.markerScale * (overlap ? 1.42 : 1), data.markerScale * (overlap ? 1.42 : 1), 1);
+  markers.C.renderOrder = overlap ? 9 : 10;
   labels.A.textContent = mini ? (overlap ? 'A+C' : 'A') : overlap ? 'A + C · projected overlap' : 'A · Kosmos 2542';
+  labels.A.style.borderRight = overlap ? `2px solid ${MARKER.C}` : '';
   labels.B.textContent = mini ? 'B' : 'B · USA 245';
   labels.C.textContent = mini ? 'C' : 'C · Kosmos 2543';
   labels.C.style.display = overlap ? 'none' : '';
@@ -262,6 +336,13 @@ function animate(now) {
   labels.A.style.transform = abCollide && !mini ? 'translate(10px,calc(-100% - 7px))' : 'translate(10px,-50%)';
   labels.B.style.transform = abCollide && !mini ? 'translate(10px,6px)' : 'translate(10px,-50%)';
   renderer.render(scene, camera);
+}
+
+function updateFrameButton() {
+  const button = $('frameMode'); if (!button) return;
+  button.textContent = data.frameMode === 'relative' ? 'Inertial camera' : 'Relative camera';
+  button.setAttribute('aria-pressed', String(data.frameMode === 'relative'));
+  button.title = data.frameMode === 'relative' ? 'Switch to an Earth-centered inertial view' : 'Follow the B–Russian pair in a co-moving orbital frame';
 }
 
 if ($('moment')) {
@@ -272,12 +353,19 @@ if ($('moment')) {
     data.playing = !data.playing; setPlaybackButton();
   });
   $('timeline').addEventListener('input', event => { data.current = Number(event.target.value); data.playing = false; setPlaybackButton(); renderFrame(); });
-  $('autoFrame').addEventListener('click', () => { data.auto = true; frameCamera(false, .3); });
+  $('autoFrame').addEventListener('click', () => { data.frameMode = 'inertial'; data.relativeSeed = null; data.auto = true; updateFrameButton(); frameCamera(false, .3); });
+  $('frameMode').addEventListener('click', () => {
+    if (data.frameMode === 'relative') { data.frameMode = 'inertial'; data.relativeSeed = null; }
+    else { data.relativePrimary = data.positions.B ? data.nearer : 'C'; seedRelativeCamera(orbitFrameAt(data.current)); data.frameMode = data.relativeSeed ? 'relative' : 'inertial'; }
+    data.auto = true; updateFrameButton(); renderFrame(true);
+  });
 }
 
 async function load() {
   if (!sgp4?.twoline2satrec) throw new Error('Orbital propagation library unavailable');
-  const manifest = await fetch('data/provenance.json').then(response => response.json());
+  const [manifest, examples] = await Promise.all([fetch('data/provenance.json').then(response => response.json()), fetch('camera-examples.json').then(response => response.json())]);
+  data.preferredView = examples.views.find(view => view.name === 'This one please' && view.momentId === 'dec8');
+  if (mini && !data.preferredView) throw new Error('Preferred December 8 camera view is unavailable');
   await Promise.all(craft.map(async item => {
     const record = manifest.datasets.find(dataset => dataset.object.norad === item.norad);
     if (!record) throw new Error(`Missing provenance for ${item.name}`);
@@ -288,9 +376,10 @@ async function load() {
     if (digest !== record.sha256) throw new Error(`Dated elements for ${item.name} changed; provenance review required`);
     data.libraries[item.slot] = JSON.parse(new TextDecoder().decode(bytes));
   }));
-  resize(); selectWindow('dec31', true);
+  resize(); selectWindow(mini ? 'dec8' : 'dec31', true);
+  if (mini) data.window = { ...data.window, end: '2019-12-08T10:50:00Z' };
   if ($('timeline')) { $('timeline').min = String(Date.parse(data.window.start)); $('timeline').max = String(Date.parse(data.window.end)); }
   // Main view starts moving immediately; Play/Pause remains visible throughout.
   data.playing = true; setPlaybackButton(); data.ready = true; requestAnimationFrame(animate);
 }
-load().catch(error => { $('sceneStatus').textContent = error.message; });
+load().catch(error => { if ($('sceneStatus')) $('sceneStatus').textContent = error.message; else console.error(error); });

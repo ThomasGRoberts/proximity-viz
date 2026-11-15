@@ -104,7 +104,8 @@ function objectInfo(row, role, data) {
   return { role, raw, record, satcat, gp: record?.gp || null,
     cospar: satcat?.OBJECT_ID || compact.cospar || raw, norad: satcat?.NORAD_CAT_ID || compact.norad || "",
     name: satcat?.OBJECT_NAME || compact.name || raw, owner: satcat?.OWNER || "",
-    ownerName: record?.ownerName || "", launchSite: data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE] || data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "" };
+    ownerName: record?.ownerName || "", launchSite: data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE] || data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "",
+    launchSiteFromCsis: !!data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE], csisSourceUrl: data.celestrak?.csisSourceUrl || "" };
 }
 function titleMarkup(row) { return field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
 function title(row) { return episodeNameText(titleMarkup(row)); }
@@ -175,9 +176,11 @@ function buildObjectPopover(info) {
   addMetadata(dl, "Launch date", fullDate(s.LAUNCH_DATE));
   if (info.launchSite) addMetadata(dl, "Launch site", `${info.launchSite.replace(/\s*\(/g, " (")}${(launchFlagEmoji[s.LAUNCH_SITE] || []).map(flag => ` ${flag}`).join("")}`);
   popover.append(dl);
-  const provenance = el("div", "object-provenance");
-  if (info.record?.recordUrl) provenance.append(externalLink("CelesTrak SATCAT record", info.record.recordUrl));
-  popover.append(provenance);
+  const sourceRow = el("div", "object-source-row"), sourceValue = el("dd");
+  sourceRow.append(el("dt", "", "Data Source"));
+  sourceValue.append(externalLink("CelesTrak SATCAT", info.record?.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(s.NORAD_CAT_ID)}`));
+  if (info.launchSiteFromCsis && info.csisSourceUrl) sourceValue.append(document.createTextNode(" · "), externalLink("CSIS launch-site names", info.csisSourceUrl));
+  sourceRow.append(sourceValue); dl.append(sourceRow);
 }
 function positionObject() {
   if (!activeObject || popover.hidden) return;
@@ -397,7 +400,8 @@ function sourceCard(group, data) {
     card.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); window.open(url, "_blank", "noopener,noreferrer"); } });
   }
   const [category, kind] = recordCategory(d), eyebrow = el("div", "source-eyebrow"); eyebrow.append(categoryIcon(kind), el("span", "", category)); card.append(eyebrow);
-  const media = el("div", `source-media${meta.kind === "document" ? " document-media" : ""}`);
+  const document = meta.kind === "document" || /\.pdf(?:$|[?#])/i.test(ref);
+  const media = el("div", `source-media${document ? " document-media" : ""}`);
   const imageUrl = meta.imagePath || meta.previewPath || safeUrl(meta.imageUrl) || "";
   if (imageUrl) {
     const img = el("img"); img.src = imageUrl; img.alt = meta.imageAlt || (meta.kind === "document" ? "First page of source document" : "Publisher's featured image for this source"); img.loading = "lazy";
@@ -406,7 +410,6 @@ function sourceCard(group, data) {
   } else media.append(sourceFallback(meta.kind === "document"));
   card.append(media);
   const content = el("div", "source-content");
-  const document = meta.kind === "document" || /\.pdf(?:$|[?#])/i.test(ref);
   const needsTranslation = !meta.titleEnglish && meta.title && (/[\u0400-\u052f\u0600-\u06ff\u4e00-\u9fff]/u.test(meta.title) || (meta.language && !/^en(?:-|_|$)/i.test(meta.language)));
   const headline = meta.titleEnglish || (needsTranslation ? `Untranslated title: ${meta.title}` : meta.title) || (document ? (/statement/i.test(field(d, "Voice type", "Description type")) ? "Official statement" : "Source document") : "Source page");
   const heading = el("h4", "source-headline", headline);
@@ -470,7 +473,9 @@ function loadingDetail(row, data) {
   return wrap;
 }
 function animateIn(node) { if (!reducedMotion.matches) node.animate([{ opacity: 0, transform: "translateY(-5px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 190, easing: "ease-out" }); }
+let scrollFrame = 0;
 function toggleRow(row) {
+  cancelAnimationFrame(scrollFrame);
   closeObject(); state.selected = state.selected === row ? null : row; render();
   const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
   if (state.selected) requestAnimationFrame(() => {
@@ -478,7 +483,17 @@ function toggleRow(row) {
     if (!selected) return;
     const stickyHeader = document.querySelector(".table-wrap thead th");
     const headerOffset = stickyHeader?.getBoundingClientRect().height || 0;
-    window.scrollTo({ top: Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - 14), behavior: reducedMotion.matches ? "instant" : "smooth" });
+    const destination = Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - 14);
+    if (reducedMotion.matches) { window.scrollTo(0, destination); return; }
+    const origin = scrollY, distance = destination - origin, started = performance.now();
+    const duration = Math.min(950, Math.max(620, Math.abs(distance) * .48));
+    const step = now => {
+      const fraction = Math.min(1, (now - started) / duration);
+      const eased = fraction < .5 ? 4 * fraction ** 3 : 1 - (-2 * fraction + 2) ** 3 / 2;
+      window.scrollTo(0, origin + distance * eased);
+      if (fraction < 1) scrollFrame = requestAnimationFrame(step);
+    };
+    scrollFrame = requestAnimationFrame(step);
   });
 }
 function periodNode(row) { const node = el("span", "period-label", periodInfo(row).label); node.title = [fullDate(field(row, "Start Date", "Date")), fullDate(field(row, "End Date"))].filter(Boolean).join(" to "); return node; }
@@ -500,9 +515,9 @@ function startPreview(row) {
   if (episodeId === "E-002") {
     const frame = el("iframe", "e002-mini");
     frame.src = new URL("../visualization/dev/e002/mini.html", location.href).href;
-    frame.title = "Animated E-002 reconstruction, December 31, 2019";
+    frame.title = "Animated E-002 relative-motion reconstruction, December 8, 2019";
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
-    host.append(frame); host.dataset.previewIntervalUtc = "2019-12-31T18:00:00Z / 2019-12-31T19:30:00Z";
+    host.append(frame); host.dataset.previewIntervalUtc = "2019-12-08T10:05:00Z / 2019-12-08T10:50:00Z";
     return;
   }
   const token = ++previewToken;

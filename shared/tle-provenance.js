@@ -8,12 +8,16 @@ export function spaceTrackHistoryUrl(norad, epoch) {
 export function tleProvenance(tle) {
   const source = String(tle?.source || "").trim();
   if (source === "CelesTrak GEO via Internet Archive") return {
-    label: "Archived CelesTrak GEO", dataSource: "Source unverified", origin: "Upstream catalog origin unverified",
+    label: "Archived CelesTrak GEO", dataSource: "CelesTrak GEO archive", origin: "CelesTrak retrieval independently documented; upstream catalog producer unverified",
     retrieval: "CelesTrak GEO file via Internet Archive", href: tle.sourceUrl || ""
   };
   if (source === "space-track") return {
     label: "Space-Track historical", dataSource: "Space-Track", origin: "USSPACECOM basic SSA catalog",
     retrieval: "Space-Track historical file in the project subset", href: "https://www.space-track.org/documentation"
+  };
+  if (source === "TLEs") return {
+    label: "Space-Track historical · supplier confirmed", dataSource: "Space-Track.org", origin: "Willa Madsen confirmed Space-Track as the historical source; individual archive entries have not been matched",
+    retrieval: "Historical project copy; original download log unavailable", href: "https://www.space-track.org/documentation#/odr"
   };
   if (source === "seesat") return {
     label: "Amateur reconstruction", dataSource: "Amateur observers", origin: "Independent satellite observers; individual fit attribution unavailable",
