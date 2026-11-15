@@ -28,14 +28,14 @@ export function decorateModelLink(link) {
     );
     globe.rotation.set(0.45, 0.65, 0); scene.add(globe);
     const orbitRoot = new THREE.Group();
-    orbitRoot.rotation.set(THREE.MathUtils.degToRad(29), THREE.MathUtils.degToRad(-15), THREE.MathUtils.degToRad(-14));
+    orbitRoot.rotation.set(THREE.MathUtils.degToRad(29), THREE.MathUtils.degToRad(15), THREE.MathUtils.degToRad(14));
     scene.add(orbitRoot);
     const segmentCount = 360, points = [], xAxis = new THREE.Vector3(1, 0, 0), yAxis = new THREE.Vector3(0, 1, 0);
     for (let index = 0; index <= segmentCount; index += 1) {
       const angle = index / segmentCount * Math.PI * 2;
-      const point = new THREE.Vector3(Math.cos(angle) * 1.28, Math.sin(angle) * 1.28, 0);
+      const point = new THREE.Vector3(Math.cos(angle) * 1.12, Math.sin(angle) * 1.12, 0);
       point.applyAxisAngle(xAxis, THREE.MathUtils.degToRad(64));
-      point.applyAxisAngle(yAxis, THREE.MathUtils.degToRad(-22));
+      point.applyAxisAngle(yAxis, THREE.MathUtils.degToRad(22));
       points.push(point);
     }
     const geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), segmentCount, 0.024, 6, false);
@@ -64,7 +64,7 @@ export function decorateModelLink(link) {
         globe.rotation.y = restingRotation + (closing ? 0 : 1.05);
         progress = closing ? 0 : 1; setOrbit(progress); render(); return;
       }
-      animation = { start: performance.now(), duration: closing ? 800 : 1000,
+      animation = { start: performance.now(), duration: closing ? 700 : 950,
         fromRotation: globe.rotation.y, toRotation: restingRotation + (closing ? 0 : 1.05),
         fromOrbit: progress, toOrbit: closing ? 0 : 1 };
       frame = requestAnimationFrame(animate);

@@ -9,7 +9,7 @@ import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fad
 const ROOT = "../visualization/Viz/";
 const EARTH_KM = 6378.137;
 const DAY = 86400000;
-const PREVIEW_RATE = 3 * 3600000; // simulated milliseconds per real second
+const PREVIEW_RATE = 30 * 60000; // thirty simulated minutes per real second
 const GEO_KM = 42164;
 const earthAxis = new THREE.Vector3(0, 1, 0);
 const eci = vector => new THREE.Vector3(vector[0] / EARTH_KM, vector[2] / EARTH_KM, -vector[1] / EARTH_KM);
@@ -52,7 +52,7 @@ function disposeScene(scene, renderer) {
   renderer.dispose(); renderer.forceContextLoss();
 }
 
-export async function mountE001Preview(host, interval) {
+export async function mountE001Preview(host, interval, closestApproachMs) {
   const [sgp4, config, cameraReference, topology, historyA, historyB] = await Promise.all([
     satelliteLibrary(), json("../visualization/local/episodes/E-001.json"),
     json("../visualization/local/camera-references/E-001-2017-10-30.json"),
@@ -62,20 +62,22 @@ export async function mountE001Preview(host, interval) {
   if (!host.isConnected) return null;
   const libs = [historyA, historyB].map(history => ({ tles: history.tles, epochs: history.tles.map(tle => Date.parse(tle.epoch)), recs: [] }));
   const maxAgeMs = config.maximumTleAgeDays * DAY;
-  let current = Math.max(interval.startMs, Math.min(interval.endMs, Date.parse(config.initialTime)));
+  // The table's synchronized SGP4 minimum selects a genuine close approach.
+  const center = Math.max(interval.startMs, Math.min(interval.endMs, closestApproachMs ?? Date.parse(config.initialTime)));
+  let current = center;
   if (!libs.every(lib => stateAt(lib, current, sgp4, maxAgeMs))) throw new Error("No supported TLE pair at the preview start within the current episode");
   // Stay within the two initial, age-checked TLEs. Reversing at the ends keeps
   // the small scene continuous without switching between independently fitted TLEs.
   const fixedIndices = libs.map(lib => nearest(lib, current));
-  const playStart = Math.max(interval.startMs, current - 12 * 3600000), playEnd = Math.min(interval.endMs, current + 36 * 3600000);
+  const playStart = Math.max(interval.startMs, center - 3 * 3600000), playEnd = Math.min(interval.endMs, center + 3 * 3600000);
   if (playEnd <= playStart) throw new Error("Current episode interval is too short for the preview");
   let playbackDirection = 1;
   const referenceAt = ms => latLon(0, config.geoReferenceLongitudeDeg, GEO_KM / EARTH_KM).applyAxisAngle(earthAxis, sgp4.gstime(new Date(ms)));
   const compositionLift = new THREE.Vector3(0, .008, 0);
   const sourceTarget = new THREE.Vector3(...cameraReference.target);
-  const closerPosition = sourceTarget.clone().addScaledVector(new THREE.Vector3(...cameraReference.position).sub(sourceTarget), .52);
+  const closerPosition = sourceTarget.clone().addScaledVector(new THREE.Vector3(...cameraReference.position).sub(sourceTarget), .24);
   const previewCameraReference = { ...cameraReference, position: closerPosition.toArray() };
-  const scene = new THREE.Scene(); scene.background = new THREE.Color(0xffffff);
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0xfffcf6);
   const camera = new THREE.PerspectiveCamera(cameraReference.fieldOfViewDeg, 1, cameraReference.near, cameraReference.far);
   camera.zoom = cameraReference.zoom;
   camera.up.fromArray(cameraReference.up);
@@ -86,10 +88,11 @@ export async function mountE001Preview(host, interval) {
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.domElement.className = "preview-scene"; renderer.domElement.setAttribute("aria-hidden", "true");
   host.dataset.previewFrame = "earth-fixed-relative";
+  host.dataset.previewCenterUtc = new Date(center).toISOString();
   host.dataset.cameraReference = cameraReference.schema;
   host.append(renderer.domElement); host.querySelector(".visualization-still")?.setAttribute("hidden", "");
   scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2));
-  const earth = new THREE.Group(); earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: 0xf7f7f7 }))); scene.add(earth);
+  const earth = new THREE.Group(); earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: 0xada9a1 }))); scene.add(earth);
   const borders = new THREE.Group(); earth.add(borders);
   const seenBorders = new Set(), borderPoints = [], borderRadius = 1.0017;
   const borderKey = point => `${point[0].toFixed(5)},${point[1].toFixed(5)}`;
@@ -115,23 +118,33 @@ export async function mountE001Preview(host, interval) {
     }
   }
   const borderGeometry = new THREE.BufferGeometry(); borderGeometry.setAttribute("position", new THREE.Float32BufferAttribute(borderPoints, 3));
-  borders.add(new THREE.LineSegments(borderGeometry, new THREE.LineBasicMaterial({ color: 0x626262, transparent: true, opacity: .85, depthTest: true, depthWrite: false })));
-  const belt = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 360 }, (_, index) => latLon(0, index - 180, GEO_KM / EARTH_KM))), new THREE.LineBasicMaterial({ color: 0xb8aa84, transparent: true, opacity: .62, depthWrite: false }));
+  borders.add(new THREE.LineSegments(borderGeometry, new THREE.LineBasicMaterial({ color: 0x6c6963, transparent: true, opacity: .27, depthTest: true, depthWrite: false })));
+  const belt = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 360 }, (_, index) => latLon(0, index - 180, GEO_KM / EARTH_KM))), new THREE.LineBasicMaterial({ color: 0xbba767, transparent: true, opacity: .44, depthWrite: false }));
   earth.add(belt);
   const dots = [], orbits = [];
-  const beltLabel = document.createElement("span"); beltLabel.className = "preview-geo-label"; beltLabel.textContent = "Geostationary orbit"; host.append(beltLabel);
+  const trailRoot = new THREE.Group(); scene.add(trailRoot);
+  const centerAngle = sgp4.gstime(new Date(center));
   for (const [index, slot] of ["A", "B"].entries()) {
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(SATELLITE_STYLES[slot].dot), sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false }));
-    const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); sprite.scale.set(DOT_SCREEN_SIZE * 1.35 * lens, DOT_SCREEN_SIZE * 1.35 * lens, 1);
+    const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); sprite.scale.set(DOT_SCREEN_SIZE * 1.75 * lens, DOT_SCREEN_SIZE * 1.75 * lens, 1);
     sprite.renderOrder = index ? 8 : 9; scene.add(sprite); dots.push(sprite);
-    const orbit = new THREE.Mesh(new THREE.BufferGeometry(), fadingTrailMaterial(slot));
+    // Build an actual 27-hour Earth-fixed track once. Rebuilding its GPU buffers
+    // during playback caused brief blank frames on small WebGL canvases.
+    const points = [], trailStart = Math.max(interval.startMs, center - DAY);
+    const trailEnd = Math.min(interval.endMs, center + 3 * 3600000);
+    for (let step = 0; step <= 180; step++) {
+      const trailTime = trailStart + step / 180 * (trailEnd - trailStart);
+      const orbitalState = stateAt(libs[index], trailTime, sgp4, maxAgeMs, fixedIndices[index]);
+      if (orbitalState) points.push(eci(orbitalState.r).applyAxisAngle(earthAxis, centerAngle - sgp4.gstime(new Date(trailTime))));
+    }
+    const orbit = new THREE.Mesh(fadingTrailGeometry(points), fadingTrailMaterial(slot));
     orbit.material.depthTest = false;
     orbit.renderOrder = 5;
-    scene.add(orbit); orbits.push(orbit);
+    trailRoot.add(orbit); orbits.push(orbit);
   }
-  let disposed = false, frame = 0, last = performance.now(), lastRender = 0, lastTrail = 0;
+  let disposed = false, frame = 0, last = performance.now(), lastRender = 0;
   function resize() { if (disposed) return; const width = Math.max(1, host.clientWidth), height = Math.max(1, host.clientHeight); camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); draw(true); }
-  function draw(snapCamera = false, updateTrails = true) {
+  function draw(snapCamera = false) {
     if (disposed) return;
     const currentStates = libs.map((lib, index) => stateAt(lib, current, sgp4, maxAgeMs, fixedIndices[index]));
     const target = referenceAt(current);
@@ -143,48 +156,24 @@ export async function mountE001Preview(host, interval) {
     }
     lastReference = target.clone();
     const positions = currentStates.filter(Boolean).map(state => eci(state.r));
-    if (positions.length) {
+    if (positions.length && snapCamera) {
       const offset = camera.position.clone().sub(target), distance = offset.length();
       const goal = relativeFitDistance(THREE, { positions, target, offset, up: camera.up, fov: camera.fov,
         aspect: camera.aspect, reference: previewCameraReference, minDistance: .006, maxDistance: 50 });
-      const next = snapCamera || goal > distance ? goal
-        : Math.abs(goal - distance) / Math.max(distance, .001) < .06 ? distance : distance + (goal - distance) * .02;
-      camera.position.copy(target).add(offset.setLength(next));
+      camera.position.copy(target).add(offset.setLength(goal));
     }
     camera.lookAt(target.clone().add(compositionLift));
     const earthAngle = sgp4.gstime(new Date(current));
     for (let index = 0; index < 2; index++) {
-      const lib = libs[index], tleIndex = fixedIndices[index], state = currentStates[index];
+      const state = currentStates[index];
       dots[index].visible = !!state;
       if (!state) continue;
       dots[index].position.copy(eci(state.r));
-      if (updateTrails) {
-        const orbitMs = 2 * DAY, points = [];
-        for (let step = 0; step <= 180; step++) {
-          const trailTime = current - orbitMs * (1 - step / 180);
-          const orbitalState = stateAt(lib, trailTime, sgp4, maxAgeMs, tleIndex);
-          if (orbitalState) points.push(eci(orbitalState.r).applyAxisAngle(earthAxis, earthAngle - sgp4.gstime(new Date(trailTime))));
-        }
-        orbits[index].geometry.dispose(); orbits[index].geometry = fadingTrailGeometry(points);
-      }
       orbits[index].material.uniforms.uResolution.value.set(host.clientWidth, host.clientHeight);
     }
     earth.rotation.y = earthAngle;
+    trailRoot.rotation.y = earthAngle - centerAngle;
     renderer.render(scene, camera);
-    camera.updateMatrixWorld(true);
-    earth.updateMatrixWorld(true);
-    const projectBelt = longitude => {
-      const point = earth.localToWorld(latLon(0, longitude, GEO_KM / EARTH_KM + .01)).project(camera);
-      return { x: (point.x + 1) * host.clientWidth / 2, y: (1 - point.y) * host.clientHeight / 2, z: point.z };
-    };
-    const beltAtReference = projectBelt(config.geoReferenceLongitudeDeg);
-    const before = projectBelt(config.geoReferenceLongitudeDeg - .3), after = projectBelt(config.geoReferenceLongitudeDeg + .3);
-    const dx = after.x - before.x, labelX = Math.min(95, host.clientWidth * .17);
-    const labelY = beltAtReference.y + (after.y - before.y) / dx * (labelX - beltAtReference.x);
-    beltLabel.hidden = beltAtReference.z < -1 || beltAtReference.z > 1 || Math.abs(dx) < 5 || labelY < 22 || labelY > host.clientHeight - 22;
-    if (!beltLabel.hidden) {
-      beltLabel.style.left = `${labelX}px`; beltLabel.style.top = `${labelY}px`;
-    }
   }
   const observer = new ResizeObserver(resize); observer.observe(host); resize();
   function animate(now) {
@@ -193,13 +182,12 @@ export async function mountE001Preview(host, interval) {
       current += Math.min((now - last) / 1000, .08) * PREVIEW_RATE * playbackDirection;
       if (current > playEnd) { current = playEnd - (current - playEnd); playbackDirection = -1; }
       if (current < playStart) { current = playStart + (playStart - current); playbackDirection = 1; }
-      draw(false, now - lastTrail >= 100);
-      if (now - lastTrail >= 100) lastTrail = now;
+      draw(false);
       lastRender = last = now;
     }
     if (document.hidden) last = now;
     frame = requestAnimationFrame(animate);
   }
   frame = requestAnimationFrame(animate);
-  return { dispose() { disposed = true; cancelAnimationFrame(frame); observer.disconnect(); beltLabel.remove(); renderer.domElement.remove(); disposeScene(scene, renderer); } };
+  return { dispose() { disposed = true; cancelAnimationFrame(frame); observer.disconnect(); renderer.domElement.remove(); disposeScene(scene, renderer); } };
 }

@@ -2,6 +2,7 @@ import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
 import { loadCurrentEpisodes, episodeUtcInterval } from "../shared/episode-feed.js";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
+import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
 
 const $ = selector => document.querySelector(selector);
 const el = (tag, className = "", value) => { const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node; };
@@ -10,7 +11,7 @@ const field = (row, ...names) => {
   return names.map(name => cells[name.toLowerCase().replace(/[^a-z0-9]/g, "")]).find(Boolean) || "";
 };
 const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
-const state = { live: null, preview: null, series: null, usePreview: false, selected: null, query: "", orbit: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
+const state = { live: null, preview: null, series: null, seriesPromise: null, usePreview: false, selected: null, query: "", orbit: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -102,7 +103,8 @@ function objectInfo(row, role, data) {
     name: satcat?.OBJECT_NAME || compact.name || raw, owner: satcat?.OWNER || "",
     ownerName: record?.ownerName || "", launchSite: data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE] || data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "" };
 }
-function title(row) { return field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
+function titleMarkup(row) { return field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
+function title(row) { return episodeNameText(titleMarkup(row)); }
 function episodeDescription(row) { return field(row, "Episode Description"); }
 function formattedDescription(value) {
   const fragment = document.createDocumentFragment();
@@ -418,10 +420,10 @@ function sourceCard(group, data) {
   card.append(content); return card;
 }
 function expandedContent(row, data) {
-  const wrap = el("div", "expanded-inner");
+  const wrap = el("div", `expanded-inner${field(row, "ID") === "E-001" ? " has-visual" : ""}`);
   if (state.usePreview) wrap.append(el("p", "caution", data.source === "local-verification-candidates" ? "Verification worklist entry. The possible counterpart is not a confirmed episode participant." : "Local preview includes unpublished records. This is not the public selection."));
   const overview = el("div", "detail-overview");
-  const context = el("section", "context-block"); context.append(el("h3", "", "Description"));
+  const context = el("section", "context-block"); context.setAttribute("aria-label", "Episode description");
   const description = episodeDescription(row);
   if (description) context.append(formattedDescription(description));
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
@@ -433,7 +435,7 @@ function expandedContent(row, data) {
     overview.append(viz);
   } else overview.classList.add("no-visual");
   const evidence = el("section", "evidence-section"), found = linkedDescriptions(row, data), requested = descriptionIds(row), sources = sourceGroups(row, data);
-  evidence.append(el("h3", "", `Records (${found.length})`));
+  evidence.setAttribute("aria-label", `${found.length} source records`);
   if (requested.length > found.length) evidence.append(el("p", "caution", `${requested.length - found.length} referenced description ID(s) could not be resolved.`));
   if (!found.length) evidence.append(el("p", "muted", "No linked sources are available."));
   else {
@@ -487,7 +489,8 @@ function startPreview(row) {
   let interval;
   try { interval = episodeUtcInterval(row); }
   catch (error) { console.warn("E-001 dates invalid", error); return; }
-  import("./e001-preview.js").then(module => module.mountE001Preview(host, interval)).then(scene => {
+  Promise.all([import("./e001-preview.js"), state.seriesPromise?.catch(() => null) || Promise.resolve(state.series)])
+    .then(([module, metrics]) => module.mountE001Preview(host, interval, metrics?.minimumDistance?.ms)).then(scene => {
     if (token !== previewToken || !host.isConnected) scene?.dispose();
     else previewScene = scene;
   }).catch(error => { if (token === previewToken) { console.warn("E-001 preview unavailable", error); host.append(el("span", "orbital-error", "Orbital preview unavailable")); } });
@@ -509,24 +512,23 @@ function render() {
   for (const [index, row] of rows.entries()) {
     const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);
     tr.tabIndex = 0; tr.dataset.episodeId = field(row, "ID"); tr.setAttribute("aria-label", `${title(row)}, ${open ? "collapse" : "expand"} details`);
+    tr.setAttribute("aria-expanded", String(open));
+    if (open) tr.setAttribute("aria-controls", `episode-detail-${field(row, "ID")}`);
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");
     const badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row);
-    heading.append(el("span", "episode-title", title(row)), badge, el("span", "episode-id", field(row, "ID")));
+    const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
+    heading.append(name, badge, el("span", "episode-id", field(row, "ID")));
     episode.append(heading); tr.append(episode);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
     const periodCell = el("td", "period-cell"); periodCell.append(periodNode(row)); tr.append(periodCell);
     const separation = el("td", "separation-column"); separation.append(proximityNode(row, "distance")); tr.append(separation);
     const speed = el("td", "speed-column"); speed.append(proximityNode(row, "speed")); tr.append(speed);
     const newsCell = el("td", "news-column"); newsCell.append(newsIndicator(row, linkedDescriptions(row, data).length)); tr.append(newsCell);
-    const actionCell = el("td", "action-cell"), action = el("button", `accordion-toggle${open ? " open" : ""}`);
-    action.type = "button"; action.append(el("span", "accordion-icon")); action.setAttribute("aria-expanded", String(open));
-    action.setAttribute("aria-label", `${open ? "Collapse" : "Expand"} context for ${title(row)}`);
-    action.addEventListener("click", event => { event.stopPropagation(); toggleRow(row); }); actionCell.append(action); tr.append(actionCell);
     tr.addEventListener("click", event => { if (!event.target.closest("button, a, input, select, .gterm")) toggleRow(row); });
     tr.addEventListener("keydown", event => { if (event.target === tr && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleRow(row); } });
     body.append(tr);
     if (open) {
-      const detailRow = el("tr", "expanded-row"), td = el("td"); td.colSpan = 7; detailRow.append(td); body.append(detailRow);
+      const detailRow = el("tr", "expanded-row"), td = el("td"); detailRow.id = `episode-detail-${field(row, "ID")}`; td.colSpan = 6; detailRow.append(td); body.append(detailRow);
       const id = field(row, "ID"), cached = state.details.get(id);
       if (data.source === "local-verification-candidates") td.append(expandedContent(row, { source: data.source, descriptions: [], sourceMetadata: {} }));
       else if (cached) { td.append(expandedContent(cached.row, cached)); requestAnimationFrame(() => { if (td.isConnected) startPreview(cached.row); }); }
@@ -558,7 +560,6 @@ function setStatus() {
   else { status.dataset.kind = "error"; status.textContent = `Current published sheet unavailable: ${live?.error || "unknown error"}. No stale episode dates are shown.`; }
 }
 async function init() {
-  const local = ["localhost", "127.0.0.1"].includes(location.hostname);
   $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; state.orbit = ""; setStatus(); render(); });
   $("#search").addEventListener("input", event => { state.query = event.target.value.trim(); render(); });
   $("#orbit").addEventListener("change", event => { state.orbit = event.target.value; render(); });
@@ -577,7 +578,7 @@ async function init() {
   }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
   setStatus(); render();
   const e001 = state.live.episodes?.find(row => field(row, "ID") === "E-001");
-  if (e001) calculateE001(episodeUtcInterval(e001)).then(series => { state.series = series; render(); })
+  if (e001) state.seriesPromise = calculateE001(episodeUtcInterval(e001)).then(series => { state.series = series; render(); return series; })
     .catch(error => { $("#status").dataset.kind = "error"; $("#status").textContent += ` E-001 reconstruction unavailable: ${error.message}.`; });
 }
 init().catch(error => { $("#status").textContent = `The table could not start: ${error.message}`; $("#status").dataset.kind = "error"; });

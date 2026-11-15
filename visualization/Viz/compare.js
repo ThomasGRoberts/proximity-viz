@@ -31,7 +31,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as topojson from "topojson-client";
-import { sampleEpisode, analyzeEpisode } from "./e001-analysis.js";
+import { sampleEpisode, analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
+import { safeEpisodeName, episodeNameText } from "../../shared/episode-name.js";
 import { relativeCameraFrame, relativeFitDistance } from "./relative-camera.js";
 import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js";
 import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js";
@@ -604,9 +605,10 @@ const version = ++labelVersion[slot];
 // ---------------------------------------------------------------------------
 const formatTime = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const elapsedDuration = ms => {
-  const wholeHours = Math.max(0, Math.floor(ms / (60 * MINUTE_MS)));
-  const days = Math.floor(wholeHours / 24), hours = wholeHours % 24;
-  return { compact: `${days}:${String(hours).padStart(2, "0")}`, spoken: `${days} ${days === 1 ? "day" : "days"}, ${hours} ${hours === 1 ? "hour" : "hours"}` };
+  const wholeMinutes = Math.max(0, Math.floor(ms / MINUTE_MS));
+  const days = Math.floor(wholeMinutes / 1440), hours = Math.floor(wholeMinutes % 1440 / 60), minutes = wholeMinutes % 60;
+  return { compact: `${String(days).padStart(2, "0")}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`,
+    spoken: `${days} days, ${hours} hours, ${minutes} minutes` };
 };
 const formatDate = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(ms));
 
@@ -742,13 +744,15 @@ function durationText(ms) {
   return hours >= 48 ? { value: (hours / 24).toFixed(1), unit: "days" } : { value: hours.toFixed(1), unit: "hours" };
 }
 const episodeDateText = ms => new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(ms);
-let distanceOnlyResult = null;
+let singleThresholdIntervals = [];
 function updateThresholds() {
   if (!analysisSamples.length) return;
   const distance = Number($("distanceThreshold").value), speed = Number($("speedThreshold").value);
   if (!(distance > 0) || !(speed > 0)) return;
   analysisResult = analyzeEpisode(analysisSamples, distance, speed, analysisStepMs);
-  distanceOnlyResult = analyzeEpisode(analysisSamples, distance, Infinity, analysisStepMs);
+  const distanceIntervals = analyzeEpisode(analysisSamples, distance, Infinity, analysisStepMs).intervals;
+  const speedIntervals = analyzeEpisode(analysisSamples, Infinity, speed, analysisStepMs).intervals;
+  singleThresholdIntervals = exclusiveQualificationIntervals(distanceIntervals, speedIntervals).single;
   const dwell = durationText(analysisResult.totalMs);
   $("dwellStat").textContent = dwell.value;
   $("dwellUnit").textContent = dwell.unit;
@@ -758,7 +762,19 @@ function updateThresholds() {
     if (!item) { target.textContent = "Minimum value this episode: unavailable"; return; }
     const value = item.value < 100 ? item.value.toFixed(1) : Math.round(item.value).toLocaleString();
     const strong = document.createElement("strong"); strong.textContent = `${value} ${unit}`;
-    target.replaceChildren(document.createTextNode("Minimum value this episode: "), strong, document.createTextNode(` (${episodeDateText(item.ms)})`));
+    const dateLink = document.createElement("a");
+    dateLink.href = "#playbackDock";
+    dateLink.textContent = `on ${episodeDateText(item.ms)}`;
+    dateLink.title = `Jump playback to ${new Date(item.ms).toISOString()}`;
+    dateLink.setAttribute("aria-label", `Jump playback to ${new Date(item.ms).toISOString()} for minimum ${unit === "km" ? "separation distance" : "relative velocity"}`);
+    dateLink.addEventListener("click", event => {
+      event.preventDefault();
+      const slider = $("timelineSlider");
+      slider.value = Math.max(startMs, Math.min(endMs, item.ms));
+      slider.dispatchEvent(new Event("input", { bubbles: true }));
+      slider.focus({ preventScroll: true });
+    });
+    target.replaceChildren(document.createTextNode("Minimum value this episode: "), strong, document.createTextNode(" "), dateLink);
   };
   minimum("distanceMinimum", analysisResult.minimumDistance, "km");
   minimum("speedMinimum", analysisResult.minimumSpeed, "m/s");
@@ -774,10 +790,11 @@ function renderDwellSegments() {
   const host = $("dwellSegments");
   if (!host || !analysisResult || !(endMs > startMs)) return;
   host.replaceChildren();
-  for (const interval of analysisResult.intervals) {
+  for (const [intervals, kind] of [[singleThresholdIntervals, "single"], [analysisResult.intervals, "both"]]) for (const interval of intervals) {
     const left = Math.max(startMs, interval.start), right = Math.min(endMs, interval.end);
     if (right <= left) continue;
     const mark = document.createElement("span");
+    mark.className = kind;
     mark.style.left = `${(left - startMs) / (endMs - startMs) * 100}%`;
     mark.style.width = `${(right - left) / (endMs - startMs) * 100}%`;
     host.append(mark);
@@ -786,19 +803,36 @@ function renderDwellSegments() {
 const chartGeometry = new Map();
 const hoveredChartLines = new Set();
 const visibleCharts = new Set();
+const chartsSeenOutside = new Set();
+const initiallyVisibleCharts = new Set();
+const chartRatios = new Map();
+let chartCuesReady = false;
 const chartCueStarts = new Map();
 const chartCueFinished = new Set();
 const reducedChartMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const chartVisibilityObserver = new IntersectionObserver(entries => {
   for (const entry of entries) {
-    if (entry.isIntersecting) visibleCharts.add(entry.target);
-    else visibleCharts.delete(entry.target);
+    chartRatios.set(entry.target, entry.intersectionRatio);
+    if (!chartCuesReady) continue;
+    if (entry.intersectionRatio < .85) { chartsSeenOutside.add(entry.target); visibleCharts.delete(entry.target); }
+    else if (chartsSeenOutside.has(entry.target)) visibleCharts.add(entry.target);
   }
   chartDirty = true;
-});
+}, { root: $("ui"), threshold: [.85] });
 for (const id of ["separationChart", "speedChart"]) chartVisibilityObserver.observe($(id));
+$("ui").addEventListener("scroll", () => {
+  const panel = $("ui").getBoundingClientRect();
+  for (const chart of initiallyVisibleCharts) {
+    const rect = chart.getBoundingClientRect();
+    const shown = Math.max(0, Math.min(rect.bottom, panel.bottom) - Math.max(rect.top, panel.top)) / rect.height;
+    if (shown >= .85) visibleCharts.add(chart);
+    else chartsSeenOutside.add(chart);
+    initiallyVisibleCharts.delete(chart);
+    chartDirty = true;
+  }
+}, { passive: true });
 function thresholdCueOffset(canvas) {
-  if (reducedChartMotion.matches || chartCueFinished.has(canvas) || !visibleCharts.has(canvas) || !analysisSamples.length) return 0;
+  if (!chartCuesReady || reducedChartMotion.matches || chartCueFinished.has(canvas) || !visibleCharts.has(canvas) || !analysisSamples.length) return 0;
   if (!chartCueStarts.has(canvas)) chartCueStarts.set(canvas, performance.now());
   const elapsed = performance.now() - chartCueStarts.get(canvas);
   if (elapsed >= 1200) { chartCueFinished.add(canvas); return 0; }
@@ -874,7 +908,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     }
   }
   ctx.stroke();
-  for (const [result, color] of [[distanceOnlyResult, "#a9a9a9"], [analysisResult, "#eaaa00"]]) {
+  for (const [result, color] of [[{ intervals: singleThresholdIntervals }, "#a9a9a9"], [analysisResult, "#eaaa00"]]) {
     for (const interval of result?.intervals || []) {
       if (interval.start > currentMs) break;
       const left = Math.max(windowStart, interval.start), end = Math.min(currentMs, interval.end);
@@ -1751,6 +1785,20 @@ $("timelineSlider").addEventListener("input", event => {
     updateGeoBeltLabel(); updateScreenLabels(); renderer.render(scene, camera);
   }
 });
+const timelineWrap = $("timelineSlider").parentElement;
+const timelineHover = $("timelineHover"), timelineHoverTick = $("timelineHoverTick");
+timelineWrap.addEventListener("pointermove", event => {
+  if (!(endMs > startMs)) return;
+  const rect = $("timelineSlider").getBoundingClientRect();
+  const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+  const minuteMs = Math.max(startMs, Math.min(endMs, Math.round((startMs + x / rect.width * (endMs - startMs)) / MINUTE_MS) * MINUTE_MS));
+  timelineHover.textContent = `${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(minuteMs))} UTC`;
+  timelineHoverTick.style.left = `${x}px`;
+  timelineHover.style.left = `${Math.max(40, Math.min(rect.width - 40, x))}px`;
+  timelineHover.style.transform = "translateX(-50%)";
+  timelineHover.hidden = timelineHoverTick.hidden = false;
+});
+timelineWrap.addEventListener("pointerleave", () => { timelineHover.hidden = timelineHoverTick.hidden = true; });
 for (const id of ["distanceThreshold", "speedThreshold"]) $(id).addEventListener("input", updateThresholds);
 for (const [canvasId, inputId, increment] of [["separationChart", "distanceThreshold", 25], ["speedChart", "speedThreshold", 5]]) {
   const canvas = $(canvasId), input = $(inputId);
@@ -1770,7 +1818,10 @@ for (const [canvasId, inputId, increment] of [["separationChart", "distanceThres
   const setFromPointer = event => {
     const chart = chartGeometry.get(canvas); if (!chart) return;
     const raw = (chart.bottom - local(event).y) / (chart.bottom - chart.top) * chart.yMax;
-    const next = Math.max(increment, Math.min(chart.yMax, Math.round(raw / increment) * increment));
+    const preferred = Math.round(raw / increment) * increment;
+    const tolerance = increment === 25 ? 3 : .65;
+    const precise = increment === 25 ? Math.round(raw) : Math.round(raw * 10) / 10;
+    const next = Math.max(increment === 25 ? 1 : .1, Math.min(chart.yMax, Math.abs(raw - preferred) <= tolerance ? preferred : precise));
     if (Number(input.value) !== next) { input.value = String(next); updateThresholds(); }
   };
   canvas.addEventListener("pointermove", event => { if (dragging) setFromPointer(event); else setHover(nearLine(event)); });
@@ -2016,6 +2067,9 @@ try {
   const feed = await loadCurrentEpisodes();
   const liveEpisode = feed.episodes.find(row => row.ID === "E-001");
   if (!liveEpisode) throw new Error("E-001 is missing from the current published Episodes sheet");
+  const episodeName = liveEpisode["Episode Name"]?.trim() || liveEpisode.ID;
+  $("episodeTitle").replaceChildren(safeEpisodeName(episodeName));
+  document.title = `Visualizing Proximity in Space — ${episodeNameText(episodeName)}`;
   const interval = episodeUtcInterval(liveEpisode);
   episodeConfig.researchWindow = { start: interval.start, end: interval.end };
   episodeConfig.playbackWindow = { start: new Date(interval.startMs).toISOString(), end: new Date(interval.endMs).toISOString() };
@@ -2029,6 +2083,15 @@ try {
   reportedPeriod = { start: episodeStartMs, end: episodeEndMs };
   caseNorads = episodeConfig.participants.map(participant => participant.norad);
   await setPair(caseNorads[0], caseNorads[1]);
+  setTimeout(() => {
+    for (const id of ["separationChart", "speedChart"]) {
+      const chart = $(id);
+      if ((chartRatios.get(chart) || 0) < .85) chartsSeenOutside.add(chart);
+      else { chartsSeenOutside.delete(chart); initiallyVisibleCharts.add(chart); }
+      visibleCharts.delete(chart);
+    }
+    chartCuesReady = true;
+  }, 450);
   if (analysisSamples.length && pair.A && pair.B) { playing = true; $("playBtn").innerHTML = '<span class="pauseIcon"></span>'; }
   $("devTime").min = new Date(startMs).toISOString().slice(0, 16);
   $("devTime").max = new Date(endMs).toISOString().slice(0, 16);
