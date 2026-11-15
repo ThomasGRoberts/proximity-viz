@@ -103,6 +103,7 @@ let currentMs = 0;           // The moment currently shown
 let playing = false;
 let lastFrameTime = performance.now();
 let cameraTween = null;      // A smooth camera movement in progress, or null if none
+let initialCameraTransition = false;
 let lastIdentityKey = "";    // Used to avoid rebuilding the "Now modeling" panel every frame
 let episodeConfig = null;
 let episodeStartMs = 0, episodeEndMs = 0, analysisStepMs = 15 * MINUTE_MS;
@@ -399,7 +400,6 @@ const geoBelt = new THREE.LineLoop(
 geoBelt.visible = false;
 earthGroup.add(geoBelt);
 const geoBeltLabel = document.getElementById("geoBeltLabel");
-let beltLabelLongitude = null;
 function updateGeoBeltLabel() {
   if (view !== "relative" || !geoBelt.visible || cameraTween) { geoBeltLabel.hidden = true; return; }
   earthGroup.updateMatrixWorld(true);
@@ -408,18 +408,30 @@ function updateGeoBeltLabel() {
     const p = earthGroup.localToWorld(latLonToPoint(0, lon, GEO_RADIUS_KM / EARTH_RADIUS_KM + .01)).project(camera);
     return { x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2, z: p.z };
   };
-  // The same Earth-fixed point stays on the GEO belt throughout playback.
-  beltLabelLongitude ??= geoReferenceLongitudeDeg + .18;
-  const p = project(beltLabelLongitude), before = project(beltLabelLongitude - .3), after = project(beltLabelLongitude + .3);
-  if (p.z < -1 || p.z > 1 || p.x < rect.left + 60 || p.x > rect.right - 60 || p.y < rect.top + 35 || p.y > rect.bottom - 35) {
+  // Put the label at a fixed screen position along the projected belt, away
+  // from the encounter. Hide it if that position would cover a spacecraft name.
+  const p = project(geoReferenceLongitudeDeg), before = project(geoReferenceLongitudeDeg - .3), after = project(geoReferenceLongitudeDeg + .3);
+  const dx = after.x - before.x;
+  if (p.z < -1 || p.z > 1 || Math.abs(dx) < 5) {
     geoBeltLabel.hidden = true; return;
   }
+  const x = rect.left + Math.min(135, rect.width * .17);
+  const y = p.y + (after.y - before.y) / dx * (x - p.x);
+  if (y < rect.top + 35 || y > rect.bottom - 35) { geoBeltLabel.hidden = true; return; }
   let angle = Math.atan2(after.y - before.y, after.x - before.x) * 180 / Math.PI;
   if (angle > 90) angle -= 180;
   if (angle < -90) angle += 180;
   geoBeltLabel.hidden = false;
-  geoBeltLabel.style.left = `${Math.round(p.x * 2) / 2}px`; geoBeltLabel.style.top = `${Math.round(p.y * 2) / 2}px`;
+  geoBeltLabel.style.left = `${Math.round(x)}px`; geoBeltLabel.style.top = `${Math.round(y)}px`;
   geoBeltLabel.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+  const labelBox = geoBeltLabel.getBoundingClientRect();
+  for (const name of document.querySelectorAll(".satelliteScreenLabel")) {
+    if (name.hidden) continue;
+    const box = name.getBoundingClientRect();
+    if (labelBox.left < box.right + 10 && labelBox.right > box.left - 10 && labelBox.top < box.bottom + 6 && labelBox.bottom > box.top - 6) {
+      geoBeltLabel.hidden = true; break;
+    }
+  }
 }
 
 // Turn an ECI position [x, y, z] in km into a point in the 3D scene.
@@ -791,7 +803,8 @@ function updateThresholds() {
     const target = $(id);
     if (!item) { target.textContent = "Minimum value this episode: unavailable"; return; }
     const value = item.value < 100 ? item.value.toFixed(1) : Math.round(item.value).toLocaleString();
-    target.textContent = `Minimum value this episode: ${value} ${unit} (${episodeDateText(item.ms)})`;
+    const strong = document.createElement("strong"); strong.textContent = `${value} ${unit}`;
+    target.replaceChildren(document.createTextNode("Minimum value this episode: "), strong, document.createTextNode(` (${episodeDateText(item.ms)})`));
   };
   minimum("distanceMinimum", analysisResult.minimumDistance, "km");
   minimum("speedMinimum", analysisResult.minimumSpeed, "m/s");
@@ -827,7 +840,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     canvas.width = Math.round(w * pixelRatio); canvas.height = Math.round(h * pixelRatio);
   }
   ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  const pad = { left: 57, right: 52, top: 13, bottom: 28 };
+  const pad = { left: 57, right: 80, top: 13, bottom: 28 };
   const bottom = h - pad.bottom, right = w - pad.right;
   const windowMs = 14 * 86400000;
   const windowStart = currentMs - windowMs;
@@ -835,7 +848,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   const y = value => bottom - Math.min(1, Math.max(0, value / yMax)) * (bottom - pad.top);
   chartGeometry.set(canvas, { top: pad.top, bottom, left: pad.left, right, yMax, thresholdY: y(threshold) });
   const edge = canvas.parentElement.querySelector(".thresholdEdge");
-  if (edge) { edge.style.top = `${canvas.offsetTop + Math.max(pad.top + 5, Math.min(bottom - 5, y(threshold)))}px`; edge.textContent = String(threshold); }
+  if (edge) { edge.style.top = `${canvas.offsetTop + Math.max(pad.top + 5, Math.min(bottom - 5, y(threshold)))}px`; edge.textContent = `${threshold} ${unit}`; }
   ctx.clearRect(0, 0, w, h); ctx.font = "10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.save(); ctx.translate(22, (pad.top + bottom) / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillStyle = "#555"; ctx.textAlign = "center";
@@ -858,10 +871,8 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     ctx.strokeStyle = "#e2e2e2"; ctx.beginPath(); ctx.moveTo(pad.left, py); ctx.lineTo(right, py); ctx.stroke();
     ctx.fillStyle = "#777"; ctx.textAlign = "right"; ctx.fillText(Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1), pad.left - 5, py + 3);
   }
-  ctx.strokeStyle = hoveredChartLines.has(canvas) ? "#555" : "#929292"; ctx.lineWidth = hoveredChartLines.has(canvas) ? 1.5 : 1;
-  ctx.beginPath(); ctx.moveTo(pad.left, y(threshold)); ctx.lineTo(right, y(threshold)); ctx.stroke();
-  ctx.fillStyle = hoveredChartLines.has(canvas) ? "#555" : "#888";
-  ctx.fillRect(right - 2, y(threshold) - 3, 3, 6);
+  ctx.strokeStyle = hoveredChartLines.has(canvas) ? "#898989" : "#b8b8b8"; ctx.lineWidth = hoveredChartLines.has(canvas) ? 1.35 : 1;
+  ctx.beginPath(); ctx.moveTo(pad.left, y(threshold)); ctx.lineTo(right + 16, y(threshold)); ctx.stroke();
   ctx.strokeStyle = "#555"; ctx.lineWidth = 1.4; ctx.beginPath();
   let connected = false, clipped = false, previous = null;
   for (const sample of analysisSamples) {
@@ -893,7 +904,6 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   }
   if (clipped) { ctx.fillStyle = "#805e10"; ctx.textAlign = "right"; ctx.fillText("↑ clipped", right, 11); }
   if (currentMs >= episodeStartMs && currentMs <= episodeEndMs) {
-    ctx.strokeStyle = "#b88b13"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x(currentMs), pad.top); ctx.lineTo(x(currentMs), bottom); ctx.stroke();
     const current = key === "distanceKm" ? separationAt(currentMs) : speedInMetresAt(currentMs);
     const label = canvas.parentElement.querySelector(".currentValue");
     if (label) {
@@ -902,8 +912,10 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
         label.textContent = `${current < 100 ? current.toFixed(1) : Math.round(current).toLocaleString()} ${unit}`;
         const position = Math.max(pad.top + 5, Math.min(bottom - 5, y(current)));
         const thresholdPosition = Math.max(pad.top + 5, Math.min(bottom - 5, y(threshold)));
-        label.style.top = `${canvas.offsetTop + position}px`;
-        if (edge && Math.abs(position - thresholdPosition) < 18) edge.style.top = `${canvas.offsetTop + Math.max(pad.top + 5, Math.min(bottom - 5, thresholdPosition + (thresholdPosition < position ? -19 : 19)))}px`;
+        const currentLabelY = Math.abs(position - thresholdPosition) < 18
+          ? Math.max(pad.top + 5, Math.min(bottom - 5, thresholdPosition + (thresholdPosition < (pad.top + bottom) / 2 ? 20 : -20)))
+          : position;
+        label.style.top = `${canvas.offsetTop + currentLabelY}px`;
       }
     }
   }
@@ -945,6 +957,7 @@ function updateIdentity() {
       const name = document.createElement("span"); name.className = "satName";
       const metadata = document.createElement("div"); metadata.className = "satMetaDetails"; metadata.id = `satMeta${slot}`;
       const sourceSummary = document.createElement("span"); sourceSummary.className = "sourceSummary"; sourceSummary.textContent = "CelesTrak";
+      sourceSummary.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 18 18" aria-hidden="true"><path class="espl-news-external__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"></path><g class="espl-news-external__arrow"><path d="M9.25 2.75h6v6"></path><path d="m8 10 7.25-7.25"></path></g></svg>');
       const chevron = document.createElement("span"); chevron.className = "satChevron"; chevron.setAttribute("aria-hidden", "true");
       const glyph = document.createElement("span"); glyph.className = "disclosureGlyph"; glyph.textContent = "‹"; chevron.append(glyph);
       heading.append(dot, name, sourceSummary, chevron);
@@ -1485,7 +1498,6 @@ function setView(next, nextCentre = centre, immediate = false) {
   earthGroup.matrixAutoUpdate = true;
   earthGroup.visible = true;
   geoBelt.visible = relative;
-  beltLabelLongitude = null;
   relativeTrail.visible = false;
   relativeAxes.visible = false;
   trails.A.visible = trails.B.visible = true;
@@ -1754,7 +1766,7 @@ $("caViewBtn").addEventListener("click", () => {
 // Slower / faster arrows: step through the hidden speed menu's options and show the chosen speed
 function updateSpeedLabel() {
   const menu = $("speed");
-  $("speedLabel").textContent = menu.selectedOptions[0].textContent.replace("hr/s", "h/s");
+  $("speedLabel").textContent = `Playback speed: ${{ 60: "1 minute", 900: "15 minutes", 3600: "1 hour", 21600: "6 hours", 86400: "1 day" }[menu.value] || menu.selectedOptions[0].textContent} per second`;
   $("speedDownBtn").disabled = menu.selectedIndex === 0;                      // already slowest
   $("speedUpBtn").disabled = menu.selectedIndex === menu.options.length - 1;  // already fastest
 }
@@ -1793,7 +1805,7 @@ for (const [canvasId, inputId, increment] of [["separationChart", "distanceThres
   const nearLine = event => {
     const chart = chartGeometry.get(canvas); if (!chart) return false;
     const point = local(event);
-    return point.x >= chart.left - 3 && point.x <= chart.right + 7 && Math.abs(point.y - chart.thresholdY) <= 9;
+    return point.x >= chart.left - 3 && point.x <= chart.right + 18 && Math.abs(point.y - chart.thresholdY) <= 9;
   };
   const setHover = hovered => {
     if (hovered === hoveredChartLines.has(canvas)) return;
@@ -1834,7 +1846,9 @@ if (!cameraDevTools.hidden) window.__proximityDebug = () => {
     return { visible: dots[slot].visible, x: rect.left + (p.x + 1) * rect.width / 2, y: rect.top + (1 - p.y) * rect.height / 2,
       label: screenLabelNodes[slot].getBoundingClientRect().toJSON() };
   };
-  return { time: new Date(currentMs).toISOString(), view, autoZoom, analysisSamples, analysisStepMs, analysisResult, camera: camera.position.toArray(), target: controls.target.toArray(),
+  return { time: new Date(currentMs).toISOString(), view, autoZoom, cameraTween: !!cameraTween, initialCameraTransition, playing,
+    trailCounts: { A: trails.A.geometry.getAttribute("position")?.count || 0, B: trails.B.geometry.getAttribute("position")?.count || 0 },
+    analysisSamples, analysisStepMs, analysisResult, camera: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov,
     markers: { A: marker("A"), B: marker("B") }, geoLabel: geoBeltLabel.getBoundingClientRect().toJSON() };
 };
 $("devTime").addEventListener("change", event => {
@@ -1936,7 +1950,7 @@ updateRendererLayout();
 function animate(now) {
   requestAnimationFrame(animate);   // Ask to be called again on the next frame
 
-  if (playing && pair.A && library[pair.A] && library[pair.B]) {
+  if (playing && !initialCameraTransition && pair.A && library[pair.A] && library[pair.B]) {
     const secondsSinceLastFrame = Math.min((now - lastFrameTime) / 1000, 0.1);
     currentMs += secondsSinceLastFrame * Number($("speed").value) * 1000;   // speed = simulated seconds per real second
     if (currentMs > endMs) currentMs = startMs;   // Loop back to the start
@@ -1950,7 +1964,7 @@ function animate(now) {
     controls.target.lerpVectors(cameraTween.fromTarget, cameraTween.toTarget, eased);
     camera.fov = cameraTween.fromFov + (cameraTween.toFov - cameraTween.fromFov) * eased;
     camera.updateProjectionMatrix(); sizeSceneSprites();
-    if (raw >= 1) cameraTween = null;
+    if (raw >= 1) { cameraTween = null; if (initialCameraTransition) { initialCameraTransition = false; lastGeoReference = geoReferenceWorld(currentMs); } }
   }
 
   // Orbit lines darken for a moment when their satellite switches to a new TLE
@@ -1972,8 +1986,8 @@ lastFrameTime = now;
   const near = THREE.MathUtils.clamp(camera.position.distanceTo(controls.target) * .05, .001, 2);
   if (Math.abs(camera.near - near) > near * .01) { camera.near = near; camera.updateProjectionMatrix(); }
   updateBorderDetail();
-  updateGeoBeltLabel();
   updateScreenLabels();
+  updateGeoBeltLabel();
   // Keep dashes the same size on screen at any zoom: DASH_SCREEN_SIZE of the screen height,
   // turned into scene units at the camera's distance (the same idea as the dot sizes in setView)
   const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
@@ -2055,7 +2069,16 @@ try {
   $("devTime").min = new Date(startMs).toISOString().slice(0, 16);
   $("devTime").max = new Date(endMs).toISOString().slice(0, 16);
   $("devTime").value = new Date(currentMs).toISOString().slice(0, 16);
-  setTimeout(() => { if (view === "earth") { preferredView = "relative"; setView("relative"); } }, 1100);
+  const beginInitialTransition = () => {
+    if (view !== "earth" || !pair.A || !pair.B) return;
+    if (!trails.A.geometry.getAttribute("position")?.count || !trails.B.geometry.getAttribute("position")?.count) {
+      setTimeout(beginInitialTransition, 120); return;
+    }
+    initialCameraTransition = true;
+    preferredView = "relative"; setView("relative");
+    if (!cameraTween) initialCameraTransition = false;
+  };
+  setTimeout(beginInitialTransition, 1100);
 
 } catch (error) {
   $("rangeNote").textContent = error.message;

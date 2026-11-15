@@ -11,7 +11,7 @@ const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.
 const state = { live: null, preview: null, series: null, usePreview: false, selected: null, query: "", orbit: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-reducedMotion.addEventListener("change", () => { if (reducedMotion.matches) pausePlayback(); else resumePlayback(); });
+
 
 function dateText(value) {
   if (!value) return "Date not recorded";
@@ -36,24 +36,20 @@ function compactDate(value) {
 }
 function periodInfo(row) {
   const start = field(row, "Start Date", "Date"), end = field(row, "End Date");
-  const first = fullDate(start), last = fullDate(end);
-  const partial = value => {
-    if (fullDate(value)) return fullDate(value);
-    if (/^\d{4}-\d{2}$/.test(value)) {
-      const date = new Date(`${value}-01T00:00:00Z`);
-      if (!Number.isNaN(date.valueOf())) return `${new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(date)} ${date.getUTCFullYear()}`;
-    }
-    if (/^\d{4}$/.test(value)) return value;
-    const approx = value.match(/^(\d{4}-\d{2}-\d{2})\s*\(approx\.\)$/i);
-    if (approx && fullDate(approx[1])) return `${fullDate(approx[1])} (approx.)`;
-    return value.replace(/\s*[—–]\s*/g, "; ");
+  const portion = value => {
+    const found = String(value).match(/^(\d{4})(?:-(\d{2}))?/);
+    if (!found) return null;
+    const year = Number(found[1]), month = Number(found[2]);
+    if (!month) return { year, label: String(year), part: "" };
+    if (month < 1 || month > 12) return null;
+    const part = month <= 4 ? "early" : month <= 8 ? "mid" : "late";
+    return { year, label: `${part[0].toUpperCase()}${part.slice(1)} ${year}`, part };
   };
-  if (!first || !last || end < start) {
-    const a = partial(start), b = partial(end);
-    return { label: !a && !b ? "Dates not recorded" : a === b || !b ? a : !a ? b : /not established/i.test(b) ? `${a}; end not established` : `${a} to ${b}`, days: null };
-  }
-  const label = start === end ? first : `${first} to ${last}`;
-  return { label, days: Math.round((Date.parse(end) - Date.parse(start)) / 86400000) + 1 };
+  const a = portion(start), b = portion(end);
+  const days = fullDate(start) && fullDate(end) && end >= start ? Math.round((Date.parse(end) - Date.parse(start)) / 86400000) + 1 : null;
+  if (!a && !b) return { label: "Dates not recorded", days };
+  if (!b || !a || end < start || a.label === b.label) return { label: a?.label || b.label, days };
+  return { label: a.year === b.year && a.part && b.part ? `${a.label.split(" ")[0]} to ${b.part} ${a.year}` : `${a.label} to ${b.label[0].toLowerCase()}${b.label.slice(1)}`, days };
 }
 function period(row) { return periodInfo(row).label; }
 function dateKey(row) { return field(row, "Start Date", "Date").match(/^\d{4}(?:-\d{2})?(?:-\d{2})?/)?.[0] || ""; }
@@ -135,15 +131,12 @@ function externalLink(label, url) {
   return a;
 }
 function visualizationLink(url, label = "Open orbital visualization") {
-  const link = el("a", "visual-link model-link"); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.setAttribute("aria-label", label);
-  const preview = el("div", "orbital-preview"), image = el("img", "visualization-still"); image.src = "./assets/e001-visualization-preview.png"; image.alt = "E-001 orbital reconstruction in Proximity-Viz"; preview.append(image);
-  const note = el("span", "willa-time-note", "E-001 reconstruction · Willa orbital model");
-  const icon = el("span", "model-icon"), canvas = el("canvas", "model-canvas"), fallback = el("img", "model-static");
-  canvas.width = 116; canvas.height = 116; canvas.setAttribute("aria-hidden", "true"); fallback.src = "./assets/polyhedron-icon.png"; fallback.alt = "";
-  icon.append(fallback, canvas);
-  const cta = el("span", "model-cta"); cta.append(icon, el("span", "model-label", "Explore the interactive model"), el("span", "model-arrow", "→"));
-  link.append(preview, note, cta);
-  import("./model-link.js").then(module => module.decorateModelLink(link)).catch(() => link.classList.add("model-static-fallback"));
+  const link = el("a", "visual-link"); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.setAttribute("aria-label", label);
+  const preview = el("div", "orbital-preview"), image = el("img", "visualization-still"); image.src = "./assets/e001-visualization-preview.png"; image.alt = ""; preview.append(image);
+  const overlay = el("span", "preview-overlay"); overlay.setAttribute("aria-hidden", "true");
+  const icon = el("img", "preview-polyhedron"); icon.src = "./assets/polyhedron-icon.png"; icon.alt = "";
+  overlay.append(icon, el("span", "", "Explore the interactive model"), el("span", "preview-arrow", "↗"));
+  preview.append(overlay); link.append(preview);
   return link;
 }
 
@@ -270,8 +263,13 @@ function visibleRows() {
   rows.sort((a, b) => {
     let av, bv;
     if (key === "date") { av = dateKey(a); bv = dateKey(b); if (!av) return bv ? 1 : 0; if (!bv) return -1; }
-    else if (key === "sources") { av = data.recordCounts?.[field(a, "ID")] ?? 0; bv = data.recordCounts?.[field(b, "ID")] ?? 0; }
-    else if (key === "orbit") { av = regime(a); bv = regime(b); }
+    else if (key === "sources") { av = linkedDescriptions(a, data).length; bv = linkedDescriptions(b, data).length; }
+    else if (key === "distance" || key === "speed") {
+      av = field(a, "ID") === "E-001" ? state.series?.[key === "distance" ? "minimumDistance" : "minimumSpeed"]?.value : null;
+      bv = field(b, "ID") === "E-001" ? state.series?.[key === "distance" ? "minimumDistance" : "minimumSpeed"]?.value : null;
+      if (!Number.isFinite(av)) return Number.isFinite(bv) ? 1 : 0;
+      if (!Number.isFinite(bv)) return -1;
+    }
     else { av = title(a); bv = title(b); }
     const compare = typeof av === "number" ? av - bv : av.localeCompare(bv, undefined, { numeric: true });
     return sign * compare || field(a, "ID").localeCompare(field(b, "ID"), undefined, { numeric: true });
@@ -418,12 +416,12 @@ function expandedContent(row, data) {
   const wrap = el("div", "expanded-inner");
   if (state.usePreview) wrap.append(el("p", "caution", data.source === "local-verification-candidates" ? "Verification worklist entry. The possible counterpart is not a confirmed episode participant." : "Local preview includes unpublished records. This is not the public selection."));
   const overview = el("div", "detail-overview");
-  const context = el("section", "context-block"); context.append(el("h3", "", "Episode description"));
+  const context = el("section", "context-block"); context.append(el("h3", "", "Description"));
   const description = episodeDescription(row);
   if (description) context.append(formattedDescription(description));
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
-  const viz = el("section", "visual-block");
+  const viz = el("section", "visual-block"); viz.append(el("h3", "", "Visualization"));
   const target = field(row, "ID") === "E-001" ? new URL("../visualization/", location.href).href : safeUrl(field(row, "Visualization URL", "Visualization Link"));
   if (field(row, "ID") === "E-001") viz.append(visualizationLink(target, `Explore the interactive model for ${title(row)}`));
   else viz.append(el("p", "muted", "No verified Willa visualization link is recorded."));
@@ -454,9 +452,9 @@ function loadingDetail(row, data) {
   const wrap = el("div", "expanded-inner expanded-partial");
   wrap.setAttribute("aria-busy", "true");
   const context = el("section", "context-block");
-  context.append(el("h3", "", "Episode description"), el("p", "description-pending", "Loading description and source records…"));
+  context.append(el("h3", "", "Description"), el("p", "description-pending", "Loading description and source records…"));
   context.append(el("p", "partial-period", period(row)), objects(row, data));
-  wrap.append(context, el("p", "partial-records", `${data.recordCounts?.[field(row, "ID")] || 0} linked records; details loading…`));
+  wrap.append(context, el("p", "partial-records", `${linkedDescriptions(row, data).length} linked records; details loading…`));
   return wrap;
 }
 function animateIn(node) { if (!reducedMotion.matches) node.animate([{ opacity: 0, transform: "translateY(-5px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 190, easing: "ease-out" }); }
@@ -464,58 +462,27 @@ function toggleRow(row) {
   closeObject(); state.selected = state.selected === row ? null : row; render();
   const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
 }
-function periodNode(row) { return el("span", "period-label", periodInfo(row).label); }
-function sparkline(samples, key, color) {
-  const values = samples.map(sample => sample[key]).filter(Number.isFinite), width = 104, height = 22;
-  const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
-  const coordinates = samples.map((sample, index) => Number.isFinite(sample[key]) ? [2 + index * (width - 4) / Math.max(1, samples.length - 1), height - 2 - (sample[key] - min) / span * (height - 4)] : null);
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("viewBox", `0 0 ${width} ${height}`); svg.setAttribute("aria-hidden", "true");
-  let run = [];
-  const addRun = () => { if (run.length < 2) { run = []; return; } const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline"); line.setAttribute("points", run.map(point => point.join(",")).join(" ")); line.setAttribute("fill", "none"); line.setAttribute("stroke", color); line.setAttribute("stroke-width", "1.8"); line.setAttribute("stroke-linecap", "round"); line.setAttribute("stroke-linejoin", "round"); svg.append(line); run = []; };
-  coordinates.forEach((point, index) => { if (!point || (index > 0 && (samples[index].tleA !== samples[index - 1].tleA || samples[index].tleB !== samples[index - 1].tleB))) addRun(); if (point) run.push(point); }); addRun();
-  const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle"); dot.setAttribute("r", "2.5"); dot.setAttribute("fill", color); dot.setAttribute("stroke", "white"); dot.setAttribute("stroke-width", "1"); svg.append(dot);
-  const wrap = el("div", "sparkline-compact"); wrap.coordinates = coordinates; wrap.append(svg, el("span", "sparkline-value")); return wrap;
-}
+function periodNode(row) { const node = el("span", "period-label", periodInfo(row).label); node.title = [fullDate(field(row, "Start Date", "Date")), fullDate(field(row, "End Date"))].filter(Boolean).join(" to "); return node; }
 function proximityNode(row, key) {
-  const cell = el("div", "proximity-cell"), fixture = field(row, "ID") === "E-001" ? state.series : null;
-  if (!fixture) { cell.append(el("span", "plot-pending", field(row, "ID") === "E-001" && !state.series ? "Loading plot…" : "Pending reconstruction")); return cell; }
-  cell.samples = fixture.samples; cell.dataset.key = key; cell.tabIndex = 0;
-  cell.setAttribute("aria-label", `${key === "separationKm" ? "Separation distance" : "Relative speed"}, E-001 reconstructed orbital series. Use arrow keys to inspect samples.`);
-  cell.append(sparkline(fixture.samples, key, "#737b82"));
-  cell.addEventListener("keydown", event => {
-    if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
-    event.preventDefault(); pausePlayback();
-    const row = cell.closest(".episode-row"), current = Number(row.dataset.sample || 0);
-    setRowSample(row, Math.max(0, Math.min(fixture.samples.length - 1, current + (event.key === "ArrowRight" ? 1 : -1))));
-  });
+  const cell = el("div", "proximity-cell");
+  const metric = field(row, "ID") === "E-001" ? state.series?.[key === "distance" ? "minimumDistance" : "minimumSpeed"] : null;
+  if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", field(row, "ID") === "E-001" && !state.series ? "Loading…" : "Unavailable")); return cell; }
+  const value = metric.value < 100 ? metric.value.toFixed(1) : Math.round(metric.value).toLocaleString();
+  cell.append(el("strong", "minimum-value", value), el("span", "minimum-unit", key === "distance" ? "km" : "m/s"));
+  cell.title = `Minimum sampled ${key === "distance" ? "separation distance" : "relative velocity"}: ${value} ${key === "distance" ? "km" : "m/s"} on ${fullDate(new Date(metric.ms).toISOString().slice(0, 10))}`;
   return cell;
 }
-function setRowSample(row, index) {
-  if (!row?.isConnected) return;
-  const cells = row.querySelectorAll(".proximity-cell"), samples = cells[0]?.samples;
-  if (!samples?.[index]) return;
-  row.dataset.sample = String(index);
-  for (const cell of cells) {
-    const chart = cell.querySelector(".sparkline-compact"), point = chart?.coordinates[index], dot = chart?.querySelector("circle"), value = chart?.querySelector(".sparkline-value");
-    if (!dot || !value) continue;
-    dot.hidden = !point;
-    if (point) { dot.setAttribute("cx", point[0]); dot.setAttribute("cy", point[1]); }
-    const current = samples[index][cell.dataset.key];
-    value.textContent = Number.isFinite(current) ? `${current.toFixed(1)} ${cell.dataset.key === "separationKm" ? "km" : "m/s"}` : "No data";
-  }
+let previewScene = null, previewToken = 0;
+function stopPreview() { previewToken++; previewScene?.dispose(); previewScene = null; }
+function startPreview(row) {
+  if (field(row, "ID") !== "E-001") return;
+  const host = document.querySelector(".expanded-row .orbital-preview"); if (!host) return;
+  const token = ++previewToken;
+  import("./e001-preview.js").then(module => module.mountE001Preview(host)).then(scene => {
+    if (token !== previewToken || !host.isConnected) scene?.dispose();
+    else previewScene = scene;
+  }).catch(error => { if (token === previewToken) console.warn("E-001 preview unavailable", error); });
 }
-let playbackTimer = null, hoveredRow = null, playbackIndex = 0;
-function pausePlayback() { if (playbackTimer) clearInterval(playbackTimer); playbackTimer = null; }
-function resumePlayback() {
-  if (reducedMotion.matches || playbackTimer || !hoveredRow?.isConnected) return;
-  const count = hoveredRow.querySelector(".proximity-cell")?.samples?.length;
-  if (!count) return;
-  playbackTimer = setInterval(() => { playbackIndex = (playbackIndex + 1) % count; setRowSample(hoveredRow, playbackIndex); }, 560);
-}
-function stopPlayback(reset = true) { pausePlayback(); if (reset && hoveredRow?.isConnected) setRowSample(hoveredRow, 0); hoveredRow = null; playbackIndex = 0; }
-function startHover(row) { if (hoveredRow === row) return; stopPlayback(); hoveredRow = row; setRowSample(row, 0); resumePlayback(); }
-function stopPreview() {}
-function startPreview() {}
 function newsIndicator(row, count) {
   const wrap = el(count ? "button" : "span", "news-indicator");
   if (count) { wrap.type = "button"; wrap.setAttribute("aria-label", `Show ${count} linked ${count === 1 ? "record" : "records"} for ${title(row)}`); wrap.addEventListener("click", event => { event.stopPropagation(); toggleRow(row); }); }
@@ -525,7 +492,7 @@ function newsIndicator(row, count) {
   wrap.title = `${count} linked ${count === 1 ? "record" : "records"}`; wrap.append(stack); return wrap;
 }
 function render() {
-  stopPlayback(); stopPreview(); closeObject(); updateOrbitOptions(); updateSortHeaders();
+  stopPreview(); closeObject(); updateOrbitOptions(); updateSortHeaders();
   const data = currentData(), rows = visibleRows();
   if (state.selected && !rows.includes(state.selected)) state.selected = null;
   $("#count").textContent = `${rows.length} ${state.usePreview ? "preview records" : "published episodes"}`;
@@ -534,25 +501,23 @@ function render() {
     const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);
     tr.tabIndex = 0; tr.dataset.episodeId = field(row, "ID"); tr.setAttribute("aria-label", `${title(row)}, ${open ? "collapse" : "expand"} details`);
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");
-    heading.append(el("span", "episode-title", title(row)), el("span", "episode-id", field(row, "ID")));
+    const badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row);
+    heading.append(el("span", "episode-title", title(row)), badge, el("span", "episode-id", field(row, "ID")));
     episode.append(heading); tr.append(episode);
-    const classification = el("td", "classification-cell"), badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row); classification.append(badge); tr.append(classification);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
     const periodCell = el("td", "period-cell"); periodCell.append(periodNode(row)); tr.append(periodCell);
-    const separation = el("td", "separation-column"); separation.append(proximityNode(row, "separationKm")); tr.append(separation);
-    const speed = el("td", "speed-column"); speed.append(proximityNode(row, "relativeVelocityMps")); tr.append(speed);
-    const newsCell = el("td", "news-column"); newsCell.append(newsIndicator(row, data?.recordCounts?.[field(row, "ID")] || 0)); tr.append(newsCell);
+    const separation = el("td", "separation-column"); separation.append(proximityNode(row, "distance")); tr.append(separation);
+    const speed = el("td", "speed-column"); speed.append(proximityNode(row, "speed")); tr.append(speed);
+    const newsCell = el("td", "news-column"); newsCell.append(newsIndicator(row, linkedDescriptions(row, data).length)); tr.append(newsCell);
     const actionCell = el("td", "action-cell"), action = el("button", `accordion-toggle${open ? " open" : ""}`);
     action.type = "button"; action.append(el("span", "accordion-icon")); action.setAttribute("aria-expanded", String(open));
     action.setAttribute("aria-label", `${open ? "Collapse" : "Expand"} context for ${title(row)}`);
     action.addEventListener("click", event => { event.stopPropagation(); toggleRow(row); }); actionCell.append(action); tr.append(actionCell);
-    tr.addEventListener("pointerenter", event => { if (event.pointerType === "mouse" || event.pointerType === "pen") startHover(tr); });
-    tr.addEventListener("pointerleave", () => { if (hoveredRow === tr) stopPlayback(); });
     tr.addEventListener("click", event => { if (!event.target.closest("button, a, input, select, .gterm")) toggleRow(row); });
     tr.addEventListener("keydown", event => { if (event.target === tr && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleRow(row); } });
-    body.append(tr); setRowSample(tr, 0);
+    body.append(tr);
     if (open) {
-      const detailRow = el("tr", "expanded-row"), td = el("td"); td.colSpan = 8; detailRow.append(td); body.append(detailRow);
+      const detailRow = el("tr", "expanded-row"), td = el("td"); td.colSpan = 7; detailRow.append(td); body.append(detailRow);
       const id = field(row, "ID"), cached = state.details.get(id);
       if (data.source === "local-verification-candidates") td.append(expandedContent(row, { source: data.source, descriptions: [], sourceMetadata: {} }));
       else if (cached) { td.append(expandedContent(cached.row, cached)); requestAnimationFrame(() => { if (td.isConnected) startPreview(cached.row); }); }
@@ -591,7 +556,6 @@ async function init() {
   $("#reset").addEventListener("click", () => { state.query = ""; state.orbit = ""; state.sort = { key: "index", direction: "asc" }; $("#search").value = ""; render(); });
   document.querySelectorAll(".sort-head").forEach(button => button.addEventListener("click", () => { const key = button.dataset.sort; state.sort = { key, direction: state.sort.key === key ? (state.sort.direction === "desc" ? "asc" : "desc") : key === "title" || key === "orbit" ? "asc" : "desc" }; render(); }));
   fetch("../shared/e001-series.json").then(r => r.ok ? r.json() : null).catch(() => fetch("./data/e001-series.json").then(r => r.ok ? r.json() : null)).then(data => { state.series = data; if (state.live) render(); });
-  $("#demo-header").hidden = true;
   state.live = await fetch("./data/table.json", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error(`Table request returned ${r.status}`); return r.json(); }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
   setStatus(); render();
 }
