@@ -34,7 +34,9 @@ import * as topojson from "topojson-client";
 import { sampleEpisode, analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { safeEpisodeName, episodeNameText } from "../../shared/episode-name.js";
 import { relativeCameraFrame, relativeFitDistance } from "./relative-camera.js";
-import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js";
+import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js?v=3";
+import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
+applyMarkerCssVariables();
 import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
@@ -729,18 +731,40 @@ function prepareAnalysis() {
     return { tleA, tleB, distanceKm: a && b ? distanceKm(a.r, b.r) : null,
       speedMps: a && b ? distanceKm(a.v, b.v) * 1000 : null };
   });
-  // The published 15-minute analysis remains authoritative. For drawing only,
-  // propagate a midpoint within each continuous TLE pair; never bridge a TLE switch.
+  // The 15-minute analysis remains authoritative. Drawing uses propagated
+  // midpoints and both limits at each nearest-TLE change; a switch gets a
+  // visible vertical join at its actual boundary instead of a blank interval.
   chartSamples = [];
+  const chartPoint = (ms, tleA, tleB, kind = "regular") => {
+    const a = stateAt(pair.A, ms, tleA), b = stateAt(pair.B, ms, tleB);
+    return { ms, tleA, tleB, kind, distanceKm: a && b ? distanceKm(a.r, b.r) : null,
+      speedMps: a && b ? distanceKm(a.v, b.v) * 1000 : null };
+  };
   for (let index = 0; index < analysisSamples.length; index++) {
     const first = analysisSamples[index], second = analysisSamples[index + 1];
     chartSamples.push(first);
-    if (!second || first.tleA !== second.tleA || first.tleB !== second.tleB ||
-        !Number.isFinite(first.distanceKm) || !Number.isFinite(second.distanceKm)) continue;
-    const ms = (first.ms + second.ms) / 2;
-    const a = stateAt(pair.A, ms, first.tleA), b = stateAt(pair.B, ms, first.tleB);
-    if (a && b) chartSamples.push({ ms, tleA: first.tleA, tleB: first.tleB,
-      distanceKm: distanceKm(a.r, b.r), speedMps: distanceKm(a.v, b.v) * 1000 });
+    if (!second || !Number.isFinite(first.distanceKm) || !Number.isFinite(second.distanceKm) ||
+        !Number.isFinite(first.speedMps) || !Number.isFinite(second.speedMps)) continue;
+    if (first.tleA === second.tleA && first.tleB === second.tleB) {
+      chartSamples.push(chartPoint((first.ms + second.ms) / 2, first.tleA, first.tleB));
+      continue;
+    }
+    let cursor = first.ms, activeA = first.tleA, activeB = first.tleB;
+    for (let switchCount = 0; switchCount < 4 &&
+        (activeA !== second.tleA || activeB !== second.tleB); switchCount++) {
+      let low = cursor, high = second.ms;
+      while (high - low > 1) {
+        const middle = Math.floor((low + high) / 2);
+        if (nearestTleIndex(library[pair.A], middle) === activeA &&
+            nearestTleIndex(library[pair.B], middle) === activeB) low = middle;
+        else high = middle;
+      }
+      const nextA = nearestTleIndex(library[pair.A], high), nextB = nearestTleIndex(library[pair.B], high);
+      const before = chartPoint(high, activeA, activeB, "switch-before");
+      const after = chartPoint(high, nextA, nextB, "switch-after");
+      chartSamples.push(before, after);
+      cursor = high; activeA = nextA; activeB = nextB;
+    }
   }
   const valid = analysisSamples.filter(s => Number.isFinite(s.distanceKm) && Number.isFinite(s.speedMps));
   const scaleFor = key => {
@@ -910,14 +934,17 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.strokeStyle = hoveredChartLines.has(canvas) ? "#898989" : "#b8b8b8"; ctx.lineWidth = hoveredChartLines.has(canvas) ? 1.35 : 1;
   ctx.beginPath(); ctx.moveTo(pad.left, thresholdY); ctx.lineTo(w - 56, thresholdY); ctx.stroke();
   ctx.strokeStyle = "#555"; ctx.lineWidth = 1.4; ctx.beginPath();
-  let connected = false, clipped = false, previous = null;
+  let connected = false, clipped = false, previous = null, missingBreaks = 0;
+  const switchJoins = [];
   for (const sample of chartSamples) {
     if (sample.ms > windowEnd || (focusedMinimumMs === null && sample.ms > currentMs)) break;
     if (sample.ms < windowStart) { previous = null; connected = false; continue; }
     const value = sample[key];
-    if (!Number.isFinite(value)) { connected = false; previous = null; continue; }
+    if (!Number.isFinite(value)) { connected = false; previous = null; missingBreaks++; continue; }
     if (value > yMax) clipped = true;
     const px = x(sample.ms), py = y(value);
+    if (sample.kind === "switch-after" && previous?.kind === "switch-before" && sample.ms === previous.ms)
+      switchJoins.push([previous, sample]);
     if (!connected || !previous || sample.tleA !== previous.tleA || sample.tleB !== previous.tleB) ctx.moveTo(px, py);
     else ctx.lineTo(px, py);
     connected = true; previous = sample;
@@ -931,6 +958,15 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     }
   }
   ctx.stroke();
+  // A thin vertical step joins the two valid model estimates at the exact
+  // switch time. It does not invent intermediate distances or hide the jump.
+  ctx.save(); ctx.strokeStyle = "#777"; ctx.lineWidth = 1.3;
+  for (const [before, after] of switchJoins) {
+    ctx.beginPath(); ctx.moveTo(x(before.ms), y(before[key])); ctx.lineTo(x(after.ms), y(after[key])); ctx.stroke();
+  }
+  ctx.restore();
+  canvas.dataset.switchJoins = String(switchJoins.length);
+  canvas.dataset.missingBreaks = String(missingBreaks);
   for (const [result, color] of [[{ intervals: singleThresholdIntervals }, "#a9a9a9"], [analysisResult, "#eaaa00"]]) {
     for (const interval of result?.intervals || []) {
       if (interval.start > windowEnd) break;
@@ -1899,7 +1935,7 @@ if (!cameraDevTools.hidden) window.__proximityDebug = () => {
   return { time: new Date(currentMs).toISOString(), view, autoZoom, cameraTween: !!cameraTween, playing,
     earthRotation: earthGroup.rotation.y, satelliteScene: { A: dots.A.position.toArray(), B: dots.B.position.toArray() },
     trailCounts: { A: trails.A.geometry.getAttribute("position")?.count || 0, B: trails.B.geometry.getAttribute("position")?.count || 0 },
-    analysisSamples, analysisStepMs, analysisResult, camera: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov,
+    analysisSamples, chartSamples, analysisStepMs, analysisResult, camera: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov,
     markers: { A: marker("A"), B: marker("B") }, geoLabel: geoBeltLabel.getBoundingClientRect().toJSON() };
 };
 $("devTime").addEventListener("change", event => {

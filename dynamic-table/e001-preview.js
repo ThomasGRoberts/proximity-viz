@@ -4,13 +4,15 @@
 import * as THREE from "../visualization/Viz/vendor/three/three.module.js";
 import { feature } from "../visualization/Viz/vendor/topojson/topojson-client.js";
 import { relativeCameraFrame, relativeFitDistance } from "../visualization/Viz/relative-camera.js";
-import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "../visualization/Viz/relative-rendering.js?v=2";
-import { MARKER } from "../shared/marker-spec.js";
+import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "../visualization/Viz/relative-rendering.js?v=3";
+import { MARKER } from "../shared/marker-spec.js?v=3";
 
 const ROOT = "../visualization/Viz/";
 const EARTH_KM = 6378.137;
 const DAY = 86400000;
-const PREVIEW_RATE = 30 * 60000; // thirty simulated minutes per real second
+const PREVIEW_RATE = 3 * 3600000; // three simulated hours per real second
+const TRAIL_WINDOW = 12 * 3600000;
+const TRAIL_SAMPLE = 2 * 60000;
 const GEO_KM = 42164;
 const earthAxis = new THREE.Vector3(0, 1, 0);
 const eci = vector => new THREE.Vector3(vector[0] / EARTH_KM, vector[2] / EARTH_KM, -vector[1] / EARTH_KM);
@@ -69,8 +71,9 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
   if (!libs.every(lib => stateAt(lib, current, sgp4, maxAgeMs))) throw new Error("No supported TLE pair at the preview start within the current episode");
   // Stay within the two initial, age-checked TLEs throughout this short loop.
   const fixedIndices = libs.map(lib => nearest(lib, current));
-  const playStart = Math.max(interval.startMs, center - 3 * 3600000), playEnd = Math.min(interval.endMs, center + 3 * 3600000);
+  const playStart = Math.max(interval.startMs, center - 12 * 3600000), playEnd = Math.min(interval.endMs, center + 12 * 3600000);
   if (playEnd <= playStart) throw new Error("Current episode interval is too short for the preview");
+  const historyStart = Math.max(interval.startMs, playStart - TRAIL_WINDOW);
   current = playStart;
   let loopCount = 0;
   const referenceAt = ms => latLon(0, config.geoReferenceLongitudeDeg, GEO_KM / EARTH_KM).applyAxisAngle(earthAxis, sgp4.gstime(new Date(ms)));
@@ -130,10 +133,10 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(SATELLITE_STYLES[slot].dot), sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false }));
     const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); sprite.scale.set(DOT_SCREEN_SIZE * 2.85 * lens, DOT_SCREEN_SIZE * 2.85 * lens, 1);
     sprite.renderOrder = index ? 8 : 9; scene.add(sprite); dots.push(sprite);
-    // Keep the complete six-hour buffer on the GPU; reveal only the path already visited.
-    const points = [], trailStart = playStart, trailEnd = playEnd;
-    for (let step = 0; step <= 180; step++) {
-      const trailTime = trailStart + step / 180 * (trailEnd - trailStart);
+    // The buffer includes twelve hours before playback; its draw range never includes future samples.
+    const points = [], steps = Math.ceil((playEnd - historyStart) / TRAIL_SAMPLE);
+    for (let step = 0; step <= steps; step++) {
+      const trailTime = historyStart + step / steps * (playEnd - historyStart);
       const orbitalState = stateAt(libs[index], trailTime, sgp4, maxAgeMs, fixedIndices[index]);
       if (!orbitalState) throw new Error("Unsupported TLE within preview loop");
       points.push(eci(orbitalState.r).applyAxisAngle(earthAxis, centerAngle - sgp4.gstime(new Date(trailTime))));
@@ -194,9 +197,10 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
       dots[index].position.copy(eci(state.r));
       orbits[index].material.uniforms.uResolution.value.set(host.clientWidth, host.clientHeight);
       const orbit = orbits[index], points = orbit.userData.points, geometry = orbit.geometry;
-      const fraction = Math.max(0, Math.min(1, (current - playStart) / (playEnd - playStart)));
+      const fraction = Math.max(0, Math.min(1, (current - historyStart) / (playEnd - historyStart)));
       const segment = Math.min(points.length - 2, Math.floor(fraction * (points.length - 1)));
-      const tipIndex = fraction === 0 ? -1 : segment + 1;
+      const tipIndex = segment + 1;
+      const tailIndex = Math.max(0, Math.floor(Math.max(0, current - TRAIL_WINDOW - historyStart) / (playEnd - historyStart) * (points.length - 1)));
       const position = geometry.getAttribute("position"), next = geometry.getAttribute("next");
       const oldTip = orbit.userData.tipIndex;
       if (oldTip > 0) for (let side = 0; side < 2; side++) position.setXYZ(oldTip * 2 + side, ...points[oldTip].toArray());
@@ -208,8 +212,9 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
         }
       }
       position.needsUpdate = true; next.needsUpdate = true;
-      geometry.setDrawRange(0, Math.max(0, tipIndex) * 6);
+      geometry.setDrawRange(tailIndex * 6, (tipIndex - tailIndex) * 6);
       orbit.material.uniforms.uHeadAge.value = Math.max(0.001, fraction);
+      orbit.material.uniforms.uTailAge.value = tailIndex / (points.length - 1);
       orbit.userData.tipIndex = tipIndex;
     }
     earth.rotation.y = earthAngle;
@@ -217,6 +222,7 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
     host.dataset.previewTimeUtc = new Date(current).toISOString();
     host.dataset.previewLoop = String(loopCount);
     host.dataset.trailSegments = orbits.map(orbit => orbit.geometry.drawRange.count / 6).join(",");
+    host.dataset.trailWindowStartUtc = new Date(Math.max(historyStart, current - TRAIL_WINDOW)).toISOString();
     if (pane) {
       const projected = (new THREE.Vector3()).project(camera);
       host.dataset.earthCenterErrorPx = ((projected.x + 1) * rect.width / 2 + rect.left - pane.left - pane.width / 2).toFixed(2);

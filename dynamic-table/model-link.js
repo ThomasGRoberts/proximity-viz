@@ -54,13 +54,13 @@ export function decorateModelLink(link) {
     function animate(now) {
       if (!open || !link.isConnected) return;
       const elapsed = now - started;
-      link.dataset.modelStage = elapsed < 240 ? "enter" : elapsed < 480 ? "spin" : elapsed < 760 ? "orbit" : elapsed < 1040 ? "text" : "arrow";
-      globe.rotation.y = restingRotation + 1.05 * portion(elapsed, 240, 240);
-      const orbitProgress = portion(elapsed, 480, 280);
+      link.dataset.modelStage = elapsed < 220 ? "enter" : elapsed < 440 ? "spin" : elapsed < 720 ? "orbit" : elapsed < 1070 ? "text" : "arrow";
+      globe.rotation.y = restingRotation + 1.05 * portion(elapsed, 220, 220);
+      const orbitProgress = portion(elapsed, 440, 280);
       setOrbit(orbitProgress);
       link.dataset.orbitProgress = orbitProgress.toFixed(2);
       render();
-      if (elapsed < 1180) frame = requestAnimationFrame(animate);
+      if (elapsed < 1350) frame = requestAnimationFrame(animate);
     }
     function setOpen(value) {
       if (open === value) return;

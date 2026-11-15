@@ -1,11 +1,11 @@
 /* Shared marker and fading trail drawing for the full model and E-001 preview. */
 import * as THREE from "./vendor/three/three.module.js";
-import { MARKER } from "../../shared/marker-spec.js";
+import { MARKER } from "../../shared/marker-spec.js?v=3";
 
 export const DOT_SCREEN_SIZE = .022;
 export const SATELLITE_STYLES = {
-  A: { dot: MARKER.A, line: 0xeaaa00 },
-  B: { dot: MARKER.B, line: 0x7a7a7a },
+  A: { dot: MARKER.A, line: Number.parseInt(MARKER.A.slice(1), 16) },
+  B: { dot: MARKER.B, line: Number.parseInt(MARKER.B.slice(1), 16) },
 };
 
 export function dotTexture(fillColor) {
@@ -44,8 +44,8 @@ export function fadingTrailGeometry(points) {
 
 export function fadingTrailMaterial(slot) {
   return new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(SATELLITE_STYLES[slot].line) }, uOpacity: { value: .82 }, uResolution: { value: new THREE.Vector2(1, 1) }, uHeadAge: { value: 1 } },
-    vertexShader: `uniform vec2 uResolution; uniform float uHeadAge; attribute vec3 previous; attribute vec3 next; attribute float side; attribute float age; varying float vAlpha;
+    uniforms: { uColor: { value: new THREE.Color(SATELLITE_STYLES[slot].line) }, uOpacity: { value: .82 }, uResolution: { value: new THREE.Vector2(1, 1) }, uHeadAge: { value: 1 }, uTailAge: { value: 0 } },
+    vertexShader: `uniform vec2 uResolution; uniform float uHeadAge; uniform float uTailAge; attribute vec3 previous; attribute vec3 next; attribute float side; attribute float age; varying float vAlpha;
       void main() {
         vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         vec4 a = projectionMatrix * modelViewMatrix * vec4(previous, 1.0);
@@ -55,7 +55,7 @@ export function fadingTrailMaterial(slot) {
         vec2 normal = vec2(-tangent.y, tangent.x);
         clip.xy += normal * side * 1.1 * 2.0 / uResolution * clip.w;
         gl_Position = clip;
-        vAlpha = pow(clamp(age / max(uHeadAge, 0.0001), 0.0, 1.0), 1.4);
+        vAlpha = pow(clamp((age - uTailAge) / max(uHeadAge - uTailAge, 0.0001), 0.0, 1.0), 1.4);
       }`,
     fragmentShader: `uniform vec3 uColor; uniform float uOpacity; varying float vAlpha;
       void main() {

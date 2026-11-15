@@ -3,9 +3,9 @@ import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
 import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval } from "../shared/episode-feed.js";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
-import { MARKER } from "../shared/marker-spec.js";
+import { applyMarkerCssVariables } from "../shared/marker-spec.js?v=3";
 
-for (const [name, value] of Object.entries(MARKER)) document.documentElement.style.setProperty(`--marker-${name}`, name.endsWith("Px") ? `${value}px` : String(value));
+applyMarkerCssVariables();
 
 const $ = selector => document.querySelector(selector);
 const el = (tag, className = "", value) => { const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node; };
@@ -147,7 +147,7 @@ function visualizationLink(url, label = "Open orbital visualization") {
   icon.append(fallback, flourish);
   action.append(icon, el("span", "model-label", "Explore the interactive model"), el("span", "model-arrow", "→"));
   link.append(preview, action);
-  import("./model-link.js").then(module => module.decorateModelLink(link)).catch(() => link.classList.add("model-static-fallback"));
+  import("./model-link.js?v=3").then(module => module.decorateModelLink(link)).catch(() => link.classList.add("model-static-fallback"));
   return link;
 }
 
@@ -493,7 +493,7 @@ function startPreview(row) {
   let interval;
   try { interval = episodeUtcInterval(row); }
   catch (error) { console.warn("E-001 dates invalid", error); return; }
-  Promise.all([import("./e001-preview.js"), state.seriesPromise?.catch(() => null) || Promise.resolve(state.series)])
+  Promise.all([import("./e001-preview.js?v=3"), state.seriesPromise?.catch(() => null) || Promise.resolve(state.series)])
     .then(([module, metrics]) => module.mountE001Preview(host, interval, metrics?.minimumDistance?.ms, EARTH_COLORS[state.earthColor])).then(scene => {
     if (token !== previewToken || !host.isConnected) scene?.dispose();
     else previewScene = scene;
