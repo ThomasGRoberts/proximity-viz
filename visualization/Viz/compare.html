@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Visualizing Proximity in Space</title>
-  <link rel="icon" href="assets/ESPL.png">
+  <link rel="icon" type="image/svg+xml" href="assets/espl-polyhedron-favicon.svg?v=2">
   <!-- Reuse the original page's styling so both pages look the same -->
   <link rel="stylesheet" href="style.css">
 </head>
@@ -1158,6 +1158,19 @@
     .thresholdEdge::after { bottom: 1px; }
     .thresholdEdge:focus-visible { outline: 1px solid #9b7c2e; outline-offset: 2px; }
     @media(prefers-reduced-motion:reduce){.episodeHeader .titleEpisode{transition:none!important;transform:none!important}}
+    #ui .episodeHeader h1{font-size:22.6px}
+    .episodeHeader .titleEpisode{transition:none;background:linear-gradient(115deg,#676767 36%,#aaa39a 43%,#fff 49%,#aaa39a 56%,#676767 64%);background-size:300% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .backEpisodes:hover ~ .titleEpisode,.backEpisodes:focus-visible ~ .titleEpisode{transform:none;animation:episodeSubtitleGlint 1.25s ease-out}
+    @keyframes episodeSubtitleGlint{from{background-position:100% 0}to{background-position:0 0}}
+    @media(prefers-reduced-motion:reduce){.backEpisodes:hover ~ .titleEpisode,.backEpisodes:focus-visible ~ .titleEpisode{animation:none}}
+    #rangeMetric,#speedMetric{border-bottom:0;padding-bottom:8px}
+    #distanceChartGroup,#speedChartGroup{margin-top:4px}
+    .minimumNote a{display:inline-flex;align-items:center;gap:3px;color:#777;text-decoration:none;white-space:nowrap}
+    .minimumNote a:hover,.minimumNote a:focus-visible{color:#505050;text-decoration:none}
+    .minimumCalendar{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+    .minimumCalendar .calendarPage{transform-origin:6px 6px;transition:transform .35s ease,opacity .35s ease}
+    .minimumNote a:hover .calendarPage,.minimumNote a:focus-visible .calendarPage{transform:translateY(-2px) rotateX(75deg);opacity:.5}
+    @media(prefers-reduced-motion:reduce){.minimumCalendar .calendarPage{transition:none}}
   </style>
 
   <!-- satellite.js does the SGP4 orbit math. It is a classic script that creates a global "satellite" object. -->

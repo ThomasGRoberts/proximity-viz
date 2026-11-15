@@ -4,7 +4,8 @@
 import * as THREE from "../visualization/Viz/vendor/three/three.module.js";
 import { feature } from "../visualization/Viz/vendor/topojson/topojson-client.js";
 import { relativeCameraFrame, relativeFitDistance } from "../visualization/Viz/relative-camera.js";
-import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "../visualization/Viz/relative-rendering.js";
+import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "../visualization/Viz/relative-rendering.js?v=2";
+import { MARKER } from "../shared/marker-spec.js";
 
 const ROOT = "../visualization/Viz/";
 const EARTH_KM = 6378.137;
@@ -52,7 +53,7 @@ function disposeScene(scene, renderer) {
   renderer.dispose(); renderer.forceContextLoss();
 }
 
-export async function mountE001Preview(host, interval, closestApproachMs, initialEarthColor = 0xd4d0c8) {
+export async function mountE001Preview(host, interval, closestApproachMs, initialEarthColor = 0xedeae5) {
   const [sgp4, config, cameraReference, topology, historyA, historyB] = await Promise.all([
     satelliteLibrary(), json("../visualization/local/episodes/E-001.json"),
     json("../visualization/local/camera-references/E-001-2017-10-30.json"),
@@ -66,12 +67,12 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
   const center = Math.max(interval.startMs, Math.min(interval.endMs, closestApproachMs ?? Date.parse(config.initialTime)));
   let current = center;
   if (!libs.every(lib => stateAt(lib, current, sgp4, maxAgeMs))) throw new Error("No supported TLE pair at the preview start within the current episode");
-  // Stay within the two initial, age-checked TLEs. Reversing at the ends keeps
-  // the small scene continuous without switching between independently fitted TLEs.
+  // Stay within the two initial, age-checked TLEs throughout this short loop.
   const fixedIndices = libs.map(lib => nearest(lib, current));
   const playStart = Math.max(interval.startMs, center - 3 * 3600000), playEnd = Math.min(interval.endMs, center + 3 * 3600000);
   if (playEnd <= playStart) throw new Error("Current episode interval is too short for the preview");
-  let playbackDirection = 1;
+  current = playStart;
+  let loopCount = 0;
   const referenceAt = ms => latLon(0, config.geoReferenceLongitudeDeg, GEO_KM / EARTH_KM).applyAxisAngle(earthAxis, sgp4.gstime(new Date(ms)));
   const compositionLift = new THREE.Vector3(0, .008, 0);
   const sourceTarget = new THREE.Vector3(...cameraReference.target);
@@ -119,7 +120,7 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
     }
   }
   const borderGeometry = new THREE.BufferGeometry(); borderGeometry.setAttribute("position", new THREE.Float32BufferAttribute(borderPoints, 3));
-  borders.add(new THREE.LineSegments(borderGeometry, new THREE.LineBasicMaterial({ color: 0x6c6963, transparent: true, opacity: .27, depthTest: true, depthWrite: false })));
+  borders.add(new THREE.LineSegments(borderGeometry, new THREE.LineBasicMaterial({ color: 0x958f86, transparent: true, opacity: .31, depthTest: true, depthWrite: false })));
   const belt = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 360 }, (_, index) => latLon(0, index - 180, GEO_KM / EARTH_KM))), new THREE.LineBasicMaterial({ color: 0xbba767, transparent: true, opacity: .44, depthWrite: false }));
   earth.add(belt);
   const dots = [], orbits = [];
@@ -127,18 +128,20 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
   const centerAngle = sgp4.gstime(new Date(center));
   for (const [index, slot] of ["A", "B"].entries()) {
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(SATELLITE_STYLES[slot].dot), sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false }));
-    const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); sprite.scale.set(DOT_SCREEN_SIZE * 2.4 * lens, DOT_SCREEN_SIZE * 2.4 * lens, 1);
+    const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)); sprite.scale.set(DOT_SCREEN_SIZE * 2.85 * lens, DOT_SCREEN_SIZE * 2.85 * lens, 1);
     sprite.renderOrder = index ? 8 : 9; scene.add(sprite); dots.push(sprite);
-    // Build an actual 27-hour Earth-fixed track once. Rebuilding its GPU buffers
-    // during playback caused brief blank frames on small WebGL canvases.
-    const points = [], trailStart = Math.max(interval.startMs, center - DAY);
-    const trailEnd = Math.min(interval.endMs, center + 3 * 3600000);
+    // Keep the complete six-hour buffer on the GPU; reveal only the path already visited.
+    const points = [], trailStart = playStart, trailEnd = playEnd;
     for (let step = 0; step <= 180; step++) {
       const trailTime = trailStart + step / 180 * (trailEnd - trailStart);
       const orbitalState = stateAt(libs[index], trailTime, sgp4, maxAgeMs, fixedIndices[index]);
-      if (orbitalState) points.push(eci(orbitalState.r).applyAxisAngle(earthAxis, centerAngle - sgp4.gstime(new Date(trailTime))));
+      if (!orbitalState) throw new Error("Unsupported TLE within preview loop");
+      points.push(eci(orbitalState.r).applyAxisAngle(earthAxis, centerAngle - sgp4.gstime(new Date(trailTime))));
     }
     const orbit = new THREE.Mesh(fadingTrailGeometry(points), fadingTrailMaterial(slot));
+    orbit.geometry.setDrawRange(0, 0);
+    orbit.userData.points = points;
+    orbit.userData.tipIndex = -1;
     orbit.material.depthTest = false;
     orbit.renderOrder = 5;
     trailRoot.add(orbit); orbits.push(orbit);
@@ -148,9 +151,9 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
     if (disposed) return;
     const width = Math.max(1, host.clientWidth), height = Math.max(1, host.clientHeight);
     camera.aspect = width / height;
-    // The canvas bleeds left behind the description. Keep both satellites in
-    // the primary pane while the GEO belt remains visible across the card.
-    camera.filmOffset = matchMedia("(min-width: 901px)").matches ? -125 / width * camera.getFilmWidth() : 0;
+    const markerScale = DOT_SCREEN_SIZE * 2.85 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 275 / height * MARKER.diameterPx / 12;
+    for (const dot of dots) dot.scale.set(markerScale, markerScale, 1);
+    camera.filmOffset = 0;
     camera.updateProjectionMatrix(); renderer.setSize(width, height, false); draw(true);
   }
   function draw(snapCamera = false) {
@@ -172,6 +175,17 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
       camera.position.copy(target).add(offset.setLength(goal));
     }
     camera.lookAt(target.clone().add(compositionLift));
+    // Solve the film shift from the actual projected Earth centre to the primary pane centre.
+    const pane = host.closest(".visual-link")?.getBoundingClientRect(), rect = host.getBoundingClientRect();
+    if (pane) {
+      camera.filmOffset = 0; camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+      const x0 = (new THREE.Vector3()).project(camera).x;
+      camera.filmOffset = -1; camera.updateProjectionMatrix();
+      const x1 = (new THREE.Vector3()).project(camera).x;
+      const desired = 2 * (pane.left + pane.width / 2 - rect.left) / rect.width - 1;
+      camera.filmOffset = (desired - x0) / (x1 - x0) * -1;
+      camera.updateProjectionMatrix();
+    }
     const earthAngle = sgp4.gstime(new Date(current));
     for (let index = 0; index < 2; index++) {
       const state = currentStates[index];
@@ -179,18 +193,42 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
       if (!state) continue;
       dots[index].position.copy(eci(state.r));
       orbits[index].material.uniforms.uResolution.value.set(host.clientWidth, host.clientHeight);
+      const orbit = orbits[index], points = orbit.userData.points, geometry = orbit.geometry;
+      const fraction = Math.max(0, Math.min(1, (current - playStart) / (playEnd - playStart)));
+      const segment = Math.min(points.length - 2, Math.floor(fraction * (points.length - 1)));
+      const tipIndex = fraction === 0 ? -1 : segment + 1;
+      const position = geometry.getAttribute("position"), next = geometry.getAttribute("next");
+      const oldTip = orbit.userData.tipIndex;
+      if (oldTip > 0) for (let side = 0; side < 2; side++) position.setXYZ(oldTip * 2 + side, ...points[oldTip].toArray());
+      if (tipIndex > 0) {
+        const tip = eci(state.r).applyAxisAngle(earthAxis, centerAngle - earthAngle);
+        for (let side = 0; side < 2; side++) {
+          position.setXYZ(tipIndex * 2 + side, ...tip.toArray());
+          next.setXYZ((tipIndex - 1) * 2 + side, ...tip.toArray());
+        }
+      }
+      position.needsUpdate = true; next.needsUpdate = true;
+      geometry.setDrawRange(0, Math.max(0, tipIndex) * 6);
+      orbit.material.uniforms.uHeadAge.value = Math.max(0.001, fraction);
+      orbit.userData.tipIndex = tipIndex;
     }
     earth.rotation.y = earthAngle;
     trailRoot.rotation.y = earthAngle - centerAngle;
+    host.dataset.previewTimeUtc = new Date(current).toISOString();
+    host.dataset.previewLoop = String(loopCount);
+    host.dataset.trailSegments = orbits.map(orbit => orbit.geometry.drawRange.count / 6).join(",");
+    if (pane) {
+      const projected = (new THREE.Vector3()).project(camera);
+      host.dataset.earthCenterErrorPx = ((projected.x + 1) * rect.width / 2 + rect.left - pane.left - pane.width / 2).toFixed(2);
+    }
     renderer.render(scene, camera);
   }
   const observer = new ResizeObserver(resize); observer.observe(host); resize();
   function animate(now) {
     if (disposed || !host.isConnected) return;
     if (!document.hidden && now - lastRender >= 33 && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      current += Math.min((now - last) / 1000, .08) * PREVIEW_RATE * playbackDirection;
-      if (current > playEnd) { current = playEnd - (current - playEnd); playbackDirection = -1; }
-      if (current < playStart) { current = playStart + (playStart - current); playbackDirection = 1; }
+      current += Math.min((now - last) / 1000, .08) * PREVIEW_RATE;
+      if (current >= playEnd) { current = playStart + (current - playEnd); loopCount++; }
       draw(false);
       lastRender = last = now;
     }

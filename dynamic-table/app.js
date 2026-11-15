@@ -3,6 +3,9 @@ import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
 import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval } from "../shared/episode-feed.js";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
+import { MARKER } from "../shared/marker-spec.js";
+
+for (const [name, value] of Object.entries(MARKER)) document.documentElement.style.setProperty(`--marker-${name}`, name.endsWith("Px") ? `${value}px` : String(value));
 
 const $ = selector => document.querySelector(selector);
 const el = (tag, className = "", value) => { const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node; };
@@ -11,8 +14,8 @@ const field = (row, ...names) => {
   return names.map(name => cells[name.toLowerCase().replace(/[^a-z0-9]/g, "")]).find(Boolean) || "";
 };
 const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
-const EARTH_COLORS = { warm: 0xd4d0c8, stone: 0xc7c7c2, taupe: 0xc9c2b8, neutral: 0xd4d1cc };
-const state = { live: null, preview: null, series: null, seriesPromise: null, usePreview: false, selected: null, query: "", orbit: "", earthColor: "warm", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
+const EARTH_COLORS = { warm: 0xe8e5df, stone: 0xe6e6e1, taupe: 0xe6e1db, neutral: 0xedeae5 };
+const state = { live: null, preview: null, series: null, seriesPromise: null, usePreview: false, selected: null, query: "", orbit: "", earthColor: "neutral", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 

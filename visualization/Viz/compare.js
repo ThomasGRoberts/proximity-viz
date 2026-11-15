@@ -106,7 +106,8 @@ let cameraTween = null;      // A smooth camera movement in progress, or null if
 let lastIdentityKey = "";    // Used to avoid rebuilding the "Now modeling" panel every frame
 let episodeConfig = null;
 let episodeStartMs = 0, episodeEndMs = 0, analysisStepMs = 15 * MINUTE_MS;
-let analysisSamples = [], analysisResult = null;
+let analysisSamples = [], chartSamples = [], analysisResult = null;
+let focusedMinimumMs = null;
 let chartScales = { distanceKm: 1000, speedMps: 100 };
 let chartDirty = true;
 let lastChartDraw = 0;
@@ -728,6 +729,19 @@ function prepareAnalysis() {
     return { tleA, tleB, distanceKm: a && b ? distanceKm(a.r, b.r) : null,
       speedMps: a && b ? distanceKm(a.v, b.v) * 1000 : null };
   });
+  // The published 15-minute analysis remains authoritative. For drawing only,
+  // propagate a midpoint within each continuous TLE pair; never bridge a TLE switch.
+  chartSamples = [];
+  for (let index = 0; index < analysisSamples.length; index++) {
+    const first = analysisSamples[index], second = analysisSamples[index + 1];
+    chartSamples.push(first);
+    if (!second || first.tleA !== second.tleA || first.tleB !== second.tleB ||
+        !Number.isFinite(first.distanceKm) || !Number.isFinite(second.distanceKm)) continue;
+    const ms = (first.ms + second.ms) / 2;
+    const a = stateAt(pair.A, ms, first.tleA), b = stateAt(pair.B, ms, first.tleB);
+    if (a && b) chartSamples.push({ ms, tleA: first.tleA, tleB: first.tleB,
+      distanceKm: distanceKm(a.r, b.r), speedMps: distanceKm(a.v, b.v) * 1000 });
+  }
   const valid = analysisSamples.filter(s => Number.isFinite(s.distanceKm) && Number.isFinite(s.speedMps));
   const scaleFor = key => {
     const values = valid.map(s => s[key]).sort((a, b) => a - b);
@@ -764,7 +778,7 @@ function updateThresholds() {
     const strong = document.createElement("strong"); strong.textContent = `${value} ${unit}`;
     const dateLink = document.createElement("a");
     dateLink.href = "#playbackDock";
-    dateLink.textContent = `on ${episodeDateText(item.ms)}`;
+    dateLink.innerHTML = `<span>on ${episodeDateText(item.ms)}</span><svg class="minimumCalendar" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.3" y="3.8" width="11.4" height="9.8" rx="1.3"/><path d="M2.7 6.4h10.6M5.1 2.3v3M10.9 2.3v3"/><path class="calendarPage" d="M5 9h5.8m-2 2 2-2"/></svg>`;
     dateLink.title = `Jump playback to ${new Date(item.ms).toISOString()}`;
     dateLink.setAttribute("aria-label", `Jump playback to ${new Date(item.ms).toISOString()} for minimum ${unit === "km" ? "separation distance" : "relative velocity"}`);
     dateLink.addEventListener("click", event => {
@@ -772,6 +786,8 @@ function updateThresholds() {
       const slider = $("timelineSlider");
       slider.value = Math.max(startMs, Math.min(endMs, item.ms));
       slider.dispatchEvent(new Event("input", { bubbles: true }));
+      focusedMinimumMs = item.ms;
+      chartDirty = true; drawEpisodeCharts();
       slider.focus({ preventScroll: true });
     });
     target.replaceChildren(document.createTextNode("Minimum value this episode: "), strong, document.createTextNode(" "), dateLink);
@@ -854,7 +870,8 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   const pad = { left: 57, right: 106, top: 13, bottom: 28 };
   const bottom = h - pad.bottom, right = w - pad.right;
   const windowMs = 14 * 86400000;
-  const windowStart = currentMs - windowMs;
+  const windowStart = focusedMinimumMs === null ? currentMs - windowMs : focusedMinimumMs - windowMs / 2;
+  const windowEnd = windowStart + windowMs;
   const x = ms => pad.left + (ms - windowStart) / windowMs * (right - pad.left);
   const y = value => bottom - Math.min(1, Math.max(0, value / yMax)) * (bottom - pad.top);
   const cue = thresholdCueOffset(canvas), thresholdY = y(threshold) + cue;
@@ -875,7 +892,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.fillStyle = "#eeeeec"; ctx.fillRect(pad.left, y(threshold), right - pad.left, bottom - y(threshold));
   // UTC-anchored ticks share the data's time transform, so they slide with it.
   const tickMs = 4 * DAY_MS;
-  for (let ms = Math.ceil(windowStart / tickMs) * tickMs; ms <= currentMs; ms += tickMs) {
+  for (let ms = Math.ceil(windowStart / tickMs) * tickMs; ms <= windowEnd; ms += tickMs) {
     const px = x(ms);
     ctx.strokeStyle = "#cacaca"; ctx.lineWidth = .8;
     ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, bottom); ctx.stroke();
@@ -887,15 +904,15 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const value = yMax * i / 4, py = y(value);
-    ctx.strokeStyle = "#e2e2e2"; ctx.beginPath(); ctx.moveTo(pad.left, py); ctx.lineTo(right, py); ctx.stroke();
+    if (i < 4) { ctx.strokeStyle = "#e2e2e2"; ctx.beginPath(); ctx.moveTo(pad.left, py); ctx.lineTo(right, py); ctx.stroke(); }
     ctx.fillStyle = "#777"; ctx.textAlign = "right"; ctx.fillText(Number.isInteger(value) ? value.toLocaleString() : value.toFixed(1), pad.left - 5, py + 3);
   }
   ctx.strokeStyle = hoveredChartLines.has(canvas) ? "#898989" : "#b8b8b8"; ctx.lineWidth = hoveredChartLines.has(canvas) ? 1.35 : 1;
   ctx.beginPath(); ctx.moveTo(pad.left, thresholdY); ctx.lineTo(w - 56, thresholdY); ctx.stroke();
   ctx.strokeStyle = "#555"; ctx.lineWidth = 1.4; ctx.beginPath();
   let connected = false, clipped = false, previous = null;
-  for (const sample of analysisSamples) {
-    if (sample.ms > currentMs) break;
+  for (const sample of chartSamples) {
+    if (sample.ms > windowEnd || (focusedMinimumMs === null && sample.ms > currentMs)) break;
     if (sample.ms < windowStart) { previous = null; connected = false; continue; }
     const value = sample[key];
     if (!Number.isFinite(value)) { connected = false; previous = null; continue; }
@@ -905,7 +922,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     else ctx.lineTo(px, py);
     connected = true; previous = sample;
   }
-  if (previous && currentMs > previous.ms && currentMs <= episodeEndMs) {
+  if (focusedMinimumMs === null && previous && currentMs > previous.ms && currentMs <= episodeEndMs) {
     const current = key === "distanceKm" ? separationAt(currentMs) : speedInMetresAt(currentMs);
     const a = nearestTleIndex(library[pair.A], currentMs), b = nearestTleIndex(library[pair.B], currentMs);
     if (Number.isFinite(current) && previous.tleA === a && previous.tleB === b) {
@@ -916,12 +933,17 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.stroke();
   for (const [result, color] of [[{ intervals: singleThresholdIntervals }, "#a9a9a9"], [analysisResult, "#eaaa00"]]) {
     for (const interval of result?.intervals || []) {
-      if (interval.start > currentMs) break;
-      const left = Math.max(windowStart, interval.start), end = Math.min(currentMs, interval.end);
+      if (interval.start > windowEnd) break;
+      const left = Math.max(windowStart, interval.start), end = Math.min(windowEnd, interval.end);
       if (end > left) { ctx.fillStyle = color; ctx.fillRect(x(left), bottom + 3, Math.max(1, x(end) - x(left)), 3); }
     }
   }
   if (clipped) { ctx.fillStyle = "#805e10"; ctx.textAlign = "right"; ctx.fillText("↑ clipped", right, 11); }
+  if (focusedMinimumMs !== null) {
+    ctx.save(); ctx.strokeStyle = "#8b806a"; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(x(focusedMinimumMs), pad.top); ctx.lineTo(x(focusedMinimumMs), bottom); ctx.stroke(); ctx.restore();
+    canvas.dataset.focusedMinimumUtc = new Date(focusedMinimumMs).toISOString();
+  } else delete canvas.dataset.focusedMinimumUtc;
   if (currentMs >= episodeStartMs && currentMs <= episodeEndMs) {
     const current = key === "distanceKm" ? separationAt(currentMs) : speedInMetresAt(currentMs);
     const label = canvas.parentElement.querySelector(".currentValue");
@@ -1227,6 +1249,7 @@ function updateReportedBand() {
 function setWindow(newStart, newEnd) {
   if (newEnd <= newStart) newEnd = newStart + DAY_MS;   // Never allow an empty window
   startMs = newStart; endMs = newEnd; currentMs = episodeConfig ? Date.parse(episodeConfig.initialTime) : startMs;
+  focusedMinimumMs = null;
   $("startTime").value = toInputValue(startMs);
   $("endTime").value = toInputValue(endMs);
   $("timelineSlider").min = startMs;
@@ -1774,11 +1797,13 @@ $("speedUpBtn").addEventListener("click", () => stepSpeed(1));
 updateSpeedLabel();
 
 $("playBtn").addEventListener("click", () => {
+  focusedMinimumMs = null; chartDirty = true;
   playing = !playing;   // "!" means "not", so this flips true <-> false
   $("playBtn").innerHTML = playing ? '<span class="pauseIcon"></span>' : '<span class="playIcon"></span>';
 });
 // Dragging or clicking the slider: jump to that moment.
 $("timelineSlider").addEventListener("input", event => {
+  focusedMinimumMs = null;
   playing = false;
   $("playBtn").innerHTML = '<span class="playIcon"></span>';
   currentMs = Number(event.target.value);

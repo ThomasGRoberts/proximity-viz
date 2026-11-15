@@ -272,9 +272,10 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 /* A faint extension of the actual GEO scene passes behind the description. */
 @media(min-width:901px){
   .expanded-inner.has-visual .visual-block{z-index:0;overflow:visible}
-  .expanded-inner.has-visual .context-block{position:relative;z-index:1;background:linear-gradient(180deg,#fffcf6 0%,#fffcf6 46%,#fffcf6a8 64%,transparent 86%)}
+  .expanded-inner.has-visual .context-block{position:relative;z-index:1;isolation:isolate;background:none}
+  .expanded-inner.has-visual .context-block::before{content:"";position:absolute;z-index:-1;inset:-36px -115px -85px -22px;pointer-events:none;background:radial-gradient(ellipse 66% 70% at 26% 24%,#fffcf6 0%,#fffcf6f5 41%,#fffcf6b8 69%,#fffcf600 100%)}
   .expanded-inner.has-visual .visual-link.model-link{overflow:visible}
-  .expanded-inner.has-visual .orbital-preview{position:absolute;left:calc(-38.8889% - 18px);width:calc(138.8889% + 18px);height:100%;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,#0009 0%,#000b 28%,#000 40%);mask-image:linear-gradient(90deg,#0009 0%,#000b 28%,#000 40%)}
+  .expanded-inner.has-visual .orbital-preview{position:absolute;left:calc(-38.8889% - 18px);width:calc(138.8889% + 18px);height:100%;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,#0003 0%,#0009 18%,#000 42%);mask-image:linear-gradient(90deg,#0003 0%,#0009 18%,#000 42%)}
 }
 .earth-controls{display:flex;align-items:center;gap:9px;padding:7px 18px;border-bottom:1px solid #eee3c9;background:#fffcf6;color:#655f52;font-size:11px}
 .earth-controls[hidden]{display:none!important}
@@ -295,3 +296,13 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .visual-link.model-static-fallback:hover .model-arrow,.visual-link.model-static-fallback:focus-visible .model-arrow{width:12px;opacity:1}
 @keyframes model-arrow-nudge{0%{transform:translateX(-2px)}60%{transform:translateX(3px)}100%{transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){.model-action,.model-action .model-label,.model-action .model-arrow{transition:none!important;animation:none!important}}
+
+/* The action lives at the lower right of the primary scene pane. */
+.model-action{top:auto;right:14px;bottom:12px;left:auto;gap:9px;pointer-events:auto}
+.model-action .model-label{padding:0}
+.model-action .model-arrow{margin-left:-7px}
+.visual-link[data-model-stage="arrow"].is-action-hover .model-action .model-arrow{animation:none;transform:translateX(5px)}
+.visual-link:not(.is-action-hover) .model-action .model-arrow{transform:translateX(0)}
+.dot{box-sizing:border-box;width:var(--marker-diameterPx,12px);height:var(--marker-diameterPx,12px);flex-basis:var(--marker-diameterPx,12px);border:var(--marker-outlinePx,2px) solid var(--marker-outline,#191919);background:var(--marker-A,#eaaa00)}
+.dot.b{background:var(--marker-B,#7a7a7a)}
+.dot.c{background:var(--marker-C,#707070)}

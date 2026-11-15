@@ -1,10 +1,11 @@
 /* Shared marker and fading trail drawing for the full model and E-001 preview. */
 import * as THREE from "./vendor/three/three.module.js";
+import { MARKER } from "../../shared/marker-spec.js";
 
 export const DOT_SCREEN_SIZE = .022;
 export const SATELLITE_STYLES = {
-  A: { dot: "#eaaa00", line: 0xeaaa00 },
-  B: { dot: "#7a7a7a", line: 0x7a7a7a },
+  A: { dot: MARKER.A, line: 0xeaaa00 },
+  B: { dot: MARKER.B, line: 0x7a7a7a },
 };
 
 export function dotTexture(fillColor) {
@@ -13,7 +14,7 @@ export function dotTexture(fillColor) {
   const ctx = canvas.getContext("2d");
   ctx.beginPath(); ctx.arc(64, 64, 37, 0, Math.PI * 2);
   ctx.fillStyle = fillColor; ctx.fill();
-  ctx.lineWidth = 12; ctx.strokeStyle = "#000"; ctx.stroke();
+  ctx.lineWidth = 2 * 43.5 * MARKER.outlinePx / MARKER.diameterPx; ctx.strokeStyle = MARKER.outline; ctx.stroke();
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
@@ -43,8 +44,8 @@ export function fadingTrailGeometry(points) {
 
 export function fadingTrailMaterial(slot) {
   return new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(SATELLITE_STYLES[slot].line) }, uOpacity: { value: .82 }, uResolution: { value: new THREE.Vector2(1, 1) } },
-    vertexShader: `uniform vec2 uResolution; attribute vec3 previous; attribute vec3 next; attribute float side; attribute float age; varying float vAlpha;
+    uniforms: { uColor: { value: new THREE.Color(SATELLITE_STYLES[slot].line) }, uOpacity: { value: .82 }, uResolution: { value: new THREE.Vector2(1, 1) }, uHeadAge: { value: 1 } },
+    vertexShader: `uniform vec2 uResolution; uniform float uHeadAge; attribute vec3 previous; attribute vec3 next; attribute float side; attribute float age; varying float vAlpha;
       void main() {
         vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         vec4 a = projectionMatrix * modelViewMatrix * vec4(previous, 1.0);
@@ -54,7 +55,7 @@ export function fadingTrailMaterial(slot) {
         vec2 normal = vec2(-tangent.y, tangent.x);
         clip.xy += normal * side * 1.1 * 2.0 / uResolution * clip.w;
         gl_Position = clip;
-        vAlpha = pow(age, 1.4);
+        vAlpha = pow(clamp(age / max(uHeadAge, 0.0001), 0.0, 1.0), 1.4);
       }`,
     fragmentShader: `uniform vec3 uColor; uniform float uOpacity; varying float vAlpha;
       void main() {

@@ -5,6 +5,7 @@ import * as THREE from "../visualization/Viz/vendor/three/three.module.js";
 export function decorateModelLink(link) {
   if (!link.isConnected) return;
   const canvas = link.querySelector(".model-canvas");
+  const action = link.querySelector(".model-action");
   if (!canvas) return;
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   try {
@@ -80,6 +81,8 @@ export function decorateModelLink(link) {
     link.addEventListener("pointerleave", () => { if (document.activeElement !== link) setOpen(false); });
     link.addEventListener("focus", () => setOpen(true));
     link.addEventListener("blur", () => { if (!link.matches(":hover")) setOpen(false); });
+    action?.addEventListener("pointerenter", () => link.classList.add("is-action-hover"));
+    action?.addEventListener("pointerleave", () => link.classList.remove("is-action-hover"));
     const observer = new MutationObserver(() => {
       if (link.isConnected) return;
       observer.disconnect(); cancelAnimationFrame(frame);
