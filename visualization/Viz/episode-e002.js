@@ -4,6 +4,9 @@ import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=2";
 import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js";
 import { E002_TITLE_MARKUP } from "../../shared/episode-copy.js";
 import { safeEpisodeName } from "../../shared/episode-name.js";
+import { renderEstimatedMinimum } from "./estimate-ui.js";
+import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
+import { CHART_PADDING, CHART_COLOR } from "./chart-style.js";
 
 const $ = id => document.getElementById(id);
 const episode = await fetch(new URL("../dev/e002/episode.json", import.meta.url)).then(response => response.json());
@@ -34,7 +37,7 @@ const sourceLabel = tle => tle?.source === "space-track" ? "Space-Track.org" : t
 
 document.body.classList.add("e002-shared");
 document.body.classList.toggle("e002-multi-pair", comparisons.length > 1);
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css?v=5">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css?v=6">');
 const scene = document.createElement("div"); scene.id = "scene"; document.body.prepend(scene);
 const labels = document.createElement("div"); labels.id = "satelliteScreenLabels"; document.body.append(labels);
 const scaffold = document.createElement("div"); scaffold.className = "e002-player-scaffold";
@@ -91,7 +94,7 @@ for (const groupId of ["distanceChartGroup", "speedChartGroup"]) {
 $("separationChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 separation; gaps indicate unsupported samples");
 $("speedChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 relative speed; gaps indicate unsupported samples");
 
-const { episodeModel: model } = await import("../dev/e002/player.js?v=15");
+const { episodeModel: model } = await import("../dev/e002/player.js?v=16");
 function validSample(comparison, ms) {
   if (comparison.slots.some(slot => !model.selected[slot] || Math.abs(ms - Date.parse(model.selected[slot].epoch)) > episode.maximumStatisticTleAgeHours * 3600000)) return null;
   return model.samplePair(...comparison.slots, ms);
@@ -113,20 +116,14 @@ function updateCards() {
     const age = card.querySelector(".tleAgeValue"); if (age && age.textContent !== card.dataset.tleAge) age.textContent = card.dataset.tleAge;
   }
 }
-function minimumNote(id, key, unit) {
+function minimumNote(id, key, unit, metric) {
   const node = $(id); node.replaceChildren();
   for (const comparison of comparisons) {
     const values = series.filter(item => Number.isFinite(item[comparison.slots[0]]?.[key]));
-    const line = document.createElement("div"); line.className = "e002-minimum-line";
-    if (!values.length) line.append("Minimum value this chapter: unavailable");
-    else {
-      const minimum = values.reduce((best, item) => item[comparison.slots[0]][key] < best[comparison.slots[0]][key] ? item : best);
-      const strong = document.createElement("strong"); strong.textContent = `${minimum[comparison.slots[0]][key].toFixed(1)} ${unit}`;
-      line.append("Minimum value this chapter: ", strong, " on ");
-      const jump = document.createElement("a"); jump.href = "#playbackDock"; jump.textContent = formatTime(minimum.ms); jump.title = "Jump playback to this sampled time";
-      jump.addEventListener("click", event => { event.preventDefault(); model.setTime(minimum.ms); }); line.append(jump);
-    }
-    node.append(line);
+    const line = comparisons.length === 1 ? node : document.createElement("div"); line.className = comparisons.length === 1 ? "minimumNote" : "e002-minimum-line";
+    const minimum = values.length ? values.reduce((best, item) => item[comparison.slots[0]][key] < best[comparison.slots[0]][key] ? item : best) : null;
+    renderEstimatedMinimum(line, { episodeId: "E-002", metric, value: minimum?.[comparison.slots[0]][key], unit, ms: minimum?.ms, onJump: ms => model.setTime(ms) });
+    if (line !== node) node.append(line);
   }
 }
 function buildSeries() {
@@ -138,54 +135,58 @@ function buildSeries() {
     const values = series.flatMap(sample => comparisons.map(comparison => sample[comparison.slots[0]]?.[key])).filter(Number.isFinite);
     if (values.length) $(sliderId).max = String(Math.max(Number($(sliderId).max), Math.ceil(Math.max(...values) * 1.25 / 1000) * 1000));
   }
-  minimumNote("distanceMinimum", "distanceKm", "km"); minimumNote("speedMinimum", "speedMs", "m/s");
+  minimumNote("distanceMinimum", "distanceKm", "km", "separationKm"); minimumNote("speedMinimum", "speedMs", "m/s", "relativeSpeedMps");
   updateCharts();
 }
 function drawChart(id, key, threshold, current) {
-  const canvas = $(id), context = canvas.getContext("2d"), width = Math.max(200, canvas.clientWidth), height = Math.max(90, canvas.clientHeight);
-  const ratio = devicePixelRatio || 1; canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); context.setTransform(ratio, 0, 0, ratio, 0, 0);
-  context.clearRect(0, 0, width, height); context.fillStyle = "#fff"; context.fillRect(0, 0, width, height);
-  const left = 42, right = width - 8, top = 12, bottom = height - 22;
-  context.strokeStyle = "#e6e6e6"; context.lineWidth = 1; context.beginPath(); context.moveTo(left, bottom); context.lineTo(right, bottom); context.stroke();
-  const byPair = comparisons.map(comparison => series.map(item => item[comparison.slots[0]]?.[key]).filter(Number.isFinite));
-  const eligible = byPair.filter(values => values.length > 1);
+  const canvas = $(id), context = canvas.getContext("2d"), width = Math.max(240, Math.round(canvas.clientWidth)), height = Math.max(150, Math.round(canvas.clientHeight));
+  const ratio = Math.min(devicePixelRatio || 1, 3); canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  const pad = CHART_PADDING, left = pad.left, right = width - pad.right, top = pad.top, bottom = height - pad.bottom;
+  const values = comparisons.flatMap(comparison => series.map(item => item[comparison.slots[0]]?.[key])).filter(Number.isFinite);
   const overflowNote = canvas.parentElement.querySelector(".e002-chart-overflow"); overflowNote.replaceChildren();
-  if (!eligible.length) { context.fillStyle = "#999"; context.font = "11px sans-serif"; context.fillText("USA 245 unavailable in this chapter", left + 5, (top + bottom) / 2); return; }
-  const maxima = eligible.map(values => Math.max(...values)).sort((a,b) => a-b);
-  const max = Math.max(threshold * 1.2, maxima.length === 2 && maxima[1] > maxima[0] * 2.5 ? maxima[0] * 1.2 : maxima.at(-1) * 1.08, 1);
+  context.clearRect(0, 0, width, height); context.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  const unit = key === "distanceKm" ? "km" : "m/s";
+  context.save(); context.translate(22, (top + bottom) / 2); context.rotate(-Math.PI / 2);
+  context.fillStyle = "#555"; context.textAlign = "center";
+  context.fillText(key === "distanceKm" ? "Estimated separation (km)" : "Estimated relative velocity (m/s)", 0, 0); context.restore();
+  if (!values.length) { context.fillStyle = CHART_COLOR.text; context.fillText("No supported samples", left + 5, (top + bottom) / 2); return; }
+  const max = Math.max(Math.max(...values) * 1.08, threshold * 1.2, 1);
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end);
-  const x = ms => left + (ms - start) / (end - start) * (right - left), y = value => bottom - Math.min(value, max) / max * (bottom - top);
+  const x = ms => left + (ms - start) / (end - start) * (right - left);
+  const y = value => bottom - Math.min(1, Math.max(0, value / max)) * (bottom - top);
   chartScales.set(id, { max, top, bottom });
+  context.fillStyle = CHART_COLOR.thresholdBand; context.fillRect(left, y(threshold), right - left, bottom - y(threshold));
+  for (let index = 0; index <= 4; index++) {
+    const value = max * index / 4, py = y(value);
+    if (index < 4) { context.strokeStyle = CHART_COLOR.grid; context.beginPath(); context.moveTo(left, py); context.lineTo(right, py); context.stroke(); }
+    context.fillStyle = CHART_COLOR.text; context.textAlign = "right"; context.fillText(Math.round(value).toLocaleString(), left - 5, py + 3);
+  }
+  context.strokeStyle = CHART_COLOR.threshold; context.lineWidth = 1; context.beginPath(); context.moveTo(left, y(threshold)); context.lineTo(width - 56, y(threshold)); context.stroke();
   const edge = canvas.parentElement.querySelector(".thresholdEdge");
-  edge.style.top = `${canvas.offsetTop + y(threshold)}px`; edge.textContent = key === "distanceKm" ? `${threshold} km` : `${threshold} m/s`; edge.setAttribute("aria-valuenow", String(threshold)); edge.setAttribute("aria-valuemax", key === "distanceKm" ? $("distanceThresholdSlider").max : $("speedThresholdSlider").max);
-  const currentValue = canvas.parentElement.querySelector(".currentValue");
-  const selected = validSample(comparisons[0], current)?.[key];
+  edge.style.top = `${canvas.offsetTop + Math.max(top + 5, Math.min(bottom - 5, y(threshold)))}px`;
+  edge.textContent = `${threshold} ${unit}`; edge.setAttribute("aria-valuenow", String(threshold));
+  edge.setAttribute("aria-valuemax", key === "distanceKm" ? $("distanceThresholdSlider").max : $("speedThresholdSlider").max);
+  const currentValue = canvas.parentElement.querySelector(".currentValue"), selected = validSample(comparisons[0], current)?.[key];
   currentValue.hidden = !Number.isFinite(selected);
-  if (Number.isFinite(selected)) { currentValue.style.top = `${canvas.offsetTop + y(selected)}px`; currentValue.textContent = selected.toFixed(1); }
-  context.setLineDash([3, 3]); context.strokeStyle = "#b8a875"; context.beginPath(); context.moveTo(left, y(threshold)); context.lineTo(right, y(threshold)); context.stroke(); context.setLineDash([]);
+  if (Number.isFinite(selected)) { currentValue.style.top = `${canvas.offsetTop + Math.max(top + 5, Math.min(bottom - 5, y(selected)))}px`; currentValue.textContent = `${Math.round(selected).toLocaleString()} ${unit}`; }
+  context.strokeStyle = CHART_COLOR.line; context.lineWidth = 1.4; context.beginPath();
   for (const comparison of comparisons) {
-    const slot = comparison.slots[0]; context.strokeStyle = comparison.color; context.lineWidth = 1.8; context.setLineDash(slot === "C" ? [4, 4] : []); context.beginPath();
-    let drawing = false, firstOverflow = null, highest = 0;
+    const slot = comparison.slots[0]; let drawing = false;
     for (const item of series) {
+      if (item.ms > current) break;
       const value = item[slot]?.[key];
       if (!Number.isFinite(value)) { drawing = false; continue; }
       if (drawing) context.lineTo(x(item.ms), y(value)); else context.moveTo(x(item.ms), y(value));
       drawing = true;
-      if (value > max) { firstOverflow ??= item.ms; highest = Math.max(highest, value); }
     }
-    context.stroke(); context.setLineDash([]);
-    if (firstOverflow !== null) {
-      const arrowX = Math.max(left + 4, Math.min(right - 4, x(firstOverflow)));
-      context.fillStyle = comparison.color; context.beginPath(); context.moveTo(arrowX, top - 3); context.lineTo(arrowX - 4, top + 5); context.lineTo(arrowX + 4, top + 5); context.fill();
-      const span = document.createElement("span"); span.style.color = comparison.color; span.textContent = `↑ ${comparison.short} exceeds ${Math.round(max).toLocaleString()} ${key === "distanceKm" ? "km" : "m/s"} (up to ${Math.round(highest).toLocaleString()})`;
-      overflowNote.append(span);
-    }
+    context.stroke(); context.beginPath();
   }
-  context.fillStyle = "#777"; context.font = "9px sans-serif"; context.fillText("0", 20, bottom + 2); context.fillText(Math.round(max).toLocaleString(), 3, top + 6);
-  context.fillStyle = "#666"; context.fillText(formatTime(start).replace(" UTC", ""), left, height - 5);
-  context.textAlign = "right"; context.fillText(formatTime(end).replace(" UTC", ""), right, height - 5); context.textAlign = "left";
-  context.strokeStyle = "#555"; context.beginPath(); context.moveTo(x(current), top); context.lineTo(x(current), bottom); context.stroke();
+  context.strokeStyle = "#8b806a"; context.lineWidth = 1; context.setLineDash([2, 3]);
+  context.beginPath(); context.moveTo(x(current), top); context.lineTo(x(current), bottom); context.stroke(); context.setLineDash([]);
+  context.fillStyle = CHART_COLOR.text; context.textAlign = "left"; context.fillText(formatTime(start).replace(/^.*?, /, "").replace(" UTC", ""), left, height - 7);
+  context.textAlign = "right"; context.fillText(formatTime(end).replace(/^.*?, /, "").replace(" UTC", ""), right, height - 7);
 }
+
 function updateCharts() {
   const distance = Number($("distanceThresholdSlider").value), speed = Number($("speedThresholdSlider").value);
   drawChart("separationChart", "distanceKm", distance, model.current);
@@ -224,9 +225,12 @@ function tick() {
   }
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end), current = model.current;
   const slider = $("timelineSlider"); slider.min = String(start); slider.max = String(end); slider.value = String(current); slider.step = "1000";
-  $("sliderNow").textContent = formatTime(current); $("timeDisplay").textContent = formatTime(current);
+  updatePlaybackCounter($("sliderNow"), current - start, current); $("timeDisplay").textContent = formatTime(current);
   const currentValues = comparisons.map(comparison => validSample(comparison, current));
-  const display = (key, unit) => comparisons.length === 1 ? (currentValues[0] ? `${currentValues[0][key].toFixed(1)} ${unit}` : "—") : comparisons.map((comparison, index) => `${comparison.short}: ${currentValues[index] ? currentValues[index][key].toFixed(1) + " " + unit : "unavailable"}`).join(" · ");
+  const display = (key, unit) => {
+    const digits = key === "distanceKm" ? 0 : 1;
+    return comparisons.length === 1 ? (currentValues[0] ? `${currentValues[0][key].toFixed(digits)} ${unit}` : "—") : comparisons.map((comparison, index) => `${comparison.short}: ${currentValues[index] ? currentValues[index][key].toFixed(digits) + " " + unit : "unavailable"}`).join(" · ");
+  };
   $("rangeStat").textContent = display("distanceKm", "km"); $("speedStat").textContent = display("speedMs", "m/s");
   $("playBtn").setAttribute("aria-label", model.playing ? "Pause" : "Play");
   updateCards(); updateCharts(); setTimeout(tick, 500);
@@ -251,18 +255,14 @@ for (const [groupId, chartId, sliderId] of [["distanceChartGroup", "separationCh
   });
 }
 $("timelineSlider").addEventListener("input", event => model.setTime(Number(event.target.value)));
+wireTimelineHover($("timelineSlider"), $("timelineHover"), $("timelineHoverTick"), () => [Date.parse(model.window.start), Date.parse(model.window.end)]);
 $("playBtn").addEventListener("click", () => model.setPlaying(!model.playing));
 $("modeBtn").addEventListener("click", () => model.toggleFrame());
 $("resetBtn").hidden = false; $("resetBtn").addEventListener("click", () => model.resetCamera());
 $("zoomInBtn").addEventListener("click", () => model.zoom(1.12));
 $("zoomOutBtn").addEventListener("click", () => model.zoom(1 / 1.12));
-const speeds = [15, 30, 60, 90, 180, 360, 720];
-let speedIndex = speeds.indexOf(model.rate);
-const speedLabel = document.createElement("span"); speedLabel.className = "e002-speed-label"; $("playbackDock").append(speedLabel);
-function updateSpeed() { model.setRate(speeds[speedIndex]); speedLabel.textContent = `${speeds[speedIndex]}×`; $("speedDownBtn").disabled = speedIndex === 0; $("speedUpBtn").disabled = speedIndex === speeds.length - 1; }
-$("speedDownBtn").addEventListener("click", () => { speedIndex = Math.max(0, speedIndex - 1); updateSpeed(); });
-$("speedUpBtn").addEventListener("click", () => { speedIndex = Math.min(speeds.length - 1, speedIndex + 1); updateSpeed(); });
-updateSpeed();
+$("speed").value = "60";
+wireSpeedButtons($("speed"), $("speedDownBtn"), $("speedUpBtn"), rate => model.setRate(rate));
 new ResizeObserver(() => document.body.style.setProperty("--e002-dock-height", `${Math.ceil($("playbackDock").getBoundingClientRect().height)}px`)).observe($("playbackDock"));
 $("cameraControls").append(makeCameraEditor(model));
 tick();

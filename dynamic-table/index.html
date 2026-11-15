@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Episodes of Concern · ESPL</title>
   <link rel="icon" type="image/png" href="./assets/polyhedron-icon.png">
-  <link rel="stylesheet" href="./style.css?v=10">
-  <script type="module" src="./app.js?v=12"></script>
+  <link rel="stylesheet" href="./style.css?v=11">
+  <script type="module" src="./app.js?v=13"></script>
 </head>
 <body>
   <main class="component-wrap">
@@ -22,8 +22,8 @@
         <th scope="col"><button class="sort-head" data-sort="title" type="button">Episode Name <span class="sort-indicator" aria-hidden="true"></span></button></th>
         <th scope="col">Space objects</th>
         <th scope="col"><button class="sort-head" data-sort="date" type="button">Period <span class="sort-indicator" aria-hidden="true"></span></button></th>
-        <th scope="col"><button class="sort-head" data-sort="distance" type="button">Min. Separation Distance <span class="sort-indicator" aria-hidden="true"></span></button></th>
-        <th scope="col"><button class="sort-head" data-sort="speed" type="button">Min. Relative Velocity <span class="sort-indicator" aria-hidden="true"></span></button></th>
+        <th scope="col"><button class="sort-head" data-sort="distance" type="button" aria-label="Estimated minimum separation distance">Est. Min. Separation <span class="sort-indicator" aria-hidden="true"></span></button></th>
+        <th scope="col"><button class="sort-head" data-sort="speed" type="button" aria-label="Estimated minimum relative velocity">Est. Min. Relative Velocity <span class="sort-indicator" aria-hidden="true"></span></button></th>
         <th scope="col" class="records-head"><button class="sort-head" data-sort="sources" type="button">Records <span class="sort-indicator" aria-hidden="true"></span></button></th>
       </tr></thead><tbody id="rows"></tbody></table></div>
       <div id="empty" class="empty" hidden></div>

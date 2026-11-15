@@ -39,6 +39,9 @@ import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
 import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js";
 import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=3";
+import { renderEstimatedMinimum } from "./estimate-ui.js";
+import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
+import { CHART_PADDING } from "./chart-style.js";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
 // "window" (the browser's global object). We give it a short name here.
@@ -608,12 +611,6 @@ const version = ++labelVersion[slot];
 // 7. Formatting helpers
 // ---------------------------------------------------------------------------
 const formatTime = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
-const elapsedDuration = ms => {
-  const wholeMinutes = Math.max(0, Math.floor(ms / MINUTE_MS));
-  const days = Math.floor(wholeMinutes / 1440), hours = Math.floor(wholeMinutes % 1440 / 60), minutes = wholeMinutes % 60;
-  return { compact: `${String(days).padStart(2, "0")}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`,
-    spoken: `${days} days, ${hours} hours, ${minutes} minutes` };
-};
 const formatDate = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(ms));
 
 // <input type="datetime-local"> uses text like "2020-01-02T10:16". We always treat it as UTC.
@@ -695,10 +692,7 @@ function updateScene() {
   $("geoReference").hidden = view !== "relative";
   $("geoReference").textContent = `Camera reference: nominal GEO at ${geoReferenceLongitudeDeg.toFixed(1)}°E (Earth-fixed).`;
   $("timeDisplay").textContent = formatTime(currentMs).replace(" UTC", "");
-  const elapsed = elapsedDuration(currentMs - startMs);
-  $("sliderNow").textContent = elapsed.compact;
-  $("sliderNow").title = `${elapsed.spoken} elapsed since playback began`;
-  $("sliderNow").setAttribute("aria-label", $("sliderNow").title);
+  updatePlaybackCounter($("sliderNow"), currentMs - startMs, currentMs);
   $("timelineSlider").value = currentMs;
   $("timelineSlider").style.setProperty("--progress", `${(currentMs - startMs) / (endMs - startMs) * 100}%`);   // gold "played so far" part of the time bar
 
@@ -787,7 +781,6 @@ function durationText(ms) {
   const hours = ms / 3600000;
   return hours >= 48 ? { value: (hours / 24).toFixed(1), unit: "days" } : { value: hours.toFixed(1), unit: "hours" };
 }
-const episodeDateText = ms => new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(ms);
 let singleThresholdIntervals = [];
 function updateThresholds() {
   if (!analysisSamples.length) return;
@@ -812,29 +805,18 @@ function updateThresholds() {
   $("dwellStat").textContent = dwell.value;
   $("dwellUnit").textContent = dwell.unit;
   renderDwellSegments();
-  const minimum = (id, item, unit) => {
-    const target = $(id);
-    if (!item) { target.textContent = "Minimum value this episode: unavailable"; return; }
-    const value = item.value < 100 ? item.value.toFixed(1) : Math.round(item.value).toLocaleString();
-    const strong = document.createElement("strong"); strong.textContent = `${value} ${unit}`;
-    const dateLink = document.createElement("a");
-    dateLink.href = "#playbackDock";
-    dateLink.innerHTML = `<span>${episodeDateText(item.ms)}</span><svg class="minimumCalendar" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3.5h10v10H3zM3 6h10"/><path class="calendarPage" d="M6.1 8.4h3.8l-2.4 3.6"/></svg>`;
-    dateLink.title = `Jump playback to ${new Date(item.ms).toISOString()}`;
-    dateLink.setAttribute("aria-label", `Jump playback to ${new Date(item.ms).toISOString()} for minimum ${unit === "km" ? "separation distance" : "relative velocity"}`);
-    dateLink.addEventListener("click", event => {
-      event.preventDefault();
+  const minimum = (id, item, unit, metric) => {
+    renderEstimatedMinimum($(id), { episodeId: "E-001", metric, value: item?.value, unit, ms: item?.ms, onJump(ms) {
       const slider = $("timelineSlider");
-      slider.value = Math.max(startMs, Math.min(endMs, item.ms));
+      slider.value = Math.max(startMs, Math.min(endMs, ms));
       slider.dispatchEvent(new Event("input", { bubbles: true }));
-      focusedMinimumMs = item.ms;
+      focusedMinimumMs = ms;
       chartDirty = true; drawEpisodeCharts();
       slider.focus({ preventScroll: true });
-    });
-    target.replaceChildren(document.createTextNode("Minimum value this episode: "), strong, document.createTextNode(" on "), dateLink);
+    } });
   };
-  minimum("distanceMinimum", analysisResult.minimumDistance, "km");
-  minimum("speedMinimum", analysisResult.minimumSpeed, "m/s");
+  minimum("distanceMinimum", analysisResult.minimumDistance, "km", "separationKm");
+  minimum("speedMinimum", analysisResult.minimumSpeed, "m/s", "relativeSpeedMps");
   chartDirty = true; drawEpisodeCharts();
 }
 function drawEpisodeCharts() {
@@ -908,7 +890,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     canvas.width = Math.round(w * pixelRatio); canvas.height = Math.round(h * pixelRatio);
   }
   ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  const pad = { left: 57, right: 106, top: 13, bottom: 28 };
+  const pad = CHART_PADDING;
   const bottom = h - pad.bottom, right = w - pad.right;
   const windowMs = 14 * 86400000;
   const windowStart = focusedMinimumMs === null ? currentMs - windowMs : focusedMinimumMs - windowMs / 2;
@@ -929,7 +911,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.clearRect(0, 0, w, h); ctx.font = "10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.save(); ctx.translate(22, (pad.top + bottom) / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillStyle = "#555"; ctx.textAlign = "center";
-  ctx.fillText(key === "distanceKm" ? "Separation distance (km)" : "Relative velocity (m/s)", 0, 0); ctx.restore();
+  ctx.fillText(key === "distanceKm" ? "Estimated separation (km)" : "Estimated relative velocity (m/s)", 0, 0); ctx.restore();
   ctx.fillStyle = "#eeeeec"; ctx.fillRect(pad.left, y(threshold), right - pad.left, bottom - y(threshold));
   // UTC-anchored ticks share the data's time transform, so they slide with it.
   const tickMs = 4 * DAY_MS;
@@ -1854,23 +1836,7 @@ $("caViewBtn").addEventListener("click", () => {
   setView(view, centre, true);                     // true = zoom so both satellites are in the frame
 });
 
-// Slower / faster arrows: step through the hidden speed menu's options and show the chosen speed
-function updateSpeedLabel() {
-  const menu = $("speed");
-  const speed = `${{ 60: "1 minute", 900: "15 minutes", 3600: "1 hour", 21600: "6 hours", 86400: "1 day" }[menu.value] || menu.selectedOptions[0].textContent} per second`;
-  $("speedDownBtn").setAttribute("aria-label", `Slow down; current speed ${speed}`);
-  $("speedUpBtn").setAttribute("aria-label", `Speed up; current speed ${speed}`);
-  $("speedDownBtn").disabled = menu.selectedIndex === 0;                      // already slowest
-  $("speedUpBtn").disabled = menu.selectedIndex === menu.options.length - 1;  // already fastest
-}
-function stepSpeed(step) {
-  const menu = $("speed");
-  menu.selectedIndex = Math.min(menu.options.length - 1, Math.max(0, menu.selectedIndex + step));
-  updateSpeedLabel();
-}
-$("speedDownBtn").addEventListener("click", () => stepSpeed(-1));
-$("speedUpBtn").addEventListener("click", () => stepSpeed(1));
-updateSpeedLabel();
+wireSpeedButtons($("speed"), $("speedDownBtn"), $("speedUpBtn"), () => {});
 
 $("playBtn").addEventListener("click", () => {
   focusedMinimumMs = null; chartDirty = true;
@@ -1892,20 +1858,7 @@ $("timelineSlider").addEventListener("input", event => {
     updateGeoBeltLabel(); updateScreenLabels(); renderer.render(scene, camera);
   }
 });
-const timelineWrap = $("timelineSlider").parentElement;
-const timelineHover = $("timelineHover"), timelineHoverTick = $("timelineHoverTick");
-timelineWrap.addEventListener("pointermove", event => {
-  if (!(endMs > startMs)) return;
-  const rect = $("timelineSlider").getBoundingClientRect();
-  const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-  const minuteMs = Math.max(startMs, Math.min(endMs, Math.round((startMs + x / rect.width * (endMs - startMs)) / MINUTE_MS) * MINUTE_MS));
-  timelineHover.textContent = `${new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(minuteMs))} UTC`;
-  timelineHoverTick.style.left = `${x}px`;
-  timelineHover.style.left = `${Math.max(40, Math.min(rect.width - 40, x))}px`;
-  timelineHover.style.transform = "translateX(-50%)";
-  timelineHover.hidden = timelineHoverTick.hidden = false;
-});
-timelineWrap.addEventListener("pointerleave", () => { timelineHover.hidden = timelineHoverTick.hidden = true; });
+wireTimelineHover($("timelineSlider"), $("timelineHover"), $("timelineHoverTick"), () => [startMs, endMs]);
 for (const id of ["distanceThreshold", "speedThreshold"]) $(id).addEventListener("input", updateThresholds);
 function snappedThreshold(raw, increment, maximum) {
   const preferred = Math.round(raw / increment) * increment;

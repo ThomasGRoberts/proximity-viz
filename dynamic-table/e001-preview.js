@@ -200,12 +200,16 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
     camera.clearViewOffset();
     camera.updateProjectionMatrix();
     const safety = Math.max(12, MARKER.diameterPx / 2 + 6);
-    const horizontalLimit = 1 - 2 * safety / width;
+    // Fit against the original interaction pane even when the same canvas
+    // extends behind the description. Its added left side must not change zoom.
+    const pane = host.closest(".visual-link")?.getBoundingClientRect(), rect = host.getBoundingClientRect();
+    const safeLeft = pane ? 2 * (pane.left - rect.left + safety) / width - 1 : -1 + 2 * safety / width;
+    const safeRight = pane ? 2 * (pane.right - rect.left - safety) / width - 1 : 1 - 2 * safety / width;
     const safeTop = 1 - 2 * safety / height;
     const safeBottom = -1 + 2 * Math.max(safety, 42) / height; // leave the lower-right Explore cue clear
     previewCameraScale = 1;
     let bounds = projectedLoopBounds(previewCameraScale);
-    while (previewCameraScale < 8 && (bounds.left < -horizontalLimit || bounds.right > horizontalLimit || bounds.top - bounds.bottom > safeTop - safeBottom)) {
+    while (previewCameraScale < 8 && (bounds.left < safeLeft || bounds.right > safeRight || bounds.top - bounds.bottom > safeTop - safeBottom)) {
       previewCameraScale *= 1.12;
       bounds = projectedLoopBounds(previewCameraScale);
     }
@@ -216,7 +220,7 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
     previewVerticalShiftPx = shiftNdc * height / 2;
     camera.setViewOffset(width, height, 0, previewVerticalShiftPx, width, height);
     host.dataset.previewProjectedBounds = JSON.stringify({ ...bounds, cameraScale: previewCameraScale, verticalShiftPx: previewVerticalShiftPx,
-      safeBottom, safeTop, horizontalLimit });
+      safeBottom, safeTop, safeLeft, safeRight });
     renderer.setSize(width, height, false); draw(true);
   }
   function draw(snapCamera = false) {

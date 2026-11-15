@@ -122,8 +122,8 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
   .table-wrap tr.episode-row td:nth-child(7){grid-column:1/-1;grid-row:5;display:flex;justify-content:center;border-top:1px solid #f0eee8}
   .table-wrap tr.episode-row td:nth-child(n+3):not(:last-child)::before{display:block;margin-bottom:3px;color:#8a8170;font-size:9px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
   .table-wrap tr.episode-row td:nth-child(3)::before{content:"Period"}
-  .table-wrap tr.episode-row td:nth-child(4)::before{content:"Min. Separation Distance"}
-  .table-wrap tr.episode-row td:nth-child(5)::before{content:"Min. Relative Velocity"}
+  .table-wrap tr.episode-row td:nth-child(4)::before{content:"Est. Min. Separation"}
+  .table-wrap tr.episode-row td:nth-child(5)::before{content:"Est. Min. Relative Velocity"}
   .table-wrap tr.episode-row td:nth-child(6)::before{content:"Records"}
   .table-wrap tr.expanded-row,.table-wrap tr.expanded-row>td{display:block;width:100%}
   .expanded-inner{width:100%!important;max-width:100%!important}
@@ -364,6 +364,8 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .table-wrap th:nth-child(1){width:31%}
 .table-wrap th:nth-child(2){width:19%}
 .table-wrap th:nth-child(6){width:7%}
+.table-wrap>.orbital-preview{-webkit-mask-image:linear-gradient(90deg,transparent 0%,#0008 18%,#000 35%);mask-image:linear-gradient(90deg,transparent 0%,#0008 18%,#000 35%)}
+.table-wrap .expanded-row[data-episode-id="E-002"] .expanded-inner.has-visual{background:linear-gradient(90deg,#fffcf6 0%,#fffcf6f0 27%,#fffcf600 36%,transparent 100%)}
 .news-indicator .news-mini-stack{transition:none}
 .news-indicator:is(button):hover .news-mini-stack,.news-indicator:is(button):focus-visible .news-mini-stack{transform:none;filter:none}
 .source-media,.source-media.document-media{box-sizing:border-box;border:1px solid #e7e7e7;border-radius:8px;background:#f6f6f6;box-shadow:none}
@@ -385,7 +387,7 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .table-wrap>.orbital-preview iframe,.table-wrap>.orbital-preview canvas{display:block;width:100%;height:100%;border:0}
 .table-wrap .episode-row.selected,.table-wrap .expanded-row{position:relative;z-index:5}
 
-/* The E-001 camera is fitted to its own preview link; only E-002 extends its canvas. */
+/* Keep the E-001 interaction pane independent of its scene's visual extent. */
 .table-wrap .expanded-row[data-episode-id="E-001"] .expanded-inner.has-visual{background:#fffcf6}
 .table-wrap .expanded-row[data-episode-id="E-001"] .orbital-preview{position:relative;inset:auto;width:100%;height:100%;-webkit-mask-image:none;mask-image:none}
 .episode-heading .orbit-tag{display:block;width:max-content;margin:4px 0 0;padding:2px 8px;border-radius:999px;background:#f1efe9;color:#696252;font-size:9px;line-height:1.35}
@@ -394,9 +396,31 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .table-wrap thead th:first-child{border-top-left-radius:10px}
 .table-wrap thead th:last-child{border-top-right-radius:10px}
 .status[hidden]{display:none}
+.episode-heading .episode-secondary-line{display:flex;align-items:center;gap:6px;margin-top:4px}
+.episode-heading .episode-secondary-line .orbit-tag{display:inline-flex;align-items:center;margin:0}
+.episode-heading .episode-secondary-line .episode-id{display:inline-block!important;margin:0!important;line-height:1.35}
+.table-wrap th:nth-child(1){width:31%}
+.table-wrap th:nth-child(2){width:25%}
+.table-wrap th:nth-child(3){width:11%}
+.table-wrap th:nth-child(4){width:13%}
+.table-wrap th:nth-child(5){width:13%}
+.table-wrap th:nth-child(6){width:7%}
 .expanded-inner.has-visual .visual-link.model-link{position:relative;z-index:2}
 .expanded-inner.has-visual .context-block,.expanded-inner.has-visual .evidence-section{position:relative;z-index:3}
 .source-media,.source-media.document-media{position:relative}
 .source-media::after{content:"";position:absolute;inset:0;z-index:1;border-radius:inherit;background:#caa75a0b;pointer-events:none}
 .source-media img{filter:sepia(.065) saturate(.97)}
 @media(max-width:900px){.table-wrap .expanded-row .expanded-inner.has-visual{background:linear-gradient(180deg,#fffcf6e8 0%,#fffcf6f0 35%,#fffcf63a 75%,#fffcf6 100%)}}
+@media(min-width:901px){
+  .table-wrap .expanded-row[data-episode-id="E-001"] .visual-link.model-link{overflow:visible}
+  .table-wrap .expanded-row[data-episode-id="E-001"] .orbital-preview{
+    position:absolute;left:calc(-44.9275% - 18px);width:calc(144.9275% + 18px);height:100%;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0%,#0004 18%,#0009 35%,#000 48%);
+    mask-image:linear-gradient(90deg,transparent 0%,#0004 18%,#0009 35%,#000 48%);
+  }
+  .table-wrap .expanded-row[data-episode-id="E-001"] .context-block::before{
+    content:"";position:absolute;z-index:-1;inset:-6px -35px -15px -7px;
+    background:linear-gradient(90deg,#fffcf6 0%,#fffcf6f7 40%,#fffcf6b8 78%,transparent 100%);
+    pointer-events:none;
+  }
+}

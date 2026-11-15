@@ -6,7 +6,7 @@ body.e002-shared #dataStatusSection label{display:block;margin:7px 0;color:#5f5f
 body.e002-shared #dataStatusSection select{display:block;width:100%;margin-top:4px;padding:5px 7px;border:1px solid #d8d8d8;border-radius:5px;background:#fff;color:#444;font-size:11px}
 body.e002-shared #dataStatusSection .methodNote{margin:5px 0 9px;font-size:10px;line-height:1.4}
 body.e002-shared #identity .sourceDot.slotC{background:#707070}
-body.e002-shared #separationChart,body.e002-shared #speedChart{width:100%;height:115px}
+body.e002-shared #separationChart,body.e002-shared #speedChart{width:100%;height:145px}
 body.e002-shared .e002-dev-toggle{font-size:20px}
 body.e002-shared .e002-camera-editor{display:flex;flex-direction:column;gap:5px;max-height:calc(100vh - 110px);overflow:auto}
 body.e002-shared .e002-camera-editor[hidden]{display:none}
@@ -27,7 +27,6 @@ body.e002-shared #dataStatusSection{padding-top:3px;padding-bottom:7px}
 body.e002-shared .playbackDock{gap:5px}
 body.e002-shared #rangeStat,body.e002-shared #speedStat{font-size:26px;line-height:1.2;font-weight:750;white-space:normal}
 body.e002-multi-pair #rangeStat,body.e002-multi-pair #speedStat{font-size:12px;line-height:1.4}
-body.e002-shared .minimumNote{display:grid;gap:3px}
 .e002-minimum-line{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap}
 .e002-minimum-line i,.e002-dwell-pairs i{display:inline-block;flex:0 0 7px;width:7px;height:7px;border-radius:50%}
 .e002-chart-legend{display:flex;flex-wrap:wrap;gap:3px 11px;margin:4px 0 2px;color:#666;font-size:9px}
@@ -39,16 +38,11 @@ body.e002-shared .minimumNote{display:grid;gap:3px}
 .e002-dwell-pairs strong{color:#9d7500;font-size:11px;white-space:nowrap}
 body.e002-shared #dwellMetric .dwellValue{display:flex}
 body.e002-shared #dwellMetric .dwellAmount{display:inline-flex}
-body.e002-shared .minimumNote strong{color:#a77a00;font-size:11px;font-weight:750}
 body.e002-shared .e002-minimum-line{display:block}
 body.e002-shared .chartGroup .thresholdEdge{pointer-events:auto;touch-action:none}
 body.e002-shared .e002-scene-status:empty{display:none}
 body.e002-shared #ui{max-height:calc(100vh - var(--e002-dock-height,100px) - 54px);overflow-y:auto}
-body.e002-shared .playbackDock{gap:5px;padding:8px 10px}
-body.e002-shared .playbackRow{grid-template-columns:26px 30px 26px minmax(0,1fr);grid-template-rows:24px auto;gap:3px 6px}
-body.e002-shared .playbackRow .sliderWrap{grid-column:4;grid-row:1}
-body.e002-shared .playbackRow .sliderNow{grid-column:1/-1;grid-row:2;justify-self:center;white-space:nowrap;font-size:11px}
-.e002-speed-label{align-self:end;margin-top:-2px;color:#777;font-size:9px;font-weight:650;text-align:center}
+body.e002-shared .playbackDock{gap:5px}
 body.e002-shared #scene.chapter-transition{animation:e002-chapter-arrival .32s ease-out}
 @keyframes e002-chapter-arrival{from{opacity:.38}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){body.e002-shared #scene.chapter-transition{animation:none}}

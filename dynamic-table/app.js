@@ -4,6 +4,7 @@ import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, clean
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
 import { E002_TITLE_MARKUP, E002_DESCRIPTION } from "../shared/episode-copy.js";
+import { estimatedValue } from "../shared/estimated-values.js";
 import { applyMarkerCssVariables } from "../shared/marker-spec.js?v=3";
 
 applyMarkerCssVariables();
@@ -493,9 +494,9 @@ function proximityNode(row, key) {
   const cell = el("div", "proximity-cell");
   const metric = field(row, "ID") === "E-001" ? state.series?.[key === "distance" ? "minimumDistance" : "minimumSpeed"] : null;
   if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", field(row, "ID") === "E-001" && !state.series ? "Loading…" : "Unavailable")); return cell; }
-  const value = metric.value < 100 ? metric.value.toFixed(1) : Math.round(metric.value).toLocaleString();
+  const value = estimatedValue(metric.value, key === "distance" ? "separationKm" : "relativeSpeedMps", field(row, "ID"));
   cell.append(el("strong", "minimum-value", value), el("span", "minimum-unit", key === "distance" ? "km" : "m/s"));
-  cell.title = `Minimum sampled ${key === "distance" ? "separation distance" : "relative velocity"}: ${value} ${key === "distance" ? "km" : "m/s"} on ${fullDate(new Date(metric.ms).toISOString().slice(0, 10))}`;
+  cell.title = `Estimated minimum in this reconstruction: ${value} ${key === "distance" ? "km separation" : "m/s relative velocity"} on ${fullDate(new Date(metric.ms).toISOString().slice(0, 10))}. Display rounding does not quantify uncertainty.`;
   return cell;
 }
 let previewScene = null, previewToken = 0;
@@ -527,7 +528,7 @@ function startPreview(row) {
   let interval;
   try { interval = episodeUtcInterval(row); }
   catch (error) { console.warn("E-001 dates invalid", error); return; }
-  Promise.all([import("./e001-preview.js?v=3"), state.seriesPromise?.catch(() => null) || Promise.resolve(state.series)])
+  Promise.all([import("./e001-preview.js?v=4"), state.seriesPromise?.catch(() => null) || Promise.resolve(state.series)])
     .then(([module, metrics]) => module.mountE001Preview(host, interval, metrics?.minimumDistance?.ms, EARTH_COLORS[state.earthColor])).then(scene => {
     if (token !== previewToken || !host.isConnected) scene?.dispose();
     else previewScene = scene;
@@ -555,7 +556,8 @@ function render() {
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");
     const badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row);
     const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
-    heading.append(name, el("span", "episode-id", field(row, "ID")), badge);
+    const secondary = el("span", "episode-secondary-line"); secondary.append(badge, el("span", "episode-id", field(row, "ID")));
+    heading.append(name, secondary);
     episode.append(heading); tr.append(episode);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
     const periodCell = el("td", "period-cell"); periodCell.append(periodNode(row)); tr.append(periodCell);

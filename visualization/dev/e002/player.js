@@ -61,7 +61,7 @@ fetch(new URL("../../Viz/vendor/countries-110m.json", import.meta.url)).then(res
 
 const markers = {}, labels = {};
 for (const item of craft) {
-  const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false }));
+  const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, opacity: 1, depthTest: false, depthWrite: false }));
   marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
   if (!mini) {
     const label = document.createElement("span"); label.className = `satelliteScreenLabel slot${item.slot}`; label.textContent = item.name;
@@ -478,7 +478,7 @@ export const episodeModel = {
   get current() { return data.current; },
   get playing() { return data.playing; },
   get rate() { return rate / 1000; },
-  setRate(value) { rate = THREE.MathUtils.clamp(value, 15, 720) * 1000; },
+  setRate(value) { rate = THREE.MathUtils.clamp(value, 60, 259200) * 1000; },
   get selected() { return data.selected; },
   get frameMode() { return data.frameMode; },
   get craft() { return craft; },
