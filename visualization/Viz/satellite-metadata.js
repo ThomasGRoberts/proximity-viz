@@ -63,11 +63,13 @@ async function render(card) {
   if (Number.isFinite(inclination)) row(orbital, "Inclination", `${inclination.toFixed(4)}°`);
   if (Number.isFinite(eccentricity)) row(orbital, "Eccentricity", eccentricity.toFixed(7));
   if (Number.isFinite(meanMotion)) row(orbital, "Mean motion", `${meanMotion.toFixed(5)} rev/day`);
-  row(orbital, "Origin", card.dataset.sourceOrigin);
   const sourceRow = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd");
-  dt.textContent = "Retrieved via";
-  if (card.dataset.sourceHref) dd.append(link(card.dataset.sourceRetrieval, card.dataset.sourceHref));
-  else dd.textContent = card.dataset.sourceRetrieval || "Unknown";
+  dt.textContent = "Data Source";
+  if (card.dataset.sourceQueryHref) {
+    const sourceLink = link(card.dataset.sourceData, card.dataset.sourceQueryHref);
+    sourceLink.title = "Space-Track historical elements for this satellite and UTC date; sign-in required. The query may include other element sets from the same date.";
+    dd.append(sourceLink);
+  } else dd.textContent = card.dataset.sourceData || "Source unverified";
   sourceRow.append(dt, dd); orbital.append(sourceRow);
 }
 host.addEventListener("toggle", event => {

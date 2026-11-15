@@ -3,33 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>E-002 camera exploration · Provisional research</title>
+  <title>E-002 · Visualizing Proximity in Space · Development preview</title>
   <link rel="icon" type="image/png" href="../../../dynamic-table/assets/polyhedron-icon.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="player.css?v=1">
   <script type="importmap">{"imports":{"three":"../../Viz/vendor/three/three.module.js","three/addons/":"../../Viz/vendor/three/addons/"}}</script>
   <script src="../../Viz/vendor/satellite/satellite.min.js"></script>
-  <script type="module" src="app.js?v=4"></script>
+  <script type="module" src="player.js?v=5"></script>
 </head>
 <body>
-  <header class="page-header">
-    <div><span class="eyebrow">ESPL · research workspace · E-002</span><h1>Kosmos 2542 / Kosmos 2543 / USA 245</h1><p>Camera exploration from dated orbital elements. This published research route is provisional, not a validated scientific reconstruction.</p></div>
-    <span class="local-badge">DEVELOPMENT PREVIEW</span>
-  </header>
+  <header class="header"><a href="../../../dynamic-table/">← Episodes of Concern</a><span>ESPL · DEVELOPMENT RECONSTRUCTION</span></header>
   <main>
-    <aside class="controls">
-      <section><h2>Historical moment</h2><label for="moment">Select a candidate</label><select id="moment"></select><p id="momentNote" class="note"></p><p id="momentTime" class="time"></p></section>
-      <section><h2>View</h2><label for="reference">Camera reference</label><select id="reference"><option value="A">A · Kosmos 2542</option><option value="B">B · USA 245</option><option value="C">C · Kosmos 2543</option></select><button id="reset" type="button">Auto frame this moment</button><p class="hint">Auto frame favors USA 245 and the nearer Russian craft, with a stable Earth scale. Drag to orbit · scroll to zoom · right drag or Shift drag to pan. Your three December views are available below as exact examples.</p></section>
-      <section><h2>Spacecraft and coverage</h2><div id="coverage" class="coverage"></div><p class="coverage-note">TLEs are fitted orbital elements, not continuous observations. Each displayed position uses its nearest dated element set within 36 hours. This display cutoff is not an accuracy bound.</p></section>
-      <section><h2>Inspect a pair</h2><label for="pair">Pair for approximate values</label><select id="pair"><option value="AB">A · Kosmos 2542 / B · USA 245</option><option value="CB">C · Kosmos 2543 / B · USA 245</option><option value="AC">A · Kosmos 2542 / C · Kosmos 2543</option></select><div id="pairResult" class="pair-result"></div><p class="coverage-note">Instantaneous TLE-derived estimates require both elements within 12 hours. This cutoff is a screening rule, not a confidence interval. No dwell time or close-approach claim is inferred from one frame.</p></section>
-      <section><h2>Camera examples and saved views</h2><label for="viewName">View name</label><input id="viewName" value="Candidate view"><div class="button-row"><button id="capture" type="button">Capture view</button><button id="download" type="button">Download JSON</button></div><div id="savedViews" class="saved-views"></div></section>
-      <section><h2>Data provenance</h2><p class="coverage-note">The dated orbital elements are fetched from <a href="https://willamadsen.github.io/How-Close-Is-Too-Close/" target="_blank" rel="noopener">Willa Madsen's published project</a> and verified against recorded checksums. Russian spacecraft elements are labeled Space-Track; USA 245 elements are labeled SeeSat-L amateur. <a href="data/provenance.json">Element provenance manifest</a> · <a href="https://www.space-track.org/documentation" target="_blank" rel="noopener">Space-Track attribution and terms</a>.</p></section>
-    </aside>
-    <section class="stage" aria-label="Interactive three spacecraft orbital reconstruction">
-      <div id="scene"></div><div id="labels"></div>
-      <div class="stage-caption"><strong>Reconstructed positions</strong><span id="stageDate"></span></div>
-      <div class="stage-legend"><span><i class="dot a"></i>A · Kosmos 2542</span><span><i class="dot b"></i>B · USA 245</span><span><i class="dot c"></i>C · Kosmos 2543</span></div>
-      <div id="stageStatus" class="stage-status"></div>
-    </section>
+    <section class="intro"><div><h1>Visualizing Proximity in Space</h1><h2>Kosmos 2542 and Kosmos 2543 near USA 245</h2><p>Playback starts automatically. Pause or scrub to inspect reconstructed orbital motion. Dated elements for USA 245 are sparse; the available viewing windows are narrower than the historical episode.</p></div><a class="advanced" href="camera-explorer.html">Advanced camera explorer ↗</a></section>
+    <section class="viewer" aria-label="E-002 orbital animation"><div id="scene"></div><div id="labels"></div><div class="viewer-badge">PROVISIONAL MODEL · E-002</div><div id="sceneStatus" class="scene-status" role="status">Loading dated orbital elements…</div></section>
+    <section class="playback" aria-label="Playback controls"><div class="playback-top"><button id="play" type="button" aria-label="Play animation">▶ <span>Play</span></button><strong id="timestamp">—</strong><button id="autoFrame" type="button">Auto frame</button></div><input id="timeline" type="range" min="0" max="1" value="0" step="1000" aria-label="Simulation time"><div class="playback-foot"><span id="startLabel">—</span><span id="endLabel">—</span></div></section>
+    <section class="below"><div><label for="moment">Historical window</label><select id="moment"></select><p id="momentNote"></p></div><div class="coverage"><h3>Spacecraft and data coverage</h3><div id="coverageRows"></div></div></section>
+    <footer><p>Positions and trails are SGP4 reconstructions from dated elements, not continuous observations or measured separations. No close-approach statistic is inferred from these frames. <a href="data/provenance.json">Element provenance</a> · <a href="RESEARCH.md">Research notes</a>.</p></footer>
   </main>
 </body>
 </html>

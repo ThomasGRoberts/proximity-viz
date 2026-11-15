@@ -1,9 +1,10 @@
 # Episodes of Concern and Proximity-Viz
 
-Static publication of two Engineering Space Policy Laboratory interfaces:
+Static publication of Engineering Space Policy Laboratory interfaces:
 
 - `dynamic-table/` browses the public Episodes of Concern records.
 - `visualization/` presents the E-001 Luch (Olymp-K) and Athena-Fidus historical orbital reconstruction.
+- `visualization/dev/e002/` presents a provisional E-002 playback model. Its advanced camera explorer remains at `visualization/dev/e002/camera-explorer.html`.
 
 Open `index.html` for navigation. All application paths are relative, so the site works at `https://thomasgroberts.github.io/proximity-viz/`.
 
@@ -18,6 +19,7 @@ This is a static site with no build step. In repository **Settings → Pages**, 
 - `https://thomasgroberts.github.io/proximity-viz/`
 - `https://thomasgroberts.github.io/proximity-viz/dynamic-table/`
 - `https://thomasgroberts.github.io/proximity-viz/visualization/`
+- `https://thomasgroberts.github.io/proximity-viz/visualization/dev/e002/`
 
 Wait for the Pages deployment to finish, then open each address and check the E-001 visualization preview and the return link. Do not assume a URL is live until that check succeeds.
 
@@ -29,4 +31,4 @@ The table computes E-001 minimum separation, minimum relative velocity, and dwel
 
 The orbital visualization is adapted from [Willa Madsen's *How Close Is Too Close?*](https://github.com/willamadsen/How-Close-Is-Too-Close). Her historical orbital elements, Three.js scene structure, and scientific implementation are credited here; this repository does not replace or modify her upstream project. The E-001 configuration documents the public TLE sources and the analysis limitations. Satellite positions are reconstructed from dated orbital elements; times without supported data are not interpolated as verified positions. Original third-party notices are retained in `visualization/Viz/vendor/satellite/LICENSE` and `visualization/Viz/assets/flags/LICENSE-flag-icons.txt`.
 
-This repository contains only the two public E-001 TLE histories required for the reconstruction. Its static table snapshot and source thumbnails are public-facing data, with no credentials or local caches.
+This repository contains only the two public E-001 TLE histories required for that reconstruction. E-002 retrieves checksum-pinned, already published historical subsets from Willa Madsen's project and commits no duplicate raw E-002 elements. Its static table snapshot and source thumbnails are public-facing data, with no credentials or local caches.

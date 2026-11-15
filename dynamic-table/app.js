@@ -423,7 +423,8 @@ function sourceCard(group, data) {
   card.append(content); return card;
 }
 function expandedContent(row, data) {
-  const wrap = el("div", `expanded-inner${field(row, "ID") === "E-001" ? " has-visual" : ""}`);
+  const episodeId = field(row, "ID");
+  const wrap = el("div", `expanded-inner${["E-001", "E-002"].includes(episodeId) ? " has-visual" : ""}`);
   if (state.usePreview) wrap.append(el("p", "caution", data.source === "local-verification-candidates" ? "Verification worklist entry. The possible counterpart is not a confirmed episode participant." : "Local preview includes unpublished records. This is not the public selection."));
   const overview = el("div", "detail-overview");
   const context = el("section", "context-block"); context.setAttribute("aria-label", "Episode description");
@@ -431,9 +432,9 @@ function expandedContent(row, data) {
   if (description) context.append(formattedDescription(description));
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
-  if (field(row, "ID") === "E-001") {
-    const viz = el("section", "visual-block"), target = new URL("../visualization/", location.href).href;
-    viz.setAttribute("aria-label", "E-001 orbital visualization");
+  if (["E-001", "E-002"].includes(episodeId)) {
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/" : "../visualization/dev/e002/", location.href).href;
+    viz.setAttribute("aria-label", `${episodeId} orbital visualization`);
     viz.append(visualizationLink(target, `Explore the interactive model for ${title(row)}`));
     overview.append(viz);
   } else overview.classList.add("no-visual");
@@ -475,8 +476,8 @@ function toggleRow(row) {
   if (state.selected) requestAnimationFrame(() => {
     const selected = [...document.querySelectorAll(".episode-row")].find(item => item.dataset.episodeId === field(row, "ID"));
     if (!selected) return;
-    const stickyHeader = document.querySelector(".table-wrap thead");
-    const headerOffset = stickyHeader && getComputedStyle(stickyHeader).position === "sticky" ? stickyHeader.getBoundingClientRect().height : 0;
+    const stickyHeader = document.querySelector(".table-wrap thead th");
+    const headerOffset = stickyHeader?.getBoundingClientRect().height || 0;
     window.scrollTo({ top: Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - 14), behavior: reducedMotion.matches ? "instant" : "smooth" });
   });
 }
@@ -493,8 +494,17 @@ function proximityNode(row, key) {
 let previewScene = null, previewToken = 0;
 function stopPreview() { previewToken++; previewScene?.dispose(); previewScene = null; }
 function startPreview(row) {
-  if (field(row, "ID") !== "E-001") return;
+  const episodeId = field(row, "ID");
+  if (!["E-001", "E-002"].includes(episodeId)) return;
   const host = document.querySelector(".expanded-row .orbital-preview"); if (!host) return;
+  if (episodeId === "E-002") {
+    const frame = el("iframe", "e002-mini");
+    frame.src = new URL("../visualization/dev/e002/mini.html", location.href).href;
+    frame.title = "Animated E-002 reconstruction, December 31, 2019";
+    frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
+    host.append(frame); host.dataset.previewIntervalUtc = "2019-12-31T18:00:00Z / 2019-12-31T19:30:00Z";
+    return;
+  }
   const token = ++previewToken;
   let interval;
   try { interval = episodeUtcInterval(row); }

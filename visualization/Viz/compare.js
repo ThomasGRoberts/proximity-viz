@@ -38,7 +38,7 @@ import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fad
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
 import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js";
-import { tleProvenance } from "../../shared/tle-provenance.js";
+import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=2";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
 // "window" (the browser's global object). We give it a short name here.
@@ -769,12 +769,19 @@ function prepareAnalysis() {
   }
   const valid = analysisSamples.filter(s => Number.isFinite(s.distanceKm) && Number.isFinite(s.speedMps));
   const scaleFor = key => {
-    const values = valid.map(s => s[key]).sort((a, b) => a - b);
-    const p98 = values[Math.floor((values.length - 1) * .98)] || 1;
-    const magnitude = 10 ** Math.floor(Math.log10(Math.max(1, p98)));
-    return Math.ceil(p98 / magnitude * 2) * magnitude / 2;
+    const maximum = valid.reduce((highest, sample) => Math.max(highest, sample[key]), 0);
+    if (!(maximum > 0)) return 1;
+    const magnitude = 10 ** Math.floor(Math.log10(maximum));
+    const step = magnitude / 2;
+    return Number(((Math.floor(maximum / step) + 1) * step).toPrecision(10));
   };
   chartScales = { distanceKm: scaleFor("distanceKm"), speedMps: scaleFor("speedMps") };
+  const changes = [];
+  for (const [inputId, bound, unit] of [["distanceThreshold", chartScales.distanceKm, "km"], ["speedThreshold", chartScales.speedMps, "m/s"]]) {
+    const input = $(inputId), previous = Number(input.value);
+    if (previous > bound) { input.value = String(bound); changes.push(`${unit} threshold adjusted to the episode range`); }
+  }
+  $("thresholdRangeNote").textContent = changes.join("; ");
   updateThresholds();
 }
 function durationText(ms) {
@@ -787,16 +794,18 @@ let singleThresholdIntervals = [];
 function updateThresholds() {
   if (!analysisSamples.length) return;
   const distance = Number($("distanceThreshold").value), speed = Number($("speedThreshold").value);
-  if (!(distance > 0) || !(speed > 0)) return;
+  if (!(distance >= 0) || !(speed >= 0)) return;
   for (const [sliderId, outputId, value, max, unit] of [
     ["distanceThresholdSlider", "distanceThresholdOutput", distance, chartScales.distanceKm, "km"],
     ["speedThresholdSlider", "speedThresholdOutput", speed, chartScales.speedMps, "m/s"]
   ]) {
     const slider = $(sliderId);
-    slider.max = String(Math.max(max, value)); slider.value = String(value);
+    slider.min = "0"; slider.max = String(max); slider.value = String(value);
+    slider.style.setProperty("--threshold-progress", `${Math.min(100, Math.max(0, value / max * 100))}%`);
     slider.setAttribute("aria-valuetext", `${value.toLocaleString()} ${unit}`);
     $(outputId).textContent = `${value.toLocaleString()} ${unit}`;
   }
+  $("thresholdSummary").textContent = `${distance.toLocaleString()} km · ${speed.toLocaleString()} m/s`;
   analysisResult = analyzeEpisode(analysisSamples, distance, speed, analysisStepMs);
   const distanceIntervals = analyzeEpisode(analysisSamples, distance, Infinity, analysisStepMs).intervals;
   const speedIntervals = analyzeEpisode(analysisSamples, Infinity, speed, analysisStepMs).intervals;
@@ -1063,6 +1072,8 @@ function updateIdentity() {
     const provenance = tleProvenance(tle);
     card.dataset.tleLine2 = tle.line2;
     card.dataset.sourceLabel = provenance.label;
+    card.dataset.sourceData = provenance.dataSource;
+    card.dataset.sourceQueryHref = tle.source === "space-track" ? spaceTrackHistoryUrl(norad, tle.epoch) : "";
     card.dataset.sourceOrigin = provenance.origin;
     card.dataset.sourceRetrieval = provenance.retrieval;
     card.dataset.sourceHref = provenance.href;
@@ -1899,7 +1910,7 @@ function snappedThreshold(raw, increment, maximum) {
   const preferred = Math.round(raw / increment) * increment;
   const tolerance = increment === 25 ? 3 : .65;
   const precise = increment === 25 ? Math.round(raw) : Math.round(raw * 10) / 10;
-  return Math.max(increment === 25 ? 1 : .1, Math.min(maximum, Math.abs(raw - preferred) <= tolerance ? preferred : precise));
+  return Math.max(0, Math.min(maximum, Math.abs(raw - preferred) <= tolerance ? preferred : precise));
 }
 for (const [sliderId, inputId, increment, scaleKey] of [
   ["distanceThresholdSlider", "distanceThreshold", 25, "distanceKm"],

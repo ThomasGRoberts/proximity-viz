@@ -1,6 +1,10 @@
-# E-002 local research and camera prototype · November 15, 2026
+# E-002 development reconstruction · November 15, 2026
 
 This folder is a published **development preview**, not a finalized science visualization. The E-002 spreadsheet fields have not been edited. The browser retrieves checksum-pinned TLE files from Willa Madsen's existing published project; this site does not commit a new copy of the raw E-002 elements. The [machine-readable manifest](data/provenance.json) identifies each dataset, provider, immediate retrieval source, available epoch range, checksum, and reuse status.
+
+The [primary playback view](index.html) starts at December 31, 2019, 18:00–19:30 UTC and advances at 90 simulated seconds per real second. Three other short windows can be selected: December 7 and 8 (three spacecraft) and January 24 (Russian spacecraft only). Each craft uses one dated TLE throughout its selected window; the player never crosses a nearest-element switch within playback. USA 245 is omitted when no element lies within the 36-hour display gate. The [miniature table view](mini.html) plays the same December 31 window forward and stops at its end. The [advanced camera explorer](camera-explorer.html) remains available for manual views and captures.
+
+The automatic camera stays on a 6.2-Earth-radius sphere with a 35° field of view. It aims near the midpoint of USA 245 and the nearer Russian craft, using 15% hysteresis to avoid frequent pair switching; without USA 245, it uses the A/C midpoint. Candidate viewing directions are scored for an unobstructed line of sight to the primary craft and continuity with the preceding view. Camera position moves on the sphere, and its up vector follows the selected craft's actual orbital plane so along-track motion appears mainly horizontal. The globe rotates by Greenwich sidereal time; spacecraft trajectories are unchanged. A short smoothing time keeps camera changes deliberate during playback. All distances shown by the scene are model geometry, not measured miss distances.
 
 ## Episode copy supplied for review
 
