@@ -75,7 +75,13 @@ function sourceGroups(row, data) {
     if (!groups.has(key)) groups.set(key, { url, ref, items: [] });
     groups.get(key).items.push(item);
   }
-  return [...groups.values()];
+  const publicationDay = group => {
+    const value = data.sourceMetadata?.[group.ref]?.publishedDate || field(group.items[0]?.row, "Publication date", "Published date");
+    const iso = String(value || "").match(/^\d{4}-\d{2}-\d{2}$/)?.[0];
+    return iso && fullDate(iso) ? Date.parse(`${iso}T00:00:00Z`) : Infinity;
+  };
+  // Map insertion order is the linked-record order; stable sort preserves ties and undated records.
+  return [...groups.values()].sort((a, b) => publicationDay(a) - publicationDay(b));
 }
 function organizationKind(info) {
   if (/^INTELSAT\b/i.test(info.name)) return "Intelsat";

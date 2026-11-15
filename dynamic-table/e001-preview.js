@@ -3,7 +3,7 @@
    spacecraft and trails come from the same public TLEs and SGP4 propagation. */
 import * as THREE from "../visualization/Viz/vendor/three/three.module.js";
 import { feature } from "../visualization/Viz/vendor/topojson/topojson-client.js";
-import { relativeCameraFrame, relativeFitDistance } from "../visualization/Viz/relative-camera.js";
+import { relativeCameraFrame } from "../visualization/Viz/relative-camera.js";
 import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "../visualization/Viz/relative-rendering.js?v=3";
 import { MARKER } from "../shared/marker-spec.js?v=3";
 
@@ -93,6 +93,8 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
   renderer.domElement.className = "preview-scene"; renderer.domElement.setAttribute("aria-hidden", "true");
   host.dataset.previewFrame = "earth-fixed-relative";
   host.dataset.previewCenterUtc = new Date(center).toISOString();
+  host.dataset.previewIntervalUtc = `${new Date(playStart).toISOString()} / ${new Date(playEnd).toISOString()}`;
+  host.dataset.previewTleEpochsUtc = libs.map((lib, index) => lib.tles[fixedIndices[index]].epoch).join(" / ");
   host.dataset.cameraReference = cameraReference.schema;
   host.append(renderer.domElement); host.querySelector(".visualization-still")?.setAttribute("hidden", "");
   scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2));
@@ -149,6 +151,44 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
     orbit.renderOrder = 5;
     trailRoot.add(orbit); orbits.push(orbit);
   }
+  let previewCameraScale = 1, previewVerticalShiftPx = 0;
+  // Fit the whole moving twelve-hour trail, not just the two dots at the loop start.
+  // Sampling every 12 minutes catches the GEO-relative extrema without fitting
+  // to the full future orbit, which is never shown as a trail.
+  function projectedLoopBounds(scale) {
+    let left = Infinity, right = -Infinity, bottom = Infinity, top = -Infinity;
+    const scenePoint = new THREE.Vector3();
+    const pane = host.closest(".visual-link")?.getBoundingClientRect(), rect = host.getBoundingClientRect();
+    const desiredEarthX = pane ? 2 * (pane.left + pane.width / 2 - rect.left) / rect.width - 1 : 0;
+    for (let ms = playStart; ms <= playEnd + 1; ms = Math.min(playEnd, ms + 12 * 60000)) {
+      const target = referenceAt(ms), frame = relativeCameraFrame(THREE, target, previewCameraReference, camera.aspect);
+      camera.position.copy(target).add(frame.position.sub(target).multiplyScalar(scale));
+      camera.lookAt(target.clone().add(compositionLift));
+      camera.updateMatrixWorld();
+      // draw() centers Earth horizontally with filmOffset; apply the same screen shift here.
+      const screenShiftX = desiredEarthX - new THREE.Vector3().project(camera).x;
+      const angle = sgp4.gstime(new Date(ms)) - centerAngle;
+      const first = Math.max(0, Math.ceil((Math.max(historyStart, ms - TRAIL_WINDOW) - historyStart) / TRAIL_SAMPLE));
+      const last = Math.min(orbits[0].userData.points.length - 1, Math.floor((ms - historyStart) / TRAIL_SAMPLE));
+      for (const orbit of orbits) {
+        const points = orbit.userData.points;
+        for (let index = first; index <= last; index += 3) {
+          scenePoint.copy(points[index]).applyAxisAngle(earthAxis, angle).project(camera);
+          left = Math.min(left, scenePoint.x + screenShiftX); right = Math.max(right, scenePoint.x + screenShiftX);
+          bottom = Math.min(bottom, scenePoint.y); top = Math.max(top, scenePoint.y);
+        }
+      }
+      for (let index = 0; index < 2; index++) {
+        const state = stateAt(libs[index], ms, sgp4, maxAgeMs, fixedIndices[index]);
+        if (!state) continue;
+        scenePoint.copy(eci(state.r)).project(camera);
+        left = Math.min(left, scenePoint.x + screenShiftX); right = Math.max(right, scenePoint.x + screenShiftX);
+        bottom = Math.min(bottom, scenePoint.y); top = Math.max(top, scenePoint.y);
+      }
+      if (ms === playEnd) break;
+    }
+    return { left, right, bottom, top };
+  }
   let disposed = false, frame = 0, last = performance.now(), lastRender = 0;
   function resize() {
     if (disposed) return;
@@ -157,26 +197,42 @@ export async function mountE001Preview(host, interval, closestApproachMs, initia
     const markerScale = DOT_SCREEN_SIZE * 2.85 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 275 / height * MARKER.diameterPx / 12;
     for (const dot of dots) dot.scale.set(markerScale, markerScale, 1);
     camera.filmOffset = 0;
-    camera.updateProjectionMatrix(); renderer.setSize(width, height, false); draw(true);
+    camera.clearViewOffset();
+    camera.updateProjectionMatrix();
+    const safety = Math.max(12, MARKER.diameterPx / 2 + 6);
+    const horizontalLimit = 1 - 2 * safety / width;
+    const safeTop = 1 - 2 * safety / height;
+    const safeBottom = -1 + 2 * Math.max(safety, 42) / height; // leave the lower-right Explore cue clear
+    previewCameraScale = 1;
+    let bounds = projectedLoopBounds(previewCameraScale);
+    while (previewCameraScale < 8 && (bounds.left < -horizontalLimit || bounds.right > horizontalLimit || bounds.top - bounds.bottom > safeTop - safeBottom)) {
+      previewCameraScale *= 1.12;
+      bounds = projectedLoopBounds(previewCameraScale);
+    }
+    // Use the smallest upward adjustment that clears the lower safety margin.
+    // Keeping the globe near its established position preserves the scene's composition.
+    const shiftNdc = bounds.bottom < safeBottom ? safeBottom - bounds.bottom :
+      bounds.top > safeTop ? safeTop - bounds.top : 0;
+    previewVerticalShiftPx = shiftNdc * height / 2;
+    camera.setViewOffset(width, height, 0, previewVerticalShiftPx, width, height);
+    host.dataset.previewProjectedBounds = JSON.stringify({ ...bounds, cameraScale: previewCameraScale, verticalShiftPx: previewVerticalShiftPx,
+      safeBottom, safeTop, horizontalLimit });
+    renderer.setSize(width, height, false); draw(true);
   }
   function draw(snapCamera = false) {
     if (disposed) return;
     const currentStates = libs.map((lib, index) => stateAt(lib, current, sgp4, maxAgeMs, fixedIndices[index]));
     const target = referenceAt(current);
-    if (snapCamera) camera.position.copy(relativeCameraFrame(THREE, target, previewCameraReference, camera.aspect).position);
+    if (snapCamera) {
+      const frame = relativeCameraFrame(THREE, target, previewCameraReference, camera.aspect);
+      camera.position.copy(target).add(frame.position.sub(target).multiplyScalar(previewCameraScale));
+    }
     else {
       const rotation = new THREE.Quaternion().setFromUnitVectors(lastReference.clone().normalize(), target.clone().normalize());
       const offset = camera.position.clone().sub(lastReference).applyQuaternion(rotation);
       camera.position.copy(target).add(offset);
     }
     lastReference = target.clone();
-    const positions = currentStates.filter(Boolean).map(state => eci(state.r));
-    if (positions.length && snapCamera) {
-      const offset = camera.position.clone().sub(target), distance = offset.length();
-      const goal = relativeFitDistance(THREE, { positions, target, offset, up: camera.up, fov: camera.fov,
-        aspect: camera.aspect, reference: previewCameraReference, minDistance: .006, maxDistance: 50 });
-      camera.position.copy(target).add(offset.setLength(goal));
-    }
     camera.lookAt(target.clone().add(compositionLift));
     // Solve the film shift from the actual projected Earth centre to the primary pane centre.
     const pane = host.closest(".visual-link")?.getBoundingClientRect(), rect = host.getBoundingClientRect();

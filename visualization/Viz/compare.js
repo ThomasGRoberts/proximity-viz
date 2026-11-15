@@ -787,6 +787,8 @@ function updateThresholds() {
   if (!analysisSamples.length) return;
   const distance = Number($("distanceThreshold").value), speed = Number($("speedThreshold").value);
   if (!(distance > 0) || !(speed > 0)) return;
+  $("dwellDistanceThreshold").textContent = `${distance.toLocaleString()} km`;
+  $("dwellSpeedThreshold").textContent = `${speed.toLocaleString()} m/s`;
   analysisResult = analyzeEpisode(analysisSamples, distance, speed, analysisStepMs);
   const distanceIntervals = analyzeEpisode(analysisSamples, distance, Infinity, analysisStepMs).intervals;
   const speedIntervals = analyzeEpisode(analysisSamples, Infinity, speed, analysisStepMs).intervals;
@@ -802,7 +804,7 @@ function updateThresholds() {
     const strong = document.createElement("strong"); strong.textContent = `${value} ${unit}`;
     const dateLink = document.createElement("a");
     dateLink.href = "#playbackDock";
-    dateLink.innerHTML = `<span>on ${episodeDateText(item.ms)}</span><svg class="minimumCalendar" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.3" y="3.8" width="11.4" height="9.8" rx="1.3"/><path d="M2.7 6.4h10.6M5.1 2.3v3M10.9 2.3v3"/><path class="calendarPage" d="M5 9h5.8m-2 2 2-2"/></svg>`;
+    dateLink.innerHTML = `<span>${episodeDateText(item.ms)}</span><svg class="minimumCalendar" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3.5h10v10H3zM3 6h10"/><path class="calendarPage" d="M6.1 8.4h3.8l-2.4 3.6"/></svg>`;
     dateLink.title = `Jump playback to ${new Date(item.ms).toISOString()}`;
     dateLink.setAttribute("aria-label", `Jump playback to ${new Date(item.ms).toISOString()} for minimum ${unit === "km" ? "separation distance" : "relative velocity"}`);
     dateLink.addEventListener("click", event => {
@@ -814,7 +816,7 @@ function updateThresholds() {
       chartDirty = true; drawEpisodeCharts();
       slider.focus({ preventScroll: true });
     });
-    target.replaceChildren(document.createTextNode("Minimum value this episode: "), strong, document.createTextNode(" "), dateLink);
+    target.replaceChildren(document.createTextNode("Minimum value this episode: "), strong, document.createTextNode(" on "), dateLink);
   };
   minimum("distanceMinimum", analysisResult.minimumDistance, "km");
   minimum("speedMinimum", analysisResult.minimumSpeed, "m/s");

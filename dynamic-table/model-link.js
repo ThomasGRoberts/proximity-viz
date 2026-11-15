@@ -81,7 +81,13 @@ export function decorateModelLink(link) {
     link.addEventListener("pointerleave", () => { if (document.activeElement !== link) setOpen(false); });
     link.addEventListener("focus", () => setOpen(true));
     link.addEventListener("blur", () => { if (!link.matches(":hover")) setOpen(false); });
-    action?.addEventListener("pointerenter", () => link.classList.add("is-action-hover"));
+    action?.addEventListener("pointerenter", () => {
+      if (link.dataset.modelStage !== "arrow" || reducedMotion.matches) return;
+      link.classList.remove("is-action-hover");
+      // Restart only the secondary arrow animation; the scene's staged entrance keeps its state.
+      void action.offsetWidth;
+      link.classList.add("is-action-hover");
+    });
     action?.addEventListener("pointerleave", () => link.classList.remove("is-action-hover"));
     const observer = new MutationObserver(() => {
       if (link.isConnected) return;
