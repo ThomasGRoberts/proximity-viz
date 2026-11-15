@@ -25,7 +25,7 @@ function dateText(value) {
   const iso = String(value).match(/^\d{4}-\d{2}-\d{2}/)?.[0];
   if (!iso) return value;
   const date = new Date(`${iso}T00:00:00Z`);
-  return Number.isNaN(date.valueOf()) ? value : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(date) + value.slice(iso.length);
+  return Number.isNaN(date.valueOf()) ? value : new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(date) + value.slice(iso.length);
 }
 function fullDate(value) {
   const iso = String(value || "");
@@ -33,13 +33,6 @@ function fullDate(value) {
   const date = new Date(`${iso}T00:00:00Z`);
   return Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== iso ? "" :
     new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(date);
-}
-function compactDate(value) {
-  const iso = String(value || "");
-  if (!fullDate(iso)) return "";
-  const date = new Date(`${iso}T00:00:00Z`);
-  const month = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" }).format(date).toUpperCase();
-  return `${month}. ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
 }
 function periodInfo(row) {
   const start = field(row, "Start Date", "Date"), end = field(row, "End Date");
@@ -479,6 +472,13 @@ function animateIn(node) { if (!reducedMotion.matches) node.animate([{ opacity: 
 function toggleRow(row) {
   closeObject(); state.selected = state.selected === row ? null : row; render();
   const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
+  if (state.selected) requestAnimationFrame(() => {
+    const selected = [...document.querySelectorAll(".episode-row")].find(item => item.dataset.episodeId === field(row, "ID"));
+    if (!selected) return;
+    const stickyHeader = document.querySelector(".table-wrap thead");
+    const headerOffset = stickyHeader && getComputedStyle(stickyHeader).position === "sticky" ? stickyHeader.getBoundingClientRect().height : 0;
+    window.scrollTo({ top: Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - 14), behavior: reducedMotion.matches ? "instant" : "smooth" });
+  });
 }
 function periodNode(row) { const node = el("span", "period-label", periodInfo(row).label); node.title = [fullDate(field(row, "Start Date", "Date")), fullDate(field(row, "End Date"))].filter(Boolean).join(" to "); return node; }
 function proximityNode(row, key) {

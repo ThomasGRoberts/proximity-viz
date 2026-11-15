@@ -38,6 +38,7 @@ import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fad
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
 import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js";
+import { tleProvenance } from "../../shared/tle-provenance.js";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
 // "window" (the browser's global object). We give it a short name here.
@@ -606,14 +607,14 @@ const version = ++labelVersion[slot];
 // ---------------------------------------------------------------------------
 // 7. Formatting helpers
 // ---------------------------------------------------------------------------
-const formatTime = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
+const formatTime = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const elapsedDuration = ms => {
   const wholeMinutes = Math.max(0, Math.floor(ms / MINUTE_MS));
   const days = Math.floor(wholeMinutes / 1440), hours = Math.floor(wholeMinutes % 1440 / 60), minutes = wholeMinutes % 60;
   return { compact: `${String(days).padStart(2, "0")}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`,
     spoken: `${days} days, ${hours} hours, ${minutes} minutes` };
 };
-const formatDate = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(ms));
+const formatDate = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(ms));
 
 // <input type="datetime-local"> uses text like "2020-01-02T10:16". We always treat it as UTC.
 const toInputValue = ms => new Date(ms).toISOString().slice(0, 16);
@@ -787,8 +788,15 @@ function updateThresholds() {
   if (!analysisSamples.length) return;
   const distance = Number($("distanceThreshold").value), speed = Number($("speedThreshold").value);
   if (!(distance > 0) || !(speed > 0)) return;
-  $("dwellDistanceThreshold").textContent = `${distance.toLocaleString()} km`;
-  $("dwellSpeedThreshold").textContent = `${speed.toLocaleString()} m/s`;
+  for (const [sliderId, outputId, value, max, unit] of [
+    ["distanceThresholdSlider", "distanceThresholdOutput", distance, chartScales.distanceKm, "km"],
+    ["speedThresholdSlider", "speedThresholdOutput", speed, chartScales.speedMps, "m/s"]
+  ]) {
+    const slider = $(sliderId);
+    slider.max = String(Math.max(max, value)); slider.value = String(value);
+    slider.setAttribute("aria-valuetext", `${value.toLocaleString()} ${unit}`);
+    $(outputId).textContent = `${value.toLocaleString()} ${unit}`;
+  }
   analysisResult = analyzeEpisode(analysisSamples, distance, speed, analysisStepMs);
   const distanceIntervals = analyzeEpisode(analysisSamples, distance, Infinity, analysisStepMs).intervals;
   const speedIntervals = analyzeEpisode(analysisSamples, Infinity, speed, analysisStepMs).intervals;
@@ -918,13 +926,18 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.fillStyle = "#eeeeec"; ctx.fillRect(pad.left, y(threshold), right - pad.left, bottom - y(threshold));
   // UTC-anchored ticks share the data's time transform, so they slide with it.
   const tickMs = 4 * DAY_MS;
+  let lastTickRight = -Infinity;
   for (let ms = Math.ceil(windowStart / tickMs) * tickMs; ms <= windowEnd; ms += tickMs) {
     const px = x(ms);
     ctx.strokeStyle = "#cacaca"; ctx.lineWidth = .8;
     ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, bottom); ctx.stroke();
     if (px > pad.left + 34 && px < right - 34) {
-      const shortDate = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(ms);
-      ctx.fillStyle = "#777"; ctx.textAlign = "center"; ctx.fillText(shortDate, px, h - 7);
+      const fullDate = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", timeZone: "UTC" }).format(ms);
+      ctx.fillStyle = "#777"; ctx.textAlign = "center";
+      const labelWidth = ctx.measureText(fullDate).width;
+      if (px - labelWidth / 2 > lastTickRight + 8 && px + labelWidth / 2 < right) {
+        ctx.fillText(fullDate, px, h - 7); lastTickRight = px + labelWidth / 2;
+      }
     }
   }
   ctx.lineWidth = 1;
@@ -1031,8 +1044,7 @@ function updateIdentity() {
       const dot = document.createElement("span"); dot.className = `sourceDot slot${slot}`;
       const name = document.createElement("span"); name.className = "satName";
       const metadata = document.createElement("div"); metadata.className = "satMetaDetails"; metadata.id = `satMeta${slot}`;
-      const sourceSummary = document.createElement("span"); sourceSummary.className = "sourceSummary"; sourceSummary.textContent = "CelesTrak";
-      sourceSummary.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 18 18" aria-hidden="true"><path class="espl-news-external__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"></path><g class="espl-news-external__arrow"><path d="M9.25 2.75h6v6"></path><path d="m8 10 7.25-7.25"></path></g></svg>');
+      const sourceSummary = document.createElement("span"); sourceSummary.className = "sourceSummary";
       const chevron = document.createElement("span"); chevron.className = "satChevron"; chevron.setAttribute("aria-hidden", "true");
       const glyph = document.createElement("span"); glyph.className = "disclosureGlyph"; glyph.textContent = "‹"; chevron.append(glyph);
       heading.append(dot, name, sourceSummary, chevron);
@@ -1048,10 +1060,24 @@ function updateIdentity() {
     screenLabelNodes[slot].textContent = slotName(slot);
     card.dataset.norad = norad;
     card.dataset.epoch = tle.epoch;
-    card.dataset.archiveHref = tle.sourceUrl || "https://celestrak.org/NORAD/archives/request.php?FORMAT=tle";
+    const provenance = tleProvenance(tle);
+    card.dataset.tleLine2 = tle.line2;
+    card.dataset.sourceLabel = provenance.label;
+    card.dataset.sourceOrigin = provenance.origin;
+    card.dataset.sourceRetrieval = provenance.retrieval;
+    card.dataset.sourceHref = provenance.href;
+    card.querySelector(".sourceSummary").textContent = provenance.label;
     card.dispatchEvent(new Event("tlechange", { bubbles: true }));
   }
   $("nowSummary").textContent = `${slotName("A")} + ${slotName("B")}`;
+}
+function updateIdentityAges() {
+  for (const card of $("identity").querySelectorAll(".satCard[data-epoch]")) {
+    const age = describeAge(currentMs - Date.parse(card.dataset.epoch));
+    card.dataset.tleAge = age;
+    const value = card.querySelector(".tleAgeValue");
+    if (value && value.textContent !== age) value.textContent = age;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1426,7 +1452,7 @@ function zoomInOnDip(lo, hi) {
 
 // "21.4 km" for small distances, "6,176 km" for big ones
 const formatKm = km => km < 100 ? `${km.toFixed(1)} km` : `${Math.round(km).toLocaleString()} km`;
-const formatTimeSeconds = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms));
+const formatTimeSeconds = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms));
 
 // ---------------------------------------------------------------------------
 // Relative motion view (set up like the original storyline page):
@@ -1861,7 +1887,7 @@ timelineWrap.addEventListener("pointermove", event => {
   const rect = $("timelineSlider").getBoundingClientRect();
   const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
   const minuteMs = Math.max(startMs, Math.min(endMs, Math.round((startMs + x / rect.width * (endMs - startMs)) / MINUTE_MS) * MINUTE_MS));
-  timelineHover.textContent = `${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(minuteMs))} UTC`;
+  timelineHover.textContent = `${new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(minuteMs))} UTC`;
   timelineHoverTick.style.left = `${x}px`;
   timelineHover.style.left = `${Math.max(40, Math.min(rect.width - 40, x))}px`;
   timelineHover.style.transform = "translateX(-50%)";
@@ -1869,6 +1895,19 @@ timelineWrap.addEventListener("pointermove", event => {
 });
 timelineWrap.addEventListener("pointerleave", () => { timelineHover.hidden = timelineHoverTick.hidden = true; });
 for (const id of ["distanceThreshold", "speedThreshold"]) $(id).addEventListener("input", updateThresholds);
+function snappedThreshold(raw, increment, maximum) {
+  const preferred = Math.round(raw / increment) * increment;
+  const tolerance = increment === 25 ? 3 : .65;
+  const precise = increment === 25 ? Math.round(raw) : Math.round(raw * 10) / 10;
+  return Math.max(increment === 25 ? 1 : .1, Math.min(maximum, Math.abs(raw - preferred) <= tolerance ? preferred : precise));
+}
+for (const [sliderId, inputId, increment, scaleKey] of [
+  ["distanceThresholdSlider", "distanceThreshold", 25, "distanceKm"],
+  ["speedThresholdSlider", "speedThreshold", 5, "speedMps"]
+]) $(sliderId).addEventListener("input", event => {
+  const next = snappedThreshold(Number(event.target.value), increment, chartScales?.[scaleKey] || Number(event.target.max));
+  $(inputId).value = String(next); updateThresholds();
+});
 for (const [canvasId, inputId, increment] of [["separationChart", "distanceThreshold", 25], ["speedChart", "speedThreshold", 5]]) {
   const canvas = $(canvasId), input = $(inputId), edge = canvas.parentElement.querySelector(".thresholdEdge");
   let dragging = false, dragStartY = 0, dragStartValue = 0;
@@ -1886,10 +1925,7 @@ for (const [canvasId, inputId, increment] of [["separationChart", "distanceThres
   };
   const choose = raw => {
     const chart = chartGeometry.get(canvas); if (!chart) return;
-    const preferred = Math.round(raw / increment) * increment;
-    const tolerance = increment === 25 ? 3 : .65;
-    const precise = increment === 25 ? Math.round(raw) : Math.round(raw * 10) / 10;
-    const next = Math.max(increment === 25 ? 1 : .1, Math.min(chart.yMax, Math.abs(raw - preferred) <= tolerance ? preferred : precise));
+    const next = snappedThreshold(raw, increment, chart.yMax);
     if (Number(input.value) !== next) { input.value = String(next); updateThresholds(); }
   };
   const setFromPointer = event => {
@@ -2068,6 +2104,7 @@ function animate(now) {
   }
 
 lastFrameTime = now;
+  updateIdentityAges();
   followGeoReference();
   keepBothInFrame();
   controls.update();
