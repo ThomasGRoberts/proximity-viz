@@ -104,7 +104,7 @@ function objectInfo(row, role, data) {
   return { role, raw, record, satcat, gp: record?.gp || null,
     cospar: satcat?.OBJECT_ID || compact.cospar || raw, norad: satcat?.NORAD_CAT_ID || compact.norad || "",
     name: satcat?.OBJECT_NAME || compact.name || raw, owner: satcat?.OWNER || "",
-    ownerName: record?.ownerName || "", launchSite: data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "",
+    ownerName: record?.ownerName || "", launchSite: data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE] || data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "",
     launchSiteFromCsis: !!data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE], csisSourceUrl: data.celestrak?.csisSourceUrl || "" };
 }
 function titleMarkup(row) { return field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }

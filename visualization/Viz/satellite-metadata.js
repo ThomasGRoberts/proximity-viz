@@ -44,7 +44,7 @@ async function render(card) {
   row(satellite, "Country", owner(satcat.OWNER) || record.ownerName);
   row(satellite, "Object type", satcat.OBJECT_TYPE === "PAY" ? "Payload" : satcat.OBJECT_TYPE);
   row(satellite, "Launch date", dateText(satcat.LAUNCH_DATE));
-  row(satellite, "Launch site", `${data.launchSites?.celestrakNames?.[satcat.LAUNCH_SITE] || satcat.LAUNCH_SITE}${siteFlags(satcat.LAUNCH_SITE)}`);
+  row(satellite, "Launch site", `${data.launchSites?.names?.[satcat.LAUNCH_SITE] || satcat.LAUNCH_SITE}${siteFlags(satcat.LAUNCH_SITE)}`);
   const identitySource = document.createElement("div"), identityLabel = document.createElement("dt"), identityValue = document.createElement("dd");
   identityLabel.textContent = "Data Source";
   identityValue.append(link("CelesTrak SATCAT", record.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(satcat.NORAD_CAT_ID)}`));
