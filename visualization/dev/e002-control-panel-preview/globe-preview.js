@@ -13,6 +13,9 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   const labelMount = document.getElementById("satelliteScreenLabels");
   const status = document.getElementById("sceneStatus");
   const caveat = document.getElementById("modelCaveat");
+  const orbitTooltip = document.createElement("div");
+  orbitTooltip.className = "orbit-tooltip"; orbitTooltip.role = "tooltip"; orbitTooltip.hidden = true;
+  stage.append(orbitTooltip);
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xffffff);
   const camera = new THREE.PerspectiveCamera(35, 1, .001, 250);
@@ -84,6 +87,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   }
 
   let mode = "relative", referenceMode = "target", auto = true, followSavedMode = true, currentWindow = null, currentMs = NaN, focus = "A";
+  const fullEarthEci = (windowId, selected) => windowId === "dec30" && selected === "C";
   let cameraViews = [...initialCameraViews], preferredDistance = 0;
   let learnedViewsByKey = new Map(), modeTimelineByKey = new Map();
   function indexCameraViews() {
@@ -258,6 +262,34 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     return fromCenter.addScaledVector(ray, closest).length() - earthRadius;
   }
   const earthOccludes = (point, eye) => earthClearance(point, eye) < 0;
+  renderer.domElement.addEventListener("pointermove", event => {
+    const geometry = referenceOrbit.geometry.getAttribute("position");
+    if (!referenceOrbit.visible || !geometry || geometry.count < 2) { orbitTooltip.hidden = true; return; }
+    const rect = renderer.domElement.getBoundingClientRect();
+    const x = event.clientX - rect.left, y = event.clientY - rect.top;
+    const first = new THREE.Vector3(), second = new THREE.Vector3();
+    let near = false;
+    for (let index = 1; index < geometry.count; index++) {
+      first.fromBufferAttribute(geometry, index - 1); second.fromBufferAttribute(geometry, index);
+      if (earthOccludes(first.clone().lerp(second, .5), camera.position)) continue;
+      const a = first.project(camera), b = second.project(camera);
+      if (a.z >= 1 || b.z >= 1) continue;
+      const ax = (a.x + 1) * rect.width / 2, ay = (1 - a.y) * rect.height / 2;
+      const bx = (b.x + 1) * rect.width / 2, by = (1 - b.y) * rect.height / 2;
+      const dx = bx - ax, dy = by - ay;
+      const fraction = THREE.MathUtils.clamp(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+      if (Math.hypot(x - ax - fraction * dx, y - ay - fraction * dy) <= 9) { near = true; break; }
+    }
+    orbitTooltip.hidden = !near;
+    if (near) {
+      const name = names[referenceMode === "target" ? "B" : focus];
+      orbitTooltip.textContent = `Modeled reference orbit of ${name}: one SGP4-propagated revolution from its nearest TLE, shown in the current relative frame.`;
+      const stageRect = stage.getBoundingClientRect();
+      orbitTooltip.style.left = `${Math.max(8, Math.min(stage.clientWidth - 245, event.clientX - stageRect.left + 14))}px`;
+      orbitTooltip.style.top = `${Math.max(8, Math.min(stage.clientHeight - 68, event.clientY - stageRect.top + 14))}px`;
+    }
+  });
+  renderer.domElement.addEventListener("pointerleave", () => { orbitTooltip.hidden = true; });
   function planCamera(immediate = false, smoothReference = false) {
     if (!auto) return;
     if (mode === "relative") {
@@ -351,9 +383,11 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     if (!force && currentWindow?.id === window.id && currentMs === ms && focus === selected) return;
     const windowChanged = currentWindow?.id !== window.id, focusChanged = focus !== selected;
     if (windowChanged) followSavedMode = true;
+    const forcedEci = fullEarthEci(window.id, selected);
+    if (forcedEci && (windowChanged || focusChanged || mode !== "eci")) { auto = true; followSavedMode = true; }
     let pathModeChanged = false;
     if (auto && followSavedMode) {
-      const expectedMode = learnedMode(window.id, ms, selected);
+      const expectedMode = forcedEci ? "eci" : learnedMode(window.id, ms, selected);
       if (expectedMode !== mode) {
         mode = expectedMode; pathModeChanged = true; syncModeButton();
         if (mode === "relative") relativeEarth.userData.anchored = false;
@@ -393,13 +427,14 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     if (focusChanged) { auto = true; if (referenceMode === "chaser") relativeEarth.userData.anchored = false; syncReferenceButton(); }
     if (currentWindow?.id !== window.id || focus !== selected) relativeEarth.userData.anchored = false;
     currentWindow = window; currentMs = ms; focus = selected === "C" ? "C" : "A";
+    syncModeButton();
     const frame = model.frame(window, ms), reference = activeReference(frame);
     if (mode === "eci" && reference) {
       const r = eciVector(reference.position), v = eciVector(reference.velocity);
       const normal = r.cross(v).normalize();
       eciEye.copy(toScene({ x: normal.x, y: normal.y, z: normal.z }).normalize().multiplyScalar(4.2));
       stage.dataset.eciNormal = [normal.x, normal.y, normal.z].map(value => value.toFixed(4)).join(",");
-      const path = auto ? learnedCameraPath(window.id, ms, selected, "eci") : null;
+      const path = auto && !forcedEci ? learnedCameraPath(window.id, ms, selected, "eci") : null;
       if (path) {
         eciEye.copy(path.direction).multiplyScalar(path.distance);
         preferredTarget.copy(path.target);
@@ -435,7 +470,9 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   }
   function syncModeButton() {
     const button = document.getElementById("modeBtn"), relative = mode === "relative";
-    button.title = relative ? "Switch to ECI view" : "Switch to relative motion";
+    const locked = fullEarthEci(currentWindow?.id, focus);
+    button.disabled = locked;
+    button.title = locked ? "Full Earth ECI view for this pair and chapter" : relative ? "Switch to ECI view" : "Switch to relative motion";
     button.setAttribute("aria-label", button.title);
     button.classList.toggle("isRelative", relative);
     button.innerHTML = relative
@@ -444,6 +481,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   }
   syncModeButton();
   document.getElementById("modeBtn").addEventListener("click", () => {
+    if (fullEarthEci(currentWindow?.id, focus)) return;
     mode = mode === "relative" ? "eci" : "relative"; auto = true; followSavedMode = false; syncModeButton();
     if (mode === "relative") relativeEarth.userData.anchored = false;
     if (currentWindow) update(currentWindow, currentMs, focus, true);
@@ -590,6 +628,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   requestAnimationFrame(animate);
   return {
     update,
+    getMode() { return mode; },
     setCameraViews(views) { cameraViews = [...views]; indexCameraViews(); },
     useLearnedPath() {
       if (!currentWindow) return;

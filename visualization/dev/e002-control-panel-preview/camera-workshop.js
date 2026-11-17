@@ -7,7 +7,7 @@ const utc = ms => new Intl.DateTimeFormat("en-US", {
   hour: "2-digit", minute: "2-digit", hour12: false,
 }).format(new Date(ms)) + " UTC";
 
-export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pausePlayback, useLearnedPath, saveView, getViews, beforeOpen }) {
+export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pausePlayback, useLearnedPath, saveView, getViews, getPlaybackSpeed, getMode, saveSpeedNote, beforeOpen }) {
   const routes = windows.flatMap(window => ["A", "C"].flatMap(slot => ["target", "chaser"].map(reference => ({ window, slot, reference }))));
   const duration = route => Math.round((Date.parse(route.window.end) - Date.parse(route.window.start)) / 60000);
   const allowedIntervals = ["key", 60, 120, 360];
@@ -83,9 +83,11 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
     $("workshopStart").disabled = busy;
     $("workshopResume").disabled = busy || (!active && !saved && !localStorage.getItem(STORAGE_KEY));
     $("workshopPlay").textContent = playing ? "Pause here" : "Play to next stop";
+    $("workshopSaveSpeed").disabled = !active || busy;
   }
   function open() {
     beforeOpen?.();
+    pausePlayback();
     $("cameraWorkshop").hidden = false;
     $("workshopToggle").setAttribute("aria-expanded", "true");
     document.body.classList.add("workshop-open");
@@ -106,6 +108,7 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
       if (forceRoute || !active || next.route !== cursor.route) await seekRoute(route, minute);
       else setMinute(minute, true);
       cursor = { route: next.route, minute }; active = true; persist();
+      $("workshopSpeed").value = String(getPlaybackSpeed());
       status("Watch the learned path. Adjust and save only where the framing needs correction; Play whole run continues without stops.");
     } catch (error) { status(`Could not open this view: ${error.message}`); }
     finally { busy = false; render(); }
@@ -131,7 +134,7 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
     let previous = 0, lastPaint = 0;
     const tick = now => {
       if (!playing) return;
-      if (previous) cursor.minute = Math.min(next.minute, cursor.minute + Math.min(100, now - previous) * 20 / 1000);
+      if (previous) cursor.minute = Math.min(next.minute, cursor.minute + Math.min(100, now - previous) * Number($("workshopSpeed").value) / 1000);
       previous = now;
       const reached = cursor.minute >= next.minute;
       setMinute(cursor.minute, reached || now - lastPaint > 100);
@@ -164,6 +167,14 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
     const success = await saveView(false);
     busy = false; render();
     if (success) await playToNext();
+  });
+  $("workshopSaveSpeed").addEventListener("click", async () => {
+    if (!active || busy) return;
+    busy = true; render();
+    const speed = Number($("workshopSpeed").value);
+    const saved = await saveSpeedNote({ route: routes[cursor.route], minute: cursor.minute, mode: getMode(), speed });
+    busy = false; render();
+    status(saved ? `Speed note saved for this view: ${speed} simulated minutes per second.` : "Could not save this speed note.");
   });
   $("workshopMinute").addEventListener("input", event => {
     if (!active || busy) return;

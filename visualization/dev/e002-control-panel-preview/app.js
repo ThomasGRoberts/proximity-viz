@@ -27,6 +27,7 @@ let lastSelectorContext = "";
 let playbackFrame = null;
 let speedIndex = 1;
 const speeds = [5, 10, 20, 40, 80];
+const currentPlaybackSpeed = () => speeds[Math.min(speeds.length - 1, speedIndex + (globe?.getMode() === "eci" ? 0 : 1))];
 const chartScales = new Map();
 const lastThresholds = { distance: 200, speed: 500 };
 let lastTimeBands = "";
@@ -439,15 +440,17 @@ function wirePlayback(dock, windows) {
     if (!preserveMarker) minimumMarker = null;
     const from = windows[activeIndex], to = windows[index], forward = Date.parse(to.start) > Date.parse(from.start);
     $("chapterTransitionMessage").textContent = forward ? "Moving forward in time" : "Moving back in time";
-    $("chapterTransitionDates").textContent = "";
+    overlay.classList.remove("show-dates");
+    $("chapterFromDate").textContent = from.chapterLabel || from.chapterShort;
+    $("chapterToDate").textContent = to.chapterLabel || to.chapterShort;
     overlay.hidden = false; stage.dataset.chapterTransition = "fading"; stage.setAttribute("aria-busy", "true");
     await wait(500);
-    $("chapterTransitionDates").textContent = `${from.chapterLabel || from.chapterShort}  →  ${to.chapterLabel || to.chapterShort}`;
-    await wait(1000);
+    overlay.classList.add("show-dates");
+    await wait(1100);
     setWindow(index, ms ?? Date.parse(to.start));
     stage.dataset.chapterTransition = "revealing";
     await wait(900);
-    overlay.hidden = true; stage.dataset.chapterTransition = "idle"; stage.removeAttribute("aria-busy");
+    overlay.hidden = true; overlay.classList.remove("show-dates"); stage.dataset.chapterTransition = "idle"; stage.removeAttribute("aria-busy");
     transitioning = false;
     if (autoplay) startPlayback();
   }
@@ -457,7 +460,7 @@ function wirePlayback(dock, windows) {
   });
   function tick(now) {
     if (playbackFrame === null) return;
-    if (lastTick) playbackMinute = Math.min(Number(slider.max), playbackMinute + (now - lastTick) * speeds[speedIndex] / 1000);
+    if (lastTick) playbackMinute = Math.min(Number(slider.max), playbackMinute + (now - lastTick) * currentPlaybackSpeed() / 1000);
     lastTick = now;
     globe?.update(currentWindow, Date.parse(currentWindow.start) + playbackMinute * 60000, selectedChaser());
     if (now - lastPaint >= 90 || playbackMinute >= Number(slider.max)) {
@@ -478,10 +481,11 @@ function wirePlayback(dock, windows) {
     lastTick = 0; lastPaint = 0; playbackFrame = requestAnimationFrame(tick);
   }
   play.addEventListener("click", () => { if (playbackFrame !== null) pause(); else startPlayback(); });
-  dock.querySelector("#speedDownBtn").addEventListener("click", () => { speedIndex = Math.max(0, speedIndex - 1); message(`Preview playback: ${speeds[speedIndex]} simulated minutes per second.`); });
-  dock.querySelector("#speedUpBtn").addEventListener("click", () => { speedIndex = Math.min(speeds.length - 1, speedIndex + 1); message(`Preview playback: ${speeds[speedIndex]} simulated minutes per second.`); });
-  setWindow(0, Date.parse(windows[0].anchor || windows[0].start));
+  dock.querySelector("#speedDownBtn").addEventListener("click", () => { speedIndex = Math.max(0, speedIndex - 1); message(`Playback: ${currentPlaybackSpeed()} simulated minutes per second in this view.`); });
+  dock.querySelector("#speedUpBtn").addEventListener("click", () => { speedIndex = Math.min(speeds.length - 1, speedIndex + 1); message(`Playback: ${currentPlaybackSpeed()} simulated minutes per second in this view.`); });
+  setWindow(0, Date.parse(windows[0].start));
   return {
+    start: startPlayback,
     reviewPause: pause,
     async reviewWindow(window, ms) {
       const index = windows.findIndex(item => item.id === window.id);
@@ -723,11 +727,26 @@ try {
     }
     catch (error) { console.error(error); $("sceneStatus").textContent = `3D globe unavailable in this browser: ${error.message}`; }
     renderOrbitalPanel();
+    if (globe) playbackControl?.start();
     if (globe && !publishedMode) cameraWorkshop = createCameraWorkshop({
       windows: episodeConfig.windows, names: catalogNames,
       beforeOpen: () => setFeedbackOpen(false),
       getViews: () => savedCameraViews,
+      getMode: () => globe.getMode(),
+      getPlaybackSpeed: currentPlaybackSpeed,
       saveView: saveCurrentCameraView,
+      async saveSpeedNote({ route, minute, mode, speed }) {
+        const timestamp = new Date(Date.parse(route.window.start) + minute * 60000).toISOString();
+        const reference = route.reference === "target" ? catalogNames.B : catalogNames[route.slot];
+        try {
+          comments = await saveAction({
+            action: "add", root: "panel", key: "cameraWorkshop", x: .5, y: .5,
+            label: `Playback speed · ${route.window.chapterShort} · ${catalogNames[route.slot]} · ${reference} centered`,
+            text: `At ${timestamp}, in ${mode.toUpperCase()} view, prefer ${speed} simulated minutes per second.`,
+          });
+          renderComments(); message("Speed note saved with the local spot comments."); return true;
+        } catch (error) { message(error.message, true); return false; }
+      },
       pausePlayback: () => playbackControl?.reviewPause(),
       setMinute: (minute, paint) => playbackControl?.reviewMinute(minute, paint),
       useLearnedPath: () => globe?.useLearnedPath(),

@@ -131,6 +131,8 @@ body{padding:0;background:#f4f3f0}
 .model-caveat,.globe-stage .scene-status{position:absolute;z-index:2;right:14px;max-width:310px;margin:0;padding:7px 9px;border:1px solid #e0d8c5;border-radius:5px;background:#fffdf9ed;color:#625e56;font-size:10px;line-height:1.35}
 .model-caveat{bottom:14px}
 .globe-stage .scene-status{bottom:47px}
+.orbit-tooltip{position:absolute;z-index:6;max-width:235px;padding:7px 9px;border:1px solid #d6d0c4;border-radius:6px;background:#fffefbf2;box-shadow:0 3px 12px #0002;color:#45413a;font-size:10px;line-height:1.4;pointer-events:none}
+.orbit-tooltip[hidden]{display:none}
 .globe-stage .scene-status:empty{display:none}
 .panel-column{position:relative;z-index:3;width:342px;margin:16px 0 18px 16px}
 .pin-layer{position:absolute;z-index:9;inset:0}
@@ -187,7 +189,11 @@ html,body{background:#fff}
 #globeStage #projectLink.is-open .projectLinkArrow{transform:translateX(-2px)}
 #globeStage #cameraControls .cameraBtn{width:46px;height:46px;border:1px solid #ddd;border-radius:50%;background:#ffffffed;box-shadow:0 3px 12px #00000019;color:#555;font-size:22px;cursor:pointer}
 #globeStage #cameraControls .cameraBtn{display:grid;place-items:center;padding:0;line-height:1}
+#globeStage #cameraControls #zoomInBtn,#globeStage #cameraControls #zoomOutBtn{position:relative;font-size:0}
+#globeStage #cameraControls #zoomInBtn::before,#globeStage #cameraControls #zoomOutBtn::before,#globeStage #cameraControls #zoomInBtn::after{content:"";position:absolute;top:50%;left:50%;width:15px;height:2px;border-radius:1px;background:currentColor;transform:translate(-50%,-50%)}
+#globeStage #cameraControls #zoomInBtn::after{transform:translate(-50%,-50%) rotate(90deg)}
 #globeStage #cameraControls .cameraBtn:hover,#globeStage #cameraControls .cameraBtn:focus-visible{border-color:#bfa66a;color:#8c6e20;background:#fff}
+#globeStage #cameraControls .cameraBtn:disabled{border-color:#ddd;color:#888;background:#ffffffed;cursor:default}
 #globeStage #cameraControls .modeBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6}
 #globeStage #cameraControls .referenceBtn svg{width:24px;height:24px;fill:none;stroke:#666;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 #globeStage #cameraControls .referenceBtn .reference-target-dot{fill:#aaa;stroke:#333;stroke-width:1.3}
@@ -212,8 +218,11 @@ body.e002-shared .playbackDock{position:relative;bottom:auto;flex:0 0 auto;box-s
 .chapter-transition{position:absolute;z-index:4;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;box-sizing:border-box;padding-left:374px;background:#ffffff80;color:#444;text-align:center;pointer-events:none;opacity:0;transition:opacity .45s ease}
 .chapter-transition[hidden]{display:none}
 .chapter-transition strong{font-size:17px;font-weight:700}
-.chapter-transition span:last-child{display:block;height:15px;font-size:11px;line-height:15px;color:#666;animation:chapterDateIn .25s ease-out}
-@keyframes chapterDateIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.chapter-transition #chapterTransitionDates{display:flex;align-items:center;justify-content:center;gap:7px;height:18px;color:#777;font-size:10px;line-height:18px}
+#chapterTransitionDates>span{opacity:0;transform:translateY(4px);transition:opacity .38s ease,transform .38s ease}
+.chapter-transition.show-dates #chapterFromDate{opacity:1;transform:none;transition-delay:.04s}
+.chapter-transition.show-dates .chapter-date-arrow{opacity:1;transform:none;transition-delay:.32s;color:#aaa}
+.chapter-transition.show-dates #chapterToDate{opacity:1;transform:none;transition-delay:.6s}
 .chapter-transition-dots{position:relative;width:88px;height:16px;margin-bottom:3px}
 .chapter-transition-dots i{position:absolute;top:3px;left:calc(50% - 5px);display:block;box-sizing:border-box;width:10px;height:10px;border:1.5px solid #777;border-radius:50%;background:#a9a9a9;animation:chapterPass 2.4s linear infinite}
 .chapter-transition-dots i:nth-child(2){animation-delay:-.8s}.chapter-transition-dots i:nth-child(3){animation-delay:-1.6s}
@@ -243,11 +252,14 @@ body.e002-shared #ui .pair-sticky[hidden]{display:none}
 .pair-sticky-choices .pair-sticky-menu[hidden]{display:none}
 .pair-sticky-menu button{width:100%;border-color:transparent}
 .pair-sticky-menu button.is-active{background:#f3f3f3}
-.pair-sticky-target{flex:0 0 auto;font-size:8px}
+.pair-sticky-target{flex:0 0 auto;font-size:9px;line-height:1.1}
+.pair-sticky-target b{font-size:9px;font-weight:700;line-height:1.1}
 /* The quiet heading reveals a card boundary and its library action on hover. */
-body.e002-shared #ui .episode-focus{position:relative;min-height:62px;margin-left:0;margin-right:0;padding:0;border:1px solid transparent;border-radius:9px;transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
-body.e002-shared #ui .episode-focus::before{content:"";position:absolute;top:9px;bottom:9px;left:0;width:2px;border-radius:2px;background:#bd9638;transform-origin:bottom center;transform:scaleY(1);transition:transform .4s cubic-bezier(.2,.72,.2,1),opacity .3s ease}
-body.e002-shared #ui .episode-focus:is(:hover,:focus-within)::before{opacity:0;transform:scaleY(.2)}
+body.e002-shared #ui .episode-focus{position:relative;min-height:62px;margin-left:0;margin-right:0;padding:0;border:1px solid #ddd9d0;border-radius:9px;background:#fff;overflow:hidden;transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
+body.e002-shared #ui .episode-focus::before{content:none}
+body.e002-shared #ui .episode-focus::after{content:"";position:absolute;z-index:2;inset:-45% -80%;background:linear-gradient(115deg,transparent 39%,#ffffff00 44%,#ffffffc9 50%,#ffffff00 56%,transparent 61%);transform:translateX(-120%);pointer-events:none}
+body.e002-shared #ui .episode-focus:is(:hover,:focus-within)::after{animation:episodeCardShimmer .95s ease-out both}
+@keyframes episodeCardShimmer{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
 body.e002-shared #ui .episode-focus:hover,body.e002-shared #ui .episode-focus:focus-within{border-color:#ded9cf;background:#fbfaf7;box-shadow:0 2px 8px #0000000d}
 body.e002-shared #ui .episode-focus-link{display:block;padding:7px 8px 10px;color:inherit;text-decoration:none}
 body.e002-shared #ui .episode-focus-link:focus-visible{outline:2px solid #9a7413;outline-offset:2px;border-radius:9px}
@@ -309,7 +321,7 @@ body.e002-shared #ui #separationChart,body.e002-shared #ui #speedChart{height:15
 .workshop-footer{display:flex;gap:6px;padding-top:9px;border-top:1px solid #ebe4d6}
 .workshop-footer button{flex:1;font-size:9px}
 body.workshop-open #workshopToggle{border-color:#aa8b46;background:#fff8e8;color:#654d1a}
-.camera-workshop,.camera-workshop.has-started{grid-template-columns:minmax(210px,1fr) minmax(190px,1fr) 170px;gap:3px 10px;max-height:160px;padding:9px}
+.camera-workshop,.camera-workshop.has-started{grid-template-columns:minmax(210px,1fr) minmax(190px,1fr) 170px;gap:3px 10px;max-height:205px;padding:9px}
 .camera-workshop .workshop-intro{display:none}
 .camera-workshop .workshop-head{grid-column:1;grid-row:1}
 .camera-workshop .workshop-context{grid-column:1;grid-row:2;padding:5px 7px;gap:1px;font-size:9px}
@@ -323,6 +335,11 @@ body.workshop-open #workshopToggle{border-color:#aa8b46;background:#fff8e8;color
 .camera-workshop .workshop-footer{grid-column:1/4;grid-row:3;padding:0;border:0}
 .camera-workshop.has-started .workshop-footer{display:none}
 .camera-workshop .workshop-status{grid-column:1/4;grid-row:4;min-height:0;margin:0;font-size:9px;line-height:1.2}
+.camera-workshop .workshop-speed{grid-column:1/4;grid-row:5;display:flex;align-items:center;gap:7px;padding-top:4px;border-top:1px solid #ebe4d6;color:#625b4c;font-size:9px}
+.camera-workshop:not(.has-started) .workshop-speed{display:none}
+.workshop-speed select{min-width:95px;padding:4px;border:1px solid #d5d0c5;border-radius:5px;background:#fff;color:#4c463b;font-size:9px}
+.workshop-speed button{padding:5px 7px;border:1px solid #d4cbbb;border-radius:5px;background:#fff8e8;color:#664e1d;font-size:9px;font-weight:700;cursor:pointer}
+.workshop-speed button:disabled{opacity:.5;cursor:default}
 .camera-workshop .workshop-head h2{font-size:14px}
 .camera-workshop .workshop-head button{font-size:19px}
 @media(max-width:950px){.camera-workshop{left:auto;right:66px;width:min(340px,calc(100% - 88px));max-height:calc(100% - 32px);grid-template-columns:1fr}.camera-workshop>*{grid-column:1!important;grid-row:auto!important}}
@@ -349,7 +366,7 @@ body.e002-shared #ui #thresholdControls[open] #thresholdSummary{display:none}
 .glossarySources a{color:#777;text-decoration:none}
 .glossarySources a:hover,.glossarySources a:focus-visible{color:#555}
 #downloadCameraViews{padding:6px 8px;border:1px solid #d5d0c5;border-radius:5px;background:#fff;color:#625b4c;font-size:10px;font-weight:700;cursor:pointer}
-@media(prefers-reduced-motion:reduce){.chapter-transition-dots i{animation:none!important}.chapter-transition-dots i:nth-child(2){background:#f7d503;border-color:#4a4a4a;opacity:1}.episode-focus,.episode-focus::before,.episode-focus .episode-eyebrow,.episode-hover-action{transition:none!important}.episode-focus .episode-eyebrow::before{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.chapter-transition-dots i{animation:none!important}.chapter-transition-dots i:nth-child(2){background:#f7d503;border-color:#4a4a4a;opacity:1}.episode-focus,.episode-focus::after,.episode-focus .episode-eyebrow,.episode-hover-action,#chapterTransitionDates>span{animation:none!important;transition:none!important}.episode-focus .episode-eyebrow::before{animation:none!important}}
 @media(max-width:760px){.chapter-transition{padding-left:0;padding-top:220px}}
 
 /* The published route uses the reviewed scene and camera path without authoring tools. */
