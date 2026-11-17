@@ -411,6 +411,15 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .source-media::after{content:"";position:absolute;inset:0;z-index:1;border-radius:inherit;background:#caa75a0b;pointer-events:none}
 .source-media img{filter:sepia(.065) saturate(.97)}
 @media(max-width:900px){.table-wrap .expanded-row .expanded-inner.has-visual{background:linear-gradient(180deg,#fffcf6e8 0%,#fffcf6f0 35%,#fffcf63a 75%,#fffcf6 100%)}}
+
+/* Local E-002 review stays inside its expanded table row. */
+.e002-workshop-toggle{position:relative;z-index:6;display:block;margin:8px 0 0;padding:8px 11px;border:1px solid #cdbb8a;border-radius:7px;background:#fffdf7;color:#67501d;font:700 11px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer}
+.e002-workshop-toggle:hover,.e002-workshop-toggle:focus-visible{background:#f8f0db;border-color:#ab8c44}
+.e002-table-workshop{position:relative;z-index:7;min-width:0;margin:16px 0 10px;padding:10px;border:1px solid #d9d1bf;border-radius:10px;background:#fff;box-shadow:0 7px 22px #00000012}
+.e002-table-workshop[hidden]{display:none}
+.e002-table-workshop-heading{margin:1px 2px 9px;color:#6f5b2e;font-size:11px;font-weight:700}
+.e002-workshop-frame{display:block;box-sizing:border-box;width:100%;height:min(82vh,850px);min-height:630px;border:1px solid #ddd;border-radius:7px;background:#fff}
+@media(min-width:901px){.expanded-inner.has-visual.workshop-visible{grid-template-areas:"description visualization" "workshop workshop" "records records"}.expanded-inner.has-visual .e002-table-workshop{grid-area:workshop}}
 @media(min-width:901px){
   .table-wrap .expanded-row[data-episode-id="E-001"] .visual-link.model-link{overflow:visible}
   .table-wrap .expanded-row[data-episode-id="E-001"] .orbital-preview{

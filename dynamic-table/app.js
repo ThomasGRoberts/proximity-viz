@@ -428,10 +428,34 @@ function expandedContent(row, data) {
   if (description) context.append(formattedDescription(description));
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
+  let localWorkshop = null;
   if (["E-001", "E-002"].includes(episodeId)) {
     const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/" : "../visualization/Viz/compare.html?episode=E-002", location.href).href;
     viz.setAttribute("aria-label", `${episodeId} orbital visualization`);
     viz.append(visualizationLink(target, `Explore the interactive model for ${title(row)}`));
+    if (episodeId === "E-002" && ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769") {
+      const toggle = el("button", "e002-workshop-toggle", "Review camera path and add spot comments");
+      toggle.type = "button"; toggle.setAttribute("aria-expanded", "false"); toggle.setAttribute("aria-controls", "e002-table-workshop");
+      const workshop = el("section", "e002-table-workshop"); workshop.id = "e002-table-workshop"; workshop.hidden = true;
+      const heading = el("div", "e002-table-workshop-heading", "E-002 local review · camera workshop and spot comments");
+      workshop.append(heading);
+      toggle.addEventListener("click", event => {
+        event.stopPropagation();
+        const open = workshop.hidden;
+        workshop.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.textContent = open ? "Close local E-002 review" : "Review camera path and add spot comments";
+        wrap.classList.toggle("workshop-visible", open);
+        if (open && !workshop.querySelector("iframe")) {
+          const frame = el("iframe", "e002-workshop-frame");
+          frame.src = new URL("../visualization/dev/e002-control-panel-preview/", location.href).href;
+          frame.title = "Interactive E-002 camera workshop and spot comments";
+          workshop.append(frame);
+        }
+      });
+      viz.append(toggle);
+      localWorkshop = workshop;
+    }
     overview.append(viz);
   } else overview.classList.add("no-visual");
   const evidence = el("section", "evidence-section"), found = linkedDescriptions(row, data), requested = descriptionIds(row), sources = sourceGroups(row, data);
@@ -454,7 +478,9 @@ function expandedContent(row, data) {
     evidence.append(grid);
     if (sources.length > 6) { const more = el("details", "more-records"), summary = el("summary", "", `Show ${sources.length - 6} more source cards`), moreGrid = el("div", "source-grid"); sources.slice(6).forEach(group => appendCard(group, moreGrid)); more.append(summary, moreGrid); evidence.append(more); }
   }
-  wrap.append(overview, evidence); return wrap;
+  wrap.append(overview);
+  if (localWorkshop) wrap.append(localWorkshop);
+  wrap.append(evidence); return wrap;
 }
 function loadingDetail(row, data) {
   const wrap = el("div", "expanded-inner expanded-partial");
