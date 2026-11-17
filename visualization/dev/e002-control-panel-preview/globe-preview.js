@@ -428,8 +428,6 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     caveat.textContent = mode === "relative"
       ? `Relative view holds ${referenceMode === "target" ? names.B : names[focus]} at the origin. The selected pair remains visible in automatic camera mode; the other chaser may pass behind Earth.`
       : `ECI view follows the normal to ${referenceMode === "target" ? names.B : names[focus]}'s orbital plane.`;
-    document.querySelector(".viewer-badge").title = caveat.textContent;
-    document.querySelector(".viewer-badge").textContent = mode === "relative" ? `E-002 · RELATIVE TO ${referenceMode === "target" ? names.B : names[focus]}` : "E-002 · ECI VIEW";
     stage.dataset.mode = mode; stage.dataset.focus = focus; stage.dataset.referenceMode = referenceMode;
     stage.dataset.visible = Object.entries(frame).filter(([, value]) => !!value).map(([slot]) => slot).join("");
     stage.dataset.referenceOffsetBKm = positions.B ? (positions.B.length() * 1000).toFixed(1) : "";

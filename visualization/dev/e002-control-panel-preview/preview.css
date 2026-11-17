@@ -125,7 +125,6 @@ body{padding:0;background:#f4f3f0}
 .globe-stage .satelliteScreenLabel.is-occluded{border-style:dashed;background:#fffdfaeb}
 .globe-stage .satelliteScreenLabel.is-muted.is-occluded{opacity:.42}
 .globe-stage .satelliteScreenLabel[hidden]{display:none}
-.viewer-badge{position:absolute;z-index:2;top:14px;right:14px;padding:6px 8px;border:1px solid #e0d8c5;border-radius:5px;background:#fffdf9e8;color:#8b6e20;font-size:9px;font-weight:750;letter-spacing:.06em}
 .stage-actions{position:absolute;z-index:3;right:14px;bottom:83px}
 .stage-actions button{padding:7px 10px;border:1px solid #cdc6b9;border-radius:6px;background:#fffdf9e8;color:#555;font-size:10px;font-weight:700;cursor:pointer}
 .stage-actions button:hover{background:#fff;border-color:#9e8b62}
@@ -161,7 +160,7 @@ body.e002-shared .e002-segmented button.is-experimental::after{content:"";positi
 body.e002-shared .chartGroup .thresholdEdge[hidden],body.e002-shared .chartGroup .currentValue[hidden]{display:none}
 body.e002-shared .chartGroup .thresholdEdge:is(:hover,:active,:focus){color:#606060;background:transparent}
 body.e002-shared .chartGroup .thresholdEdge:focus-visible{outline:1px solid #777}
-@media(max-width:780px){.panel-column{margin-left:10px}.viewer-badge{top:8px;right:8px}.feedback-rail{top:10px;right:10px;width:min(340px,calc(100% - 20px))}.model-caveat,.globe-stage .scene-status{max-width:min(290px,calc(100% - 30px))}}
+@media(max-width:780px){.panel-column{margin-left:10px}.feedback-rail{top:10px;right:10px;width:min(340px,calc(100% - 20px))}.model-caveat,.globe-stage .scene-status{max-width:min(290px,calc(100% - 30px))}}
 @media(max-width:430px){.review-header{padding:9px 11px;gap:8px}.review-header h1{font-size:14px}.review-actions{gap:4px}.review-actions button{padding:7px 6px;font-size:9px}.review-workspace{width:calc(100% - 12px);margin:6px}.panel-column{width:min(342px,calc(100% - 12px));margin:12px 6px}.globe-stage .satelliteScreenLabel{font-size:9px}}
 .review-workspace{height:calc(100vh - 92px);min-height:620px}
 .panel-column{height:calc(100% - 32px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#c7c2b7 transparent}
@@ -175,10 +174,19 @@ html,body{background:#fff}
 .globe-stage .satelliteScreenLabel.is-muted.is-occluded{opacity:.4}
 .globe-stage .satelliteScreenLabel{transition:left .12s linear,top .12s linear}
 #globeStage #modelCaveat{display:none}
-.globe-stage .viewer-badge{background:#fff;border-color:#e0e0e0;color:#777}
 .globe-stage .model-caveat,.globe-stage .scene-status{background:#ffffffed;border-color:#dedede}
 #globeStage #cameraControls{position:absolute;z-index:5;top:14px;right:14px;display:flex;flex-direction:column;align-items:center;gap:7px}
+#globeStage #cameraControls[hidden]{display:none}
+#globeStage #projectLink{position:relative;z-index:1;display:flex;align-items:center;justify-content:flex-end;flex:0 0 46px;width:46px;height:46px;color:#444;text-decoration:none}
+#globeStage .projectLinkIcon{position:relative;z-index:2;flex:0 0 46px;width:46px;height:46px}
+#globeStage #projectFlourishCanvas{position:absolute;top:-6px;left:-6px;width:58px;height:58px;pointer-events:none;opacity:.9;transition:opacity .24s ease}
+#globeStage #projectLink.is-open #projectFlourishCanvas{opacity:1}
+#globeStage .projectLinkLabel{position:absolute;top:0;right:46px;display:flex;align-items:center;height:46px;padding-right:10px;color:#666;font-size:12px;white-space:nowrap;opacity:0;clip-path:inset(0 0 0 100%);transition:clip-path .5s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
+#globeStage #projectLink.is-open .projectLinkLabel{opacity:1;clip-path:inset(0)}
+#globeStage .projectLinkArrow{flex:0 0 13px;width:13px;height:13px;margin-left:6px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s ease}
+#globeStage #projectLink.is-open .projectLinkArrow{transform:translateX(-2px)}
 #globeStage #cameraControls .cameraBtn{width:46px;height:46px;border:1px solid #ddd;border-radius:50%;background:#ffffffed;box-shadow:0 3px 12px #00000019;color:#555;font-size:22px;cursor:pointer}
+#globeStage #cameraControls .cameraBtn{display:grid;place-items:center;padding:0;line-height:1}
 #globeStage #cameraControls .cameraBtn:hover,#globeStage #cameraControls .cameraBtn:focus-visible{border-color:#bfa66a;color:#8c6e20;background:#fff}
 #globeStage #cameraControls .modeBtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6}
 #globeStage #cameraControls .referenceBtn svg{width:24px;height:24px;fill:none;stroke:#666;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
@@ -186,7 +194,6 @@ html,body{background:#fff}
 #globeStage #cameraControls .referenceBtn .reference-chaser-dot{fill:#eaaa00;stroke:#333;stroke-width:1.3;opacity:.45}
 #globeStage #cameraControls .referenceBtn.is-chaser .reference-target-dot{opacity:.45}
 #globeStage #cameraControls .referenceBtn.is-chaser .reference-chaser-dot{opacity:1}
-#globeStage .viewer-badge{right:72px}
 .thresholdControl .threshold-input-wrap{display:inline-flex;align-items:center;gap:5px;justify-self:end;color:#555;font-size:10px;font-weight:700}
 .thresholdControl .threshold-input-wrap input[type=number]{width:62px;height:26px;margin:0;padding:3px 5px;border:1px solid #ccc;border-radius:4px;background:#fff;color:#333;font:700 12px/18px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;text-align:right}
 .thresholdControl .threshold-input-wrap input[type=number]:focus-visible{outline:2px solid #9b7c2e;outline-offset:1px}

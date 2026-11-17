@@ -717,7 +717,10 @@ try {
   renderComments(); renderCameraViews();
   loadOrbitalPreview(episodeConfig).then(model => {
     orbitalModel = model;
-    try { globe = createGlobePreview(model, episodeConfig, catalogNames, savedCameraViews); }
+    try {
+      globe = createGlobePreview(model, episodeConfig, catalogNames, savedCameraViews);
+      $("cameraControls").hidden = false;
+    }
     catch (error) { console.error(error); $("sceneStatus").textContent = `3D globe unavailable in this browser: ${error.message}`; }
     renderOrbitalPanel();
     if (globe && !publishedMode) cameraWorkshop = createCameraWorkshop({
