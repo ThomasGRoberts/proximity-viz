@@ -374,3 +374,13 @@ body.e002-published .review-header,body.e002-published .feedback-rail,body.e002-
 body.e002-published .review-workspace{width:100%;height:100vh;min-height:620px;margin:0;border:0;border-radius:0}
 body.e002-published .panel-column{margin:16px 0 16px 16px}
 @media(max-width:430px){body.e002-published .panel-column{margin:10px 0 10px 6px;width:min(342px,calc(100% - 12px))}}
+
+/* Match the SBI lab-home logo, including its quiet resting state and glint. */
+body.e002-shared #gtLogo{position:fixed;z-index:9;right:26px;bottom:24px;display:block;width:320px;overflow:hidden;border-radius:2px;opacity:.23;filter:grayscale(1);line-height:0}
+body.e002-shared #gtLogo img{display:block;width:100%;height:auto}
+body.e002-shared #gtLogo::after{content:"";position:absolute;inset:-35% -45%;pointer-events:none;background:linear-gradient(115deg,transparent 36%,#ffffff2e 43%,#fffffff9 49%,#ffffff47 56%,transparent 64%);transform:translateX(-125%)}
+body.e002-shared #gtLogo:hover::after,body.e002-shared #gtLogo:focus-visible::after{animation:esplLogoGlint 1.25s ease-out forwards}
+body.e002-shared #gtLogo:focus-visible{outline:2px solid #b49123;outline-offset:4px}
+@keyframes esplLogoGlint{to{transform:translateX(125%)}}
+@media(max-width:760px){body.e002-shared #gtLogo{right:14px;bottom:16px;width:160px}}
+@media(prefers-reduced-motion:reduce){body.e002-shared #gtLogo:hover::after,body.e002-shared #gtLogo:focus-visible::after{animation:none}}
