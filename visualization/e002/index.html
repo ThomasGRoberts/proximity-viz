@@ -12,6 +12,7 @@
   <script src="../../Viz/vendor/satellite/satellite.min.js"></script>
 </head>
 <body class="e002-shared e002-published" data-heading-style="quiet" data-books="off" data-calendar-icon="off">
+  <div id="episodeLoading" class="episode-loading" role="status" aria-live="polite"><span class="episode-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><strong id="episodeLoadingText">Loading episode</strong></div>
   <header class="review-header">
     <div><span class="review-kicker">E-002 · LOCAL DESIGN REVIEW</span><h1>Visualizing Proximity in the Space Domain</h1></div>
     <div class="review-actions"><button id="workshopToggle" type="button" aria-expanded="false" aria-controls="cameraWorkshop" disabled>Camera workshop</button><button id="saveCameraBtn" type="button" title="Save the current 3D camera angle locally">Save camera view <span id="cameraViewCount">0</span></button><button id="feedbackToggle" type="button" aria-expanded="false" aria-controls="feedbackRail">Comments <span id="headerCommentCount">0</span></button><button id="commentMode" type="button" aria-pressed="false">✚ Add spot comment</button></div>
@@ -32,6 +33,7 @@
     </div>
     <div id="panelColumn" class="panel-column" aria-label="E-002 control panel preview">
       <div id="panelMount"><p class="loading">Loading the E-002 panel…</p></div>
+      <button id="panelToggleBtn" class="panel-toggle" type="button" aria-label="Hide control panel" aria-expanded="true" title="Hide control panel"><span aria-hidden="true">‹</span></button>
     </div>
     <div id="pinLayer" class="pin-layer" aria-label="Saved comment markers"></div>
     <aside id="cameraWorkshop" class="camera-workshop" data-spot-key="cameraWorkshop" aria-label="Guided camera path workshop" hidden>

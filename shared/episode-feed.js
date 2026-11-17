@@ -12,7 +12,7 @@ export function plottedObjects(row) {
   return ["A", "B", "C"].map(slot => ({ slot, cospar: cleanCospar(row?.[`Object ${slot}`]) })).filter(item => item.cospar);
 }
 
-export function parseCsv(text, requiredHeaders = ["ID", "Start Date", "End Date"]) {
+export function parseCsv(text, requiredHeaders = ["ID"]) {
   const rows = []; let row = [], cell = "", quoted = false;
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
@@ -58,7 +58,34 @@ export function loadCurrentDescriptions() {
     });
 }
 
+export function episodeChapters(row) {
+  const chapters = [];
+  for (let index = 1; index <= 4; index++) {
+    const centerText = String(row?.[`Chapter ${index} Center`] || "").trim();
+    const widthText = String(row?.[`Chapter ${index} Width (hours)`] || row?.[`Chapter ${index} Width`] || "").trim();
+    if (!centerText && !widthText) continue;
+    const match = centerText.match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?(?:Z)?$/);
+    const widthHours = Number(widthText);
+    if (!match || !Number.isFinite(widthHours) || widthHours <= 0 || widthHours > 24 * 31) continue;
+    const iso = `${match[1]}T${(match[2] || "0").padStart(2, "0")}:${match[3] || "00"}:${match[4] || "00"}Z`;
+    const centerMs = Date.parse(iso);
+    if (!Number.isFinite(centerMs) || new Date(centerMs).toISOString().slice(0, 19) !== iso.slice(0, 19)) continue;
+    const half = widthHours * 1800000;
+    chapters.push({ id: `chapter-${index}`, index, center: iso, centerMs, widthHours,
+      start: new Date(centerMs - half).toISOString(), end: new Date(centerMs + half).toISOString(),
+      startMs: centerMs - half, endMs: centerMs + half });
+  }
+  return chapters.sort((a, b) => a.centerMs - b.centerMs);
+}
+
 export function episodeUtcInterval(row) {
+  const chapters = episodeChapters(row);
+  if (chapters.length) {
+    const startMs = Math.min(...chapters.map(item => item.startMs));
+    const endMs = Math.max(...chapters.map(item => item.endMs));
+    return { start: new Date(startMs).toISOString().slice(0, 10), end: new Date(endMs).toISOString().slice(0, 10),
+      startMs, endMs, endExclusiveMs: endMs + 1, chapters };
+  }
   const start = row?.["Start Date"], end = row?.["End Date"];
   const valid = value => /^\d{4}-\d{2}-\d{2}$/.test(value || "") &&
     Number.isFinite(Date.parse(`${value}T00:00:00Z`)) &&

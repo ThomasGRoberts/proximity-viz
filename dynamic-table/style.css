@@ -19,6 +19,7 @@ td{padding:15px 12px;border-bottom:1px solid #ededed;vertical-align:middle;overf
 .expanded-inner{border-top:0;border-left:0;border-radius:8px;box-shadow:inset 3px 0 var(--espl-gold);background:#fffcf6}
 .expanded-row>td{background:#fff}
 .orbital-preview iframe.e002-mini{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#fffcf6}
+.orbital-preview iframe.e001-mini{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#fffcf6}
 /* Satellite markers use Willa's #eaaa00/#a9a9a9 palette and a bold black ring. */
 .dot{width:14px;height:14px;flex-basis:14px;margin-top:2px;border:2px solid #000}
 .organization-icon{display:inline-block;color:#777;font-size:14px;line-height:1;vertical-align:baseline}
@@ -122,8 +123,8 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
   .table-wrap tr.episode-row td:nth-child(7){grid-column:1/-1;grid-row:5;display:flex;justify-content:center;border-top:1px solid #f0eee8}
   .table-wrap tr.episode-row td:nth-child(n+3):not(:last-child)::before{display:block;margin-bottom:3px;color:#8a8170;font-size:9px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
   .table-wrap tr.episode-row td:nth-child(3)::before{content:"Period"}
-  .table-wrap tr.episode-row td:nth-child(4)::before{content:"Est. Min. Separation"}
-  .table-wrap tr.episode-row td:nth-child(5)::before{content:"Est. Min. Relative Velocity"}
+  .table-wrap tr.episode-row td:nth-child(4)::before{content:"Minimum Separation Distance"}
+  .table-wrap tr.episode-row td:nth-child(5)::before{content:"Minimum Relative Velocity"}
   .table-wrap tr.episode-row td:nth-child(6)::before{content:"Records"}
   .table-wrap tr.expanded-row,.table-wrap tr.expanded-row>td{display:block;width:100%}
   .expanded-inner{width:100%!important;max-width:100%!important}
@@ -287,12 +288,6 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
   .expanded-inner.has-visual .visual-link.model-link{overflow:visible}
   .expanded-inner.has-visual .orbital-preview{position:absolute;left:calc(-38.8889% - 18px);width:calc(138.8889% + 18px);height:100%;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,#0003 0%,#0009 18%,#000 42%);mask-image:linear-gradient(90deg,#0003 0%,#0009 18%,#000 42%)}
 }
-.earth-controls{display:flex;align-items:center;gap:9px;padding:7px 18px;border-bottom:1px solid #eee3c9;background:#fffcf6;color:#655f52;font-size:11px}
-.earth-controls[hidden]{display:none!important}
-.earth-controls select{padding:4px 7px;border:1px solid #d9d3c5;border-radius:4px;background:white;color:#4c4a45;font:inherit}
-.earth-controls small{color:#928a7b;font-size:10px}
-.earth-swatch{width:18px;height:18px;border:1px solid #a49f96;border-radius:50%}
-@media(max-width:650px){.earth-controls{flex-wrap:wrap}}
 
 /* The scene link's pane stays the hover and click target for the SBI cue. */
 .model-action{top:9px;bottom:auto;left:12px;transform:translateY(-38px);transition:transform .24s cubic-bezier(.16,1,.3,1),opacity .12s ease}
@@ -412,14 +407,69 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .source-media img{filter:sepia(.065) saturate(.97)}
 @media(max-width:900px){.table-wrap .expanded-row .expanded-inner.has-visual{background:linear-gradient(180deg,#fffcf6e8 0%,#fffcf6f0 35%,#fffcf63a 75%,#fffcf6 100%)}}
 
-/* Local E-002 review stays inside its expanded table row. */
-.e002-workshop-toggle{position:relative;z-index:6;display:block;margin:8px 0 0;padding:8px 11px;border:1px solid #cdbb8a;border-radius:7px;background:#fffdf7;color:#67501d;font:700 11px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer}
-.e002-workshop-toggle:hover,.e002-workshop-toggle:focus-visible{background:#f8f0db;border-color:#ab8c44}
-.e002-table-workshop{position:relative;z-index:7;min-width:0;margin:16px 0 10px;padding:10px;border:1px solid #d9d1bf;border-radius:10px;background:#fff;box-shadow:0 7px 22px #00000012}
-.e002-table-workshop[hidden]{display:none}
-.e002-table-workshop-heading{margin:1px 2px 9px;color:#6f5b2e;font-size:11px;font-weight:700}
-.e002-workshop-frame{display:block;box-sizing:border-box;width:100%;height:min(82vh,850px);min-height:630px;border:1px solid #ddd;border-radius:7px;background:#fff}
-@media(min-width:901px){.expanded-inner.has-visual.workshop-visible{grid-template-areas:"description visualization" "workshop workshop" "records records"}.expanded-inner.has-visual .e002-table-workshop{grid-area:workshop}}
+/* Local editing uses the existing miniature scene, moved into its table viewport. */
+.table-wrap>.orbital-preview.mini-editing-viewport{z-index:8;border:1px solid #d9c894;border-radius:9px;pointer-events:auto;-webkit-mask-image:none;mask-image:none}
+.table-wrap>.orbital-preview.mini-editing-viewport iframe.e002-mini{pointer-events:auto}
+.expanded-row[data-episode-id="E-002"] .visual-block.mini-workshop-active{position:relative;z-index:7}
+.expanded-row[data-episode-id="E-002"] .visual-block.mini-workshop-active .visual-link.model-link{height:340px!important;min-height:340px!important;visibility:hidden}
+.table-review-bar{position:sticky;top:0;z-index:1100;display:grid;gap:6px;padding:8px 16px 7px;border-bottom:1px solid #d9d2c2;background:#fffdf8f5;box-shadow:0 3px 14px #00000012;font-size:11px}
+.table-review-bar[hidden],.table-comment-drawer[hidden],#tableCommentForm[hidden]{display:none}
+.table-review-line{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
+.table-review-line>strong{margin-right:3px;color:#695021;font-size:11px;white-space:nowrap}
+.table-review-line label{display:inline-flex;align-items:center;gap:4px;color:#6d6556;white-space:nowrap}
+.table-review-line button,.table-review-line select,.table-comment-drawer button{min-height:28px;padding:4px 8px;border:1px solid #d5cbbb;border-radius:5px;background:#fff;color:#5b5244;font-size:10px;font-weight:700}
+.table-review-line button:hover:not(:disabled),.table-comment-drawer button:hover{border-color:#a98a42;background:#fff9ec}
+.table-review-line button:disabled,.table-review-line select:disabled{opacity:.48;cursor:default}
+.table-review-line .review-primary,.table-comment-drawer .review-primary{border-color:#b79a56;background:#fff7e1;color:#634c1b}
+.table-review-line input[type=range]{flex:1 1 180px;min-width:125px;max-width:310px;accent-color:#a47c1d}
+.table-review-line output{min-width:103px;color:#514c44;font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mini-review-hint,.mini-loop-summary,.table-review-status{color:#80796d;font-size:10px}
+.mini-loop-summary{max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table-review-spacer{flex:1 1 auto}
+.table-review-status{margin:0;line-height:1.3}
+.table-comment-drawer{display:grid;gap:8px;max-height:300px;overflow:auto;padding:10px;border:1px solid #e4d9bf;border-radius:7px;background:#fff}
+#tableCommentForm{display:flex;align-items:start;flex-wrap:wrap;gap:7px}
+#tableCommentForm label{min-width:180px;color:#5f584d;font-size:10px}
+#tableCommentForm label strong{display:block;color:#4e421f}
+#tableCommentText{flex:1 1 330px;min-height:58px;padding:7px;border:1px solid #d5cbbb;border-radius:5px;font:11px/1.4 inherit}
+.table-comment-list{display:flex;flex-wrap:wrap;gap:7px}
+.table-comment-item{display:flex;align-items:center;gap:5px;max-width:400px;padding:5px 7px;border:1px solid #e4dfd5;border-radius:5px;background:#faf9f6;font-size:10px}
+.table-comment-item button{min-height:0;padding:2px 4px;border:0;background:transparent;color:#70551f;text-align:left}
+.table-comment-item p{margin:0;color:#5d5a54;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table-spot-pins{position:fixed;z-index:1080;inset:0;pointer-events:none}
+.table-spot-pins[hidden]{display:none}
+.table-spot-pin{position:absolute;display:grid;place-items:center;width:22px;height:22px;border:2px solid #fff;border-radius:50%;background:#a77906;box-shadow:0 2px 7px #0004;color:#fff;font-size:10px;font-weight:800;transform:translate(-50%,-50%);pointer-events:auto}
+body.table-spot-mode .component-wrap,body.table-spot-mode .component-wrap *{cursor:crosshair!important}
+@media(max-width:700px){.table-review-bar{padding:7px 9px}.mini-review-hint{display:none}.table-review-line input[type=range]{max-width:none}}
+
+/* Local table review: clear metric headings, balanced records edge, and satellite metadata. */
+.table-wrap th:nth-child(1){width:29%}
+.table-wrap th:nth-child(2){width:23%}
+.table-wrap th:nth-child(3){width:10%}
+.table-wrap th:nth-child(4),.table-wrap th:nth-child(5){width:15%}
+.table-wrap th:nth-child(6){width:8%}
+.table-wrap th:last-child,.table-wrap tr.episode-row td:last-child{padding-left:17px;padding-right:17px}
+.records-head .sort-head{position:relative;display:flex;width:100%;justify-content:center}
+.records-head .sort-indicator{position:absolute;right:-10px}
+.metric-heading>span:first-child{display:block;text-align:center}
+.metric-heading{letter-spacing:.035em}
+.object-line.e002-inactive-chaser .dot.c{background:var(--marker-A,#eaaa00);opacity:.4}
+.object-line.e002-inactive-chaser .object-trigger{color:#888}
+.object-popover{width:min(350px,calc(100vw - 20px));padding:12px 14px;color:#555;font-size:10px;line-height:1.4}
+.object-popover-title{margin-bottom:10px;font-size:12px;font-weight:700}
+.object-popover-section{margin:0 0 5px;color:#555;font-size:11px;font-weight:700;letter-spacing:.055em;text-transform:uppercase}
+.object-meta div{grid-template-columns:124px minmax(0,1fr);gap:6px;padding:2px 0}
+.object-meta div+div{padding-top:2px}
+.object-meta dt{color:#777;white-space:nowrap}
+.object-meta dd{min-width:0}
+.object-meta .object-source-row{margin-top:0;padding-top:2px;border-top:0}
+.object-source-row .espl-external{font-size:10px}
+/* Keep the launch cue at the miniature's lower right as the description grows. */
+@media(min-width:901px){
+  .expanded-inner.has-visual .visual-block{align-self:stretch}
+  .expanded-inner.has-visual .visual-link.model-link{height:100%;min-height:235px}
+  .expanded-inner.has-visual .model-action{left:auto;right:12px;bottom:8px}
+}
 @media(min-width:901px){
   .table-wrap .expanded-row[data-episode-id="E-001"] .visual-link.model-link{overflow:visible}
   .table-wrap .expanded-row[data-episode-id="E-001"] .orbital-preview{

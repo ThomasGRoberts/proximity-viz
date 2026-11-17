@@ -1,7 +1,7 @@
 // Display increments describe editorial precision, never physical uncertainty.
 export const ESTIMATE_DISPLAY = Object.freeze({
   "E-001": { separationKm: 5, relativeSpeedMps: 1, scope: "in this reconstruction" },
-  "E-002": { separationKm: 10, relativeSpeedMps: 10, scope: "in this interval" },
+  "E-002": { separationKm: 5, relativeSpeedMps: 1, scope: "in this interval" },
 });
 
 export function estimatedValue(value, metric, episodeId) {

@@ -1,10 +1,10 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
-import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, cleanCospar } from "../shared/episode-feed.js";
+import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
-import { E002_TITLE_MARKUP, E002_DESCRIPTION } from "../shared/episode-copy.js";
-import { estimatedValue } from "../shared/estimated-values.js";
+import { E002_DESCRIPTION } from "../shared/episode-copy.js";
+import { estimatedValue } from "../shared/estimated-values.js?v=2";
 import { applyMarkerCssVariables } from "../shared/marker-spec.js?v=3";
 
 applyMarkerCssVariables();
@@ -16,8 +16,8 @@ const field = (row, ...names) => {
   return names.map(name => cells[name.toLowerCase().replace(/[^a-z0-9]/g, "")]).find(Boolean) || "";
 };
 const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
-const EARTH_COLORS = { warm: 0xe8e5df, stone: 0xe6e6e1, taupe: 0xe6e1db, neutral: 0xedeae5 };
-const state = { live: null, preview: null, series: null, seriesPromise: null, usePreview: false, selected: null, query: "", earthColor: "neutral", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
+const EARTH_COLOR = 0xedeae5;
+const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, usePreview: false, selected: null, query: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -37,7 +37,9 @@ function fullDate(value) {
     new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(date);
 }
 function periodInfo(row) {
-  const start = field(row, "Start Date", "Date"), end = field(row, "End Date");
+  const chapters = episodeChapters(row);
+  const start = chapters[0]?.center.slice(0, 10) || field(row, "Start Date", "Date");
+  const end = chapters.at(-1)?.center.slice(0, 10) || field(row, "End Date");
   const portion = value => {
     const found = String(value).match(/^(\d{4})(?:-(\d{2}))?/);
     if (!found) return null;
@@ -48,13 +50,13 @@ function periodInfo(row) {
     return { year, label: `${part[0].toUpperCase()}${part.slice(1)} ${year}`, part };
   };
   const a = portion(start), b = portion(end);
-  const days = fullDate(start) && fullDate(end) && end >= start ? Math.round((Date.parse(end) - Date.parse(start)) / 86400000) + 1 : null;
+  const days = chapters.length ? null : fullDate(start) && fullDate(end) && end >= start ? Math.round((Date.parse(end) - Date.parse(start)) / 86400000) + 1 : null;
   if (!a && !b) return { label: "Dates not recorded", days };
   if (!b || !a || end < start || a.label === b.label) return { label: a?.label || b.label, days };
   return { label: a.year === b.year && a.part && b.part ? `${a.label.split(" ")[0]} to ${b.part} ${a.year}` : `${a.label} to ${b.label[0].toLowerCase()}${b.label.slice(1)}`, days };
 }
 function period(row) { return periodInfo(row).label; }
-function dateKey(row) { return field(row, "Start Date", "Date").match(/^\d{4}(?:-\d{2})?(?:-\d{2})?/)?.[0] || ""; }
+function dateKey(row) { return episodeChapters(row)[0]?.start || field(row, "Start Date", "Date").match(/^\d{4}(?:-\d{2})?(?:-\d{2})?/)?.[0] || ""; }
 function descriptionIds(row) { return field(row, "Descriptions").split(/[,;\n]/).map(x => x.trim()).filter(Boolean); }
 function linkedDescriptions(row, data) {
   const lookup = new Map((data.descriptions || []).map(d => [field(d, "ID", "Description ID").toUpperCase(), d]));
@@ -100,6 +102,11 @@ function ownerIndicators(info, compact = false) {
 function objectInfo(row, role, data) {
   const raw = field(row, `Object ${role}`);
   if (!cleanCospar(raw)) return null;
+  const spaceRecord = data.spaceTrack?.records?.[raw.toUpperCase()];
+  if (data.spaceTrack) return { role, raw, record: null, source: "space-track", satcat: spaceRecord || null, gp: null,
+    cospar: spaceRecord?.OBJECT_ID || raw, norad: spaceRecord?.NORAD_CAT_ID || "",
+    name: spaceRecord?.SATNAME || spaceRecord?.OBJECT_NAME || raw, owner: spaceRecord?.COUNTRY || "",
+    ownerName: "", launchSite: data.spaceTrack.launchSiteNames?.[spaceRecord?.SITE] || spaceRecord?.SITE || "", launchSiteFromCsis: false, csisSourceUrl: "" };
   const record = data.celestrak?.objects?.[raw.toUpperCase()] || null;
   const satcat = record?.status === "resolved" ? record.satcat : null;
   const compact = data.compactObjects?.[raw.toUpperCase()] || currentData()?.compactObjects?.[raw.toUpperCase()] || {};
@@ -109,9 +116,9 @@ function objectInfo(row, role, data) {
     ownerName: record?.ownerName || "", launchSite: data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE] || data.celestrak?.launchSites?.[satcat?.LAUNCH_SITE] || satcat?.LAUNCH_SITE || "",
     launchSiteFromCsis: !!data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE], csisSourceUrl: data.celestrak?.csisSourceUrl || "" };
 }
-function titleMarkup(row) { return field(row, "ID") === "E-002" ? E002_TITLE_MARKUP : field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
+function titleMarkup(row) { return field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
 function title(row) { return episodeNameText(titleMarkup(row)); }
-function episodeDescription(row) { return field(row, "ID") === "E-002" ? E002_DESCRIPTION : field(row, "Episode Description"); }
+function episodeDescription(row) { return field(row, "Episode Description") || (field(row, "ID") === "E-002" ? E002_DESCRIPTION : ""); }
 function formattedDescription(value) {
   const fragment = document.createDocumentFragment();
   const parsed = new DOMParser().parseFromString(`<div>${value}</div>`, "text/html").body.firstElementChild;
@@ -158,38 +165,42 @@ let activeObject = null, pinnedObject = false, hideTimer = null, showTimer = nul
 function closeObject() { clearTimeout(hideTimer); clearTimeout(showTimer); if (activeObject) activeObject.setAttribute("aria-expanded", "false"); activeObject = null; pinnedObject = false; popover.hidden = true; }
 function scheduleObjectClose() { clearTimeout(hideTimer); clearTimeout(showTimer); if (!pinnedObject) hideTimer = setTimeout(() => { if (!popover.matches(":hover") && !popover.contains(document.activeElement)) closeObject(); }, 320); }
 function addMetadata(dl, label, value) { if (!value) return; const item = el("div"); item.append(el("dt", "", label), el("dd", "", value)); dl.append(item); }
-const launchFlagEmoji = { AFETR:["🇺🇸"], AFWTR:["🇺🇸"], DLS:["🇷🇺"], FRGUI:["🇫🇷"], JSC:["🇨🇳"], PLMSC:["🇷🇺"], RLLB:["🇳🇿"], SRILR:["🇮🇳"], TAISC:["🇨🇳"], TANSC:["🇯🇵"], TYMSC:["🇰🇿","🇷🇺"], WSC:["🇨🇳"], XICLF:["🇨🇳"] };
+const launchFlagEmoji = { AFETR:["🇺🇸"], AFWTR:["🇺🇸"], DLS:["🇷🇺"], FRGUI:["🇫🇷"], JSC:["🇨🇳"], PKMTR:["🇷🇺"], PLMSC:["🇷🇺"], RLLB:["🇳🇿"], SRILR:["🇮🇳"], TAISC:["🇨🇳"], TANSC:["🇯🇵"], TTMTR:["🇰🇿","🇷🇺"], TYMSC:["🇰🇿","🇷🇺"], WSC:["🇨🇳"], XICLF:["🇨🇳"] };
 function buildObjectPopover(info) {
   popover.replaceChildren(); popover.append(el("strong", "object-popover-title", info.name));
   if (!info.satcat) {
-    popover.append(el("p", "metadata-note", `No exact CelesTrak SATCAT match for ${info.raw}. Identity remains unresolved.`));
-    popover.append(externalLink("CelesTrak SATCAT search", `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(info.raw)}`));
+    const spaceTrack = info.source === "space-track";
+    popover.append(el("p", "metadata-note", `No exact ${spaceTrack ? "Space-Track" : "CelesTrak"} SATCAT match for ${info.raw}. Identity remains unresolved.`));
+    popover.append(externalLink(spaceTrack ? "Space-Track" : "CelesTrak", spaceTrack ? `https://www.space-track.org/basicspacedata/query/class/satcat/OBJECT_ID/${encodeURIComponent(info.raw)}/format/html` : `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(info.raw)}`));
     return;
   }
   const s = info.satcat, dl = el("dl", "object-meta");
-  const objectTypes = { PAY:"Payload", "R/B":"Rocket body", DEB:"Debris", TBA:"To be assigned" };
-  addMetadata(dl, "COSPAR", s.OBJECT_ID);
-  addMetadata(dl, "NORAD", s.NORAD_CAT_ID);
-  const ownerRow = el("div"), ownerValue = el("dd"); ownerRow.append(el("dt", "", "Country / Org."));
+  const objectTypes = { PAY:"Payload", PAYLOAD:"Payload", "R/B":"Rocket body", "ROCKET BODY":"Rocket body", DEB:"Debris", DEBRIS:"Debris", TBA:"To be assigned" };
+  addMetadata(dl, "COSPAR ID", s.OBJECT_ID);
+  addMetadata(dl, "NORAD ID", s.NORAD_CAT_ID);
+  const ownerRow = el("div"), ownerValue = el("dd"); ownerRow.append(el("dt", "", "Country"));
   ownerValue.append(document.createTextNode(ownerDisplay(info)));
   if (!organizationKind(info)) for (const flag of emojiForOwner(info.owner)) ownerValue.append(document.createTextNode(` ${flag}`));
   ownerRow.append(ownerValue); dl.append(ownerRow);
   addMetadata(dl, "Object type", objectTypes[s.OBJECT_TYPE] || s.OBJECT_TYPE);
-  addMetadata(dl, "Launch date", fullDate(s.LAUNCH_DATE));
-  if (info.launchSite) addMetadata(dl, "Launch site", `${info.launchSite.replace(/\s*\(/g, " (")}${(launchFlagEmoji[s.LAUNCH_SITE] || []).map(flag => ` ${flag}`).join("")}`);
+  addMetadata(dl, "Launch date", fullDate(s.LAUNCH || s.LAUNCH_DATE));
+  const siteCode = s.SITE || s.LAUNCH_SITE;
+  if (info.launchSite) addMetadata(dl, "Launch site", `${info.launchSite.replace(/\s*\(/g, " (")}${(launchFlagEmoji[siteCode] || []).map(flag => ` ${flag}`).join("")}`);
   popover.append(dl);
   const sourceRow = el("div", "object-source-row"), sourceValue = el("dd");
   sourceRow.append(el("dt", "", "Data source"));
-  sourceValue.append(externalLink("CelesTrak SATCAT", info.record?.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(s.NORAD_CAT_ID)}`));
+  sourceValue.append(externalLink(info.source === "space-track" ? "Space-Track" : "CelesTrak", info.source === "space-track" ? `https://www.space-track.org/basicspacedata/query/class/satcat/NORAD_CAT_ID/${encodeURIComponent(s.NORAD_CAT_ID)}/format/html` : info.record?.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(s.NORAD_CAT_ID)}`));
   sourceRow.append(sourceValue); dl.append(sourceRow);
 }
 function positionObject() {
   if (!activeObject || popover.hidden) return;
   const trigger = activeObject.getBoundingClientRect(), width = popover.offsetWidth, height = popover.offsetHeight;
-  const left = Math.max(10, Math.min(trigger.left, innerWidth - width - 10));
-  const above = trigger.bottom + height + 12 > innerHeight && trigger.top > height + 12;
-  const top = above ? trigger.top - height - 8 : trigger.bottom + 8;
-  popover.style.left = `${left}px`; popover.style.top = `${Math.max(8, top)}px`;
+  const rightSide = trigger.right + width + 12 <= innerWidth - 10;
+  const leftSide = trigger.left - width - 12 >= 10;
+  const left = rightSide ? trigger.right + 12 : leftSide ? trigger.left - width - 12 : Math.max(10, Math.min(trigger.left, innerWidth - width - 10));
+  const below = trigger.bottom + height + 12 <= innerHeight;
+  const top = rightSide || leftSide ? trigger.top - 7 : below ? trigger.bottom + 8 : trigger.top - height - 8;
+  popover.style.left = `${left}px`; popover.style.top = `${Math.max(8, Math.min(top, innerHeight - height - 8))}px`;
 }
 function showObject(button, info, pin = false, row = null) {
   clearTimeout(hideTimer);
@@ -198,7 +209,7 @@ function showObject(button, info, pin = false, row = null) {
   const cached = row && state.details.get(field(row, "ID"));
   if (cached) buildObjectPopover(objectInfo(cached.row, info.role, cached));
   else if (row && currentData()?.source === "live") {
-    popover.replaceChildren(el("span", "metadata-note", "Loading CelesTrak record…"));
+    popover.replaceChildren(el("span", "metadata-note", `Loading ${info.source === "space-track" ? "Space-Track" : "CelesTrak"} record…`));
     ensureDetail(row).then(detail => {
       if (activeObject !== button || !detail) return;
       buildObjectPopover(objectInfo(detail.row, info.role, detail)); positionObject();
@@ -214,7 +225,8 @@ window.addEventListener("resize", positionObject); window.addEventListener("scro
 function objectNode(info, row) {
   const line = el("div", "object-line"), button = el("button", "object-trigger", info.name);
   button.type = "button"; button.setAttribute("aria-haspopup", "dialog"); button.setAttribute("aria-expanded", "false"); button.setAttribute("aria-label", `${info.name}, show object metadata`);
-  line.append(el("span", `dot ${info.role.toLowerCase()}`), button);
+  line.append(el("span", `dot ${info.role.toLowerCase()}${field(row, "ID") === "E-002" && info.role === "C" ? " e002-chaser" : ""}`), button);
+  if (field(row, "ID") === "E-002" && info.role === "C") line.classList.add("e002-inactive-chaser");
   if (info.cospar) line.append(el("span", "object-id", info.cospar));
   button.addEventListener("pointerenter", () => { if (matchMedia("(hover:hover)").matches) { clearTimeout(hideTimer); clearTimeout(showTimer); showTimer = setTimeout(() => showObject(button, info, false, row), 90); } });
   button.addEventListener("pointerleave", scheduleObjectClose);
@@ -225,7 +237,7 @@ function objectNode(info, row) {
 }
 function objects(row, data) {
   const wrap = el("div", "objects");
-  for (const role of ["A", "B", "C"]) { const info = objectInfo(row, role, data); if (info) wrap.append(objectNode(info, row)); }
+  for (const role of field(row, "ID") === "E-002" ? ["A", "C", "B"] : ["A", "B", "C"]) { const info = objectInfo(row, role, data); if (info) wrap.append(objectNode(info, row)); }
   if (!wrap.children.length) wrap.append(el("span", "muted", "Objects not recorded"));
   return wrap;
 }
@@ -261,6 +273,10 @@ export function episodeDescriptionText(value, row, data) {
 }
 
 function currentData() { return state.usePreview && state.live?.source !== "live" ? state.preview : state.live; }
+function rowMetric(row, key) {
+  const id = field(row, "ID"), name = key === "distance" ? "minimumDistance" : "minimumSpeed";
+  return id === "E-001" ? state.series?.[name] : id === "E-002" ? state.e002Metrics?.[name] : null;
+}
 function visibleRows() {
   const data = currentData(); if (!data) return [];
   const approved = new Set(data.approvedEpisodeIds || []);
@@ -278,8 +294,8 @@ function visibleRows() {
     if (key === "date") { av = dateKey(a); bv = dateKey(b); if (!av) return bv ? 1 : 0; if (!bv) return -1; }
     else if (key === "sources") { av = linkedDescriptions(a, data).length; bv = linkedDescriptions(b, data).length; }
     else if (key === "distance" || key === "speed") {
-      av = field(a, "ID") === "E-001" ? state.series?.[key === "distance" ? "minimumDistance" : "minimumSpeed"]?.value : null;
-      bv = field(b, "ID") === "E-001" ? state.series?.[key === "distance" ? "minimumDistance" : "minimumSpeed"]?.value : null;
+      av = rowMetric(a, key)?.value;
+      bv = rowMetric(b, key)?.value;
       if (!Number.isFinite(av)) return Number.isFinite(bv) ? 1 : 0;
       if (!Number.isFinite(bv)) return -1;
     }
@@ -308,7 +324,7 @@ function ensureDetail(row) {
     const descriptions = (data.descriptions || []).filter(item => refs.has(field(item, "ID", "Description ID")) && field(item, "Episode", "Episode ID").toUpperCase() === id.toUpperCase());
     const urls = new Set(descriptions.map(item => field(item, "Source URL", "URL", "Link")));
     const objectIds = new Set(["A", "B", "C"].map(role => field(fullRow, `Object ${role}`).toUpperCase()).filter(Boolean));
-    const detail = { source: data.source, row: fullRow, descriptions, sourceMetadata: Object.fromEntries(Object.entries(data.sourceMetadata || {}).filter(([url]) => urls.has(url))),
+    const detail = { source: data.source, row: fullRow, descriptions, sourceMetadata: Object.fromEntries(Object.entries(data.sourceMetadata || {}).filter(([url]) => urls.has(url))), spaceTrack: data.spaceTrack,
       celestrak: { ...(data.celestrak || {}), objects: Object.fromEntries(Object.entries(data.celestrak?.objects || {}).filter(([key]) => objectIds.has(key.toUpperCase()))) }, glossary: data.glossary || [] };
     state.details.set(id, detail); state.detailFailures.delete(id); state.glossary = detail.glossary || state.glossary;
     prefetchDetailImages(detail);
@@ -428,34 +444,10 @@ function expandedContent(row, data) {
   if (description) context.append(formattedDescription(description));
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
-  let localWorkshop = null;
   if (["E-001", "E-002"].includes(episodeId)) {
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/" : "../visualization/Viz/compare.html?episode=E-002", location.href).href;
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : "../visualization/e002/", location.href).href;
     viz.setAttribute("aria-label", `${episodeId} orbital visualization`);
     viz.append(visualizationLink(target, `Explore the interactive model for ${title(row)}`));
-    if (episodeId === "E-002" && ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769") {
-      const toggle = el("button", "e002-workshop-toggle", "Review camera path and add spot comments");
-      toggle.type = "button"; toggle.setAttribute("aria-expanded", "false"); toggle.setAttribute("aria-controls", "e002-table-workshop");
-      const workshop = el("section", "e002-table-workshop"); workshop.id = "e002-table-workshop"; workshop.hidden = true;
-      const heading = el("div", "e002-table-workshop-heading", "E-002 local review · camera workshop and spot comments");
-      workshop.append(heading);
-      toggle.addEventListener("click", event => {
-        event.stopPropagation();
-        const open = workshop.hidden;
-        workshop.hidden = !open;
-        toggle.setAttribute("aria-expanded", String(open));
-        toggle.textContent = open ? "Close local E-002 review" : "Review camera path and add spot comments";
-        wrap.classList.toggle("workshop-visible", open);
-        if (open && !workshop.querySelector("iframe")) {
-          const frame = el("iframe", "e002-workshop-frame");
-          frame.src = new URL("../visualization/dev/e002-control-panel-preview/", location.href).href;
-          frame.title = "Interactive E-002 camera workshop and spot comments";
-          workshop.append(frame);
-        }
-      });
-      viz.append(toggle);
-      localWorkshop = workshop;
-    }
     overview.append(viz);
   } else overview.classList.add("no-visual");
   const evidence = el("section", "evidence-section"), found = linkedDescriptions(row, data), requested = descriptionIds(row), sources = sourceGroups(row, data);
@@ -479,7 +471,6 @@ function expandedContent(row, data) {
     if (sources.length > 6) { const more = el("details", "more-records"), summary = el("summary", "", `Show ${sources.length - 6} more source cards`), moreGrid = el("div", "source-grid"); sources.slice(6).forEach(group => appendCard(group, moreGrid)); more.append(summary, moreGrid); evidence.append(more); }
   }
   wrap.append(overview);
-  if (localWorkshop) wrap.append(localWorkshop);
   wrap.append(evidence); return wrap;
 }
 function loadingDetail(row, data) {
@@ -502,7 +493,8 @@ function toggleRow(row) {
     if (!selected) return;
     const stickyHeader = document.querySelector(".table-wrap thead th");
     const headerOffset = stickyHeader?.getBoundingClientRect().height || 0;
-    const destination = Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - 14);
+    const reviewOffset = document.getElementById("tableReviewBar")?.hidden ? 0 : document.getElementById("tableReviewBar").getBoundingClientRect().height;
+    const destination = Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - reviewOffset - 14);
     if (reducedMotion.matches) { window.scrollTo(0, destination); return; }
     const origin = scrollY, distance = destination - origin, started = performance.now();
     const duration = Math.min(950, Math.max(620, Math.abs(distance) * .48));
@@ -515,18 +507,54 @@ function toggleRow(row) {
     scrollFrame = requestAnimationFrame(step);
   });
 }
-function periodNode(row) { const node = el("span", "period-label", periodInfo(row).label); node.title = [fullDate(field(row, "Start Date", "Date")), fullDate(field(row, "End Date"))].filter(Boolean).join(" to "); return node; }
+function periodNode(row) { const node = el("span", "period-label", periodInfo(row).label); const chapters = episodeChapters(row); node.title = chapters.length ? chapters.map(item => `${item.center} · ${item.widthHours} hours`).join("\n") : [fullDate(field(row, "Start Date", "Date")), fullDate(field(row, "End Date"))].filter(Boolean).join(" to "); return node; }
 function proximityNode(row, key) {
   const cell = el("div", "proximity-cell");
-  const metric = field(row, "ID") === "E-001" ? state.series?.[key === "distance" ? "minimumDistance" : "minimumSpeed"] : null;
-  if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", field(row, "ID") === "E-001" && !state.series ? "Loading…" : "Unavailable")); return cell; }
+  const id = field(row, "ID"), metric = rowMetric(row, key);
+  if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", id === "E-001" && !state.series || id === "E-002" && !state.e002Metrics ? "Loading…" : "Unavailable")); return cell; }
   const value = estimatedValue(metric.value, key === "distance" ? "separationKm" : "relativeSpeedMps", field(row, "ID"));
   cell.append(el("strong", "minimum-value", value), el("span", "minimum-unit", key === "distance" ? "km" : "m/s"));
-  cell.title = `Estimated minimum in this reconstruction: ${value} ${key === "distance" ? "km separation" : "m/s relative velocity"} on ${fullDate(new Date(metric.ms).toISOString().slice(0, 10))}. Display rounding does not quantify uncertainty.`;
+  cell.title = `${id === "E-002" ? "COSMOS 2542 to USA 245; December 9 and December 30 chapters. " : ""}Estimated minimum in this reconstruction: ${value} ${key === "distance" ? "km separation" : "m/s relative velocity"} on ${fullDate(new Date(metric.ms).toISOString().slice(0, 10))}. Display rounding does not quantify uncertainty.`;
   return cell;
 }
 let previewScene = null, previewToken = 0;
-function stopPreview() { previewToken++; previewScene?.dispose(); previewScene = null; document.querySelector(".table-wrap > .orbital-preview")?.remove(); }
+let miniFrame = null, miniBackdropHost = null, miniEditing = false, miniOriginalBounds = null, miniResizeObserver = null, localReview = null;
+function stopPreview() {
+  previewToken++; previewScene?.dispose(); previewScene = null;
+  miniResizeObserver?.disconnect(); miniResizeObserver = null;
+  miniFrame?.remove(); miniFrame = null; miniBackdropHost = null; miniEditing = false; miniOriginalBounds = null;
+  localReview?.previewStopped();
+  document.querySelector(".table-wrap > .orbital-preview")?.remove();
+}
+function setMiniEditing(open) {
+  if (!miniFrame || !miniBackdropHost) return false;
+  const block = document.querySelector('.expanded-row[data-episode-id="E-002"] .visual-block');
+  if (!block) return false;
+  miniEditing = open; block.classList.toggle("mini-workshop-active", open);
+  miniBackdropHost.classList.toggle("mini-editing-viewport", open);
+  if (open) {
+    if (!miniOriginalBounds) miniOriginalBounds = { top: miniBackdropHost.style.top, left: miniBackdropHost.style.left, width: miniBackdropHost.style.width, height: miniBackdropHost.style.height };
+    const table = document.querySelector(".table-wrap").getBoundingClientRect(), rect = block.getBoundingClientRect();
+    miniBackdropHost.style.top = `${rect.top - table.top}px`;
+    miniBackdropHost.style.left = `${rect.left - table.left}px`;
+    miniBackdropHost.style.width = `${rect.width}px`;
+    miniBackdropHost.style.height = `${rect.height}px`;
+    miniFrame.tabIndex = 0; miniFrame.removeAttribute("aria-hidden");
+  } else {
+    if (miniOriginalBounds) Object.assign(miniBackdropHost.style, miniOriginalBounds);
+    miniOriginalBounds = null;
+    miniFrame.tabIndex = -1; miniFrame.setAttribute("aria-hidden", "true");
+  }
+  return true;
+}
+function updateMiniBackdropBounds(host, tableWrap, header, expanded) {
+  if (miniEditing || !host.isConnected || !expanded.isConnected) return;
+  const origin = tableWrap.getBoundingClientRect(), heading = header.getBoundingClientRect(), detail = expanded.getBoundingClientRect();
+  host.style.top = `${heading.top - origin.top}px`;
+  host.style.left = `${heading.left - origin.left}px`;
+  host.style.width = `${heading.width}px`;
+  host.style.height = `${heading.height + detail.height}px`;
+}
 function startPreview(row) {
   const episodeId = field(row, "ID");
   if (!["E-001", "E-002"].includes(episodeId)) return;
@@ -535,27 +563,27 @@ function startPreview(row) {
   // the interaction target while the canvas is a clipped background layer.
   const tableWrap = document.querySelector(".table-wrap"), header = document.querySelector(".episode-row.selected"), expanded = document.querySelector(".expanded-row");
   if (episodeId === "E-002" && tableWrap && header && expanded) {
-    const origin = tableWrap.getBoundingClientRect(), heading = header.getBoundingClientRect(), detail = expanded.getBoundingClientRect();
-    host.style.top = `${heading.top - origin.top}px`;
-    host.style.left = `${heading.left - origin.left}px`;
-    host.style.width = `${heading.width}px`;
-    host.style.height = `${Math.min(650, heading.height + detail.height)}px`;
     tableWrap.append(host);
+    updateMiniBackdropBounds(host, tableWrap, header, expanded);
+    miniResizeObserver = new ResizeObserver(() => updateMiniBackdropBounds(host, tableWrap, header, expanded));
+    miniResizeObserver.observe(header); miniResizeObserver.observe(expanded);
   }
   if (episodeId === "E-002") {
     const frame = el("iframe", "e002-mini");
-    frame.src = new URL("../visualization/dev/e002/mini.html", location.href).href;
-    frame.title = "Animated E-002 relative-motion reconstruction, December 8, 2019";
+    const localMini = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
+    frame.src = new URL(localMini ? "../visualization/dev/e002-control-panel-preview/table-mini.html" : "../visualization/dev/e002/mini.html", location.href).href;
+    frame.title = "Animated E-002 miniature orbital reconstruction";
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
     host.append(frame); host.dataset.previewIntervalUtc = "2019-12-08T10:05:00Z / 2019-12-08T10:50:00Z";
+    if (localMini) { miniFrame = frame; miniBackdropHost = host; frame.addEventListener("load", () => localReview?.attachMini(frame)); localReview?.attachMini(frame); }
     return;
   }
   const token = ++previewToken;
   let interval;
   try { interval = episodeUtcInterval(row); }
   catch (error) { console.warn("E-001 dates invalid", error); return; }
-  Promise.all([import("./e001-preview.js?v=4"), state.seriesPromise?.catch(() => null) || Promise.resolve(state.series)])
-    .then(([module, metrics]) => module.mountE001Preview(host, interval, metrics?.minimumDistance?.ms, EARTH_COLORS[state.earthColor])).then(scene => {
+  Promise.all([import("./e001-preview.js?v=6"), state.seriesPromise?.catch(() => null) || Promise.resolve(state.series)])
+    .then(([module, metrics]) => module.mountE001Preview(host, interval, metrics?.minimumDistance?.ms, EARTH_COLOR)).then(scene => {
     if (token !== previewToken || !host.isConnected) scene?.dispose();
     else previewScene = scene;
   }).catch(error => { if (token === previewToken) { console.warn("E-001 preview unavailable", error); host.append(el("span", "orbital-error", "Orbital preview unavailable")); } });
@@ -626,16 +654,10 @@ function setStatus() {
   else { status.hidden = false; status.dataset.kind = "error"; status.textContent = `Current published sheet unavailable: ${live?.error || "unknown error"}. No stale episode dates are shown.`; }
 }
 async function init() {
-  if (["localhost", "127.0.0.1"].includes(location.hostname)) {
-    const selector = $("#earth-choice"), swatch = $("#earth-swatch");
-    $("#earth-controls").hidden = false;
-    swatch.style.backgroundColor = `#${EARTH_COLORS[state.earthColor].toString(16).padStart(6, "0")}`;
-    selector.addEventListener("change", () => {
-      state.earthColor = selector.value;
-      const color = EARTH_COLORS[state.earthColor];
-      swatch.style.backgroundColor = `#${color.toString(16).padStart(6, "0")}`;
-      previewScene?.setEarthColor(color);
-    });
+  const localReviewMode = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
+  if (localReviewMode) {
+    const { createLocalReview } = await import("./local-review.js?v=3");
+    localReview = createLocalReview({ getMini: () => miniFrame?.contentWindow?.miniWorkshop, getFrame: () => miniFrame, setEditing: setMiniEditing, getSelectedEpisode: () => field(state.selected, "ID") });
   }
   $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; setStatus(); render(); });
   $("#search").addEventListener("input", event => { state.query = event.target.value.trim(); render(); });
@@ -644,13 +666,16 @@ async function init() {
     fetch("./data/table.json", { cache: "no-store" }).then(r => { if (!r.ok) throw new Error(`Table support data returned ${r.status}`); return r.json(); }),
     loadCurrentEpisodes(),
     loadCurrentDescriptions().catch(error => ({ descriptions: [], error: error.message })),
-  ]).then(([snapshot, feed, descriptionFeed]) => {
+    fetch("./data/space-track-satcat.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Space-Track catalog returned ${response.status}`); return response.json(); }),
+    fetch("./data/e002-metrics.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`E-002 metrics returned ${response.status}`); return response.json(); }),
+  ]).then(([snapshot, feed, descriptionFeed, spaceTrack, e002Metrics]) => {
+    state.e002Metrics = e002Metrics;
     const supporting = new Map(snapshot.episodes.map(row => [field(row, "ID"), row]));
     const episodes = feed.episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || ""))
       .map(row => ({ ...(supporting.get(row.ID) || {}), ...row }));
     const e001 = episodes.find(row => field(row, "ID") === "E-001");
     if (e001) episodeUtcInterval(e001);
-    return { ...snapshot, descriptions: descriptionFeed.descriptions, episodes, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc, descriptionsCheckedUtc: descriptionFeed.fetchedUtc, descriptionError: descriptionFeed.error || "" };
+    return { ...snapshot, descriptions: descriptionFeed.descriptions, episodes, spaceTrack, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc, descriptionsCheckedUtc: descriptionFeed.fetchedUtc, descriptionError: descriptionFeed.error || "" };
   }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
   setStatus(); render();
   const e001 = state.live.episodes?.find(row => field(row, "ID") === "E-001");

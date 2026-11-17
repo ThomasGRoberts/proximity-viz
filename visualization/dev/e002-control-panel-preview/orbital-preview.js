@@ -117,7 +117,7 @@ export async function loadOrbitalPreview(episode) {
   return { series, minimum, qualifications, frame };
 }
 
-export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, threshold, title, maximum, qualifications, markedMs = null }) {
+export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, threshold, title, maximum, qualifications, markedMs = null, speedUnit = "km/s", connectSwitches = false, historyHours = 12 }) {
   const width = Math.max(260, Math.round(canvas.clientWidth || 306)), height = 155;
   const ratio = Math.min(Math.max(globalThis.devicePixelRatio || 1, 2), 3), context = canvas.getContext("2d");
   canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); context.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -125,21 +125,22 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   let left = 52;
   const right = width - 122, top = 11, bottom = height - 38;
   const start = Date.parse(window.start), end = Date.parse(window.end);
-  const viewSpan = Math.min(end - start, 12 * 3600000);
+  const viewSpan = Math.min(end - start, historyHours * 3600000);
   const viewStart = currentMs - viewSpan, viewEnd = currentMs;
-  const speedScale = metric === "speedMs" ? 1000 : 1;
+  const speedScale = metric === "speedMs" && speedUnit !== "m/s" ? 1000 : 1;
   const visibleThreshold = threshold / speedScale;
   const values = samples.filter(sample => sample.ms >= viewStart && sample.ms <= currentMs && Number.isFinite(sample[metric])).map(sample => sample[metric] / speedScale);
-  const rawMax = Math.max(visibleThreshold * 1.2, values.length ? Math.max(...values) * 1.08 : 0, metric === "speedMs" ? .05 : 1);
-  const targetStep = roundTickStep(rawMax, metric === "speedMs" ? .05 : 5);
+  const minimumStep = metric === "speedMs" ? speedUnit === "m/s" ? 5 : .05 : 5;
+  const rawMax = Math.max(visibleThreshold * 1.2, values.length ? Math.max(...values) * 1.08 : 0, metric === "speedMs" ? minimumStep : 1);
+  const targetStep = roundTickStep(rawMax, minimumStep);
   const targetMax = Math.ceil(rawMax / targetStep) * targetStep;
   const now = performance.now(), previousScale = chartScaleState.get(canvas);
   const continuous = previousScale?.windowId === window.id && currentMs >= previousScale.currentMs && currentMs - previousScale.currentMs <= 30 * 60000;
   const max = continuous ? previousScale.max + (targetMax - previousScale.max) * (1 - Math.exp(-(now - previousScale.now) / 420)) : targetMax;
   chartScaleState.set(canvas, { windowId: window.id, currentMs, now, max });
-  const tickStep = roundTickStep(max, metric === "speedMs" ? .05 : 5);
+  const tickStep = roundTickStep(max, minimumStep);
   const speedDecimals = tickStep >= 1 ? 0 : Number.isInteger(tickStep * 10) ? 1 : 2;
-  const tickLabel = value => metric === "speedMs" ? value.toFixed(speedDecimals).replace(/\.0+$/, "") : Math.round(value).toLocaleString();
+  const tickLabel = value => metric === "speedMs" && speedUnit !== "m/s" ? value.toFixed(speedDecimals).replace(/\.0+$/, "") : Math.round(value).toLocaleString();
   context.font = '9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
   const longestTick = Math.max(...Array.from({ length: Math.ceil(max / tickStep) + 1 }, (_, index) => context.measureText(tickLabel(index * tickStep)).width));
   left = Math.max(left, Math.ceil(longestTick + 30));
@@ -176,7 +177,7 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
       if (sample.ms > until) break;
       if (sample.ms < viewStart) continue;
       if (!Number.isFinite(value)) { drawing = false; previous = null; continue; }
-      if (drawing && previous?.tleA === sample.tleA && previous?.tleB === sample.tleB) context.lineTo(x(sample.ms), y(value));
+      if (drawing && (previous?.tleA === sample.tleA && previous?.tleB === sample.tleB || connectSwitches && previous?.kind === "switch-before" && sample.kind === "switch-after" && previous.ms === sample.ms)) context.lineTo(x(sample.ms), y(value));
       else context.moveTo(x(sample.ms), y(value));
       drawing = true; previous = sample;
     }
@@ -201,7 +202,7 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   canvas.dataset.singleThresholdSegments = String(qualifications?.single.length || 0);
   canvas.dataset.bothThresholdSegments = String(qualifications?.both.intervals.length || 0);
   const group = canvas.parentElement, edge = group.querySelector(".thresholdEdge"), current = group.querySelector(".currentValue");
-  const unit = metric === "distanceKm" ? "km" : "km/s";
+  const unit = metric === "distanceKm" ? "km" : speedUnit;
   edge.hidden = false;
   edge.style.top = `${canvas.offsetTop + y(visibleThreshold)}px`; edge.textContent = `${Number(visibleThreshold.toFixed(2)).toLocaleString()} ${unit}`;
   edge.setAttribute("aria-valuenow", String(visibleThreshold));
@@ -210,7 +211,7 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   current.hidden = !sample;
   if (sample) {
     current.style.top = `${canvas.offsetTop + y(sample[metric] / speedScale)}px`;
-    const value = metric === "distanceKm" ? Math.round(sample[metric]).toLocaleString("en-US") : (roundedSpeed(sample[metric]) / 1000).toFixed(2);
+    const value = metric === "distanceKm" ? Math.round(sample[metric]).toLocaleString("en-US") : speedUnit === "m/s" ? Math.round(sample[metric]).toLocaleString("en-US") : (roundedSpeed(sample[metric]) / 1000).toFixed(2);
     current.textContent = `${value} ${unit}`;
   }
   group.querySelector(".chart-time-context")?.remove();
@@ -218,5 +219,5 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
     context.fillStyle = "#777"; context.textAlign = "center";
     context.fillText("No supported one-minute samples", (left + right) / 2, (top + bottom) / 2);
   }
-  return { top, bottom, max, viewStart, viewEnd };
+  return { top, bottom, left, right, max, thresholdY: y(visibleThreshold), viewStart, viewEnd };
 }

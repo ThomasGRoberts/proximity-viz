@@ -9,6 +9,14 @@ const $ = id => document.getElementById(id);
 const publishedMode = document.body.classList.contains("e002-published");
 const panelMount = $("panelMount");
 const panelColumn = $("panelColumn");
+const panelToggle = $("panelToggleBtn");
+panelToggle?.addEventListener("click", () => {
+  const collapsed = document.body.classList.toggle("ui-collapsed");
+  panelToggle.setAttribute("aria-expanded", String(!collapsed));
+  panelToggle.setAttribute("aria-label", collapsed ? "Show control panel" : "Hide control panel");
+  panelToggle.title = collapsed ? "Show control panel" : "Hide control panel";
+  panelToggle.querySelector("span").textContent = collapsed ? "›" : "‹";
+});
 const workspace = document.querySelector(".review-workspace");
 const pinLayer = $("pinLayer");
 const status = $("commentStatus");
@@ -35,6 +43,17 @@ let minimumMarker = null;
 let updateStickyPair = () => {};
 let cameraWorkshop = null;
 const prettyDate = value => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(value)) + " UTC";
+function finishEpisodeLoading() {
+  const loading = $("episodeLoading");
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    loading.classList.add("is-leaving");
+    setTimeout(() => { loading.hidden = true; }, 420);
+  }));
+}
+function showEpisodeLoadError(error) {
+  $("episodeLoadingText").textContent = `Could not load episode: ${error.message}`;
+  $("episodeLoading").classList.add("is-error");
+}
 const datePart = value => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(value));
 
 function message(text, error = false) {
@@ -131,8 +150,9 @@ function renderComments() {
       catch (error) { message(error.message, true); }
     });
     const text = document.createElement("p"); text.textContent = comment.text;
+    const scope = document.createElement("span"); scope.className = "comment-scope-badge"; scope.textContent = comment.appliesToAllEpisodes === true ? "All episodes" : "E-002 only";
     const time = document.createElement("time"); time.dateTime = comment.createdAt; time.textContent = new Date(comment.createdAt).toLocaleString();
-    head.append(jump, remove); item.append(head, text, time); list.append(item);
+    head.append(jump, remove); item.append(head, scope, text, time); list.append(item);
   }
   positionPins();
 }
@@ -197,6 +217,7 @@ function chooseSpot(event, root) {
   const rect = element.getBoundingClientRect();
   draft = { root, key: element.dataset.spotKey || "ui", label: spotLabel(element, root), x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)), y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) };
   $("draftLocation").textContent = draft.label;
+  $("commentAllEpisodes").checked = false;
   setFeedbackOpen(true);
   $("commentForm").hidden = false;
   $("commentText").focus();
@@ -519,8 +540,9 @@ async function buildPanel() {
   ]);
   const row = sheet.episodes.find(item => item.ID === "E-002");
   if (!row) throw new Error("E-002 is missing from the published Episodes sheet");
-  const interval = episodeUtcInterval(row);
-  if (!(interval.startMs <= Date.parse("2019-12-09T11:40:00Z") && interval.endExclusiveMs > Date.parse("2019-12-09T11:40:00Z"))) {
+  let interval = null;
+  try { interval = episodeUtcInterval(row); } catch { /* E-002 sheet chapters are still being authored. */ }
+  if (interval && !(interval.startMs <= Date.parse("2019-12-09T11:40:00Z") && interval.endExclusiveMs > Date.parse("2019-12-09T11:40:00Z"))) {
     console.warn("The current Episodes sheet interval no longer contains the local Dec 9 chapter anchor.");
   }
   const firstWindow = {
@@ -667,18 +689,18 @@ async function buildPanel() {
 $("commentMode").addEventListener("click", () => setSpotMode(!spotMode));
 $("feedbackToggle").addEventListener("click", () => setFeedbackOpen($("feedbackRail").hidden));
 $("globeStage").addEventListener("pointerdown", event => chooseSpot(event, "panel"), true);
-$("cancelComment").addEventListener("click", () => { draft = null; $("commentForm").hidden = true; $("commentText").value = ""; });
+$("cancelComment").addEventListener("click", () => { draft = null; $("commentForm").hidden = true; $("commentText").value = ""; $("commentAllEpisodes").checked = false; });
 $("commentForm").addEventListener("submit", async event => {
   event.preventDefault(); if (!draft) return;
   const text = $("commentText").value.trim(); if (!text) return;
   try {
-    comments = await saveAction({ action: "add", ...draft, text });
-    draft = null; $("commentForm").hidden = true; $("commentText").value = "";
+    comments = await saveAction({ action: "add", ...draft, text, appliesToAllEpisodes: $("commentAllEpisodes").checked });
+    draft = null; $("commentForm").hidden = true; $("commentText").value = ""; $("commentAllEpisodes").checked = false;
     renderComments(); message("Comment saved locally. I can read it during the next iteration.");
   } catch (error) { message(error.message, true); }
 });
 $("copyComments").addEventListener("click", async () => {
-  const markdown = comments.map((item, index) => `${index + 1}. **${item.label}** (${item.root}, ${item.key}): ${item.text}`).join("\n\n") || "No E-002 control-panel comments yet.";
+  const markdown = comments.map((item, index) => `${index + 1}. **${item.label}** (${item.root}, ${item.key}; ${item.appliesToAllEpisodes === true ? "all episodes" : "E-002 only"}): ${item.text}`).join("\n\n") || "No E-002 control-panel comments yet.";
   try { await navigator.clipboard.writeText(markdown); message("Feedback copied. Paste it into this conversation whenever you want."); }
   catch { message("Clipboard unavailable. Use Download JSON instead.", true); }
 });
@@ -725,9 +747,10 @@ try {
       globe = createGlobePreview(model, episodeConfig, catalogNames, savedCameraViews);
       $("cameraControls").hidden = false;
     }
-    catch (error) { console.error(error); $("sceneStatus").textContent = `3D globe unavailable in this browser: ${error.message}`; }
+    catch (error) { console.error(error); $("sceneStatus").textContent = `3D globe unavailable in this browser: ${error.message}`; showEpisodeLoadError(error); }
     renderOrbitalPanel();
     if (globe) playbackControl?.start();
+    if (globe) finishEpisodeLoading();
     if (globe && !publishedMode) cameraWorkshop = createCameraWorkshop({
       windows: episodeConfig.windows, names: catalogNames,
       beforeOpen: () => setFeedbackOpen(false),
@@ -768,11 +791,13 @@ try {
     $("previewCaveat").textContent = "This local globe and panel use the Space-Track SATCAT export and checksum-verified historical elements. Episode dates and text come from the published Episodes sheet. Playback chooses the nearest available element at each time; the sparse USA 245 observations limit precision.";
   }).catch(error => {
     console.error(error);
+    showEpisodeLoadError(error);
     for (const [id, kind] of [["separationChart", "distance"], ["speedChart", "speed"]]) drawPlaceholderChart($(id), kind, "Verified orbital data unavailable");
     $("previewCaveat").textContent = `Orbital data unavailable: ${error.message}`;
   });
 } catch (error) {
   console.error(error); message(error.message, true);
+  showEpisodeLoadError(error);
   if (!$("ui")) {
     const notice = document.createElement("p"); notice.className = "loading";
     notice.textContent = `Control-panel preview unavailable: ${error.message}`;

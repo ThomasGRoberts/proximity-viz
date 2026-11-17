@@ -1,6 +1,10 @@
 // SATCAT metadata in the native disclosures used by the SBI control panel.
 const host = document.getElementById("identity");
-const catalog = fetch("data/episode-library.json").then(response => response.ok ? response.json() : null).catch(() => null);
+const query = new URLSearchParams(location.search);
+const useSpaceTrack = query.get("published") === "1" || query.get("mini") === "1" || (query.get("dev") === "1" && ["localhost", "127.0.0.1"].includes(location.hostname));
+const catalog = useSpaceTrack
+  ? fetch("../../dynamic-table/data/space-track-satcat.json").then(response => response.ok ? response.json() : null).catch(() => null)
+  : fetch("data/episode-library.json").then(response => response.ok ? response.json() : null).catch(() => null);
 const externalIcon = '<svg viewBox="0 0 18 18" aria-hidden="true"><path class="espl-news-external__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"></path><g class="espl-news-external__arrow"><path d="M9.25 2.75h6v6"></path><path d="m8 10 7.25-7.25"></path></g></svg>';
 const dateText = value => {
   const date = new Date(value?.includes("T") ? value : `${value}T00:00:00Z`);
@@ -13,7 +17,7 @@ const epochText = value => {
   return `${whole}${fraction ? `.${fraction}` : ""} UTC`;
 };
 const owner = code => code === "CIS" ? "Russia (CIS) 🇷🇺" : code === "FRIT" ? "France / Italy 🇫🇷 🇮🇹" : code;
-const siteFlags = code => code === "TYMSC" ? " 🇰🇿 🇷🇺" : code === "FRGUI" ? " 🇫🇷" : "";
+const siteFlags = code => ["TYMSC", "TTMTR"].includes(code) ? " 🇰🇿 🇷🇺" : code === "FRGUI" ? " 🇫🇷" : "";
 function link(label, href) {
   const anchor = document.createElement("a");
   anchor.className = "espl-news-external"; anchor.href = href; anchor.target = "_blank"; anchor.rel = "noopener noreferrer";
@@ -29,7 +33,12 @@ async function render(card) {
   const details = card.querySelector(".satMetaDetails");
   const data = await catalog;
   if (!card.open) return;
-  const record = data?.objects?.[card.dataset.cospar], satcat = record?.satcat;
+  const record = useSpaceTrack ? data?.records?.[card.dataset.cospar] : data?.objects?.[card.dataset.cospar];
+  const satcat = useSpaceTrack && record ? {
+    OBJECT_ID: record.OBJECT_ID, NORAD_CAT_ID: record.NORAD_CAT_ID,
+    OWNER: record.COUNTRY, OBJECT_TYPE: record.OBJECT_TYPE === "PAYLOAD" ? "PAY" : record.OBJECT_TYPE,
+    LAUNCH_DATE: record.LAUNCH, LAUNCH_SITE: record.SITE
+  } : record?.satcat;
   details.replaceChildren();
   if (!satcat) { details.textContent = "Catalog metadata unavailable."; return; }
   const section = title => {
@@ -41,13 +50,15 @@ async function render(card) {
   const satellite = section("Satellite Details");
   row(satellite, "COSPAR ID", satcat.OBJECT_ID);
   row(satellite, "NORAD ID", satcat.NORAD_CAT_ID);
-  row(satellite, "Country", owner(satcat.OWNER) || record.ownerName);
+  row(satellite, useSpaceTrack ? "Country / org." : "Country", owner(satcat.OWNER) || record.ownerName);
   row(satellite, "Object type", satcat.OBJECT_TYPE === "PAY" ? "Payload" : satcat.OBJECT_TYPE);
   row(satellite, "Launch date", dateText(satcat.LAUNCH_DATE));
-  row(satellite, "Launch site", `${data.launchSites?.names?.[satcat.LAUNCH_SITE] || satcat.LAUNCH_SITE}${siteFlags(satcat.LAUNCH_SITE)}`);
+  row(satellite, "Launch site", `${(useSpaceTrack ? data.launchSiteNames : data.launchSites?.names)?.[satcat.LAUNCH_SITE] || satcat.LAUNCH_SITE}${siteFlags(satcat.LAUNCH_SITE)}`);
   const identitySource = document.createElement("div"), identityLabel = document.createElement("dt"), identityValue = document.createElement("dd");
   identityLabel.textContent = "Data source";
-  identityValue.append(link("CelesTrak SATCAT", record.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(satcat.NORAD_CAT_ID)}`));
+  identityValue.append(useSpaceTrack
+    ? link("Space-Track", `https://www.space-track.org/basicspacedata/query/class/satcat/NORAD_CAT_ID/${encodeURIComponent(satcat.NORAD_CAT_ID)}/format/json`)
+    : link("CelesTrak SATCAT", record.recordUrl || `https://celestrak.org/satcat/search.php?SEARCH=${encodeURIComponent(satcat.NORAD_CAT_ID)}`));
   identitySource.append(identityLabel, identityValue); satellite.append(identitySource);
   const orbital = section("Orbital Details");
   const epochRow = document.createElement("div"), epochLabel = document.createElement("dt"), epochValue = document.createElement("dd");
@@ -70,7 +81,7 @@ async function render(card) {
   const sourceRow = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd");
   dt.textContent = "Data source";
   if (card.dataset.sourceQueryHref) {
-    const sourceLink = link(card.dataset.sourceData, card.dataset.sourceQueryHref);
+    const sourceLink = link(useSpaceTrack && card.dataset.sourceData?.startsWith("Space-Track") ? "Space-Track" : card.dataset.sourceData, card.dataset.sourceQueryHref);
     sourceLink.title = "Space-Track historical elements for this satellite and UTC date; sign-in required. The query may include other element sets from the same date.";
     dd.append(sourceLink);
   } else if (card.dataset.sourceHref && card.dataset.sourceData !== "Source unverified") {

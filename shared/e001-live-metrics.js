@@ -33,16 +33,18 @@ export async function calculateE001(interval, { distanceKm = 200, speedMps = 15,
     fetch(historyUrl("39509")).then(r => { if (!r.ok) throw new Error("Athena-Fidus TLE history unavailable"); return r.json(); }),
   ]);
   const libs = histories.map(history => ({ tles: history.tles, epochs: history.tles.map(tle => Date.parse(tle.epoch)), records: [] }));
-  const samples = sampleEpisode(interval.startMs, interval.endMs, STEP_MS, ms => {
+  const sampleAt = ms => {
     const a = stateAt(libs[0], ms, sgp4, maximumTleAgeDays * DAY_MS);
     const b = stateAt(libs[1], ms, sgp4, maximumTleAgeDays * DAY_MS);
     return { tleA: a?.index ?? null, tleB: b?.index ?? null,
       distanceKm: a && b ? distance(a.r, b.r) : null,
       speedMps: a && b ? distance(a.v, b.v) * 1000 : null };
-  });
-  const result = analyzeEpisode(samples, distanceKm, speedMps, STEP_MS);
-  return { source: "Live E-001 window, public historical TLEs and synchronized SGP4", startMs: interval.startMs,
-    endMs: interval.endMs, stepMs: STEP_MS, validSamples: result.validSamples,
-    minimumDistance: result.minimumDistance, minimumSpeed: result.minimumSpeed,
-    dwellMs: result.totalMs };
+  };
+  const windows = interval.chapters?.length ? interval.chapters : [interval];
+  const results = windows.map(window => analyzeEpisode(sampleEpisode(window.startMs, window.endMs, STEP_MS, sampleAt), distanceKm, speedMps, STEP_MS));
+  const minimum = key => results.map(result => result[key]).filter(Boolean).reduce((best, item) => !best || item.value < best.value ? item : best, null);
+  return { source: "E-001 sheet chapters, public historical TLEs and synchronized SGP4", startMs: interval.startMs,
+    endMs: interval.endMs, stepMs: STEP_MS, validSamples: results.reduce((total, result) => total + result.validSamples, 0),
+    minimumDistance: minimum("minimumDistance"), minimumSpeed: minimum("minimumSpeed"),
+    dwellMs: results.reduce((total, result) => total + result.totalMs, 0) };
 }

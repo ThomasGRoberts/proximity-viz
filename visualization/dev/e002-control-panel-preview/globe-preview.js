@@ -7,7 +7,7 @@ import { MARKER } from "../../../shared/marker-spec.js";
 const EARTH_KM = 6378.137;
 const toScene = point => new THREE.Vector3(point.x / EARTH_KM, point.z / EARTH_KM, -point.y / EARTH_KM);
 
-export function createGlobePreview(model, episode, names, initialCameraViews = []) {
+export function createGlobePreview(model, episode, names, initialCameraViews = [], options = {}) {
   const stage = document.getElementById("globeStage");
   const mount = document.getElementById("scene");
   const labelMount = document.getElementById("satelliteScreenLabels");
@@ -17,7 +17,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   orbitTooltip.className = "orbit-tooltip"; orbitTooltip.role = "tooltip"; orbitTooltip.hidden = true;
   stage.append(orbitTooltip);
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xffffff);
+  scene.background = new THREE.Color(options.tableMini ? 0xfffcf6 : 0xffffff);
   const camera = new THREE.PerspectiveCamera(35, 1, .001, 250);
   camera.up.set(0, 1, 0);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -31,9 +31,9 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   controls.enablePan = true;
   scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2.4));
   const earth = new THREE.Group(); scene.add(earth);
-  earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: 0xf7f7f7 })));
+  earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: options.tableMini ? 0xedeae5 : 0xf7f7f7 })));
   const relativeEarth = new THREE.Group();
-  relativeEarth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: 0xf3f3f3 })));
+  relativeEarth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: options.tableMini ? 0xedeae5 : 0xf3f3f3 })));
   relativeEarth.scale.setScalar(EARTH_KM / 1000);
   relativeEarth.visible = false;
   scene.add(relativeEarth);
@@ -63,12 +63,12 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(coords, 3));
-    earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: 1, depthTest: true, depthWrite: false })));
-    relativeEarth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x3a3a3a, transparent: true, opacity: 1, depthTest: true, depthWrite: false })));
+    earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: options.tableMini ? 0x6b655b : 0x444444, transparent: true, opacity: options.tableMini ? .55 : 1, depthTest: true, depthWrite: false })));
+    relativeEarth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: options.tableMini ? 0x6b655b : 0x3a3a3a, transparent: true, opacity: options.tableMini ? .55 : 1, depthTest: true, depthWrite: false })));
   }).catch(() => {});
 
   const markers = {}, labels = {}, trails = {}, labelPlacement = {};
-  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: .72, depthTest: true, depthWrite: false }));
+  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: options.tableMini ? 0xbba767 : 0x222222, transparent: true, opacity: options.tableMini ? .44 : .72, depthTest: true, depthWrite: false }));
   referenceOrbit.frustumCulled = false; referenceOrbit.renderOrder = 2; referenceOrbit.visible = false; scene.add(referenceOrbit);
   for (const item of episode.participants) {
     const color = item.slot === "B" ? MARKER.B : MARKER.A;
@@ -166,7 +166,8 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   function resize() {
     const width = Math.max(1, mount.clientWidth), height = Math.max(1, mount.clientHeight);
     camera.aspect = width / height;
-    if (width > 620) camera.setViewOffset(width, height, -Math.min(165, width * .14), 0, width, height);
+    if (width > 620 || options.tableMini) camera.setViewOffset(width, height, width > 620 ? -Math.min(165, width * .14) : 0,
+      options.tableMini ? Math.max(0, height / 2 - Math.min(240, height * .36)) : 0, width, height);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);

@@ -37,7 +37,7 @@ import { relativeCameraFrame, relativeFitDistance } from "./relative-camera.js";
 import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js?v=3";
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
-import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js";
+import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js";
 import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=3";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
@@ -77,6 +77,10 @@ const SLOTS = SATELLITE_STYLES;
 
 // A tiny helper so we can write $("playBtn") instead of document.getElementById("playBtn").
 const $ = id => document.getElementById(id);
+const chapterMode = new URLSearchParams(location.search);
+const publicChapterView = chapterMode.get("published") === "1" || chapterMode.get("mini") === "1";
+const localChapterReview = publicChapterView || (chapterMode.get("dev") === "1" && ["localhost", "127.0.0.1"].includes(location.hostname));
+const localChartModule = localChapterReview ? await import("../dev/e002-control-panel-preview/orbital-preview.js") : null;
 
 
 
@@ -278,7 +282,7 @@ function speedInMetresAt(ms) {
 // 5. Set up the 3D scene: camera, renderer, Earth
 // ---------------------------------------------------------------------------
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xffffff);
+scene.background = new THREE.Color(chapterMode.get("mini") === "1" ? 0xfffcf6 : 0xffffff);
 
 // PerspectiveCamera(field of view in degrees, aspect ratio, near limit, far limit)
 const camera = new THREE.PerspectiveCamera(15.5, innerWidth / innerHeight, 0.01, 1000);
@@ -297,6 +301,7 @@ controls.dampingFactor = 0.08;
 controls.minDistance = 0.006;
 controls.maxDistance = 180;
 controls.addEventListener("start", () => { cameraTween = null; });  // If the user drags, cancel any automatic camera move
+controls.addEventListener("end", () => { if (localChapterReview && view === "relative") { lastLocalRelativeTrailKey = ""; drawRelative(); } });
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2.4));
 
@@ -657,23 +662,24 @@ function updateScene() {
     dots[slot].visible = r !== null;
     if (r) {
       dots[slot].position.copy(eciToScene(r));
-      if (view === "earth") dots[slot].position.applyAxisAngle(earthAxis, -earthAngle);
+      if (view === "earth" && !localChapterReview) dots[slot].position.applyAxisAngle(earthAxis, -earthAngle);
     }
 
     if (!r) { trails[slot].geometry.dispose(); trails[slot].geometry = new THREE.BufferGeometry(); continue; }
+    if (localChapterReview && view === "relative") continue;
     // The orbit line shows the last full orbit, all from the TLE in use right now
     // (so it doesn't jump when the nearest TLE changes partway along it).
     // satrec.no is the mean motion in radians per minute, so one orbit = 2π / no minutes.
-    const periodMs = view === "relative" || (view === "earth" && Math.hypot(...r) > HIGH_ORBIT_KM)
+    const periodMs = localChapterReview && view === "earth" ? 30 * MINUTE_MS : view === "relative" || (view === "earth" && Math.hypot(...r) > HIGH_ORBIT_KM)
       ? 2 * DAY_MS : (2 * Math.PI / satrecFor(lib, tleIndex).no) * MINUTE_MS;
     const points = [];
     for (let i = 0; i <= TRAIL_POINTS; i++) {
-      const trailTime = currentMs - periodMs * (1 - i / TRAIL_POINTS);
+      const trailTime = currentMs - (localChapterReview ? Math.min(periodMs, Math.max(0, currentMs - startMs)) : periodMs) * (1 - i / TRAIL_POINTS);
       const p = positionAt(norad, trailTime, tleIndex);
       if (p) {
         const point = eciToScene(p);
         if (view === "relative") point.applyAxisAngle(earthAxis, earthAngle - sgp4.gstime(new Date(trailTime)));
-        else point.applyAxisAngle(earthAxis, -sgp4.gstime(new Date(trailTime)));
+        else if (!localChapterReview) point.applyAxisAngle(earthAxis, -sgp4.gstime(new Date(trailTime)));
         points.push(point);
       }
     }
@@ -690,20 +696,38 @@ function updateScene() {
   const speed = relativeSpeedAt(currentMs);
   $("speedStat").textContent = speed === null ? "No data" : formatSpeed(speed);
   $("geoReference").hidden = view !== "relative";
-  $("geoReference").textContent = `Camera reference: nominal GEO at ${geoReferenceLongitudeDeg.toFixed(1)}°E (Earth-fixed).`;
+  $("geoReference").textContent = localChapterReview
+    ? `Relative-motion origin: ${slotName(centre)}.`
+    : `Camera reference: nominal GEO at ${geoReferenceLongitudeDeg.toFixed(1)}°E (Earth-fixed).`;
   $("timeDisplay").textContent = formatTime(currentMs).replace(" UTC", "");
   updatePlaybackCounter($("sliderNow"), currentMs - startMs, currentMs);
+  if (localChapterReview) {
+    $("sliderNow").textContent = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(currentMs)) + " UTC";
+    $("sliderNow").setAttribute("aria-label", `Playback time: ${formatTime(currentMs)}`);
+    $("sliderNow").removeAttribute("data-full-utc");
+  }
   $("timelineSlider").value = currentMs;
   $("timelineSlider").style.setProperty("--progress", `${(currentMs - startMs) / (endMs - startMs) * 100}%`);   // gold "played so far" part of the time bar
 
   // Spin Earth to the right angle for this moment (Greenwich sidereal time).
   // latLonToPoint and eciToScene map positive longitude toward negative scene Z;
   // a positive sidereal rotation therefore carries Earth-fixed longitude into ECI.
-  earthGroup.rotation.y = view === "earth" ? 0 : earthAngle;
+  earthGroup.rotation.y = view === "earth" && !localChapterReview ? 0 : earthAngle;
 
   // Relative motion keeps Willa's ECI scene. The globe mode instead rotates
   // each propagated ECI position into Earth-fixed coordinates above.
   earthGroup.visible = true;
+  if (localChapterReview && view === "relative") {
+    earthGroup.matrixAutoUpdate = false;
+    trails.A.visible = trails.B.visible = false;
+    drawRelative();
+  } else if (localChapterReview) {
+    earthGroup.matrixAutoUpdate = true;
+    trails.A.visible = trails.B.visible = true;
+    relativeTrail.visible = false;
+    localMotionTrail.visible = false;
+    localReferenceOrbit.visible = false;
+  }
 
   for (const slot of ["A", "B"]) {             // name labels follow their dots
     labels[slot].position.copy(dots[slot].position);
@@ -718,7 +742,7 @@ function updateScene() {
 // One synchronized, quality-gated series drives both fixed-domain charts and dwell.
 function prepareAnalysis() {
   if (!episodeConfig || !pair.A || !pair.B) return;
-  analysisSamples = sampleEpisode(episodeStartMs, episodeEndMs, analysisStepMs, ms => {
+  analysisSamples = sampleEpisode(localChapterReview ? startMs : episodeStartMs, localChapterReview ? endMs : episodeEndMs, analysisStepMs, ms => {
     const tleA = nearestTleIndex(library[pair.A], ms), tleB = nearestTleIndex(library[pair.B], ms);
     const a = stateAt(pair.A, ms, tleA), b = stateAt(pair.B, ms, tleB);
     return { tleA, tleB, distanceKm: a && b ? distanceKm(a.r, b.r) : null,
@@ -817,10 +841,43 @@ function updateThresholds() {
   };
   minimum("distanceMinimum", analysisResult.minimumDistance, "km", "separationKm");
   minimum("speedMinimum", analysisResult.minimumSpeed, "m/s", "relativeSpeedMps");
+  if (localChapterReview) {
+    for (const id of ["distanceMinimum", "speedMinimum"]) {
+      const caption = $(id).querySelector(".estimateCaption");
+      if (caption) caption.textContent = "Minimum this episode:";
+      $(id).querySelector(".estimateInfo")?.remove();
+    }
+  }
   chartDirty = true; drawEpisodeCharts();
 }
 function drawEpisodeCharts() {
   if (!analysisSamples.length || !analysisResult) return;
+  if (localChapterReview) {
+    const now = {
+      ms: currentMs,
+      tleA: nearestTleIndex(library[pair.A], currentMs),
+      tleB: nearestTleIndex(library[pair.B], currentMs),
+      distanceKm: separationAt(currentMs),
+      speedMs: speedInMetresAt(currentMs)
+    };
+    const samples = chartSamples.filter(sample => sample.ms <= currentMs).map(sample => ({ ...sample, speedMs: sample.speedMps }));
+    if (!samples.some(sample => sample.ms === currentMs)) samples.push(now);
+    const window = { id: `e001-${startMs}`, start: new Date(startMs).toISOString(), end: new Date(endMs).toISOString() };
+    const qualifications = { single: singleThresholdIntervals, both: { intervals: analysisResult.intervals } };
+    for (const [canvasId, metric, thresholdId, title, maximum] of [
+      ["separationChart", "distanceKm", "distanceThreshold", "Separation distance (km)", chartScales.distanceKm],
+      ["speedChart", "speedMs", "speedThreshold", "Relative velocity (m/s)", chartScales.speedMps]
+    ]) {
+      const canvas = $(canvasId), scale = localChartModule.drawOrbitalChart(canvas, samples, metric, {
+        window, currentMs, threshold: Number($(thresholdId).value), title, maximum, qualifications,
+        markedMs: focusedMinimumMs, speedUnit: "m/s", connectSwitches: true, historyHours: 168
+      });
+      chartGeometry.set(canvas, { top: scale.top, bottom: scale.bottom, left: scale.left, right: scale.right,
+        yMax: scale.max, thresholdY: scale.thresholdY });
+    }
+    chartDirty = false;
+    return;
+  }
   drawFixedChart("separationChart", "distanceKm", chartScales.distanceKm, Number($("distanceThreshold").value), "km");
   drawFixedChart("speedChart", "speedMps", chartScales.speedMps, Number($("speedThreshold").value), "m/s");
   chartDirty = false;
@@ -892,8 +949,8 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   const pad = CHART_PADDING;
   const bottom = h - pad.bottom, right = w - pad.right;
-  const windowMs = 14 * 86400000;
-  const windowStart = focusedMinimumMs === null ? currentMs - windowMs : focusedMinimumMs - windowMs / 2;
+  const windowMs = localChapterReview ? Math.max(MINUTE_MS, endMs - startMs) : 14 * 86400000;
+  const windowStart = localChapterReview ? startMs : focusedMinimumMs === null ? currentMs - windowMs : focusedMinimumMs - windowMs / 2;
   const windowEnd = windowStart + windowMs;
   const x = ms => pad.left + (ms - windowStart) / windowMs * (right - pad.left);
   const y = value => bottom - Math.min(1, Math.max(0, value / yMax)) * (bottom - pad.top);
@@ -914,14 +971,14 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.fillText(key === "distanceKm" ? "Estimated separation (km)" : "Estimated relative velocity (m/s)", 0, 0); ctx.restore();
   ctx.fillStyle = "#eeeeec"; ctx.fillRect(pad.left, y(threshold), right - pad.left, bottom - y(threshold));
   // UTC-anchored ticks share the data's time transform, so they slide with it.
-  const tickMs = 4 * DAY_MS;
+  const tickMs = localChapterReview ? 3 * 60 * MINUTE_MS : 4 * DAY_MS;
   let lastTickRight = -Infinity;
   for (let ms = Math.ceil(windowStart / tickMs) * tickMs; ms <= windowEnd; ms += tickMs) {
     const px = x(ms);
     ctx.strokeStyle = "#cacaca"; ctx.lineWidth = .8;
     ctx.beginPath(); ctx.moveTo(px, pad.top); ctx.lineTo(px, bottom); ctx.stroke();
     if (px > pad.left + 34 && px < right - 34) {
-      const fullDate = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", timeZone: "UTC" }).format(ms);
+      const fullDate = new Intl.DateTimeFormat("en-US", localChapterReview ? { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" } : { month: "long", day: "numeric", timeZone: "UTC" }).format(ms);
       ctx.fillStyle = "#777"; ctx.textAlign = "center";
       const labelWidth = ctx.measureText(fullDate).width;
       if (px - labelWidth / 2 > lastTickRight + 8 && px + labelWidth / 2 < right) {
@@ -1081,6 +1138,19 @@ function updateIdentityAges() {
 // The viewing direction follows the selected satellites' longitude, while
 // the Earth and both propagated positions determine the scale.
 function fullEarthFraming() {
+  if (localChapterReview) {
+    const state = pair[centre] && stateAt(pair[centre], currentMs);
+    if (state) {
+      const normal = ricAxes(state).C;
+      const direction = new THREE.Vector3(normal[0], normal[2], -normal[1]).normalize();
+      const radius = Math.max(1, ...["A", "B"].map(slot => {
+        const position = pair[slot] && positionAt(pair[slot], currentMs);
+        return position ? Math.hypot(...position) / EARTH_RADIUS_KM : 1;
+      }));
+      const distance = Math.max(24, radius * 3.6) * Math.max(1, 1 / camera.aspect);
+      return { position: direction.multiplyScalar(distance), target: new THREE.Vector3() };
+    }
+  }
   const earthAngle = sgp4.gstime(new Date(currentMs));
   const positions = [];
   for (const slot of ["A", "B"]) {
@@ -1306,7 +1376,7 @@ function updateReportedBand() {
 // Set the start and end of the time window, and jump to the start.
 function setWindow(newStart, newEnd) {
   if (newEnd <= newStart) newEnd = newStart + DAY_MS;   // Never allow an empty window
-  startMs = newStart; endMs = newEnd; currentMs = episodeConfig ? Date.parse(episodeConfig.initialTime) : startMs;
+  startMs = newStart; endMs = newEnd; currentMs = localChapterReview ? startMs : episodeConfig ? Date.parse(episodeConfig.initialTime) : startMs;
   focusedMinimumMs = null;
   $("startTime").value = toInputValue(startMs);
   $("endTime").value = toInputValue(endMs);
@@ -1410,7 +1480,7 @@ function identify(text) {
 // Step 2: every "dip" (a moment closer than the moments either side of it) might be
 //         the closest approach, so zoom in on the 10 deepest dips to find the exact moment.
 function findClosestApproach() {
-  const scanStart = episodeConfig ? episodeStartMs : startMs, scanEnd = episodeConfig ? episodeEndMs : endMs;
+  const scanStart = episodeConfig && !localChapterReview ? episodeStartMs : startMs, scanEnd = episodeConfig && !localChapterReview ? episodeEndMs : endMs;
   const stepMs = Math.max(30 * 1000, (scanEnd - scanStart) / 20000);
   const samples = [];
   for (let ms = scanStart; ms <= scanEnd; ms += stepMs) samples.push({ ms, km: separationAt(ms) });
@@ -1431,7 +1501,7 @@ function findClosestApproach() {
 // Zoom in on the closest moment between lo and hi: check 100 evenly spaced moments,
 // keep the closest, then repeat in a narrower range around it until we're within a second.
 function zoomInOnDip(lo, hi) {
-  lo = Math.max(episodeConfig ? episodeStartMs : startMs, lo); hi = Math.min(episodeConfig ? episodeEndMs : endMs, hi);
+  lo = Math.max(episodeConfig && !localChapterReview ? episodeStartMs : startMs, lo); hi = Math.min(episodeConfig && !localChapterReview ? episodeEndMs : endMs, hi);
   let best = null;
   while (true) {
     const step = (hi - lo) / 100;
@@ -1440,7 +1510,7 @@ function zoomInOnDip(lo, hi) {
       if (km !== null && (!best || km < best.km)) best = { ms, km };
     }
     if (!best || step < 1000) return best;
-    lo = Math.max(episodeConfig ? episodeStartMs : startMs, best.ms - step); hi = Math.min(episodeConfig ? episodeEndMs : endMs, best.ms + step);
+    lo = Math.max(episodeConfig && !localChapterReview ? episodeStartMs : startMs, best.ms - step); hi = Math.min(episodeConfig && !localChapterReview ? episodeEndMs : endMs, best.ms + step);
   }
 }
 
@@ -1515,6 +1585,17 @@ const relativeTrail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineB
 relativeTrail.userData = { solid: relativeTrail.material, dashed: new THREE.LineDashedMaterial({ vertexColors: true }) };
 relativeTrail.visible = false;
 scene.add(relativeTrail);
+const localMotionTrail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial("A"));
+localMotionTrail.visible = false;
+localMotionTrail.renderOrder = 9;
+localMotionTrail.frustumCulled = false;
+scene.add(localMotionTrail);
+const localReferenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: .72, depthTest: true, depthWrite: false }));
+localReferenceOrbit.visible = false;
+localReferenceOrbit.frustumCulled = false;
+localReferenceOrbit.renderOrder = 2;
+scene.add(localReferenceOrbit);
+let lastLocalRelativeTrailKey = "";
 
 // Put Earth in the right place, size and orientation for the relative view:
 // centred straight "down" from A, at 1 unit = 1,000 km, turned to match A's directions.
@@ -1533,8 +1614,8 @@ function placeEarthRelative(stateA) {
 // In the relative view: A at the centre, B at its relative position, B's fading trail, Earth below.
 function drawRelative() {
   const stateCentre = stateAt(pair[centre], currentMs);
-  if (!stateCentre) { dots.A.visible = dots.B.visible = false; relativeTrail.visible = false; earthGroup.visible = false; return; }
-  earthGroup.visible = true; relativeTrail.visible = true;
+  if (!stateCentre) { dots.A.visible = dots.B.visible = false; relativeTrail.visible = false; localMotionTrail.visible = false; localReferenceOrbit.visible = false; earthGroup.visible = false; return; }
+  earthGroup.visible = true; relativeTrail.visible = !localChapterReview;
   placeEarthRelative(stateCentre);
   const other = otherSlot();
   dots[centre].visible = true;
@@ -1547,25 +1628,68 @@ function drawRelative() {
   // nearest TLE would change partway along it (the same trick the orbit lines use)
   const tleCentre = nearestTleIndex(library[pair[centre]], currentMs);
   const tleOther = nearestTleIndex(library[pair[other]], currentMs);
-  const points = [], colors = [];
-  // During a TLE flash the newest end of the trail turns darker. Each point is a mix of "faded" and
-  // "recent", so every point darkens in proportion to how dark it already is and the fade keeps its shape.
-  const flashing = performance.now() < Math.max(flashUntil.A, flashUntil.B);
-  const faded = new THREE.Color(0xffffff), recent = new THREE.Color(0x777777).multiplyScalar(flashing ? TLE_FLASH_DARKEN : 1);
-  const trailHours = relativeTrailHours();
-  const trailPoints = Math.max(RELATIVE_TRAIL_POINTS, trailHours * 10);   // at least 10 points per hour, so long trails stay smooth
-  for (let i = 0; i <= trailPoints; i++) {
-    const fraction = i / trailPoints;                       // 0 = start of the trail, 1 = now
-    const p = relativePointAt(currentMs - trailHours * 60 * MINUTE_MS * (1 - fraction), tleCentre, tleOther);
-    if (!p) continue;
-    points.push(p);
-    const color = faded.clone().lerp(recent, fraction ** 1.7);
-    colors.push(color.r, color.g, color.b);
+  const trailKey = `${centre}:${tleCentre}:${tleOther}:${Math.floor(currentMs / (5 * MINUTE_MS))}`;
+  if (localChapterReview && trailKey === lastLocalRelativeTrailKey) return;
+  lastLocalRelativeTrailKey = trailKey;
+  if (localChapterReview) {
+    const periodMs = 2 * Math.PI / satrecFor(library[pair[centre]], tleCentre).no * MINUTE_MS;
+    const orbitPoints = [];
+    for (let i = 0; i <= 180; i++) {
+      const sample = stateAt(pair[centre], currentMs + periodMs * (i / 180 - .5), tleCentre);
+      if (sample) orbitPoints.push(relativeToScene(ricOf(stateCentre, sample.r)));
+    }
+    localReferenceOrbit.geometry.dispose();
+    localReferenceOrbit.geometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+    localReferenceOrbit.visible = orbitPoints.length > 1;
   }
-  relativeTrail.geometry.dispose();
-  relativeTrail.geometry = new THREE.BufferGeometry().setFromPoints(points);
-  relativeTrail.geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-  setDashed(relativeTrail, tleIsStale(library[pair[centre]], tleCentre) || tleIsStale(library[pair[other]], tleOther));
+  const points = [], colors = [];
+  if (localChapterReview) {
+    // Work backwards until the tail has the E-002 screen length. GEO motion
+    // can need many more hours than LEO to cover the same number of pixels.
+    const maximumLookback = 14 * DAY_MS;
+    const stepMs = Math.max(5 * MINUTE_MS, maximumLookback / 360);
+    camera.updateMatrixWorld(true);
+    const screenPoint = point => {
+      const projected = point.clone().project(camera);
+      return { x: (projected.x + 1) * renderer.domElement.clientWidth / 2, y: (1 - projected.y) * renderer.domElement.clientHeight / 2 };
+    };
+    let pixelLength = 0, newer = null;
+    for (let elapsed = 0; elapsed <= maximumLookback + stepMs / 2; elapsed += stepMs) {
+      const point = relativePointAt(currentMs - Math.min(elapsed, maximumLookback), tleCentre, tleOther);
+      if (!point) { if (points.length) break; continue; }
+      if (newer) {
+        const a = screenPoint(newer), b = screenPoint(point);
+        pixelLength += Math.hypot(a.x - b.x, a.y - b.y);
+      }
+      points.push(point); newer = point;
+      if (pixelLength >= 260) break;
+    }
+    points.reverse();
+    localMotionTrail.geometry.dispose();
+    localMotionTrail.geometry = fadingTrailGeometry(points);
+    localMotionTrail.material.uniforms.uColor.value.set(SLOTS[other].line);
+    localMotionTrail.material.uniforms.uOpacity.value = other === "A" ? 1 : .85;
+    localMotionTrail.visible = points.length > 1;
+  } else {
+    // During a TLE flash the newest end of the trail turns darker. Each point is a mix of "faded" and
+    // "recent", so every point darkens in proportion to how dark it already is and the fade keeps its shape.
+    const flashing = performance.now() < Math.max(flashUntil.A, flashUntil.B);
+    const faded = new THREE.Color(0xffffff), recent = new THREE.Color(0x777777).multiplyScalar(flashing ? TLE_FLASH_DARKEN : 1);
+    const trailHours = relativeTrailHours();
+    const trailPoints = Math.max(RELATIVE_TRAIL_POINTS, trailHours * 10);
+    for (let i = 0; i <= trailPoints; i++) {
+      const fraction = i / trailPoints;
+      const p = relativePointAt(currentMs - trailHours * 60 * MINUTE_MS * (1 - fraction), tleCentre, tleOther);
+      if (!p) continue;
+      points.push(p);
+      const color = faded.clone().lerp(recent, fraction ** 1.7);
+      colors.push(color.r, color.g, color.b);
+    }
+    relativeTrail.geometry.dispose();
+    relativeTrail.geometry = new THREE.BufferGeometry().setFromPoints(points);
+    relativeTrail.geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    setDashed(relativeTrail, tleIsStale(library[pair[centre]], tleCentre) || tleIsStale(library[pair[other]], tleOther));
+  }
 } // closes drawRelative
 
 function sizeSceneSprites() {
@@ -1589,7 +1713,10 @@ function setView(next, nextCentre = centre, immediate = false) {
   const relative = next === "relative";
   earthGroup.matrixAutoUpdate = true;
   earthGroup.visible = true;
-  geoBelt.visible = true;
+  geoBelt.visible = !localChapterReview;
+  localReferenceOrbit.visible = false;
+  localMotionTrail.visible = false;
+  if (localChapterReview && relative) lastLocalRelativeTrailKey = "";
   relativeTrail.visible = false;
   relativeAxes.visible = false;
   trails.A.visible = trails.B.visible = true;
@@ -1597,13 +1724,13 @@ function setView(next, nextCentre = centre, immediate = false) {
   $("axesBtn").hidden = true;
   $("earthView").classList.toggle("activeViewSwitch", !relative);
   $("relativeView").classList.toggle("activeViewSwitch", relative);
-  $("modeBtn").title = relative ? "Switch to Earth-fixed view" : "Switch to relative motion";
+  $("modeBtn").title = relative ? localChapterReview ? "Switch to ECI view" : "Switch to Earth-fixed view" : "Switch to relative motion";
   $("modeBtn").setAttribute("aria-label", $("modeBtn").title);
   $("modeBtn").classList.toggle("isRelative", relative);
   $("modeBtn").innerHTML = relative
     ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c-3 3-3 13 0 16M12 4c3 3 3 13 0 16"/></svg>'
     : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="13" r="1" fill="currentColor"/><path d="M2 12h4m12 0h4M12 2v4m0 12v4"/></svg>';
-  $("viewNote").textContent = relative ? "Both spacecraft move around a fixed point on the nominal GEO belt." : "Earth-fixed view: the globe stays still while the spacecraft drift over their longitudes.";
+  $("viewNote").textContent = localChapterReview ? relative ? `Relative motion centered on ${slotName(centre)}.` : "ECI view along the orbital-plane normal." : relative ? "Both spacecraft move around a fixed point on the nominal GEO belt." : "Earth-fixed view: the globe stays still while the spacecraft drift over their longitudes.";
   const framing = relative ? relativeFraming() : fullEarthFraming();
   lastGeoReference = relative ? framing.target.clone() : null;
   if (immediate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -1647,6 +1774,17 @@ function relativeViewDirection() {
 // satellites (so one can't hide behind the other), and stand far enough back that the other
 // satellite sits comfortably inside the frame, however close they are.
 function relativeFraming() {
+  if (localChapterReview) {
+    const target = new THREE.Vector3(0, 0, 0);
+    const other = relativePointAt(currentMs);
+    const offset = new THREE.Vector3(0, 0, 1);
+    const distance = relativeFitDistance(THREE, {
+      positions: other ? [target, other] : [target], target, offset, up: camera.up,
+      fov: 35, aspect: camera.aspect, reference: null,
+      minDistance: controls.minDistance, maxDistance: 50
+    });
+    return { position: offset.multiplyScalar(distance), target };
+  }
   return relativeCameraFrame(THREE, geoReferenceWorld(currentMs), preferredCameraReference, camera.aspect);
 }
 // Auto-zoom: in the relative view, the camera's distance follows the distance between the two
@@ -1679,6 +1817,7 @@ function keepBothInFrame(snapOut = false) {
 }
 function followGeoReference() {
   if (view !== "relative" || cameraTween || cameraEditMode) return;
+  if (localChapterReview) return;
   const next = geoReferenceWorld(currentMs);
   if (lastGeoReference) {
     const rotation = new THREE.Quaternion().setFromUnitVectors(lastGeoReference.clone().normalize(), next.clone().normalize());
@@ -1941,6 +2080,55 @@ if (!cameraDevTools.hidden) window.__proximityDebug = () => {
     analysisSamples, chartSamples, analysisStepMs, analysisResult, camera: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov,
     markers: { A: marker("A"), B: marker("B") }, geoLabel: geoBeltLabel.getBoundingClientRect().toJSON() };
 };
+// The local review shell controls E-001 chapters without changing published playback.
+if (localChapterReview) {
+  window.__proximityWorkshop = {
+    setWindow(start, end) {
+      const a = Date.parse(start), b = Date.parse(end);
+      if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) throw new Error("Invalid chapter window");
+      playing = false; $("playBtn").innerHTML = '<span class="playIcon"></span>';
+      setWindow(a, b);
+    },
+    setTime(value) {
+      const ms = Date.parse(value);
+      if (!Number.isFinite(ms) || ms < startMs || ms > endMs) throw new Error("Time is outside this chapter");
+      playing = false; $("playBtn").innerHTML = '<span class="playIcon"></span>';
+      currentMs = ms; chartDirty = true; updateScene();
+    },
+    play() { if (!playing) $("playBtn").click(); },
+    pause() { if (playing) $("playBtn").click(); },
+    capture() { $("captureViewBtn").click(); return JSON.parse($("cameraCaptureOutput").value); },
+    applyCamera(viewConfig) {
+      for (const key of ["position", "target", "up"]) if (!Array.isArray(viewConfig[key]) || viewConfig[key].length !== 3 || !viewConfig[key].every(Number.isFinite)) throw new Error(`Invalid camera ${key}`);
+      if (!Number.isFinite(viewConfig.fieldOfViewDeg) || !Number.isFinite(viewConfig.zoom)) throw new Error("Invalid camera optics");
+      setView(viewConfig.cameraMode, ["A", "B"].includes(viewConfig.referenceSatellite) ? viewConfig.referenceSatellite : centre, true);
+      playing = false; $("playBtn").innerHTML = '<span class="playIcon"></span>';
+      cameraTween = null; cameraEditMode = true; autoZoom = false; controls.enablePan = true;
+      camera.position.fromArray(viewConfig.position); controls.target.fromArray(viewConfig.target); camera.up.fromArray(viewConfig.up);
+      camera.fov = viewConfig.fieldOfViewDeg; camera.zoom = viewConfig.zoom; camera.updateProjectionMatrix(); controls.update();
+      chartDirty = true; updateScene();
+    },
+    hold(value) {
+      cameraEditMode = !!value; autoZoom = !value; controls.enablePan = !!value;
+      $("holdCameraBtn").setAttribute("aria-pressed", String(!!value));
+      $("holdCameraBtn").textContent = value ? "Release camera" : "Hold camera";
+      if (value) { playing = false; $("playBtn").innerHTML = '<span class="playIcon"></span>'; cameraTween = null; }
+      else moveCameraSmoothly();
+    },
+    setReference(slot) {
+      if (!["A", "B"].includes(slot)) throw new Error("Unknown reference satellite");
+      if (view === "relative") setView("relative", slot, true);
+      else centre = slot;
+    },
+    setMode(mode) { if (!["earth", "relative"].includes(mode)) throw new Error("Unknown camera mode"); setView(mode, centre, true); },
+    setSpeed(secondsPerSecond) {
+      const select = $("speed"), value = String(secondsPerSecond);
+      if (![...select.options].some(option => option.value === value)) select.add(new Option(`${secondsPerSecond / 60} min/s`, value));
+      select.value = value;
+    },
+    get state() { return { time: currentMs, start: startMs, end: endMs, playing, held: cameraEditMode, mode: view, referenceSatellite: centre }; },
+  };
+}
 $("devTime").addEventListener("change", event => {
   const requested = Date.parse(`${event.target.value}Z`);
   if (!Number.isFinite(requested) || requested < startMs || requested > endMs) {
@@ -1993,6 +2181,7 @@ $("captureViewBtn").addEventListener("click", async () => {
     schema: "espl-proximity-camera-view-v1",
     simulationTimeUtc: new Date(currentMs).toISOString(),
     cameraMode: view,
+    ...(localChapterReview ? { referenceSatellite: centre } : {}),
     referenceFrame: "Three.js scene coordinates in Earth-radius units; ECI [x,y,z] maps to [x,z,-y]",
     geoReferenceLongitudeDeg,
     position: camera.position.toArray().map(rounded),
@@ -2067,6 +2256,7 @@ function animate(now) {
     trails[slot].material.uniforms.uColor.value.set(SLOTS[slot].line).multiplyScalar(brightness);
     trails[slot].material.uniforms.uResolution.value.set(renderer.domElement.clientWidth, renderer.domElement.clientHeight);
   }
+  if (localChapterReview) localMotionTrail.material.uniforms.uResolution.value.set(renderer.domElement.clientWidth * renderer.getPixelRatio(), renderer.domElement.clientHeight * renderer.getPixelRatio());
 
 lastFrameTime = now;
   updateIdentityAges();
@@ -2149,6 +2339,19 @@ try {
     if (!response.ok) throw new Error("E-001 configuration unavailable");
     return response.json();
   });
+  if (localChapterReview) {
+    const satcat = await fetch("../../dynamic-table/data/space-track-satcat.json").then(response => {
+      if (!response.ok) throw new Error("Space-Track SATCAT extract unavailable");
+      return response.json();
+    });
+    for (const participant of episodeConfig.participants) {
+      const record = satcat.records?.[participant.cospar];
+      if (record?.NORAD_CAT_ID !== String(participant.norad) || !record.OBJECT_NAME) {
+        throw new Error(`Space-Track SATCAT record unavailable for ${participant.cospar}`);
+      }
+      participant.name = record.OBJECT_NAME;
+    }
+  }
   const feed = await loadCurrentEpisodes();
   const liveEpisode = feed.episodes.find(row => row.ID === "E-001");
   if (!liveEpisode) throw new Error("E-001 is missing from the current published Episodes sheet");
@@ -2168,6 +2371,15 @@ try {
   reportedPeriod = { start: episodeStartMs, end: episodeEndMs };
   caseNorads = episodeConfig.participants.map(participant => participant.norad);
   await setPair(caseNorads[0], caseNorads[1]);
+  if (chapterMode.get("mini") === "1") {
+    const chapter = episodeChapters(liveEpisode)[0];
+    if (!chapter) throw new Error("E-001 mini scene has no published chapter");
+    const anchor = chapter.centerMs;
+    setWindow(anchor - 30 * MINUTE_MS, anchor + 30 * MINUTE_MS);
+    setView("relative", "A", true);
+    $("speed").add(new Option("5 min/s", "300"));
+    $("speed").value = "300";
+  }
   setTimeout(() => {
     for (const id of ["separationChart", "speedChart"]) {
       const chart = $(id);

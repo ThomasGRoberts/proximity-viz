@@ -8,9 +8,10 @@ import { loadCurrentEpisodes, plottedObjects } from "../../../shared/episode-fee
 
 const $ = id => document.getElementById(id);
 const mini = document.body.classList.contains("mini");
+const workshop = mini && new URLSearchParams(location.search).has("workshop");
 const sgp4 = window.satellite;
 const episode = await fetch(new URL("episode.json", import.meta.url)).then(response => response.json());
-const EARTH_KM = 6378.137, MAX_AGE = episode.maximumDisplayTleAgeHours * 3600000, TRAIL_MS = (mini ? 65 : 45) * 60000;
+const EARTH_KM = 6378.137, MAX_AGE = (workshop ? 120 : episode.maximumDisplayTleAgeHours) * 3600000, TRAIL_MS = (mini ? 65 : 45) * 60000;
 let rate = (mini ? 150 : 90) * 1000; // Simulated milliseconds per wall second.
 const RADIUS = 5.55;
 const sheet = await loadCurrentEpisodes();
@@ -23,11 +24,14 @@ const craft = selectedObjects.map(({ slot, cospar }) => {
   if (!item) throw new Error(`No reviewed orbital data match published object ${slot}: ${cospar}`);
   return { ...item, color: MARKER[item.slot] };
 });
-const windows = episode.windows.filter(item => item.id !== "jan24");
+const windows = workshop ? [
+  { id: "dec9", label: "December 9, 2019", start: "2019-12-08T17:40:00Z", end: "2019-12-10T05:40:00Z", anchor: "2019-12-09T11:40:00Z" },
+  { id: "dec30", label: "December 30, 2019", start: "2019-12-29T23:29:00Z", end: "2019-12-31T11:29:00Z", anchor: "2019-12-30T17:29:00Z" },
+] : episode.windows.filter(item => item.id !== "jan24");
 const formatUtc = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const formatShort = ms => new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const toScene = point => new THREE.Vector3(point.x / EARTH_KM, point.z / EARTH_KM, -point.y / EARTH_KM);
-const data = { libraries: {}, window: windows[0], selected: {}, available: {}, positions: {}, velocities: {}, traces: [], playing: false, current: Date.parse(windows[0].start), auto: true, nearer: "A", ready: false, lastCoverageMs: 0, frameMode: mini ? "relative" : "inertial", relativeSeed: null, relativePrimary: "A", preferredView: null, lastTrailWall: 0, markerScale: 0 };
+const data = { libraries: {}, window: windows[0], selected: {}, available: {}, positions: {}, velocities: {}, traces: [], playing: false, current: Date.parse(windows[0].start), loopStart: Date.parse(windows[0].start), loopEnd: Date.parse(windows[0].end), auto: true, nearer: "A", ready: false, lastCoverageMs: 0, frameMode: mini ? "relative" : "inertial", relativeSeed: null, relativePrimary: "A", preferredView: null, lastTrailWall: 0, markerScale: 0 };
 
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0xfffcf6);
 const camera = new THREE.PerspectiveCamera(35, 1, .01, 100);
@@ -35,8 +39,14 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mini ? 1.5 : 2)); renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.domElement.setAttribute("aria-hidden", "true"); $("scene").append(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = !mini && new URLSearchParams(location.search).get('dev') === '1'; controls.minDistance = 2; controls.maxDistance = 12;
+controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = workshop || !mini && new URLSearchParams(location.search).get('dev') === '1'; controls.minDistance = 2; controls.maxDistance = 12;
 controls.addEventListener("start", () => { data.auto = false; $("scene").dataset.cameraMode = "manual"; });
+controls.addEventListener("end", () => {
+  if (workshop && data.frameMode === "relative") {
+    seedRelativeCamera(orbitFrameAt(data.current)); data.auto = !!data.relativeSeed;
+    $("scene").dataset.cameraMode = data.auto ? "auto" : "manual";
+  }
+});
 scene.add(new THREE.HemisphereLight(0xffffff, 0xdcd8cf, 1.6));
 const earth = new THREE.Group(); scene.add(earth);
 earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 96, 72), new THREE.MeshBasicMaterial({ color: 0xe9e6e0 })));
@@ -210,7 +220,10 @@ function setPlaybackButton() {
 function selectWindow(windowId, initial = false) {
   const selectedWindow = windows.find(item => item.id === windowId) || windows[0];
   data.window = mini && selectedWindow.id === 'dec8' ? { ...selectedWindow, end: '2019-12-08T10:50:00Z' } : selectedWindow;
-  data.current = Date.parse(data.window.start); data.playing = true; data.auto = true; data.nearer = "A";
+  const windowStart = Date.parse(data.window.start), windowEnd = Date.parse(data.window.end);
+  data.loopStart = workshop ? Math.max(windowStart, Math.min(windowEnd - 45 * 60000, Date.parse(data.window.anchor) - 15 * 60000)) : windowStart;
+  data.loopEnd = workshop ? data.loopStart + 45 * 60000 : windowEnd;
+  data.current = data.loopStart; data.playing = true; data.auto = true; data.nearer = "A";
   if (!mini) { data.frameMode = "inertial"; data.relativeSeed = null; updateFrameButton(); }
   const mid = (Date.parse(data.window.start) + Date.parse(data.window.end)) / 2;
   data.selected = {};
@@ -224,7 +237,7 @@ function selectWindow(windowId, initial = false) {
   const firstA = stateAt(data.selected.A, data.current)?.position;
   const firstC = stateAt(data.selected.C, data.current)?.position;
   data.relativePrimary = !firstB ? "C" : firstC && (!firstA || firstC.distanceTo(firstB) < firstA.distanceTo(firstB)) ? "C" : "A";
-  if (mini && data.preferredView) {
+  if (mini && data.preferredView && !workshop) {
     camera.position.fromArray(data.preferredView.position);
     controls.target.fromArray(data.preferredView.target);
     // A small orbit around the saved target gives the three fixed-size sprite
@@ -236,6 +249,16 @@ function selectWindow(windowId, initial = false) {
     camera.fov = data.preferredView.fieldOfViewDeg; camera.zoom = data.preferredView.zoom * Math.min(1, Math.max(.38, $("scene").clientWidth / 800)); camera.updateProjectionMatrix();
     seedRelativeCamera(orbitFrameAt(data.current));
     $("scene").dataset.preferredView = data.preferredView.name;
+  }
+  if (workshop) {
+    data.positions = {}; data.velocities = {};
+    for (const item of craft) {
+      const state = stateAt(data.selected[item.slot], data.current);
+      if (state) { data.positions[item.slot] = state.position; data.velocities[item.slot] = state.velocity; }
+    }
+    camera.fov = 35; camera.zoom = .75; camera.updateProjectionMatrix();
+    frameCamera(true);
+    seedRelativeCamera(orbitFrameAt(data.current));
   }
   buildTraces(); renderFrame(initial); setPlaybackButton();
   if ($('moment')) { $('moment').value = data.window.id; $('momentNote').textContent = data.window.note; $('startLabel').textContent = formatShort(Date.parse(data.window.start)); $('endLabel').textContent = formatShort(Date.parse(data.window.end)); $('timeline').min = String(Date.parse(data.window.start)); $('timeline').max = String(Date.parse(data.window.end)); }
@@ -340,7 +363,7 @@ function renderFrame(immediate = false, seconds = .016) {
 function resize() {
   const width = Math.max(1, $('scene').clientWidth), height = Math.max(1, $('scene').clientHeight);
   camera.aspect = width / height;
-  if (mini && data.preferredView) camera.zoom = data.preferredView.zoom * Math.min(1, Math.max(.38, width / 800));
+  if (mini && data.preferredView && !workshop) camera.zoom = data.preferredView.zoom * Math.min(1, Math.max(.38, width / 800));
   if (mini) camera.setViewOffset(width, height, width > 900 ? -Math.min(100, width * .09) : 0, Math.min(110, height * .18), width, height);
   else camera.clearViewOffset();
   camera.updateProjectionMatrix(); renderer.setSize(width, height, false);
@@ -354,13 +377,13 @@ function animate(now) {
   requestAnimationFrame(animate);
   const seconds = Math.min(.1, (now - last) / 1000); last = now;
   if (data.playing) {
-    data.current = Math.min(Date.parse(data.window.end), data.current + seconds * rate);
-    if (data.current >= Date.parse(data.window.end)) {
+    data.current = Math.min(data.loopEnd, data.current + seconds * rate);
+    if (data.current >= data.loopEnd) {
       data.playing = false;
       if (mini) {
         document.querySelector('.viewer').classList.add('loop-reset');
         setTimeout(() => {
-          data.current = Date.parse(data.window.start); renderFrame(true);
+          data.current = data.loopStart; renderFrame(true);
           requestAnimationFrame(() => { document.querySelector('.viewer').classList.remove('loop-reset'); data.playing = true; });
         }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 360);
       } else {
@@ -462,12 +485,14 @@ async function load() {
       if (tle.source === 'seesat' && !tle.sourceUrl) tle.sourceUrl = record.url;
     }
   }));
-  resize(); selectWindow(mini ? 'dec8' : 'dec7', true);
+  resize(); selectWindow(workshop ? 'dec9' : mini ? 'dec8' : 'dec7', true);
   if ($('timeline')) { $('timeline').min = String(Date.parse(data.window.start)); $('timeline').max = String(Date.parse(data.window.end)); }
   // Main view starts moving immediately; Play/Pause remains visible throughout.
   data.playing = true; setPlaybackButton(); data.ready = true; requestAnimationFrame(animate);
 }
-load().catch(error => { if ($('sceneStatus')) $('sceneStatus').textContent = error.message; else console.error(error); });
+load().then(() => {
+  if (workshop) { window.miniWorkshop = episodeModel; parent.postMessage({ type: "espl-e002-mini-ready" }, location.origin); }
+}).catch(error => { if ($('sceneStatus')) $('sceneStatus').textContent = error.message; else console.error(error); });
 
 // The shared episode shell uses this same scene and vetted element selection.
 // Its charts sample only the currently selected, supported viewing window.
@@ -478,6 +503,8 @@ export const episodeModel = {
   get current() { return data.current; },
   get playing() { return data.playing; },
   get rate() { return rate / 1000; },
+  get loopStart() { return data.loopStart; },
+  get loopEnd() { return data.loopEnd; },
   setRate(value) { rate = THREE.MathUtils.clamp(value, 60, 259200) * 1000; },
   get selected() { return data.selected; },
   get frameMode() { return data.frameMode; },
@@ -490,14 +517,33 @@ export const episodeModel = {
       speedMs: a.velocity.distanceTo(b.velocity) * EARTH_KM * 1000 };
   },
   setTime(ms) { data.current = THREE.MathUtils.clamp(ms, Date.parse(data.window.start), Date.parse(data.window.end)); data.playing = false; setPlaybackButton(); renderFrame(true); },
-  setPlaying(value) { if (value && data.current >= Date.parse(data.window.end)) data.current = Date.parse(data.window.start); data.playing = !!value; setPlaybackButton(); },
+  setLoop(start, end) {
+    const first = Date.parse(data.window.start), last = Date.parse(data.window.end);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start < first || end > last || end - start < 60000) throw new Error("Choose a loop of at least one minute inside this chapter.");
+    data.loopStart = start; data.loopEnd = end; data.current = THREE.MathUtils.clamp(data.current, start, end); renderFrame(true);
+  },
+  setPlaying(value) { if (value && data.current >= data.loopEnd) data.current = data.loopStart; data.playing = !!value; setPlaybackButton(); },
   selectWindow(id) { selectWindow(id); },
-  toggleFrame() { $('frameMode')?.click(); },
-  resetCamera() { $('autoFrame')?.click(); },
-  zoom(factor) { camera.zoom = THREE.MathUtils.clamp(camera.zoom * factor, .5, 3); camera.updateProjectionMatrix(); data.auto = false; $("scene").dataset.cameraMode = "manual"; },
+  toggleFrame() {
+    if (!workshop) { $('frameMode')?.click(); return; }
+    if (data.frameMode === 'relative') { data.frameMode = 'inertial'; data.relativeSeed = null; data.auto = true; frameCamera(true); }
+    else { data.relativePrimary = data.positions.B ? data.nearer : 'C'; seedRelativeCamera(orbitFrameAt(data.current)); data.frameMode = data.relativeSeed ? 'relative' : 'inertial'; data.auto = true; }
+    renderFrame(true);
+  },
+  resetCamera() {
+    if (!workshop) { $('autoFrame')?.click(); return; }
+    data.auto = false; frameCamera(true);
+    if (data.frameMode === 'relative') seedRelativeCamera(orbitFrameAt(data.current));
+    data.auto = true; $("scene").dataset.cameraMode = "auto"; renderFrame(true);
+  },
+  zoom(factor) { camera.zoom = THREE.MathUtils.clamp(camera.zoom * factor, .5, 3); camera.updateProjectionMatrix(); if (workshop && data.frameMode === 'relative') { seedRelativeCamera(orbitFrameAt(data.current)); data.auto = !!data.relativeSeed; } else { data.auto = false; $("scene").dataset.cameraMode = "manual"; } },
   captureCamera(name = 'Untitled view') { return { episodeId: 'E-002', name, momentId: data.window.id, timestampUtc: new Date(data.current).toISOString(), frameMode: data.frameMode,
     position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), fieldOfViewDeg: camera.fov, zoom: camera.zoom }; },
-  applyCamera(view) { camera.position.fromArray(view.position); controls.target.fromArray(view.target); camera.up.fromArray(view.up || [0,1,0]); camera.fov = view.fieldOfViewDeg; camera.zoom = view.zoom; camera.updateProjectionMatrix(); data.auto = false; $("scene").dataset.cameraMode = "manual"; camera.lookAt(controls.target); },
+  applyCamera(view) {
+    camera.position.fromArray(view.position); controls.target.fromArray(view.target); camera.up.fromArray(view.up || [0,1,0]); camera.fov = view.fieldOfViewDeg; camera.zoom = view.zoom; camera.updateProjectionMatrix(); camera.lookAt(controls.target);
+    if (workshop) { data.frameMode = view.frameMode === 'inertial' ? 'inertial' : 'relative'; if (data.frameMode === 'relative') seedRelativeCamera(orbitFrameAt(data.current)); data.auto = data.frameMode === 'relative'; renderFrame(true); }
+    else { data.auto = false; $("scene").dataset.cameraMode = "manual"; }
+  },
   previewCameraTransition(view, duration = 1100) {
     const from = this.captureCamera('Transition start'), start = performance.now(); data.auto = false; $("scene").dataset.cameraMode = "manual";
     const destination = new THREE.Vector3().fromArray(view.position), target = new THREE.Vector3().fromArray(view.target), up = new THREE.Vector3().fromArray(view.up || [0,1,0]);

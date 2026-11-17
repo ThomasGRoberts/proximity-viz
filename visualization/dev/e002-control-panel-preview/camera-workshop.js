@@ -7,15 +7,16 @@ const utc = ms => new Intl.DateTimeFormat("en-US", {
   hour: "2-digit", minute: "2-digit", hour12: false,
 }).format(new Date(ms)) + " UTC";
 
-export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pausePlayback, useLearnedPath, saveView, getViews, getPlaybackSpeed, getMode, saveSpeedNote, beforeOpen }) {
-  const routes = windows.flatMap(window => ["A", "C"].flatMap(slot => ["target", "chaser"].map(reference => ({ window, slot, reference }))));
+export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pausePlayback, useLearnedPath, saveView, getViews, getPlaybackSpeed, getMode, saveSpeedNote, beforeOpen, reviewRoutes = null, routeLabel = null, storageKey = STORAGE_KEY }) {
+  const routes = reviewRoutes || windows.flatMap(window => ["A", "C"].flatMap(slot => ["target", "chaser"].map(reference => ({ window, slot, reference }))));
+  const matchesRoute = (view, route) => view.windowId === route.window.id && view.selected === route.slot && view.referenceMode === route.reference && (!route.viewMode || view.mode === route.viewMode);
   const duration = route => Math.round((Date.parse(route.window.end) - Date.parse(route.window.start)) / 60000);
   const allowedIntervals = ["key", 60, 120, 360];
   let interval = "key", cursor = { route: 0, minute: 0 }, active = false, busy = false, playing = false, frame = null;
   const saved = (() => {
     try {
-      const current = localStorage.getItem(STORAGE_KEY);
-      const data = JSON.parse(current || localStorage.getItem("espl-e002-camera-workshop-v1") || "null");
+      const current = localStorage.getItem(storageKey);
+      const data = JSON.parse(current || (storageKey === STORAGE_KEY ? localStorage.getItem("espl-e002-camera-workshop-v1") : null) || "null");
       if (!data || !Number.isInteger(data.route) || data.route < 0 || data.route >= routes.length || !Number.isFinite(data.minute)) return null;
       return { route: data.route, minute: Math.max(0, Math.min(duration(routes[data.route]), data.minute)), interval: current && allowedIntervals.includes(data.interval) ? data.interval : "key" };
     } catch { return null; }
@@ -23,14 +24,14 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
   if (saved) { cursor = { route: saved.route, minute: saved.minute }; interval = saved.interval; }
   $("workshopInterval").value = String(interval);
 
-  const routeName = route => `${route.window.chapterShort || route.window.id} · ${names[route.slot]} · ${route.reference === "target" ? names.B : names[route.slot]} centered`;
+  const routeName = routeLabel || (route => `${route.window.chapterShort || route.window.id} · ${names[route.slot]} · ${route.reference === "target" ? names.B : names[route.slot]} centered`);
   const routeSelect = $("workshopRouteSelect");
   routes.forEach((route, index) => {
     const option = document.createElement("option"); option.value = String(index); option.textContent = routeName(route); routeSelect.append(option);
   });
 
   function persist() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...cursor, interval })); } catch { /* The tour still works without storage. */ }
+    try { localStorage.setItem(storageKey, JSON.stringify({ ...cursor, interval })); } catch { /* The tour still works without storage. */ }
   }
   function status(text) { $("workshopStatus").textContent = text; }
   function stopPlaying() {
@@ -45,7 +46,7 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
       minutes.push(end); return minutes;
     }
     const minutes = [0, Math.round((Date.parse(route.window.anchor || route.window.start) - start) / 60000), end];
-    const views = getViews().filter(view => view.windowId === route.window.id && view.selected === route.slot && view.referenceMode === route.reference)
+    const views = getViews().filter(view => matchesRoute(view, route))
       .sort((a, b) => Date.parse(a.timeUtc) - Date.parse(b.timeUtc));
     for (let index = 1; index < views.length; index++) if (views[index].mode !== views[index - 1].mode) {
       minutes.push(Math.round((Date.parse(views[index].timeUtc) - start) / 60000));
@@ -57,7 +58,7 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
     let covered = 0, total = 0;
     for (const route of routes) {
       const reviewMinutes = stops(route), start = Date.parse(route.window.start);
-      const matches = views.filter(view => view.windowId === route.window.id && view.selected === route.slot && view.referenceMode === route.reference);
+      const matches = views.filter(view => matchesRoute(view, route));
       for (const minute of reviewMinutes) {
         total++;
         if (matches.some(view => Math.abs(Date.parse(view.timeUtc) - (start + minute * 60000)) <= (interval === "key" ? 60 : interval / 2) * 60000)) covered++;
@@ -81,7 +82,7 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
     for (const id of ["workshopNext", "workshopPlayRun", "workshopSavePlay", "workshopMinute", "workshopRouteSelect", "workshopInterval"]) $(id).disabled = !active || busy;
     $("workshopPlay").disabled = !active || (busy && !playing);
     $("workshopStart").disabled = busy;
-    $("workshopResume").disabled = busy || (!active && !saved && !localStorage.getItem(STORAGE_KEY));
+    $("workshopResume").disabled = busy || (!active && !saved && !localStorage.getItem(storageKey));
     $("workshopPlay").textContent = playing ? "Pause here" : "Play to next stop";
     $("workshopSaveSpeed").disabled = !active || busy;
   }
