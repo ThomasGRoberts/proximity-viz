@@ -11,6 +11,7 @@ import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 import { formatDwellDuration } from "../../shared/format-duration.js";
+import { dwellSatelliteName } from "../../shared/dwell-name.js";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 
 const $ = id => document.getElementById(id);
@@ -20,7 +21,7 @@ const EARTH_KM = 6378.137, HOUR = 3600000;
 const utc = ms => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(ms)) + " UTC";
 const shortUtc = ms => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" }).format(new Date(ms));
 const displayName = (name, concise = false) => /^INTELSAT 7 \(PAS 7\)$/i.test(name)
-  ? (concise ? "Intelsat 7" : "Intelsat 7 (PAS 7)") : name;
+  ? (concise ? "INTELSAT 7" : "INTELSAT 7 (PAS 7)") : name;
 const toScene = p => new THREE.Vector3(p.x / EARTH_KM, p.z / EARTH_KM, -p.y / EARTH_KM);
 const svgLink = '<svg viewBox="0 0 18 18" width="12" height="12" aria-hidden="true"><path class="espl-news-external__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"></path><g class="espl-news-external__arrow"><path d="M9.25 2.75h6v6"></path><path d="m8 10 7.25-7.25"></path></g></svg>';
 
@@ -396,8 +397,8 @@ async function start() {
       dwellKey.dataset.stamp = dwellStamp;
       const italic = value => { const node = document.createElement("i"); node.textContent = value; return node; };
       const bold = (value, className = "") => { const node = document.createElement("strong"); node.textContent = value; node.className = className; return node; };
-      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(displayName(participants[0].name)), " and ",
-        italic(displayName(participants.find(item => item.slot === selected).name, true)),
+      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(dwellSatelliteName(displayName(participants[0].name))), " and ",
+        italic(dwellSatelliteName(displayName(participants.find(item => item.slot === selected).name, true))),
         " are within ", bold(`${distance.toLocaleString()} km`), " and at or below ", bold(`${speed.toLocaleString()} m/s`),
         ". ", bold("Gray", "e006-gray-word"), " marks one threshold; ", bold("gold", "e006-gold-word"), " marks both.");
     }
@@ -533,8 +534,18 @@ async function start() {
           camera.zoom = learned.zoom; camera.fov = learned.fov; camera.updateProjectionMatrix();
         } else {
           const selectedPoint = markers[selected].position, targetPoint = markers.A.position, target = markers[referenceSlot].position.clone();
-          const distance = Math.max(.1, Math.min(9, selectedPoint.distanceTo(targetPoint) * 10));
-          camera.position.copy(target).add(new THREE.Vector3(0, distance * .35, distance)); camera.up.set(0, 1, 0); controls.target.copy(target);
+          const chapterTwo = chapters.find(item => item.id === "chapter-2");
+          const priorCamera = chapter.id === "chapter-3" && chapterTwo
+            ? learnedCameraAt(chapterTwo.id, chapterTwo.centerMs, selected, referenceSlot)
+              || learnedCameraAt(chapterTwo.id, chapterTwo.centerMs, "B", "B")
+            : null;
+          if (priorCamera) {
+            camera.position.copy(priorCamera.position); controls.target.copy(priorCamera.target); camera.up.copy(priorCamera.up);
+            camera.zoom = priorCamera.zoom; camera.fov = priorCamera.fov; camera.updateProjectionMatrix();
+          } else {
+            const distance = Math.max(.1, Math.min(9, selectedPoint.distanceTo(targetPoint) * 10));
+            camera.position.copy(target).add(new THREE.Vector3(0, distance * .35, distance)); camera.up.set(0, 1, 0); controls.target.copy(target);
+          }
         }
       }
       camera.lookAt(controls.target);
@@ -754,7 +765,7 @@ async function start() {
 function makeReviewBar() {
   document.body.classList.add("e006-review");
   const bar = document.createElement("header"); bar.className = "e006-review-bar";
-  bar.innerHTML = '<strong class="e006-review-title">E-006 · local review</strong><nav><button id="e006CommentMode" type="button">✚ Spot comment</button><button id="e006CommentsToggle" type="button">Comments <span id="e006CommentCount">0</span></button></nav>';
+  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-005</a><a href="compare.html?dev=1&amp;episode=E-006" aria-current="page">E-006</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-006 review tools"><button id="e006CommentMode" type="button">✚ Spot comment</button><button id="e006CommentsToggle" type="button">Comments <span id="e006CommentCount">0</span></button></nav>';
   document.body.append(bar);
   const drawer = document.createElement("aside"); drawer.className = "e006-review-drawer"; drawer.hidden = true;
   drawer.innerHTML = '<strong>E-006 spot comments</strong><form id="e006CommentForm" hidden><p id="e006CommentLocation"></p><textarea id="e006CommentText" required maxlength="4000"></textarea><label><input id="e006AllEpisodes" type="checkbox"> Applies to all full episode views</label><button type="submit">Save comment</button></form><div id="e006CommentList"></div><button id="e006ExportComments" type="button">Export comments JSON</button>';

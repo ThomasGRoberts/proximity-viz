@@ -4,6 +4,7 @@ import { loadCurrentEpisodes, episodeUtcInterval } from "../../../shared/episode
 import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.js";
 import { installGlossary } from "./glossary.js";
 import { createCameraWorkshop } from "./camera-workshop.js";
+import { formatDwellDuration } from "../../../shared/format-duration.js";
 
 const $ = id => document.getElementById(id);
 const publishedMode = document.body.classList.contains("e002-published");
@@ -394,14 +395,8 @@ function renderOrbitalPanel() {
   chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), samples, "speedMs", { window: currentWindow, currentMs, threshold: speed, title: `Relative velocity (${speedUnit})`, maximum: Number($("speedThresholdSlider").max) * 1000, qualifications, markedMs, speedUnit }));
   $("separationChart").setAttribute("aria-label", `${chaser} to ${catalogNames.B || "USA 245"} separation over time`);
   $("speedChart").setAttribute("aria-label", `${chaser} to ${catalogNames.B || "USA 245"} relative velocity over time`);
-  const dwellMinutes = Math.round(qualifications.both.totalMs / 60000);
-  const displayDwell = dwellMinutes >= 1440
-    ? { value: Number((dwellMinutes / 1440).toFixed(1)), unit: "d" }
-    : dwellMinutes >= 60
-      ? { value: Number((dwellMinutes / 60).toFixed(1)), unit: "hr" }
-      : { value: dwellMinutes, unit: "min" };
-  $("dwellStat").textContent = qualifications.both.validSamples ? String(displayDwell.value) : "—";
-  $("dwellUnit").textContent = displayDwell.unit;
+  $("dwellStat").textContent = qualifications.both.validSamples ? formatDwellDuration(qualifications.both.totalMs) : "—";
+  $("dwellUnit").textContent = "";
   renderDwellDescription($("dwellMetric").querySelector(".dwellKey"), chaser, distance, speed);
   if (playbackFrame === null) globe?.update(currentWindow, currentMs, slot);
   for (const id of ["rangeMetric", "speedMetric", "distanceChartGroup", "speedChartGroup"]) $(id).classList.remove("preview-placeholder");
@@ -694,7 +689,7 @@ async function buildPanel() {
   thresholdHint.textContent = "Select threshold values by clicking and dragging the labels on the charts above or typing in values in the boxes below.";
   ui.querySelector("#thresholdControls>summary>span").textContent = "How close is too close?";
   ui.querySelector("#thresholdControls .thresholdBody").prepend(thresholdHint);
-  ui.querySelector("#dwellStat").textContent = "—"; ui.querySelector("#dwellUnit").textContent = "minutes";
+  ui.querySelector("#dwellStat").textContent = "—"; ui.querySelector("#dwellUnit").textContent = "";
   ui.querySelector("#dwellLabel").textContent = "Dwell time";
   renderDwellDescription(ui.querySelector("#dwellMetric .dwellKey"), catalogNames.A, 200, 500);
   for (const [id, kind] of [["separationChart", "distance"], ["speedChart", "speed"]]) drawPlaceholderChart(ui.querySelector(`#${id}`), kind);

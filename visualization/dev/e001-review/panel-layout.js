@@ -117,6 +117,8 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     #cameraControls .referenceBtn .reference-chaser-dot{fill:#aaa;stroke:#333;stroke-width:1.3;opacity:.45}
     #cameraControls .referenceBtn.is-chaser .reference-target-dot{opacity:.45}
     #cameraControls .referenceBtn.is-chaser .reference-chaser-dot{opacity:1}
+    #cameraControls .referenceBtn:disabled{color:#aaa!important;background:#f4f4f4!important;opacity:.55;cursor:default!important}
+    #cameraControls .referenceBtn:disabled:hover{background:#f4f4f4!important;box-shadow:0 3px 12px #0000001a!important}
     #gtLogo{position:fixed!important;z-index:9!important;right:24px!important;bottom:24px!important;width:min(300px,26vw)!important;opacity:.23!important;filter:grayscale(1)!important;overflow:hidden}
     #gtLogo::after{content:"";position:absolute;inset:-35% -45%;pointer-events:none;background:linear-gradient(115deg,transparent 36%,#ffffff2e 43%,#fffffff9 49%,#ffffff47 56%,transparent 64%);transform:translateX(-125%)}
     #gtLogo:hover::after,#gtLogo:focus-visible::after{animation:e001LogoGlint 1.25s ease-out forwards}

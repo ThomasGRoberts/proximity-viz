@@ -1,7 +1,7 @@
 import * as THREE from "../../Viz/vendor/three/three.module.js";
 import { OrbitControls } from "../../Viz/vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "../../Viz/vendor/topojson/topojson-client.js";
-import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "../../Viz/relative-rendering.js";
+import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "../../Viz/relative-rendering.js?v=4";
 import { MARKER } from "../../../shared/marker-spec.js";
 
 const EARTH_KM = 6378.137;
@@ -80,7 +80,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
     marker.renderOrder = 10;
     scene.add(marker); markers[item.slot] = marker;
-    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A", options.tableMini ? 1.8 : 1.55));
+    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A"));
     trail.material.depthTest = true;
     trail.renderOrder = 9;
     trail.frustumCulled = false;
@@ -180,7 +180,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     renderer.setSize(width, height, false);
     for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height);
     markerScale = options.tableMini
-      ? DOT_SCREEN_SIZE * 2.1 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+      ? miniMarkerScale(camera, height)
       : DOT_SCREEN_SIZE * 2.85 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 275 / height * MARKER.diameterPx / 12;
     for (const marker of Object.values(markers)) marker.scale.set(markerScale, markerScale, 1);
   }

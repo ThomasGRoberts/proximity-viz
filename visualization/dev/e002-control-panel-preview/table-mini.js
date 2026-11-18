@@ -1,6 +1,6 @@
 import { loadCurrentEpisodes, cleanCospar } from "../../../shared/episode-feed.js?v=2";
 import { loadOrbitalPreview } from "./orbital-preview.js";
-import { createGlobePreview } from "./globe-preview.js?tablemini=7";
+import { createGlobePreview } from "./globe-preview.js?tablemini=8";
 
 const $ = id => document.getElementById(id);
 const minute = 60000;

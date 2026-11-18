@@ -139,6 +139,41 @@
           "y": 36
         }
       }
+    },
+    "E-006": {
+      "episodeId": "E-006",
+      "windowId": "chapter-1",
+      "frameMode": "relative",
+      "loopStartUtc": "2015-06-19T02:44:40.821Z",
+      "loopEndUtc": "2015-06-23T12:59:39.220Z",
+      "rate": 3600,
+      "camera": {
+        "name": "Current unsaved mini preview",
+        "timestampUtc": "2015-06-23T12:59:39.220Z",
+        "frameMode": "relative",
+        "referenceSatellite": "B",
+        "position": [
+          0.7010600932140852,
+          0.09512870099454239,
+          0.9150108879098363
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "fieldOfViewDeg": 35,
+        "zoom": 1,
+        "viewportOffset": {
+          "x": 0,
+          "y": 0
+        }
+      }
     }
   }
 }

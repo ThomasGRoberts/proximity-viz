@@ -3,6 +3,13 @@ import * as THREE from "./vendor/three/three.module.js";
 import { MARKER } from "../../shared/marker-spec.js?v=3";
 
 export const DOT_SCREEN_SIZE = .022;
+// The outlined circle occupies 88.5 pixels of the 128-pixel texture.
+// Size mini markers in CSS pixels, independent of camera zoom and viewport.
+export function miniMarkerScale(camera, viewportHeight) {
+  const outlinedDiameter = 2 * (37 + 43.5 * MARKER.outlinePx / MARKER.diameterPx);
+  return MARKER.diameterPx * 128 / outlinedDiameter *
+    2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / (Math.max(1, viewportHeight) * camera.zoom);
+}
 export const SATELLITE_STYLES = {
   A: { dot: MARKER.A, line: Number.parseInt(MARKER.A.slice(1), 16) },
   B: { dot: MARKER.B, line: Number.parseInt(MARKER.B.slice(1), 16) },

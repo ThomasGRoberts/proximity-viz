@@ -34,7 +34,7 @@ import * as topojson from "topojson-client";
 import { sampleEpisode, analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { safeEpisodeName, episodeNameText } from "../../shared/episode-name.js";
 import { relativeCameraFrame, relativeFitDistance } from "./relative-camera.js";
-import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js?v=3";
+import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
 import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js?v=2";
@@ -43,6 +43,7 @@ import { renderEstimatedMinimum } from "./estimate-ui.js";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
 import { CHART_PADDING } from "./chart-style.js";
 import { formatDwellDuration } from "../../shared/format-duration.js";
+import { dwellSatelliteName } from "../../shared/dwell-name.js";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
 // "window" (the browser's global object). We give it a short name here.
@@ -562,7 +563,7 @@ for (const slot of ["A", "B"]) {
   scene.add(dot);
   dots[slot] = dot;
 
-  const material = fadingTrailMaterial(slot, chapterMode.get("mini") === "1" ? 1.8 : 1.55);
+  const material = fadingTrailMaterial(slot);
   const trail = new THREE.Mesh(new THREE.BufferGeometry(), material);
   scene.add(trail);
   trails[slot] = trail;
@@ -842,9 +843,11 @@ function updateScene() {
       if (sample) orbitPoints.push(eciToScene([sample.x, sample.y, sample.z]));
     }
     if (orbitPoints.length > 1) orbitPoints.push(orbitPoints[0].clone());
-    localReferenceOrbit.geometry.dispose();
-    localReferenceOrbit.geometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
-    localReferenceOrbit.visible = orbitPoints.length > 1;
+    if (orbitPoints.length > 1 || !miniScene) {
+      localReferenceOrbit.geometry.dispose();
+      localReferenceOrbit.geometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+      localReferenceOrbit.visible = orbitPoints.length > 1;
+    }
   }
 
   for (const slot of ["A", "B"]) {             // name labels follow their dots
@@ -949,7 +952,7 @@ function updateThresholds() {
     const distanceValue = document.createElement("strong"), speedValue = document.createElement("strong");
     const gray = document.createElement("strong"), gold = document.createElement("strong");
     gray.className = "single"; gray.textContent = "Gray"; gold.className = "both"; gold.textContent = "gold";
-    chaser.textContent = displaySatelliteName(slotName("A")); target.textContent = displaySatelliteName(slotName("B"));
+    chaser.textContent = dwellSatelliteName(displaySatelliteName(slotName("A"))); target.textContent = dwellSatelliteName(displaySatelliteName(slotName("B"))).replace(/^Usa\b/, "USA");
     distanceValue.textContent = `${distance.toLocaleString()} km`;
     speedValue.textContent = speed < 1000 ? `${speed.toLocaleString()} m/s` : `${Number((speed / 1000).toFixed(2))} km/s`;
     dwellKey.replaceChildren("The cumulative time within this ", String(Math.round((endMs - startMs) / 3600000)), "-hour chapter during which ", chaser,
@@ -1761,7 +1764,12 @@ function placeEarthRelative(stateA) {
 // In the relative view: A at the centre, B at its relative position, B's fading trail, Earth below.
 function drawRelative() {
   const stateCentre = stateAt(pair[centre], currentMs);
-  if (!stateCentre) { dots.A.visible = dots.B.visible = false; relativeTrail.visible = false; localMotionTrail.visible = false; localReferenceOrbit.visible = false; earthGroup.visible = false; return; }
+  if (!stateCentre) {
+    // Keep the last valid Earth and reference orbit when a sparse miniature
+    // sample cannot be propagated during the playback loop.
+    if (miniScene) return;
+    dots.A.visible = dots.B.visible = false; relativeTrail.visible = false; localMotionTrail.visible = false; localReferenceOrbit.visible = false; earthGroup.visible = false; return;
+  }
   earthGroup.visible = true; relativeTrail.visible = !localChapterReview;
   placeEarthRelative(stateCentre);
   const other = otherSlot();
@@ -1785,9 +1793,11 @@ function drawRelative() {
       const sample = stateAt(pair[centre], currentMs + periodMs * (i / 180 - .5), tleCentre);
       if (sample) orbitPoints.push(relativeToScene(ricOf(stateCentre, sample.r)));
     }
-    localReferenceOrbit.geometry.dispose();
-    localReferenceOrbit.geometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
-    localReferenceOrbit.visible = orbitPoints.length > 1;
+    if (orbitPoints.length > 1 || !miniScene) {
+      localReferenceOrbit.geometry.dispose();
+      localReferenceOrbit.geometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+      localReferenceOrbit.visible = orbitPoints.length > 1;
+    }
   }
   const points = [], colors = [];
   if (localChapterReview) {
@@ -1842,7 +1852,7 @@ function drawRelative() {
 function sizeSceneSprites() {
   const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   for (const slot of ["A", "B"]) {
-    const dotSize = DOT_SCREEN_SIZE * lens * (miniScene ? 3.2 : 1);
+    const dotSize = miniScene ? miniMarkerScale(camera, renderer.domElement.clientHeight) : DOT_SCREEN_SIZE * lens;
     dots[slot].scale.set(dotSize, dotSize, 1);
     labels[slot].scale.set(LABEL_SCREEN_SIZE * lens * 5.33, LABEL_SCREEN_SIZE * lens, 1);
   }
@@ -2410,7 +2420,7 @@ function animate(now) {
   requestAnimationFrame(animate);   // Ask to be called again on the next frame
 
   if (miniScene) {
-    const base = DOT_SCREEN_SIZE * 2.5 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const base = miniMarkerScale(camera, renderer.domElement.clientHeight);
     const pulse = miniSceneHover && !miniReducedMotion.matches ? 1 + .32 * (.5 + .5 * Math.sin(now / 180)) : 1;
     for (const slot of ["A", "B"]) dots[slot].scale.set(base * pulse, base * pulse, 1);
   }

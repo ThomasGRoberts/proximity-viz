@@ -74,13 +74,13 @@
     const dateText = value => new Intl.DateTimeFormat("en-US", { year:"numeric", month:"long", day:"numeric", timeZone:"UTC" }).format(new Date(value.includes("T") ? value : `${value}T00:00:00Z`));
     const epochTime = value => new Intl.DateTimeFormat("en-US", { hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false, timeZone:"UTC" }).format(new Date(value));
     const fetchedJson = async file => { const response = await fetch(file); if (!response.ok) throw new Error(`${file} returned HTTP ${response.status}`); return response.json(); };
-    const ownerName = (code, fallback) => code === "CIS" ? "Russia (CIS) 🇷🇺" : code === "US" ? "United States 🇺🇸" : fallback || code;
+    const ownerName = (code, fallback) => code === "CIS" ? "Russia (CIS) 🇷🇺" : code === "US" ? "United States 🇺🇸" : code === "PRC" ? "China (PRC) 🇨🇳" : fallback || code;
     const ageText = epoch => {
       const difference = anchor - Date.parse(epoch), hours = Math.floor(Math.abs(difference) / 3600000);
       return `${hours === 0 ? "" : difference < 0 ? "−" : "+"}${hours} ${hours === 1 ? "hour" : "hours"}`;
     };
     const externalIcon = '<svg viewBox="0 0 18 18" aria-hidden="true"><path class="espl-news-external__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"></path><g class="espl-news-external__arrow"><path d="M9.25 2.75h6v6"></path><path d="m8 10 7.25-7.25"></path></g></svg>';
-    const siteFlags = code => code === "PKMTR" ? " 🇷🇺" : code === "AFWTR" ? " 🇺🇸" : "";
+    const siteFlags = code => code === "PKMTR" ? " 🇷🇺" : code === "AFWTR" ? " 🇺🇸" : code === "WSC" ? " 🇨🇳" : "";
     const catalogName = name => name;
     const spaceTrackSatcatUrl = number => `https://www.space-track.org/basicspacedata/query/class/satcat/NORAD_CAT_ID/${encodeURIComponent(number)}/format/html`;
     function epochValue(epoch) {
@@ -149,6 +149,7 @@
       chevron.className = "chevron"; chevron.setAttribute("aria-hidden", "true"); chevron.textContent = "‹";
       let main, toggle;
       let selected = options[0];
+      let lastDetailsKey = "";
       if (options.length === 1) {
         toggle = document.createElement("button"); toggle.className = "identity single-header"; toggle.type = "button"; main = toggle;
         const dot = document.createElement("span"), name = document.createElement("span");
@@ -183,7 +184,25 @@
           button.classList.toggle("is-active", active); button.setAttribute("aria-pressed", String(active));
         }
         toggle.setAttribute("aria-label", `${details.hidden ? "Show" : "Hide"} details for ${selected.name}`);
-        if (!details.hidden) details.replaceChildren(detailsFor(selected, context.catalog.records[selected.cospar], context.catalog.launchSiteNames, context.manifest.datasets.find(entry => entry.object.cospar === selected.cospar), context.tles[selected.cospar]));
+        if (!details.hidden) {
+          const tle = context.tles[selected.cospar];
+          const key = `${selected.slot}:${tle?.epoch || "unavailable"}`;
+          if (key !== lastDetailsKey) {
+            const fresh = detailsFor(selected, context.catalog.records[selected.cospar], context.catalog.launchSiteNames, context.manifest.datasets.find(entry => entry.object.cospar === selected.cospar), tle);
+            const oldRows = [...details.querySelectorAll(".metadata-section dl>div")];
+            const newRows = [...fresh.querySelectorAll(".metadata-section dl>div")];
+            if (selected.slot === lastDetailsKey.split(":")[0] && oldRows.length === newRows.length && oldRows.every((row, index) => row.querySelector("dt")?.textContent === newRows[index].querySelector("dt")?.textContent)) {
+              oldRows.forEach((row, index) => {
+                const oldValue = row.querySelector("dd"), newValue = newRows[index].querySelector("dd");
+                if (oldValue.textContent !== newValue.textContent || oldValue.querySelector("a")?.href !== newValue.querySelector("a")?.href) oldValue.replaceChildren(...[...newValue.childNodes].map(node => node.cloneNode(true)));
+              });
+            } else details.replaceChildren(fresh);
+            lastDetailsKey = key;
+          }
+          const ageRow = [...details.querySelectorAll(".metadata-section dl>div")].find(row => row.querySelector("dt")?.textContent === "TLE age");
+          const ageValue = ageRow?.querySelector("dd"), nextAge = tle ? ageText(tle.epoch) : "Unavailable";
+          if (ageValue && ageValue.textContent !== nextAge) ageValue.textContent = nextAge;
+        }
       }
       toggle.addEventListener("click", toggleDetails);
       if (options.length > 1) row.addEventListener("click", event => {

@@ -5,12 +5,13 @@ import { OrbitControls } from "./vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "./vendor/topojson/topojson-client.js";
 import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=2";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
-import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js";
+import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
 import { wireTimelineHover } from "./playback-shared.js";
 import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 import { formatDwellDuration } from "../../shared/format-duration.js";
+import { dwellSatelliteName } from "../../shared/dwell-name.js";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 
 const $ = id => document.getElementById(id);
@@ -162,15 +163,15 @@ async function start() {
     earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: .8, depthWrite: false })));
   }).catch(() => {});
   const markers = {}, trails = {}, cards = {}, labels = {};
-  const miniDotSize = miniScene ? DOT_SCREEN_SIZE * 3.1 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) : DOT_SCREEN_SIZE;
+  const miniDotSize = () => miniScene ? miniMarkerScale(camera, sceneHost.clientHeight) : DOT_SCREEN_SIZE;
   const miniReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let miniHover = false;
   const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: .68, depthTest: true, depthWrite: false }));
   referenceOrbit.renderOrder = 2; referenceOrbit.frustumCulled = false; scene.add(referenceOrbit);
   for (const item of participants) {
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
-    marker.scale.set(miniDotSize, miniDotSize, 1); marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
-    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "A" ? "A" : "B", miniScene ? 1.8 : 1.55));
+    marker.scale.setScalar(miniDotSize()); marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
+    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "A" ? "A" : "B"));
     trail.renderOrder = 5; scene.add(trail); trails[item.slot] = trail;
     const screenLabel = document.createElement("span"); screenLabel.className = `e005-screen-label slot${item.slot}`;
     screenLabel.textContent = displayName(item.name, true); labelHost.append(screenLabel); labels[item.slot] = screenLabel;
@@ -397,8 +398,8 @@ async function start() {
       dwellKey.dataset.stamp = dwellStamp;
       const italic = value => { const node = document.createElement("i"); node.textContent = value; return node; };
       const bold = (value, className = "") => { const node = document.createElement("strong"); node.textContent = value; node.className = className; return node; };
-      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(displayName(participants[0].name)), " and ",
-        italic(displayName(participants.find(item => item.slot === selected).name, true)),
+      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(dwellSatelliteName(displayName(participants[0].name))), " and ",
+        italic(dwellSatelliteName(displayName(participants.find(item => item.slot === selected).name, true))),
         " are within ", bold(`${distance.toLocaleString()} km`), " and at or below ", bold(`${speed.toLocaleString()} m/s`),
         ". ", bold("Gray", "e005-gray-word"), " marks one threshold; ", bold("gold", "e005-gold-word"), " marks both.");
     }
@@ -684,7 +685,7 @@ async function start() {
     requestAnimationFrame(animate);
     if (miniScene) {
       const pulse = miniHover && !miniReducedMotion.matches ? 1 + .32 * (.5 + .5 * Math.sin(now / 180)) : 1;
-      for (const marker of Object.values(markers)) marker.scale.setScalar(miniDotSize * pulse);
+      for (const marker of Object.values(markers)) marker.scale.setScalar(miniDotSize() * pulse);
     }
     const elapsed = Math.min(.1, (now - previous) / 1000); previous = now;
     if (playing) {
@@ -759,7 +760,7 @@ async function start() {
 function makeReviewBar() {
   document.body.classList.add("e005-review");
   const bar = document.createElement("header"); bar.className = "e005-review-bar";
-  bar.innerHTML = '<strong class="e005-review-title">E-005 · local review</strong><nav><button id="e005CommentMode" type="button">✚ Spot comment</button><button id="e005CommentsToggle" type="button">Comments <span id="e005CommentCount">0</span></button></nav>';
+  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003">E-003</a><a href="compare.html?dev=1&amp;episode=E-005" aria-current="page">E-005</a><a href="compare.html?dev=1&amp;episode=E-006">E-006</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-005 review tools"><button id="e005CommentMode" type="button">✚ Spot comment</button><button id="e005CommentsToggle" type="button">Comments <span id="e005CommentCount">0</span></button></nav>';
   document.body.append(bar);
   const drawer = document.createElement("aside"); drawer.className = "e005-review-drawer"; drawer.hidden = true;
   drawer.innerHTML = '<strong>E-005 spot comments</strong><form id="e005CommentForm" hidden><p id="e005CommentLocation"></p><textarea id="e005CommentText" required maxlength="4000"></textarea><label><input id="e005AllEpisodes" type="checkbox"> Applies to all full episode views</label><button type="submit">Save comment</button></form><div id="e005CommentList"></div><button id="e005ExportComments" type="button">Export comments JSON</button>';

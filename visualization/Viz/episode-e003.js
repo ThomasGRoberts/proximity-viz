@@ -5,12 +5,13 @@ import { OrbitControls } from "./vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "./vendor/topojson/topojson-client.js";
 import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=2";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
-import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js";
+import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
 import { wireTimelineHover } from "./playback-shared.js";
 import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 import { formatDwellDuration } from "../../shared/format-duration.js";
+import { dwellSatelliteName } from "../../shared/dwell-name.js";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 
 const $ = id => document.getElementById(id);
@@ -162,15 +163,16 @@ async function start() {
     earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: .8, depthWrite: false })));
   }).catch(() => {});
   const markers = {}, trails = {}, cards = {}, labels = {};
-  const miniDotSize = miniScene ? DOT_SCREEN_SIZE * 3.1 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) : DOT_SCREEN_SIZE;
+  const miniDotSize = () => miniScene ? miniMarkerScale(camera, sceneHost.clientHeight) : DOT_SCREEN_SIZE;
+  let miniProjectionScale = 1;
   const miniReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let miniHover = false;
   const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: .68, depthTest: true, depthWrite: false }));
   referenceOrbit.renderOrder = 2; referenceOrbit.frustumCulled = false; scene.add(referenceOrbit);
   for (const item of participants) {
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
-    marker.scale.set(miniDotSize, miniDotSize, 1); marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
-    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "A" ? "A" : "B", miniScene ? 1.8 : 1.55));
+    marker.scale.setScalar(miniDotSize()); marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
+    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "A" ? "A" : "B"));
     trail.renderOrder = 5; scene.add(trail); trails[item.slot] = trail;
     const screenLabel = document.createElement("span"); screenLabel.className = `e003-screen-label slot${item.slot}`;
     screenLabel.textContent = displayName(item.name, true); labelHost.append(screenLabel); labels[item.slot] = screenLabel;
@@ -383,8 +385,8 @@ async function start() {
       dwellKey.dataset.stamp = dwellStamp;
       const italic = value => { const node = document.createElement("i"); node.textContent = value; return node; };
       const bold = (value, className = "") => { const node = document.createElement("strong"); node.textContent = value; node.className = className; return node; };
-      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(displayName(participants[0].name)), " and ",
-        italic(displayName(participants.find(item => item.slot === selected).name, true)),
+      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(dwellSatelliteName(displayName(participants[0].name))), " and ",
+        italic(dwellSatelliteName(displayName(participants.find(item => item.slot === selected).name, true))),
         " are within ", bold(`${distance.toLocaleString()} km`), " and at or below ", bold(`${speed.toLocaleString()} m/s`),
         ". ", bold("Gray", "e003-gray-word"), " marks one threshold; ", bold("gold", "e003-gold-word"), " marks both.");
     }
@@ -570,7 +572,7 @@ async function start() {
     }
     if (referenceSlot !== "A") referenceSlot = slot; autoCamera = true; lastTrailKey = ""; lastReferenceOrbitKey = ""; updateMinima(); updateSticky(); render();
   }
-  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
+  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; const nextScale = miniScene ? (Number(window.frameElement?.dataset.miniBaseHeight) || height) / height : 1; camera.zoom *= nextScale / miniProjectionScale; miniProjectionScale = nextScale; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
   new ResizeObserver(resize).observe(sceneHost); new ResizeObserver(drawCharts).observe($("distanceChartGroup"));
   chapterNav.addEventListener("click", event => { const button = event.target.closest("button[data-chapter]"); if (button) void switchChapter(button.dataset.chapter); });
   $("timelineSlider").addEventListener("input", event => setTime(Number(event.target.value)));
@@ -622,7 +624,7 @@ async function start() {
   playing = true; updatePlay(); render();
   if (miniScene) {
     const captureCamera = (name = "E-003 mini preview") => ({ name, timestampUtc: new Date(current).toISOString(), frameMode: mode === "eci" ? "inertial" : "relative", referenceSatellite: referenceSlot,
-      position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), fieldOfViewDeg: camera.fov, zoom: camera.zoom });
+      position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), fieldOfViewDeg: camera.fov, zoom: camera.zoom / miniProjectionScale });
     const seekMiniTime = ms => setTime(ms);
     window.miniWorkshop = {
       get ready() { return true; },
@@ -644,11 +646,11 @@ async function start() {
       setOrigin(slot) { referenceSlot = slot === "A" ? "A" : selected; autoCamera = true; lastReferenceOrbitKey = ""; render(); },
       zoom(factor) { autoCamera = false; camera.position.sub(controls.target).multiplyScalar(1 / factor).add(controls.target); controls.update(); render(); },
       moveComposition(x, y) { autoCamera = false; camera.updateMatrixWorld(); const step = camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * .16; const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1); const shift = right.multiplyScalar(-x * step).addScaledVector(up, -y * step); camera.position.add(shift); controls.target.add(shift); render(); },
-      resetCamera() { autoCamera = true; camera.zoom = 1; camera.updateProjectionMatrix(); render(); },
+      resetCamera() { autoCamera = true; camera.zoom = miniProjectionScale; camera.updateProjectionMatrix(); render(); },
       setHover(value) { miniHover = !!value; earthSurface.material.color.setHex(miniHover ? 0xcfbea9 : 0xd8cbb9); },
       get tleEpochs() { return Object.fromEntries(participants.map(item => [item.slot, libraries[item.slot][miniPinnedTles[item.slot]]?.epoch || null])); },
       captureCamera,
-      applyCamera(saved) { mode = saved.frameMode === "inertial" ? "eci" : "relative"; referenceSlot = saved.referenceSatellite === "A" ? "A" : selected; camera.position.fromArray(saved.position); controls.target.fromArray(saved.target); camera.up.fromArray(saved.up); camera.fov = saved.fieldOfViewDeg || 35; camera.zoom = saved.zoom || 1; camera.updateProjectionMatrix(); autoCamera = false; lastReferenceOrbitKey = ""; render(); },
+      applyCamera(saved) { mode = saved.frameMode === "inertial" ? "eci" : "relative"; referenceSlot = saved.referenceSatellite === "A" ? "A" : selected; camera.position.fromArray(saved.position); controls.target.fromArray(saved.target); camera.up.fromArray(saved.up); camera.fov = saved.fieldOfViewDeg || 35; camera.zoom = (saved.zoom || 1) * miniProjectionScale; camera.updateProjectionMatrix(); autoCamera = false; lastReferenceOrbitKey = ""; render(); },
     };
     parent.postMessage({ type: "espl-e003-mini-ready" }, location.origin);
   }
@@ -658,7 +660,7 @@ async function start() {
     requestAnimationFrame(animate);
     if (miniScene) {
       const pulse = miniHover && !miniReducedMotion.matches ? 1 + .32 * (.5 + .5 * Math.sin(now / 180)) : 1;
-      for (const marker of Object.values(markers)) marker.scale.setScalar(miniDotSize * pulse);
+      for (const marker of Object.values(markers)) marker.scale.setScalar(miniDotSize() * pulse);
     }
     const elapsed = Math.min(.1, (now - previous) / 1000); previous = now;
     if (playing) {
@@ -733,7 +735,7 @@ async function start() {
 function makeReviewBar() {
   document.body.classList.add("e003-review");
   const bar = document.createElement("header"); bar.className = "e003-review-bar";
-  bar.innerHTML = '<strong class="e003-review-title">E-003 · local review</strong><nav><button id="e003CommentMode" type="button">✚ Spot comment</button><button id="e003CommentsToggle" type="button">Comments <span id="e003CommentCount">0</span></button></nav>';
+  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003" aria-current="page">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-005</a><a href="compare.html?dev=1&amp;episode=E-006">E-006</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-003 review tools"><button id="e003CommentMode" type="button">✚ Spot comment</button><button id="e003CommentsToggle" type="button">Comments <span id="e003CommentCount">0</span></button></nav>';
   document.body.append(bar);
   const drawer = document.createElement("aside"); drawer.className = "e003-review-drawer"; drawer.hidden = true;
   drawer.innerHTML = '<strong>E-003 spot comments</strong><form id="e003CommentForm" hidden><p id="e003CommentLocation"></p><textarea id="e003CommentText" required maxlength="4000"></textarea><label><input id="e003AllEpisodes" type="checkbox"> Applies to all full episode views</label><button type="submit">Save comment</button></form><div id="e003CommentList"></div><button id="e003ExportComments" type="button">Export comments JSON</button>';

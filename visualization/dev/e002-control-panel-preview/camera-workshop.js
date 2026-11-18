@@ -7,12 +7,16 @@ const utc = ms => new Intl.DateTimeFormat("en-US", {
   hour: "2-digit", minute: "2-digit", hour12: false,
 }).format(new Date(ms)) + " UTC";
 
-export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pausePlayback, useLearnedPath, saveView, getViews, getPlaybackSpeed, getMode, saveSpeedNote, beforeOpen, reviewRoutes = null, routeLabel = null, storageKey = STORAGE_KEY }) {
+export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pausePlayback, useLearnedPath, saveView, getViews, getPlaybackSpeed, getMode, saveSpeedNote, beforeOpen, getMoments = () => [], addMoment = null, deleteMoment = null, motionPreview = null, reviewRoutes = null, routeLabel = null, storageKey = STORAGE_KEY, defaultMotionSpanMinutes = 30, maxKeyRunMinutes = 360 }) {
   const routes = reviewRoutes || windows.flatMap(window => ["A", "C"].flatMap(slot => ["target", "chaser"].map(reference => ({ window, slot, reference }))));
   const matchesRoute = (view, route) => view.windowId === route.window.id && view.selected === route.slot && view.referenceMode === route.reference && (!route.viewMode || view.mode === route.viewMode);
+  const routeMoments = route => getMoments().filter(moment => matchesRoute(moment, route));
   const duration = route => Math.round((Date.parse(route.window.end) - Date.parse(route.window.start)) / 60000);
-  const allowedIntervals = ["key", 60, 120, 360];
+  const allowedIntervals = ["key", 30, 60, 120, 180, 360, 720];
   let interval = "key", cursor = { route: 0, minute: 0 }, active = false, busy = false, playing = false, frame = null;
+  let momentSignature = "";
+  const motionLayer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  motionLayer.classList.add("workshop-motion-layer"); motionLayer.setAttribute("aria-hidden", "true"); document.body.append(motionLayer);
   const saved = (() => {
     try {
       const current = localStorage.getItem(storageKey);
@@ -23,6 +27,8 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
   })();
   if (saved) { cursor = { route: saved.route, minute: saved.minute }; interval = saved.interval; }
   $("workshopInterval").value = String(interval);
+  $("workshopMomentSpan").value = String(defaultMotionSpanMinutes);
+  $("workshopSpeed").value = String(getPlaybackSpeed(routes[0]));
 
   const routeName = routeLabel || (route => `${route.window.chapterShort || route.window.id} · ${names[route.slot]} · ${route.reference === "target" ? names.B : names[route.slot]} centered`);
   const routeSelect = $("workshopRouteSelect");
@@ -40,12 +46,17 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
   }
   function stops(route) {
     const end = duration(route), start = Date.parse(route.window.start);
+    const added = routeMoments(route).map(moment => Math.round((Date.parse(moment.timeUtc) - start) / 60000));
     if (interval !== "key") {
       const minutes = [];
       for (let minute = 0; minute < end; minute += interval) minutes.push(minute);
-      minutes.push(end); return minutes;
+      minutes.push(end, ...added); return [...new Set(minutes.map(minute => Math.max(0, Math.min(end, minute))))].sort((a, b) => a - b);
     }
-    const minutes = [0, Math.round((Date.parse(route.window.anchor || route.window.start) - start) / 60000), end];
+    // Divide long GEO chapters into short optional review runs. The author can
+    // still play a whole configuration without stopping at each point.
+    const maximumRun = maxKeyRunMinutes;
+    const minutes = [0, Math.round((Date.parse(route.window.anchor || route.window.start) - start) / 60000), end, ...added];
+    for (let minute = maximumRun; minute < end; minute += maximumRun) minutes.push(minute);
     const views = getViews().filter(view => matchesRoute(view, route))
       .sort((a, b) => Date.parse(a.timeUtc) - Date.parse(b.timeUtc));
     for (let index = 1; index < views.length; index++) if (views[index].mode !== views[index - 1].mode) {
@@ -66,6 +77,80 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
     }
     return { covered, total };
   }
+  function renderMoments() {
+    const route = routes[cursor.route], items = routeMoments(route);
+    const signature = `${cursor.route}:${items.map(item => `${item.id}:${item.label}:${item.timeUtc}`).join("|")}`;
+    if (signature === momentSignature) return;
+    momentSignature = signature;
+    const list = $("workshopMomentList"); list.replaceChildren();
+    if (!items.length) { list.textContent = "No added moments in this configuration."; return; }
+    for (const item of items.sort((a, b) => Date.parse(a.timeUtc) - Date.parse(b.timeUtc))) {
+      const row = document.createElement("div"), jump = document.createElement("button"), remove = document.createElement("button");
+      const minute = Math.round((Date.parse(item.timeUtc) - Date.parse(route.window.start)) / 60000);
+      jump.type = remove.type = "button"; jump.textContent = `${item.label} · ${utc(Date.parse(item.timeUtc))}`;
+      jump.title = item.note || "Jump to this key moment";
+      jump.addEventListener("click", () => { if ([...$("workshopMomentSpan").options].some(option => Number(option.value) === item.spanMinutes)) $("workshopMomentSpan").value = String(item.spanMinutes); void seek({ route: cursor.route, minute }); });
+      remove.textContent = "×"; remove.setAttribute("aria-label", `Remove ${item.label}`);
+      remove.addEventListener("click", async () => { try { await deleteMoment?.(item.id); momentSignature = ""; render(); status("Key moment removed."); } catch (error) { status(`Could not remove moment: ${error.message}`); } });
+      row.append(jump, remove); list.append(row);
+    }
+  }
+  function renderMotion() {
+    motionLayer.replaceChildren();
+    if (!active || $("cameraWorkshop").hidden || !motionPreview) return;
+    const span = Number($("workshopMomentSpan").value);
+    const half = span / 2, halfShort = half >= 60 ? `${half / 60}h` : `${half}m`, halfLong = half >= 60 ? `${half / 60} ${half === 60 ? "hour" : "hours"}` : `${half} minutes`;
+    const preview = motionPreview(routes[cursor.route], cursor.minute, span);
+    if (!preview?.series?.length) return;
+    motionLayer.setAttribute("viewBox", `0 0 ${innerWidth} ${innerHeight}`);
+    const svg = (tag, attributes, parent = motionLayer) => {
+      const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
+      parent.append(node); return node;
+    };
+    const bounds = preview.bounds || { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+    const clipId = "workshop-motion-clip";
+    const defs = svg("defs", {}), clip = svg("clipPath", { id: clipId }, defs);
+    svg("rect", { x: bounds.left, y: bounds.top, width: Math.max(1, bounds.right - bounds.left), height: Math.max(1, bounds.bottom - bounds.top) }, clip);
+    const tracks = svg("g", { "clip-path": `url(#${clipId})` });
+    const clamp = point => ({ x: Math.max(bounds.left + 9, Math.min(bounds.right - 9, point.x)), y: Math.max(bounds.top + 9, Math.min(bounds.bottom - 9, point.y)) });
+    const path = points => {
+      let restart = true;
+      return points.map(point => {
+        if (!point?.visibleDepth) { restart = true; return ""; }
+        const command = restart ? "M" : "L"; restart = false;
+        return `${command}${point.x.toFixed(1)} ${point.y.toFixed(1)}`;
+      }).join(" ");
+    };
+    let outside = 0;
+    for (const series of preview.series) {
+      const points = series.points.map(point => point && Number.isFinite(point.x) && Number.isFinite(point.y) ? point : null);
+      if (series.primary && points.some(point => point && !point.inside)) outside++;
+      const middle = Math.floor((points.length - 1) / 2), now = points[middle];
+      for (const [segment, dash, opacity] of [[points.slice(0, middle + 1), "5 4", series.primary ? .74 : .3], [points.slice(middle), "", series.primary ? .88 : .36]]) {
+        const data = path(segment);
+        if (!data.includes("L")) continue;
+        const common = { d: data, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-dasharray": dash };
+        svg("path", { ...common, stroke: "#fff", "stroke-width": series.primary ? 4.4 : 3, opacity: opacity * .9 }, tracks);
+        svg("path", { ...common, stroke: series.color, "stroke-width": series.primary ? 2.3 : 1.5, opacity }, tracks);
+      }
+      if (now?.visibleDepth) {
+        const current = clamp(now);
+        svg("circle", { cx: current.x, cy: current.y, r: series.primary ? 4.8 : 3.2, fill: "#fff", stroke: series.color, "stroke-width": 2, opacity: series.primary ? 1 : .5 }, tracks);
+      }
+      for (const [index, sign] of [[0, "−"], [points.length - 1, "+"]]) {
+        const point = points[index]; if (!point?.visibleDepth) continue;
+        const end = clamp(point), distant = !now || Math.hypot(end.x - now.x, end.y - now.y) > 12;
+        if (!distant) continue;
+        svg(point.inside ? "circle" : "rect", point.inside ? { cx: end.x, cy: end.y, r: series.primary ? 4.1 : 3, fill: "#fff", stroke: series.color, "stroke-width": 1.7, opacity: series.primary ? .9 : .5 } : { x: end.x - 4, y: end.y - 4, width: 8, height: 8, fill: "#fff", stroke: series.color, "stroke-width": 1.7 }, tracks);
+        if (series.primary && series.slot === routes[cursor.route].slot && now && Math.hypot(end.x - now.x, end.y - now.y) > 45) {
+          const label = svg("text", { x: end.x + (index ? -8 : 8), y: end.y - 8, fill: series.color, "font-size": 10, "font-weight": 700, "text-anchor": index ? "end" : "start" }, tracks);
+          label.textContent = `${sign}${halfShort}${point.inside ? "" : " · edge"}`;
+        }
+      }
+    }
+    $("workshopMotionStatus").textContent = `Full path over ±${halfLong}: dashed = past, solid = future.${outside ? ` ${outside} main ${outside === 1 ? "path leaves" : "paths leave"} the frame; widen the zoom or move the camera.` : ""}`;
+  }
   function render() {
     const route = routes[cursor.route], end = duration(route);
     $("cameraWorkshop").classList.toggle("has-started", active);
@@ -73,18 +158,22 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
     $("workshopTime").textContent = `${utc(Date.parse(route.window.start) + cursor.minute * 60000)} · ${Math.floor(cursor.minute)} of ${end} minutes`;
     const { covered, total } = coverage();
     const adjusted = getViews().filter(view => view.auto === false).length;
-    $("workshopProgress").textContent = `${adjusted} adjusted camera views · ${total} optional review stops`;
-    $("workshopProgress").title = `${covered} stops have a saved view within the review window`;
+    $("workshopProgress").textContent = `${adjusted} saved camera angles · up to ${maxKeyRunMinutes / 60}-hour review sections`;
+    $("workshopProgress").title = `${covered} of ${total} optional review points have a saved camera angle nearby`;
     $("workshopMinute").max = String(end);
     $("workshopMinute").value = String(Math.floor(cursor.minute));
     routeSelect.value = String(cursor.route);
     $("workshopPrevious").disabled = !active || busy || (cursor.route === 0 && cursor.minute === 0);
-    for (const id of ["workshopNext", "workshopPlayRun", "workshopSavePlay", "workshopMinute", "workshopRouteSelect", "workshopInterval"]) $(id).disabled = !active || busy;
+    for (const id of ["workshopNext", "workshopPlayRun", "workshopSavePlay", "workshopRouteSelect", "workshopInterval"]) $(id).disabled = !active || busy;
+    // The review timeline stays available while a run plays; dragging it pauses at that minute.
+    $("workshopMinute").disabled = !active || (busy && !playing);
     $("workshopPlay").disabled = !active || (busy && !playing);
     $("workshopStart").disabled = busy;
     $("workshopResume").disabled = busy || (!active && !saved && !localStorage.getItem(storageKey));
     $("workshopPlay").textContent = playing ? "Pause here" : "Play to next stop";
     $("workshopSaveSpeed").disabled = !active || busy;
+    $("workshopAddMoment").disabled = !active || (busy && !playing);
+    renderMoments();
   }
   function open() {
     beforeOpen?.();
@@ -94,25 +183,35 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
     document.body.classList.add("workshop-open");
     render();
   }
+  function peek(value) {
+    $("cameraWorkshop").classList.toggle("is-peeking", value);
+    $("workshopPeek").textContent = value ? "Show controls" : "View full path";
+    $("workshopPeek").setAttribute("aria-pressed", String(value));
+    renderMotion();
+  }
   function close() {
     stopPlaying(); pausePlayback();
+    peek(false);
     $("cameraWorkshop").hidden = true;
     $("workshopToggle").setAttribute("aria-expanded", "false");
     document.body.classList.remove("workshop-open");
+    motionLayer.replaceChildren();
   }
   async function seek(next, forceRoute = false) {
     if (busy) return;
     stopPlaying(); pausePlayback(); busy = true; render();
     const route = routes[next.route], minute = Math.max(0, Math.min(duration(route), next.minute));
+    const routeChanged = forceRoute || !active || next.route !== cursor.route;
     status("Moving to the next camera review point…");
     try {
-      if (forceRoute || !active || next.route !== cursor.route) await seekRoute(route, minute);
+      if (routeChanged) await seekRoute(route, minute);
       else setMinute(minute, true);
       cursor = { route: next.route, minute }; active = true; persist();
-      $("workshopSpeed").value = String(getPlaybackSpeed());
+      if (routeChanged) $("workshopSpeed").value = String(getPlaybackSpeed(route));
       status("Watch the learned path. Adjust and save only where the framing needs correction; Play whole run continues without stops.");
     } catch (error) { status(`Could not open this view: ${error.message}`); }
     finally { busy = false; render(); }
+    renderMotion();
   }
   function nextCursor() {
     const route = routes[cursor.route], end = duration(route);
@@ -140,6 +239,7 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
       const reached = cursor.minute >= next.minute;
       setMinute(cursor.minute, reached || now - lastPaint > 100);
       if (reached || now - lastPaint > 100) { render(); lastPaint = now; }
+      if (reached || now - lastPaint > 250) renderMotion();
       if (reached) {
         stopPlaying(); cursor = next; persist(); render();
         status(fullRun ? "End of this run. Save only if this view needs a correction, or choose the next configuration." : "Review point reached. Save a correction if needed, or continue.");
@@ -150,6 +250,7 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
 
   $("workshopToggle").disabled = false;
   $("workshopToggle").addEventListener("click", () => $("cameraWorkshop").hidden ? open() : close());
+  $("workshopPeek").addEventListener("click", () => peek(!$("cameraWorkshop").classList.contains("is-peeking")));
   $("workshopClose").addEventListener("click", close);
   $("workshopStart").addEventListener("click", () => void seek({ route: 0, minute: 0 }, true));
   $("workshopResume").addEventListener("click", () => void seek({ ...cursor }, true));
@@ -178,14 +279,31 @@ export function createCameraWorkshop({ windows, names, seekRoute, setMinute, pau
     status(saved ? `Speed note saved for this view: ${speed} simulated minutes per second.` : "Could not save this speed note.");
   });
   $("workshopMinute").addEventListener("input", event => {
-    if (!active || busy) return;
+    if (!active || (busy && !playing)) return;
+    if (playing) stopPlaying();
     cursor.minute = Number(event.target.value); setMinute(cursor.minute, true); persist(); render();
-    status("At this exact minute, adjust and save only if the framing needs correction.");
+    status("Paused at this minute. Scrub again or adjust the camera, then save the angle.");
+    renderMotion();
+  });
+  $("workshopMomentSpan").addEventListener("change", renderMotion);
+  $("workshopAddMoment").addEventListener("click", async () => {
+    if (!active || (busy && !playing) || !addMoment) return;
+    if (playing) { stopPlaying(); setMinute(cursor.minute, true); persist(); }
+    busy = true; render();
+    const route = routes[cursor.route], label = $("workshopMomentLabel").value.trim();
+    try {
+      await addMoment({ windowId: route.window.id, selected: route.slot, referenceMode: route.reference, mode: route.viewMode || getMode(),
+        timeUtc: new Date(Date.parse(route.window.start) + Math.round(cursor.minute) * 60000).toISOString(), label,
+        note: $("workshopCameraNote").value.trim(), spanMinutes: Number($("workshopMomentSpan").value) });
+      $("workshopMomentLabel").value = ""; momentSignature = ""; status("Key moment added to this camera run.");
+    } catch (error) { status(`Could not add moment: ${error.message}`); }
+    finally { busy = false; render(); renderMotion(); }
   });
   routeSelect.addEventListener("change", () => { if (active && !busy) void seek({ route: Number(routeSelect.value), minute: 0 }, true); });
   $("workshopInterval").addEventListener("change", event => {
     interval = event.target.value === "key" ? "key" : Number(event.target.value); persist(); render();
   });
   render();
-  return { refresh: render, close };
+  setInterval(renderMotion, 750);
+  return { refresh: () => { render(); renderMotion(); }, close };
 }
