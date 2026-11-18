@@ -29,6 +29,7 @@ try { await start(); } catch (error) {
   console.error("E-006 visualization", error);
   const status = $("sceneStatus") || document.createElement("p");
   status.id = "sceneStatus"; status.textContent = `E-006 could not load: ${error.message}`; document.body.append(status);
+  const bootText = document.getElementById("episodeBootText"); if (bootText) bootText.textContent = `Could not load episode: ${error.message}`;
 }
 
 async function start() {
@@ -211,7 +212,7 @@ async function start() {
   let focusedMinimumMs = null;
   let lastChartPaint = 0;
   const sticky = document.createElement("div"); sticky.id = "pairSticky"; sticky.className = "e006-pair-sticky"; sticky.hidden = true;
-  const stickyIntro = document.createElement("span"); stickyIntro.className = "e006-pair-intro"; stickyIntro.textContent = "Current episode:";
+  const stickyIntro = document.createElement("span"); stickyIntro.className = "e006-pair-intro"; stickyIntro.textContent = "Current Episode:";
   const stickyChoices = document.createElement("span"); stickyChoices.className = "e006-pair-choices";
   const stickyToggle = document.createElement("button"); stickyToggle.type = "button"; stickyToggle.className = "e006-pair-toggle";
   stickyToggle.setAttribute("aria-haspopup", "true"); stickyToggle.setAttribute("aria-expanded", "false");
@@ -397,8 +398,8 @@ async function start() {
       dwellKey.dataset.stamp = dwellStamp;
       const italic = value => { const node = document.createElement("i"); node.textContent = value; return node; };
       const bold = (value, className = "") => { const node = document.createElement("strong"); node.textContent = value; node.className = className; return node; };
-      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(dwellSatelliteName(displayName(participants[0].name))), " and ",
-        italic(dwellSatelliteName(displayName(participants.find(item => item.slot === selected).name, true))),
+      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(displayName(participants[0].name).toUpperCase()), " and ",
+        italic(displayName(participants.find(item => item.slot === selected).name, true).toUpperCase()),
         " are within ", bold(`${distance.toLocaleString()} km`), " and at or below ", bold(`${speed.toLocaleString()} m/s`),
         ". ", bold("Gray", "e006-gray-word"), " marks one threshold; ", bold("gold", "e006-gold-word"), " marks both.");
     }
@@ -710,6 +711,7 @@ async function start() {
     }
   }
   requestAnimationFrame(animate);
+  requestAnimationFrame(() => document.documentElement.classList.remove("episode-initializing"));
   if (new URLSearchParams(location.search).get("dev") === "1" && ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769") {
     makeReviewBar();
     const captureCamera = () => ({ position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), zoom: camera.zoom, fov: camera.fov });
@@ -765,7 +767,7 @@ async function start() {
 function makeReviewBar() {
   document.body.classList.add("e006-review");
   const bar = document.createElement("header"); bar.className = "e006-review-bar";
-  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-005</a><a href="compare.html?dev=1&amp;episode=E-006" aria-current="page">E-006</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-006 review tools"><button id="e006CommentMode" type="button">✚ Spot comment</button><button id="e006CommentsToggle" type="button">Comments <span id="e006CommentCount">0</span></button></nav>';
+  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-005</a><a href="compare.html?dev=1&amp;episode=E-006" aria-current="page">E-006</a><a href="compare.html?dev=1&amp;episode=E-008">E-008</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-006 review tools"><button id="e006CommentMode" type="button">✚ Spot comment</button><button id="e006CommentsToggle" type="button">Comments <span id="e006CommentCount">0</span></button></nav>';
   document.body.append(bar);
   const drawer = document.createElement("aside"); drawer.className = "e006-review-drawer"; drawer.hidden = true;
   drawer.innerHTML = '<strong>E-006 spot comments</strong><form id="e006CommentForm" hidden><p id="e006CommentLocation"></p><textarea id="e006CommentText" required maxlength="4000"></textarea><label><input id="e006AllEpisodes" type="checkbox"> Applies to all full episode views</label><button type="submit">Save comment</button></form><div id="e006CommentList"></div><button id="e006ExportComments" type="button">Export comments JSON</button>';

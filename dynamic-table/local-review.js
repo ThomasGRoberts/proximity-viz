@@ -3,9 +3,9 @@ const $ = id => document.getElementById(id);
 const fmt = ms => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(ms)) + " UTC";
 const spotLabel = key => {
   const column = key.match(/^(E-\d+)-cell-(\d)$/);
-  if (column) return `${column[1]} · ${["Episode name", "Space objects", "Period", "Minimum separation distance", "Minimum relative velocity", "Records"][Number(column[2])]}`;
+  if (column) return `${column[1]} · ${["Episode", "Orbit", "Space objects", "Period", "Minimum separation distance", "Minimum relative velocity", "Records"][Number(column[2])]}`;
   const heading = key.match(/^heading-(\d)$/);
-  if (heading) return `Column heading · ${["Episode name", "Space objects", "Period", "Minimum separation distance", "Minimum relative velocity", "Records"][Number(heading[1])]}`;
+  if (heading) return `Column heading · ${["Episode", "Orbit", "Space objects", "Period", "Minimum separation distance", "Minimum relative velocity", "Records"][Number(heading[1])]}`;
   const episode = key.match(/^(E-\d+)-(.+)$/);
   return episode ? `${episode[1]} · ${episode[2].replaceAll("-", " ")}` : key.replaceAll("-", " ");
 };
@@ -104,7 +104,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
     beginComment(anchor, (event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height, spotLabel(key));
   };
   const sync = () => {
-    const m = model(), ready = !!m && ["E-001", "E-002", "E-003", "E-005", "E-006"].includes(getSelectedEpisode());
+    const m = model(), ready = !!m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008"].includes(getSelectedEpisode());
     if (ready && getSelectedEpisode() === "E-005") {
       const row = document.querySelector('.episode-row[data-episode-id="E-005"]');
       if (row) row.dataset.miniSelected = m.selected === "C" ? "C" : "B";
@@ -213,7 +213,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
   });
   $("miniExportSettings").addEventListener("click", () => {
     const m = model(), episodeId = getSelectedEpisode();
-    const draft = m && ["E-001", "E-002", "E-003", "E-005", "E-006"].includes(episodeId) ? {
+    const draft = m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008"].includes(episodeId) ? {
       episodeId, windowId: m.window.id, frameMode: m.frameMode,
       loopStartUtc: new Date(loopStart ?? m.loopStart).toISOString(),
       loopEndUtc: new Date(loopEnd ?? m.loopEnd).toISOString(), rate: m.rate,
@@ -238,7 +238,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
   $("tableDownloadComments").addEventListener("click", () => { const blob = new Blob([JSON.stringify({ schema: "espl-shared-review-v1", comments }, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "review-comments.json"; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); });
   new MutationObserver(markAnchors).observe($("rows"), { childList: true, subtree: true });
   window.addEventListener("scroll", placePins, { passive: true }); window.addEventListener("resize", placePins);
-  window.addEventListener("message", event => { if (event.origin === location.origin && ["espl-e001-mini-ready", "espl-e002-mini-ready", "espl-e005-mini-ready", "espl-e006-mini-ready"].includes(event.data?.type) && getFrame()) attachMini(getFrame()); });
+  window.addEventListener("message", event => { if (event.origin === location.origin && ["espl-e001-mini-ready", "espl-e002-mini-ready", "espl-e005-mini-ready", "espl-e006-mini-ready", "espl-e008-mini-ready"].includes(event.data?.type) && getFrame()) attachMini(getFrame()); });
   setInterval(sync, 250);
   async function primeMini(frame, episodeId) {
     await savedReady;

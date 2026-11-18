@@ -28,6 +28,7 @@ try { await start(); } catch (error) {
   console.error("E-003 visualization", error);
   const status = $("sceneStatus") || document.createElement("p");
   status.id = "sceneStatus"; status.textContent = `E-003 could not load: ${error.message}`; document.body.append(status);
+  const bootText = document.getElementById("episodeBootText"); if (bootText) bootText.textContent = `Could not load episode: ${error.message}`;
 }
 
 async function start() {
@@ -199,33 +200,16 @@ async function start() {
   let focusedMinimumMs = null;
   let lastChartPaint = 0;
   const sticky = document.createElement("div"); sticky.id = "pairSticky"; sticky.className = "e003-pair-sticky"; sticky.hidden = true;
-  const stickyIntro = document.createElement("span"); stickyIntro.className = "e003-pair-intro"; stickyIntro.textContent = "Current episode:";
-  const stickyChoices = document.createElement("span"); stickyChoices.className = "e003-pair-choices";
-  const stickyToggle = document.createElement("button"); stickyToggle.type = "button"; stickyToggle.className = "e003-pair-toggle";
-  stickyToggle.setAttribute("aria-haspopup", "true"); stickyToggle.setAttribute("aria-expanded", "false");
-  stickyToggle.innerHTML = '<i></i><b></b><span class="e003-pair-chevron" aria-hidden="true">‹</span>';
-  const stickyMenu = document.createElement("span"); stickyMenu.className = "e003-pair-menu"; stickyMenu.hidden = true;
-  for (const item of participants.filter(item => item.slot !== "A")) {
-    const button = document.createElement("button"); button.type = "button"; button.dataset.slot = item.slot;
-    button.innerHTML = "<i></i><b></b>"; button.querySelector("b").textContent = displayName(item.name, true);
-    button.addEventListener("click", () => { stickyMenu.hidden = true; stickyToggle.setAttribute("aria-expanded", "false"); if (selected !== item.slot) chooseChaser(item.slot); });
-    stickyMenu.append(button);
-  }
-  stickyToggle.addEventListener("click", () => { stickyMenu.hidden = !stickyMenu.hidden; stickyToggle.setAttribute("aria-expanded", String(!stickyMenu.hidden)); });
-  stickyChoices.append(stickyToggle, stickyMenu);
-  const stickyChaser = document.createElement("span"); stickyChaser.className = "e003-pair-chaser"; stickyChaser.innerHTML = "<i></i><b></b>"; stickyChaser.querySelector("b").textContent = participants[0].name;
-  sticky.append(stickyIntro, stickyChaser, document.createTextNode("+"), stickyChoices);
+  const stickyIntro = document.createElement("span"); stickyIntro.className = "e003-pair-intro"; stickyIntro.textContent = "Current Episode:";
+  const stickyChaser = document.createElement("span"); stickyChaser.className = "e003-pair-chaser";
+  stickyChaser.innerHTML = "<i></i><b></b>"; stickyChaser.querySelector("b").textContent = participants[0].name;
+  const stickyTarget = document.createElement("span"); stickyTarget.className = "e003-pair-target";
+  stickyTarget.innerHTML = "<i></i><b></b>"; stickyTarget.querySelector("b").textContent = participants[1].name;
+  sticky.append(stickyIntro, stickyChaser, document.createTextNode("+"), stickyTarget); $("ui").prepend(sticky);
   function updateSticky() {
-    if (!sticky.isConnected) return;
     sticky.hidden = selector.getBoundingClientRect().bottom > $("ui").getBoundingClientRect().top + 38;
-    if (sticky.hidden) { stickyMenu.hidden = true; stickyToggle.setAttribute("aria-expanded", "false"); }
-    stickyToggle.querySelector("b").textContent = displayName(participants.find(item => item.slot === selected).name, true);
-    stickyToggle.setAttribute("aria-label", `Selected ${stickyToggle.querySelector("b").textContent}. Choose another target satellite`);
-    stickyMenu.querySelectorAll("button").forEach(button => { button.classList.toggle("is-active", button.dataset.slot === selected); button.setAttribute("aria-pressed", String(button.dataset.slot === selected)); });
   }
   $("ui").addEventListener("scroll", updateSticky, { passive: true });
-  document.addEventListener("click", event => { if (!stickyChoices.contains(event.target)) { stickyMenu.hidden = true; stickyToggle.setAttribute("aria-expanded", "false"); } });
-  stickyChoices.addEventListener("keydown", event => { if (event.key === "Escape") { stickyMenu.hidden = true; stickyToggle.setAttribute("aria-expanded", "false"); stickyToggle.focus(); } });
   const referenceButton = document.createElement("button"); referenceButton.id = "referenceBtn"; referenceButton.type = "button"; referenceButton.className = "cameraBtn referenceBtn";
   referenceButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="reference-target-dot" cx="6" cy="12" r="3"/><circle class="reference-chaser-dot" cx="18" cy="12" r="3"/><path d="M9.5 6.5h7l-2-2M14.5 17.5h-7l2 2"/></svg>';
   $("cameraControls").append(referenceButton);
@@ -385,8 +369,8 @@ async function start() {
       dwellKey.dataset.stamp = dwellStamp;
       const italic = value => { const node = document.createElement("i"); node.textContent = value; return node; };
       const bold = (value, className = "") => { const node = document.createElement("strong"); node.textContent = value; node.className = className; return node; };
-      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(dwellSatelliteName(displayName(participants[0].name))), " and ",
-        italic(dwellSatelliteName(displayName(participants.find(item => item.slot === selected).name, true))),
+      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(displayName(participants[0].name).toUpperCase()), " and ",
+        italic(displayName(participants.find(item => item.slot === selected).name, true).toUpperCase()),
         " are within ", bold(`${distance.toLocaleString()} km`), " and at or below ", bold(`${speed.toLocaleString()} m/s`),
         ". ", bold("Gray", "e003-gray-word"), " marks one threshold; ", bold("gold", "e003-gold-word"), " marks both.");
     }
@@ -680,6 +664,7 @@ async function start() {
     }
   }
   requestAnimationFrame(animate);
+  requestAnimationFrame(() => document.documentElement.classList.remove("episode-initializing"));
   if (new URLSearchParams(location.search).get("dev") === "1" && ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769") {
     makeReviewBar();
     const captureCamera = () => ({ position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), zoom: camera.zoom, fov: camera.fov });
@@ -735,7 +720,7 @@ async function start() {
 function makeReviewBar() {
   document.body.classList.add("e003-review");
   const bar = document.createElement("header"); bar.className = "e003-review-bar";
-  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003" aria-current="page">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-005</a><a href="compare.html?dev=1&amp;episode=E-006">E-006</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-003 review tools"><button id="e003CommentMode" type="button">✚ Spot comment</button><button id="e003CommentsToggle" type="button">Comments <span id="e003CommentCount">0</span></button></nav>';
+  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003" aria-current="page">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-005</a><a href="compare.html?dev=1&amp;episode=E-006">E-006</a><a href="compare.html?dev=1&amp;episode=E-008">E-008</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-003 review tools"><button id="e003CommentMode" type="button">✚ Spot comment</button><button id="e003CommentsToggle" type="button">Comments <span id="e003CommentCount">0</span></button></nav>';
   document.body.append(bar);
   const drawer = document.createElement("aside"); drawer.className = "e003-review-drawer"; drawer.hidden = true;
   drawer.innerHTML = '<strong>E-003 spot comments</strong><form id="e003CommentForm" hidden><p id="e003CommentLocation"></p><textarea id="e003CommentText" required maxlength="4000"></textarea><label><input id="e003AllEpisodes" type="checkbox"> Applies to all full episode views</label><button type="submit">Save comment</button></form><div id="e003CommentList"></div><button id="e003ExportComments" type="button">Export comments JSON</button>';

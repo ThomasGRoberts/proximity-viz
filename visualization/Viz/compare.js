@@ -952,7 +952,7 @@ function updateThresholds() {
     const distanceValue = document.createElement("strong"), speedValue = document.createElement("strong");
     const gray = document.createElement("strong"), gold = document.createElement("strong");
     gray.className = "single"; gray.textContent = "Gray"; gold.className = "both"; gold.textContent = "gold";
-    chaser.textContent = dwellSatelliteName(displaySatelliteName(slotName("A"))); target.textContent = dwellSatelliteName(displaySatelliteName(slotName("B"))).replace(/^Usa\b/, "USA");
+    chaser.textContent = slotName("A").toUpperCase(); target.textContent = slotName("B").toUpperCase();
     distanceValue.textContent = `${distance.toLocaleString()} km`;
     speedValue.textContent = speed < 1000 ? `${speed.toLocaleString()} m/s` : `${Number((speed / 1000).toFixed(2))} km/s`;
     dwellKey.replaceChildren("The cumulative time within this ", String(Math.round((endMs - startMs) / 3600000)), "-hour chapter during which ", chaser,
@@ -1536,6 +1536,21 @@ function slotName(slot) {
   return library[pair[slot]]?.info.name ?? `Satellite ${slot}`;
 }
 
+let e001PairSticky;
+function updateE001PairSticky() {
+  const ui = $("ui"), modeling = $("nowModeling");
+  if (!ui || !modeling || !pair.A || !pair.B) return;
+  if (!e001PairSticky) {
+    e001PairSticky = document.createElement("div"); e001PairSticky.id = "e001PairSticky";
+    e001PairSticky.innerHTML = '<span class="pair-intro">Current Episode:</span><span class="pair-chaser"><i></i><b></b></span><span>+</span><span class="pair-target"><i></i><b></b></span>';
+    e001PairSticky.hidden = true; ui.prepend(e001PairSticky);
+    ui.addEventListener("scroll", updateE001PairSticky, { passive: true });
+  }
+  e001PairSticky.querySelector(".pair-chaser b").textContent = slotName("A");
+  e001PairSticky.querySelector(".pair-target b").textContent = slotName("B");
+  e001PairSticky.hidden = modeling.getBoundingClientRect().bottom > ui.getBoundingClientRect().top + 38;
+}
+
 // Show the chosen satellites' names in the panel and the 3D view, instead of "A" and "B".
 function updateNames() {
    $("centreNameA").textContent = slotName("A");
@@ -1545,6 +1560,7 @@ function updateNames() {
   $("separationTitle").textContent = `Separation between ${slotName("A")} and ${slotName("B")}`;
   setLabelText("A", slotName("A"));
   setLabelText("B", slotName("B"));
+  updateE001PairSticky();
 }
 
 
@@ -2639,6 +2655,7 @@ try {
         },
       };
       parent.postMessage({ type: "espl-e001-mini-ready" }, location.origin);
+      requestAnimationFrame(() => document.documentElement.classList.remove("episode-initializing"));
     }
   }
   setTimeout(() => {
@@ -2656,6 +2673,10 @@ try {
   $("devTime").value = new Date(currentMs).toISOString().slice(0, 16);
 } catch (error) {
   $("rangeNote").textContent = error.message;
+  if (document.documentElement.classList.contains("mini-scene")) {
+    const bootText = document.getElementById("episodeBootText");
+    if (bootText) bootText.textContent = `Mini preview unavailable: ${error.message}`;
+  }
   console.error(error);
 }
 animate(performance.now());

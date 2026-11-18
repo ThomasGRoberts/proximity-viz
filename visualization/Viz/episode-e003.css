@@ -209,3 +209,5 @@ body.e003-review .e003-workshop{left:390px;right:18px;bottom:17px;width:auto;max
 body.e003-review.e003-eci #scene,body.e003-review.e003-eci #e003ScreenLabels{left:390px}
 @media(max-width:1180px){body.e003-review .e003-workshop{max-height:245px}.e003-workshop-main{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:800px){body.e003-review .e003-workshop{left:12px;right:12px;bottom:12px;max-height:42vh}body.e003-review.e003-eci #scene,body.e003-review.e003-eci #e003ScreenLabels{left:14px}}
+
+@media(min-width:761px){body.e003-shared:not(.e003-review) #ui{max-height:calc(100vh - 145px)}}

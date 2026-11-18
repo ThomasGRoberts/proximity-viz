@@ -8,17 +8,30 @@
   <script>
     const query = new URLSearchParams(location.search);
     if (query.get("episode") === "E-002") location.replace(new URL("../e002/", location.href));
-    else if (query.get("mini") === "1") document.documentElement.classList.add("mini-scene");
+    else if (query.get("mini") === "1") document.documentElement.classList.add("mini-scene", "episode-initializing");
     else if (!query.has("dev") && !query.has("published") && (!query.has("episode") || query.get("episode") === "E-001") && (!query.has("case") || query.get("case") === "E-001")) location.replace(new URL("../e001/", location.href));
+    else if (["E-003", "E-005", "E-006", "E-008"].includes(query.get("episode"))) document.documentElement.classList.add("episode-initializing");
   </script>
   <title>Visualizing Proximity in Space</title>
   <link rel="icon" type="image/png" href="../../dynamic-table/assets/polyhedron-icon.png">
   <!-- Reuse the original page's styling so both pages look the same -->
   <link rel="stylesheet" href="style.css">
   <style>.mini-scene body{background:#fffcf6}.mini-scene #ui,.mini-scene #playbackDock,.mini-scene #cameraControls,.mini-scene #geoBeltLabel,.mini-scene #gtLogo,.mini-scene #cameraDevTools,.mini-scene #satelliteScreenLabels{display:none!important}.mini-scene .sceneCanvas{pointer-events:none}.mini-scene.mini-editing .sceneCanvas{pointer-events:auto}</style>
+  <style>
+    .episode-initializing body>:not(#episodeBoot){visibility:hidden!important}
+    #episodeBoot{display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;gap:12px;background:#fff;color:#5e5645;font:700 13px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .episode-initializing #episodeBoot{display:flex}
+    #episodeBoot .episode-boot-dots{display:flex;gap:5px}
+    #episodeBoot .episode-boot-dots i{display:block;width:6px;height:6px;border-radius:50%;background:#d4ac42;animation:episode-boot-pulse 1.1s ease-in-out infinite}
+    #episodeBoot .episode-boot-dots i:nth-child(2){animation-delay:.14s}#episodeBoot .episode-boot-dots i:nth-child(3){animation-delay:.28s}
+    @keyframes episode-boot-pulse{0%,80%,100%{opacity:.35;transform:scale(.8)}40%{opacity:1;transform:scale(1.15)}}
+    #e001PairSticky{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;margin:-18px -18px 12px;padding:8px;border-bottom:1px solid #ddd;background:#fffffff2;box-shadow:0 2px 7px #0000000c;font:700 10px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    #e001PairSticky[hidden]{display:none}#e001PairSticky span{display:inline-flex;align-items:center;gap:5px;min-width:0;white-space:nowrap}#e001PairSticky b{overflow:hidden;text-overflow:ellipsis;font-size:9px}#e001PairSticky i{display:block;width:9px;height:9px;flex:0 0 9px;border:1.5px solid #333;border-radius:50%}.pair-chaser i{background:#eaaa00}.pair-target i{background:#a9a9a9}#e001PairSticky .pair-intro{color:#8d6b1d;font-size:9px;text-transform:uppercase}
+  </style>
 </head>
 
 <body>
+  <div id="episodeBoot" role="status" aria-live="polite"><span class="episode-boot-dots" aria-hidden="true"><i></i><i></i><i></i></span><span id="episodeBootText">Loading episode</span></div>
   <!-- The side panel. Everything with an id="..." is something compare.js reads or updates. -->
   <aside id="ui">
     <div class="episodeHeader">
@@ -1252,7 +1265,7 @@
     type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/","topojson-client":"./vendor/topojson/topojson-client.js"}}</script>
   <script type="module" src="project-flourish.js"></script>
   <script type="module" src="satellite-metadata.js?v=11"></script>
-  <script type="module" src="episode-entry.js?v=11"></script>
+  <script type="module" src="episode-entry.js?v=14"></script>
   <script type="module" src="episode-ui.js?v=5"></script>
 </body>
 

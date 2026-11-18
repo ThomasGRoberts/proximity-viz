@@ -82,6 +82,7 @@ async function start() {
   };
   window.miniWorkshop = api;
   parent.postMessage({ type: "espl-e002-mini-ready" }, location.origin);
+  requestAnimationFrame(() => { $("miniBoot").hidden = true; });
   function tick(now) {
     requestAnimationFrame(tick);
     const elapsed = Math.min(.1, (now - last) / 1000); last = now;
@@ -94,4 +95,4 @@ async function start() {
   }
   requestAnimationFrame(tick);
 }
-start().catch(error => { $("sceneStatus").textContent = `Mini preview unavailable: ${error.message}`; console.error(error); });
+start().catch(error => { $("miniBoot").textContent = `Mini preview unavailable: ${error.message}`; $("sceneStatus").textContent = `Mini preview unavailable: ${error.message}`; console.error(error); });

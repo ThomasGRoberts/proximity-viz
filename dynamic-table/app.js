@@ -18,7 +18,7 @@ const field = (row, ...names) => {
 const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
 const EARTH_COLOR = 0xedeae5;
 const localE003Review = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
-const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006"].includes(id);
+const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008"].includes(id);
 const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, historicalMetrics: {}, usePreview: false, selected: null, query: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 let sourceCarouselCleanup = () => {};
@@ -409,6 +409,14 @@ function sourceFallback(meta, row, url, documentSource) {
   return fallback;
 }
 const reviewedSourceMetadata = {
+  "https://hansard.parliament.uk/commons/2021-07-14/debates/D9862D76-47F8-4DE4-AC12-9BAA4A3BD7AF/SpaceDebris": {
+    kind: "document",
+    title: "Space Debris",
+    publisher: "UK Parliament Hansard",
+    publishedDate: "2021-07-14",
+    previewPath: "./assets/source-previews/e008-hansard-record.svg",
+    imageAlt: "Designed preview identifying the Hansard record of the Space Debris debate in Westminster Hall on 14 July 2021",
+  },
   "https://vpk.name/news/376303_v_mid_otvetili_na_obvineniya_ssha_v_presledovanii_amerikanskogo_sputnika.html": {
     publisher: "VPK.name",
   },
@@ -484,7 +492,7 @@ function expandedContent(row, data) {
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
   if (hasEpisodeVisual(episodeId)) {
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : episodeId === "E-002" ? "../visualization/e002/" : episodeId === "E-003" ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=E-003` : episodeId === "E-006" ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=E-006` : "../visualization/Viz/compare.html?episode=E-005", location.href).href;
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : episodeId === "E-002" ? "../visualization/e002/" : episodeId === "E-003" ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=E-003` : episodeId === "E-008" ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=E-008` : episodeId === "E-006" ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=E-006` : "../visualization/Viz/compare.html?episode=E-005", location.href).href;
     viz.setAttribute("aria-label", `${episodeId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -616,7 +624,7 @@ function periodNode(row) { const node = el("span", "period-label", periodInfo(ro
 function proximityNode(row, key) {
   const cell = el("div", "proximity-cell");
   const id = field(row, "ID"), metric = rowMetric(row, key);
-  if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", id === "E-001" && !state.series || id === "E-002" && !state.e002Metrics || ["E-003", "E-005"].includes(id) && !state.historicalMetrics[id] ? "Loading…" : "Unavailable")); return cell; }
+  if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", id === "E-001" && !state.series || id === "E-002" && !state.e002Metrics || ["E-003", "E-005", "E-006", "E-008"].includes(id) && !state.historicalMetrics[id] ? "Loading…" : "Unavailable")); return cell; }
   const value = estimatedValue(metric.value, key === "distance" ? "separationKm" : "relativeSpeedMps", field(row, "ID"));
   cell.append(el("strong", "minimum-value", value), el("span", "minimum-unit", key === "distance" ? "km" : "m/s"));
   const pair = metric.pair?.split(":");
@@ -733,7 +741,7 @@ function setMiniEditing(open) {
   miniEditing = open; block.classList.toggle("mini-workshop-active", open);
   miniBackdropHost.classList.toggle("mini-editing-viewport", open);
   miniFrame.contentWindow?.miniWorkshop?.setEditing?.(open);
-  if (["E-001", "E-003", "E-005", "E-006"].includes(episodeId)) {
+  if (["E-001", "E-003", "E-005", "E-006", "E-008"].includes(episodeId)) {
     miniFrame.tabIndex = open ? 0 : -1;
     if (open) miniFrame.removeAttribute("aria-hidden"); else miniFrame.setAttribute("aria-hidden", "true");
     return true;
@@ -832,7 +840,7 @@ function startPreview(row) {
     localReview?.attachMini(warmedE005Frame);
     return;
   }
-  if (["E-003", "E-005", "E-006"].includes(episodeId)) {
+  if (["E-003", "E-005", "E-006", "E-008"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
     frame.src = new URL(`../visualization/Viz/compare.html?mini=1&episode=${episodeId}&table=28`, location.href).href;
     frame.title = `Animated ${episodeId} miniature orbital reconstruction`;
@@ -857,7 +865,7 @@ function startPreview(row) {
       miniResizeObserver.observe(expanded);
     }
     frame.addEventListener("load", () => localReview?.attachMini(frame));
-    if (["E-003", "E-005", "E-006"].includes(episodeId)) frame.addEventListener("load", () => void applyPublishedMiniConfig(frame, episodeId));
+    if (["E-003", "E-005", "E-006", "E-008"].includes(episodeId)) frame.addEventListener("load", () => void applyPublishedMiniConfig(frame, episodeId));
     localReview?.attachMini(frame);
     return;
   }
@@ -908,15 +916,16 @@ function render() {
   for (const [index, row] of rows.entries()) {
     const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);
     tr.tabIndex = 0; tr.dataset.episodeId = field(row, "ID"); tr.setAttribute("aria-label", `${title(row)}, ${open ? "collapse" : "expand"} details`);
-    if (field(row, "ID") === "E-005") tr.dataset.miniSelected = "B";
+    if (["E-005", "E-006"].includes(field(row, "ID"))) tr.dataset.miniSelected = "B";
     tr.setAttribute("aria-expanded", String(open));
     if (open) tr.setAttribute("aria-controls", `episode-detail-${field(row, "ID")}`);
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");
     const badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row);
     const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
-    const secondary = el("span", "episode-secondary-line"); secondary.append(badge, el("span", "episode-id", field(row, "ID")));
+    const secondary = el("span", "episode-secondary-line"); secondary.append(el("span", "episode-id", field(row, "ID")));
     heading.append(name, secondary);
     episode.append(heading); tr.append(episode);
+    const orbitCell = el("td", "orbit-cell"); orbitCell.append(badge); tr.append(orbitCell);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
     const periodCell = el("td", "period-cell"); periodCell.append(periodNode(row)); tr.append(periodCell);
     const separation = el("td", "separation-column"); separation.append(proximityNode(row, "distance")); tr.append(separation);
@@ -926,7 +935,7 @@ function render() {
     tr.addEventListener("keydown", event => { if (event.target === tr && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleRow(row); } });
     body.append(tr);
     if (open) {
-      const detailRow = el("tr", "expanded-row"), td = el("td"); detailRow.id = `episode-detail-${field(row, "ID")}`; detailRow.dataset.episodeId = field(row, "ID"); td.colSpan = 6; detailRow.append(td); body.append(detailRow);
+      const detailRow = el("tr", "expanded-row"), td = el("td"); detailRow.id = `episode-detail-${field(row, "ID")}`; detailRow.dataset.episodeId = field(row, "ID"); td.colSpan = 7; detailRow.append(td); body.append(detailRow);
       const id = field(row, "ID"), cached = state.details.get(id);
       if (data.source === "local-verification-candidates") td.append(expandedContent(row, { source: data.source, descriptions: [], sourceMetadata: {} }));
       else if (cached) { td.append(expandedContent(cached.row, cached)); startPreview(cached.row); }
@@ -963,7 +972,7 @@ async function init() {
     const shell = await fetch("./review-bar.html", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Local review shell returned ${response.status}`); return response.text(); });
     document.body.insertAdjacentHTML("afterbegin", shell);
     const reviewStyles = document.createElement("link"); reviewStyles.rel = "stylesheet"; reviewStyles.href = "../visualization/dev/review-nav.css"; document.head.append(reviewStyles);
-    const { createLocalReview } = await import("./local-review.js?v=5");
+    const { createLocalReview } = await import("./local-review.js?v=6");
     localReview = createLocalReview({ getMini: () => miniFrame?.contentWindow?.miniWorkshop, getFrame: () => miniFrame, setEditing: setMiniEditing, getSelectedEpisode: () => field(state.selected, "ID") });
   }
   prewarmE002(); prewarmE001(); prewarmE005();
@@ -990,7 +999,7 @@ async function init() {
   const reviewEpisode = new URLSearchParams(location.search).get("review");
   if (localReviewMode && hasEpisodeVisual(reviewEpisode)) state.selected = state.live.episodes?.find(row => field(row, "ID") === reviewEpisode) || null;
   setStatus(); render();
-  for (const id of ["E-003", "E-005"]) {
+  for (const id of ["E-003", "E-005", "E-006", "E-008"]) {
     const row = state.live.episodes?.find(item => item.ID === id);
     if (!row) continue;
     historicalEpisodeMetrics(row, state.live.spaceTrack).then(metrics => {
