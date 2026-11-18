@@ -21,6 +21,7 @@ const workspace = document.querySelector(".review-workspace");
 const pinLayer = $("pinLayer");
 const status = $("commentStatus");
 let comments = [];
+let moments = [];
 let savedCameraViews = [];
 let draft = null;
 let spotMode = false;
@@ -45,10 +46,10 @@ let cameraWorkshop = null;
 const prettyDate = value => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(value)) + " UTC";
 function finishEpisodeLoading() {
   const loading = $("episodeLoading");
-  requestAnimationFrame(() => requestAnimationFrame(() => {
+  setTimeout(() => {
     loading.classList.add("is-leaving");
     setTimeout(() => { loading.hidden = true; }, 420);
-  }));
+  }, 0);
 }
 function showEpisodeLoadError(error) {
   $("episodeLoadingText").textContent = `Could not load episode: ${error.message}`;
@@ -138,19 +139,22 @@ function renderComments() {
     const empty = document.createElement("p"); empty.className = "comment-empty"; empty.textContent = "No comments yet. Pin the first spot in the panel."; list.append(empty);
   }
   for (const [index, comment] of comments.entries()) {
-    const pin = document.createElement("button"); pin.type = "button"; pin.className = "spot-pin"; pin.dataset.id = comment.id; pin.textContent = String(index + 1); pin.title = `${comment.label}: ${comment.text}`; pin.setAttribute("aria-label", `Open comment ${index + 1} on ${comment.label}`);
-    pin.addEventListener("click", () => { setFeedbackOpen(true); const item = [...list.children].find(node => node.dataset.id === comment.id); item?.scrollIntoView({ behavior: "smooth", block: "nearest" }); item?.querySelector(".comment-jump")?.focus({ preventScroll: true }); });
-    pinLayer.append(pin);
+    if (comment.surface === "E-002" || comment.appliesToAllEpisodes && comment.surface !== "Library") {
+      const pin = document.createElement("button"); pin.type = "button"; pin.className = "spot-pin"; pin.dataset.id = comment.id; pin.textContent = String(index + 1); pin.title = `${comment.label}: ${comment.text}`; pin.setAttribute("aria-label", `Open comment ${index + 1} on ${comment.label}`);
+      pin.addEventListener("click", () => { setFeedbackOpen(true); const item = [...list.children].find(node => node.dataset.id === comment.id); item?.scrollIntoView({ behavior: "smooth", block: "nearest" }); item?.querySelector(".comment-jump")?.focus({ preventScroll: true }); });
+      pinLayer.append(pin);
+    }
     const item = document.createElement("article"); item.className = "comment-item"; item.dataset.id = comment.id;
     const head = document.createElement("div"); head.className = "comment-item-head";
-    const jump = document.createElement("button"); jump.type = "button"; jump.className = "comment-jump"; jump.textContent = `${index + 1}. ${comment.label}`; jump.addEventListener("click", () => jumpTo(comment));
+    const jump = document.createElement("button"); jump.type = "button"; jump.className = "comment-jump"; jump.textContent = `${index + 1}. ${comment.label}`;
+    jump.addEventListener("click", () => { if (comment.surface === "E-002") jumpTo(comment); else location.href = comment.surface === "E-001" ? "../e001-review/" : comment.surface === "E-005" ? "../../Viz/compare.html?dev=1&episode=E-005" : "../../../dynamic-table/"; });
     const remove = document.createElement("button"); remove.type = "button"; remove.className = "delete-comment"; remove.textContent = "Delete"; remove.setAttribute("aria-label", `Delete comment ${index + 1}`);
     remove.addEventListener("click", async () => {
       try { comments = await saveAction({ action: "delete", id: comment.id }); renderComments(); message("Comment deleted."); }
       catch (error) { message(error.message, true); }
     });
     const text = document.createElement("p"); text.textContent = comment.text;
-    const scope = document.createElement("span"); scope.className = "comment-scope-badge"; scope.textContent = comment.appliesToAllEpisodes === true ? "All episodes" : "E-002 only";
+    const scope = document.createElement("span"); scope.className = "comment-scope-badge"; scope.textContent = comment.surface === "Library" ? `Library · ${comment.appliesToAllEpisodes ? "All table episodes" : "This table spot"}` : `${comment.surface} · ${comment.appliesToAllEpisodes === true ? "All episodes" : "This view"}`;
     const time = document.createElement("time"); time.dateTime = comment.createdAt; time.textContent = new Date(comment.createdAt).toLocaleString();
     head.append(jump, remove); item.append(head, scope, text, time); list.append(item);
   }
@@ -178,13 +182,23 @@ function renderCameraViews() {
         savedCameraViews = payload.views; globe?.setCameraViews(savedCameraViews); renderCameraViews(); cameraWorkshop?.refresh(); message("Camera view deleted.");
       } catch (error) { message(error.message, true); }
     });
-    item.append(label, remove);
+    const note = document.createElement("textarea"); note.rows = 2; note.maxLength = 4000; note.value = view.note || "";
+    note.placeholder = "Comment on this camera angle"; note.setAttribute("aria-label", `Comment on camera view at ${time} UTC`);
+    const saveNote = document.createElement("button"); saveNote.type = "button"; saveNote.textContent = "Save note";
+    saveNote.addEventListener("click", async () => {
+      try {
+        const response = await fetch("/api/camera-views", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "annotate", id: view.id, note: note.value }) });
+        const payload = await response.json(); if (!response.ok) throw new Error(payload.error || "Could not save camera note");
+        savedCameraViews = payload.views; message("Camera angle comment saved.");
+      } catch (error) { message(error.message, true); }
+    });
+    item.append(label, note, saveNote, remove);
     host.append(item);
   }
 }
 
 async function saveAction(request) {
-  const response = await fetch("/api/spot-comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request) });
+  const response = await fetch("/api/review-comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...request, ...(request.action === "add" ? { surface: "E-002" } : {}) }) });
   const payload = await response.json();
   if (!response.ok) throw new Error(payload.error || "Could not save comment");
   return payload.comments;
@@ -237,6 +251,8 @@ function setFeedbackOpen(open) {
   $("feedbackRail").hidden = !open;
   $("feedbackToggle").setAttribute("aria-expanded", String(open));
   document.body.classList.toggle("review-open", open);
+  if (open) sessionStorage.setItem("espl-review-comments-open", "1");
+  else sessionStorage.removeItem("espl-review-comments-open");
   positionPins();
 }
 
@@ -316,12 +332,15 @@ function renderTimeBands(window, slot, distance, speed, qualifications) {
 function renderDwellDescription(node, chaser, distance, speed) {
   const first = document.createElement("em"), target = document.createElement("em");
   const distanceValue = document.createElement("strong"), speedValue = document.createElement("strong");
+  const gray = document.createElement("strong"), gold = document.createElement("strong");
+  gray.className = "single"; gray.textContent = "Gray"; gold.className = "both"; gold.textContent = "gold";
   first.textContent = chaser.replace(/^COSMOS\s+/i, "Cosmos "); target.textContent = catalogNames.B || "USA 245";
   distanceValue.textContent = `${distance.toLocaleString()} km`;
   speedValue.textContent = `${(speed / 1000).toFixed(2).replace(/0+$/, "").replace(/\.$/, "")} km/s`;
   const hours = currentWindow ? (Date.parse(currentWindow.end) - Date.parse(currentWindow.start)) / 3600000 : 36;
   node.replaceChildren("The cumulative time within this ", String(hours), "-hour chapter during which ", first,
-    " is within ", distanceValue, " of ", target, " with a relative velocity at or below ", speedValue, ".");
+    " is within ", distanceValue, " of ", target, " with a relative velocity at or below ", speedValue,
+    ". ", gray, " marks one threshold; ", gold, " marks both.");
 }
 
 function compactSpeed(metersPerSecond) {
@@ -368,8 +387,11 @@ function renderOrbitalPanel() {
   showMinimum($("distanceMinimum"), orbitalModel.minimum(slot, "distanceKm"), "km");
   showMinimum($("speedMinimum"), orbitalModel.minimum(slot, "speedMs"), "km/s");
   const markedMs = minimumMarker?.windowId === currentWindow.id ? minimumMarker.ms : null;
+  const speedWindowMs = Date.parse(currentWindow.end) - Date.parse(currentWindow.start);
+  const visibleSpeedMax = samples.reduce((max, sample) => sample.ms <= currentMs && sample.ms >= currentMs - speedWindowMs && Number.isFinite(sample.speedMs) ? Math.max(max, sample.speedMs) : max, 0);
+  const speedUnit = Math.max(speed, visibleSpeedMax) < 1000 ? "m/s" : "km/s";
   chartScales.set("distanceChartGroup", drawOrbitalChart($("separationChart"), samples, "distanceKm", { window: currentWindow, currentMs, threshold: distance, title: "Separation distance (km)", maximum: Number($("distanceThresholdSlider").max), qualifications, markedMs }));
-  chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), samples, "speedMs", { window: currentWindow, currentMs, threshold: speed, title: "Relative velocity (km/s)", maximum: Number($("speedThresholdSlider").max), qualifications, markedMs }));
+  chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), samples, "speedMs", { window: currentWindow, currentMs, threshold: speed, title: `Relative velocity (${speedUnit})`, maximum: Number($("speedThresholdSlider").max) * 1000, qualifications, markedMs, speedUnit }));
   $("separationChart").setAttribute("aria-label", `${chaser} to ${catalogNames.B || "USA 245"} separation over time`);
   $("speedChart").setAttribute("aria-label", `${chaser} to ${catalogNames.B || "USA 245"} relative velocity over time`);
   const dwellMinutes = Math.round(qualifications.both.totalMs / 60000);
@@ -399,7 +421,7 @@ function wireChartThreshold(groupId, chartId, sliderId) {
   const change = clientY => {
     const scale = chartScales.get(groupId); if (!scale) return;
     const y = clientY - chart.getBoundingClientRect().top;
-    const value = (scale.bottom - y) / (scale.bottom - scale.top) * scale.max;
+    const value = (scale.bottom - y) / (scale.bottom - scale.top) * scale.max / (groupId === "speedChartGroup" && scale.unit === "m/s" ? 1000 : 1);
     const step = Number(slider.step) || 1;
     slider.value = (Math.round(Math.max(Number(slider.min), Math.min(Number(slider.max), value)) / step) * step).toFixed(2);
     updateThresholds($("ui"));
@@ -700,22 +722,24 @@ $("commentForm").addEventListener("submit", async event => {
   } catch (error) { message(error.message, true); }
 });
 $("copyComments").addEventListener("click", async () => {
-  const markdown = comments.map((item, index) => `${index + 1}. **${item.label}** (${item.root}, ${item.key}; ${item.appliesToAllEpisodes === true ? "all episodes" : "E-002 only"}): ${item.text}`).join("\n\n") || "No E-002 control-panel comments yet.";
+  const markdown = comments.map((item, index) => `${index + 1}. **${item.surface} · ${item.label}** (${item.root}, ${item.key}; ${item.appliesToAllEpisodes === true ? "all episodes" : "this view"}): ${item.text}`).join("\n\n") || "No review comments yet.";
   try { await navigator.clipboard.writeText(markdown); message("Feedback copied. Paste it into this conversation whenever you want."); }
   catch { message("Clipboard unavailable. Use Download JSON instead.", true); }
 });
 $("downloadComments").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify({ schema: "espl-e002-spot-comments-v1", comments }, null, 2)], { type: "application/json" });
-  const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "e002-control-panel-comments.json"; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  const blob = new Blob([JSON.stringify({ schema: "espl-shared-review-v1", comments }, null, 2)], { type: "application/json" });
+  const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "review-comments.json"; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 });
 async function saveCurrentCameraView(openFeedback = true) {
   const view = globe?.captureCameraView();
   if (!view) { message("The camera is still loading; try again in a moment.", true); return false; }
+  view.note = $("workshopCameraNote").value.trim();
   try {
     const response = await fetch("/api/camera-views", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "add", view }) });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || "Could not save camera view");
     savedCameraViews = payload.views; globe?.setCameraViews(savedCameraViews); renderCameraViews(); cameraWorkshop?.refresh();
+    $("workshopCameraNote").value = "";
     if (openFeedback && $("cameraWorkshop").hidden) setFeedbackOpen(true);
     message("Camera view saved locally. Its exact angle and time are in saved-camera-views.json.");
     return true;
@@ -726,6 +750,7 @@ $("downloadCameraViews").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify({ schema: "espl-e002-camera-views-v1", views: savedCameraViews }, null, 2)], { type: "application/json" });
   const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "e002-saved-camera-views.json"; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 });
+$("exportCameraViews").addEventListener("click", () => $("downloadCameraViews").click());
 window.addEventListener("resize", positionPins);
 panelColumn.addEventListener("scroll", positionPins);
 try {
@@ -735,12 +760,15 @@ try {
     if (!response.ok) throw new Error("Saved E-002 camera path unavailable");
     savedCameraViews = (await response.json()).views || [];
   } else {
-    const [response, cameraResponse] = await Promise.all([fetch("/api/spot-comments"), fetch("/api/camera-views")]);
+    const [response, cameraResponse, momentResponse] = await Promise.all([fetch("/api/review-comments"), fetch("/api/camera-views"), fetch("/api/camera-moments")]);
     if (!response.ok) throw new Error("Saved comments unavailable");
     comments = (await response.json()).comments;
     if (cameraResponse.ok) savedCameraViews = (await cameraResponse.json()).views;
+    if (momentResponse.ok) moments = (await momentResponse.json()).moments.filter(item => item.surface === "E-002");
   }
   renderComments(); renderCameraViews();
+  if (!publishedMode && comments.length && sessionStorage.getItem("espl-review-comments-open") === "1") setFeedbackOpen(true);
+  else if (!publishedMode && !comments.length) sessionStorage.removeItem("espl-review-comments-open");
   loadOrbitalPreview(episodeConfig).then(model => {
     orbitalModel = model;
     try {
@@ -753,6 +781,12 @@ try {
     if (globe) finishEpisodeLoading();
     if (globe && !publishedMode) cameraWorkshop = createCameraWorkshop({
       windows: episodeConfig.windows, names: catalogNames,
+      reviewRoutes: episodeConfig.windows.flatMap(window => ["A", "C"].flatMap(slot => window.id === "dec30" && slot === "C" ? [] : ["target", "chaser"].map(reference => ({ window, slot, reference, viewMode: "relative" })))),
+      storageKey: "espl-e002-camera-workshop-v3",
+      getMoments: () => moments,
+      addMoment: async moment => { const response = await fetch("/api/camera-moments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "add", moment: { ...moment, surface: "E-002" } }) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || "Could not save moment"); moments = payload.moments.filter(item => item.surface === "E-002"); return moments; },
+      deleteMoment: async id => { const response = await fetch("/api/camera-moments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", id }) }); const payload = await response.json(); if (!response.ok) throw new Error(payload.error || "Could not remove moment"); moments = payload.moments.filter(item => item.surface === "E-002"); return moments; },
+      motionPreview: (route, minute, spanMinutes) => globe?.motionPreview(route.window, Date.parse(route.window.start) + minute * 60000, route.slot, spanMinutes),
       beforeOpen: () => setFeedbackOpen(false),
       getViews: () => savedCameraViews,
       getMode: () => globe.getMode(),
@@ -783,6 +817,7 @@ try {
           option.click();
         }
         globe.update(currentWindow, ms, route.slot);
+        if (globe.getMode() === "eci") $("modeBtn").click();
         if (stage.dataset.referenceMode !== route.reference) $("referenceBtn").click();
         playbackControl.reviewMinute(minute, true);
         globe.useLearnedPath();

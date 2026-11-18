@@ -42,10 +42,10 @@ export function fadingTrailGeometry(points) {
   return geometry;
 }
 
-export function fadingTrailMaterial(slot) {
+export function fadingTrailMaterial(slot, halfWidthPx = 1.55) {
   return new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(SATELLITE_STYLES[slot].line) }, uOpacity: { value: .82 }, uResolution: { value: new THREE.Vector2(1, 1) }, uHeadAge: { value: 1 }, uTailAge: { value: 0 } },
-    vertexShader: `uniform vec2 uResolution; uniform float uHeadAge; uniform float uTailAge; attribute vec3 previous; attribute vec3 next; attribute float side; attribute float age; varying float vAlpha;
+    uniforms: { uColor: { value: new THREE.Color(SATELLITE_STYLES[slot].line) }, uOpacity: { value: .82 }, uResolution: { value: new THREE.Vector2(1, 1) }, uHeadAge: { value: 1 }, uTailAge: { value: 0 }, uHalfWidthPx: { value: halfWidthPx } },
+    vertexShader: `uniform vec2 uResolution; uniform float uHeadAge; uniform float uTailAge; uniform float uHalfWidthPx; attribute vec3 previous; attribute vec3 next; attribute float side; attribute float age; varying float vAlpha;
       void main() {
         vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         vec4 a = projectionMatrix * modelViewMatrix * vec4(previous, 1.0);
@@ -53,7 +53,7 @@ export function fadingTrailMaterial(slot) {
         vec2 tangent = (b.xy / b.w - a.xy / a.w) * uResolution;
         tangent = length(tangent) > 0.0001 ? normalize(tangent) : vec2(1.0, 0.0);
         vec2 normal = vec2(-tangent.y, tangent.x);
-        clip.xy += normal * side * 1.1 * 2.0 / uResolution * clip.w;
+        clip.xy += normal * side * uHalfWidthPx * 2.0 / uResolution * clip.w;
         gl_Position = clip;
         vAlpha = pow(clamp((age - uTailAge) / max(uHeadAge - uTailAge, 0.0001), 0.0, 1.0), 1.4);
       }`,

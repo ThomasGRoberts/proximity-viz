@@ -10,6 +10,7 @@ export async function mountE001Preview(host) {
   host.dataset.previewFrame = "satellite-centered-relative";
   host.replaceChildren(frame);
   return {
+    frame,
     setEarthColor() {},
     dispose() { frame.src = "about:blank"; frame.remove(); },
   };

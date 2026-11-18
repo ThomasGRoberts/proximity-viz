@@ -16,8 +16,8 @@ const epochText = value => {
   const fraction = value.match(/\.(\d+)Z$/)?.[1];
   return `${whole}${fraction ? `.${fraction}` : ""} UTC`;
 };
-const owner = code => code === "CIS" ? "Russia (CIS) 🇷🇺" : code === "FRIT" ? "France / Italy 🇫🇷 🇮🇹" : code;
-const siteFlags = code => ["TYMSC", "TTMTR"].includes(code) ? " 🇰🇿 🇷🇺" : code === "FRGUI" ? " 🇫🇷" : "";
+const owner = code => code === "CIS" ? "Russia (CIS) 🇷🇺" : code === "FRIT" ? "France / Italy 🇫🇷 🇮🇹" : code === "PRC" ? "China (PRC) 🇨🇳" : code;
+const siteFlags = code => ["TYMSC", "TTMTR"].includes(code) ? " 🇰🇿 🇷🇺" : code === "FRGUI" ? " 🇫🇷" : code === "WSC" ? " 🇨🇳" : "";
 function link(label, href) {
   const anchor = document.createElement("a");
   anchor.className = "espl-news-external"; anchor.href = href; anchor.target = "_blank"; anchor.rel = "noopener noreferrer";
@@ -31,6 +31,7 @@ function row(dl, label, value) {
 }
 async function render(card) {
   const details = card.querySelector(".satMetaDetails");
+  if (!details) return;
   const data = await catalog;
   if (!card.open) return;
   const record = useSpaceTrack ? data?.records?.[card.dataset.cospar] : data?.objects?.[card.dataset.cospar];
@@ -39,13 +40,13 @@ async function render(card) {
     OWNER: record.COUNTRY, OBJECT_TYPE: record.OBJECT_TYPE === "PAYLOAD" ? "PAY" : record.OBJECT_TYPE,
     LAUNCH_DATE: record.LAUNCH, LAUNCH_SITE: record.SITE
   } : record?.satcat;
-  details.replaceChildren();
   if (!satcat) { details.textContent = "Catalog metadata unavailable."; return; }
+  const fresh = document.createElement("div");
   const section = title => {
     const wrap = document.createElement("section"); wrap.className = "metadataSection";
     const heading = document.createElement("h4"); heading.textContent = title;
     const dl = document.createElement("dl"); dl.className = "object-meta";
-    wrap.append(heading, dl); details.append(wrap); return dl;
+    wrap.append(heading, dl); fresh.append(wrap); return dl;
   };
   const satellite = section("Satellite Details");
   row(satellite, "COSPAR ID", satcat.OBJECT_ID);
@@ -91,6 +92,17 @@ async function render(card) {
   }
   else dd.textContent = card.dataset.sourceData || "Source unverified";
   sourceRow.append(dt, dd); orbital.append(sourceRow);
+  const oldRows = [...details.querySelectorAll(".metadataSection .object-meta>div")];
+  const newRows = [...fresh.querySelectorAll(".metadataSection .object-meta>div")];
+  const sameShape = details.querySelectorAll(":scope>.metadataSection").length === fresh.children.length &&
+    oldRows.length === newRows.length && oldRows.every((oldRow, index) => oldRow.querySelector("dt")?.textContent === newRows[index].querySelector("dt")?.textContent);
+  if (!sameShape) { details.replaceChildren(...fresh.children); return; }
+  oldRows.forEach((oldRow, index) => {
+    const oldValue = oldRow.querySelector("dd"), newValue = newRows[index].querySelector("dd");
+    if (oldValue.textContent !== newValue.textContent || oldValue.querySelector("a")?.href !== newValue.querySelector("a")?.href) {
+      oldValue.replaceChildren(...[...newValue.childNodes].map(node => node.cloneNode(true)));
+    }
+  });
 }
 host.addEventListener("toggle", event => {
   const card = event.target.closest(".satCard");

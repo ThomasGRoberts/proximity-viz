@@ -20,6 +20,7 @@ td{padding:15px 12px;border-bottom:1px solid #ededed;vertical-align:middle;overf
 .expanded-row>td{background:#fff}
 .orbital-preview iframe.e002-mini{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#fffcf6}
 .orbital-preview iframe.e001-mini{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#fffcf6}
+.orbital-preview iframe.e005-mini{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#fffcf6}
 /* Satellite markers use Willa's #eaaa00/#a9a9a9 palette and a bold black ring. */
 .dot{width:14px;height:14px;flex-basis:14px;margin-top:2px;border:2px solid #000}
 .organization-icon{display:inline-block;color:#777;font-size:14px;line-height:1;vertical-align:baseline}
@@ -129,6 +130,17 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
   .table-wrap tr.expanded-row,.table-wrap tr.expanded-row>td{display:block;width:100%}
   .expanded-inner{width:100%!important;max-width:100%!important}
 }
+
+/* The model invitation sits below the episode description and remains legible. */
+.expanded-inner.has-visual .context-model-link{position:relative;z-index:4;display:inline-flex;align-items:center;width:max-content;max-width:100%;min-height:45px;margin-top:8px;color:#514a3e;text-decoration:none}
+.context-model-link .model-action{position:static;display:inline-flex;align-items:center;gap:6px;width:auto;max-width:none;height:42px;opacity:1;transform:none!important;pointer-events:auto}
+.context-model-link .model-label,.context-model-link.is-open .model-label,.context-model-link[data-model-stage] .model-label{width:auto;opacity:1;clip-path:none;white-space:nowrap;transition:none}
+.context-model-link .model-arrow,.context-model-link.is-open .model-arrow,.context-model-link[data-model-stage] .model-arrow{width:12px;opacity:1;margin-left:0;transition:transform .2s ease}
+.context-model-link:hover .model-arrow,.context-model-link:focus-visible .model-arrow{transform:translateX(4px)}
+.context-model-link:focus-visible{outline:2px solid #a27c1e;outline-offset:2px;border-radius:5px}
+.visual-link .orbital-preview,.table-wrap>.orbital-preview{transition:filter .25s ease}
+.visual-link.scene-hover .orbital-preview,.table-wrap>.orbital-preview.scene-hover{filter:brightness(.82) contrast(1.05)}
+.table-wrap>.orbital-preview.scene-hover iframe{transform:scale(1.025);transition:transform .4s ease}
 @media(prefers-reduced-motion:reduce){.news-indicator .news-mini-stack{transition:none}}
 .detail-overview{grid-template-columns:minmax(0,1.4fr) minmax(280px,.8fr);gap:14px;align-items:start}
 .context-block .episode-description{line-height:1.48;margin-bottom:5px}
@@ -410,6 +422,14 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 /* Local editing uses the existing miniature scene, moved into its table viewport. */
 .table-wrap>.orbital-preview.mini-editing-viewport{z-index:8;border:1px solid #d9c894;border-radius:9px;pointer-events:auto;-webkit-mask-image:none;mask-image:none}
 .table-wrap>.orbital-preview.mini-editing-viewport iframe.e002-mini{pointer-events:auto}
+.table-wrap>.orbital-preview.e002-prewarm{left:-12000px!important;top:0!important;width:900px!important;height:450px!important;visibility:hidden!important;pointer-events:none!important;-webkit-mask-image:none!important;mask-image:none!important}
+.table-wrap>.orbital-preview.mini-editing-viewport{border:0;border-radius:0;box-shadow:none}
+.table-wrap>.orbital-preview:has(iframe.e002-mini){border-radius:0;box-shadow:none}
+.expanded-row[data-episode-id="E-001"] .visual-block.mini-workshop-active{position:relative;z-index:8}
+.expanded-row[data-episode-id="E-001"] .visual-block.mini-workshop-active .visual-link.model-link{pointer-events:none}
+.expanded-row[data-episode-id="E-001"] .orbital-preview.mini-editing-viewport{z-index:9;pointer-events:auto;-webkit-mask-image:none;mask-image:none;border:1px solid #d9c894;border-radius:9px}
+.expanded-row[data-episode-id="E-001"] .orbital-preview.mini-editing-viewport iframe.e001-mini{pointer-events:auto}
+.expanded-row[data-episode-id="E-005"] .orbital-preview.mini-editing-viewport iframe.e005-mini{pointer-events:auto}
 .expanded-row[data-episode-id="E-002"] .visual-block.mini-workshop-active{position:relative;z-index:7}
 .expanded-row[data-episode-id="E-002"] .visual-block.mini-workshop-active .visual-link.model-link{height:340px!important;min-height:340px!important;visibility:hidden}
 .table-review-bar{position:sticky;top:0;z-index:1100;display:grid;gap:6px;padding:8px 16px 7px;border-bottom:1px solid #d9d2c2;background:#fffdf8f5;box-shadow:0 3px 14px #00000012;font-size:11px}
@@ -427,15 +447,19 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .mini-loop-summary{max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .table-review-spacer{flex:1 1 auto}
 .table-review-status{margin:0;line-height:1.3}
-.table-comment-drawer{display:grid;gap:8px;max-height:300px;overflow:auto;padding:10px;border:1px solid #e4d9bf;border-radius:7px;background:#fff}
+.table-comment-drawer{position:fixed;top:calc(var(--table-review-bar-height, 130px) + 8px);right:16px;z-index:1105;display:grid;align-content:start;gap:8px;width:min(430px,calc(100vw - 32px));max-height:calc(100vh - var(--table-review-bar-height, 130px) - 20px);overflow:auto;padding:10px;border:1px solid #e4d9bf;border-radius:7px;background:#fff;box-shadow:0 9px 30px #0002}
+.table-comment-head{display:flex;align-items:center;justify-content:space-between;color:#554a36;font-size:11px}
+.table-comment-head button{font-size:18px;line-height:1}
 #tableCommentForm{display:flex;align-items:start;flex-wrap:wrap;gap:7px}
 #tableCommentForm label{min-width:180px;color:#5f584d;font-size:10px}
 #tableCommentForm label strong{display:block;color:#4e421f}
+.table-comment-drawer #tableCommentForm .table-comment-scope{display:flex;align-items:center;gap:6px;width:100%;min-width:0}
+.table-comment-drawer #tableCommentAllEpisodes{margin:0;accent-color:#a47c1d}
 #tableCommentText{flex:1 1 330px;min-height:58px;padding:7px;border:1px solid #d5cbbb;border-radius:5px;font:11px/1.4 inherit}
-.table-comment-list{display:flex;flex-wrap:wrap;gap:7px}
-.table-comment-item{display:flex;align-items:center;gap:5px;max-width:400px;padding:5px 7px;border:1px solid #e4dfd5;border-radius:5px;background:#faf9f6;font-size:10px}
+.table-comment-list{display:grid;gap:7px}
+.table-comment-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:3px 6px;padding:7px;border:1px solid #e4dfd5;border-radius:5px;background:#faf9f6;font-size:10px}
 .table-comment-item button{min-height:0;padding:2px 4px;border:0;background:transparent;color:#70551f;text-align:left}
-.table-comment-item p{margin:0;color:#5d5a54;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table-comment-item p{grid-column:1/-1;margin:0;color:#5d5a54;line-height:1.4;white-space:pre-wrap}
 .table-spot-pins{position:fixed;z-index:1080;inset:0;pointer-events:none}
 .table-spot-pins[hidden]{display:none}
 .table-spot-pin{position:absolute;display:grid;place-items:center;width:22px;height:22px;border:2px solid #fff;border-radius:50%;background:#a77906;box-shadow:0 2px 7px #0004;color:#fff;font-size:10px;font-weight:800;transform:translate(-50%,-50%);pointer-events:auto}
@@ -455,6 +479,9 @@ body.table-spot-mode .component-wrap,body.table-spot-mode .component-wrap *{curs
 .metric-heading{letter-spacing:.035em}
 .object-line.e002-inactive-chaser .dot.c{background:var(--marker-A,#eaaa00);opacity:.4}
 .object-line.e002-inactive-chaser .object-trigger{color:#888}
+.episode-row[data-episode-id="E-005"] .object-line .dot:is(.b,.c){background:#a9a9a9}
+.episode-row[data-episode-id="E-005"][data-mini-selected="B"] .object-line:has(.dot.c),
+.episode-row[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b){opacity:.3}
 .object-popover{width:min(350px,calc(100vw - 20px));padding:12px 14px;color:#555;font-size:10px;line-height:1.4}
 .object-popover-title{margin-bottom:10px;font-size:12px;font-weight:700}
 .object-popover-section{margin:0 0 5px;color:#555;font-size:11px;font-weight:700;letter-spacing:.055em;text-transform:uppercase}
@@ -483,3 +510,77 @@ body.table-spot-mode .component-wrap,body.table-spot-mode .component-wrap *{curs
     pointer-events:none;
   }
 }
+
+/* The E-001 miniature is an open scene, including while its camera is editable. */
+.table-wrap .expanded-row[data-episode-id="E-001"] .orbital-preview,
+.table-wrap .expanded-row[data-episode-id="E-001"] .orbital-preview.mini-editing-viewport{border:0;border-radius:0;box-shadow:none}
+
+/* Match the SBI invitation's inline, text-sized arrow and adjacent spacing. */
+.context-model-link .model-action{gap:0}
+.context-model-link .model-label{margin-left:10px}
+.context-model-link .model-arrow,.context-model-link.is-open .model-arrow,.context-model-link[data-model-stage] .model-arrow{width:12px;margin-left:4px;font-size:12px;font-weight:400;line-height:1.2}
+
+/* Small X/Y camera nudges are part of the local review ribbon only. */
+.mini-position-controls{display:inline-flex;align-items:center;gap:3px;color:#6d6556;font-size:10px}
+.mini-position-controls span:not(:first-child){margin-left:5px}
+.table-review-line .mini-position-controls button{min-width:27px;padding:4px 5px;font-size:13px;line-height:1}
+.table-review-line #miniOriginControl[hidden]{display:none}
+.context-model-link .model-arrow,.context-model-link.is-open .model-arrow,.context-model-link[data-model-stage] .model-arrow{position:static;display:inline-flex;align-items:center;justify-content:center;height:1em;margin-left:9px;line-height:1}
+.expanded-row[data-episode-id="E-001"] .orbital-preview iframe.e001-mini{will-change:transform}
+
+/* E-005 uses the same in-row miniature treatment as E-001 in local review. */
+.table-wrap .expanded-row[data-episode-id="E-005"] .expanded-inner.has-visual{background:#fffcf6}
+.expanded-row[data-episode-id="E-005"] .visual-block.mini-workshop-active{position:relative;z-index:8}
+.expanded-row[data-episode-id="E-005"] .visual-block.mini-workshop-active .visual-link.model-link{pointer-events:none}
+.expanded-row[data-episode-id="E-005"] .orbital-preview.mini-editing-viewport{z-index:9;pointer-events:auto;-webkit-mask-image:none;mask-image:none}
+.expanded-row[data-episode-id="E-005"] .orbital-preview iframe.e005-mini{will-change:transform}
+@media(min-width:901px){
+  .table-wrap .expanded-row[data-episode-id="E-005"] .visual-link.model-link{overflow:visible}
+  .table-wrap .expanded-row[data-episode-id="E-005"] .orbital-preview{position:absolute;left:calc(-44.9275% - 18px);width:calc(144.9275% + 18px);height:100%;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#0004 18%,#0009 35%,#000 48%);mask-image:linear-gradient(90deg,transparent 0%,#0004 18%,#0009 35%,#000 48%)}
+  .table-wrap .expanded-row[data-episode-id="E-005"] .context-block::before{content:"";position:absolute;z-index:-1;inset:-6px -35px -15px -7px;background:linear-gradient(90deg,#fffcf6 0%,#fffcf6f7 40%,#fffcf6b8 78%,transparent 100%);pointer-events:none}
+}
+.table-wrap .expanded-row .context-block{z-index:10;isolation:isolate}
+.table-wrap .expanded-row .context-block .episode-description{position:relative;z-index:1}
+.source-media .source-record-preview{box-sizing:border-box;width:calc(100% - 16px);height:calc(100% - 16px);padding:12px 15px;align-items:stretch;justify-content:center;gap:9px;overflow:hidden;border:1px solid #ded8ca;border-radius:3px;background:#fffdf8;box-shadow:0 1px 4px #00000012;color:#453f36;text-align:left;letter-spacing:normal}
+.source-record-publisher{padding-bottom:6px;border-bottom:1px solid #d8d1c1;color:#8a7651;font-size:10px;font-weight:700;line-height:1.2;text-transform:uppercase}
+.source-record-title{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;font-family:Georgia,serif;font-size:15px;font-weight:600;line-height:1.22}
+.table-wrap>.orbital-preview:has(iframe.e002-mini){background:#fffcf6;-webkit-mask-image:none;mask-image:none}
+.table-wrap .expanded-row[data-episode-id="E-002"] .expanded-inner.has-visual{background:transparent}
+.expanded-row[data-episode-id="E-002"] .visual-link.model-link{height:340px!important;min-height:340px!important}
+.expanded-inner.has-visual .evidence-section:has(.source-stack:hover),
+.expanded-inner.has-visual .evidence-section:has(.source-stack:focus-within){z-index:30}
+.source-stack:hover,.source-stack:focus-within{z-index:5}
+.source-carousel-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.source-carousel-grid .source-stack[hidden]{display:none}
+.source-carousel-controls{position:relative;display:flex;align-items:center;justify-content:center;width:max-content;min-height:34px;margin:8px auto 0;padding:0 29px}
+.source-carousel-dots{display:flex;align-items:center;justify-content:center;gap:8px;min-height:23px}
+.source-carousel-dot{appearance:none;flex:0 0 6px;width:6px;height:6px;margin:0;padding:0;border:0;border-radius:50%;background:rgba(55,65,81,.2);cursor:pointer;transition:width 230ms cubic-bezier(.2,.8,.2,1),flex-basis 230ms cubic-bezier(.2,.8,.2,1),background 180ms ease,border-radius 230ms cubic-bezier(.2,.8,.2,1)}
+.source-carousel-dot.is-active{flex-basis:23px;width:23px;border-radius:999px;background:#f4ba20}
+.source-carousel-dot:focus-visible{outline:2px solid #74652f;outline-offset:4px}
+.source-carousel-arrow{appearance:none;position:absolute;top:50%;display:grid;place-items:center;width:24px;height:34px;margin:0;padding:0;border:0;background:transparent;color:rgba(55,65,81,.72);opacity:.92;cursor:pointer;transform:translateY(-50%);transition:color 150ms ease,opacity 150ms ease}
+.source-carousel-arrow.previous{left:0}.source-carousel-arrow.next{right:0}
+.source-carousel-arrow svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:butt;stroke-linejoin:miter}
+.source-carousel-arrow:hover,.source-carousel-arrow:focus-visible{color:rgba(31,41,55,.95);opacity:1}
+.source-carousel-arrow:focus-visible{border-radius:3px;outline:1px solid rgba(107,114,128,.42);outline-offset:1px}
+@media(max-width:900px){.source-carousel-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Let the records begin under the model invitation while the orbital image
+   continues behind their cards. In edit mode, reserve the full scene viewport. */
+@media(min-width:901px){
+  .expanded-inner.has-visual{row-gap:0}
+  .expanded-inner.has-visual .visual-block{height:0;min-height:0;overflow:visible}
+  .expanded-inner.has-visual .evidence-section{padding-top:0}
+  .expanded-row[data-episode-id="E-002"] .visual-block.mini-workshop-active{height:460px;min-height:460px}
+}
+.expanded-row[data-episode-id="E-002"] .visual-link.model-link{height:460px!important;min-height:460px!important}
+.expanded-row[data-episode-id="E-002"] .visual-block.mini-workshop-active .visual-link.model-link{height:460px!important;min-height:460px!important}
+.context-model-link .model-arrow,.context-model-link.is-open .model-arrow,.context-model-link[data-model-stage] .model-arrow{transform:translateY(-1px)}
+.context-model-link:hover .model-arrow,.context-model-link:focus-visible .model-arrow{transform:translate(4px,-1px)}
+.context-model-link .model-label{display:inline!important;width:auto!important;clip-path:none!important;opacity:1!important;overflow:visible!important}
+.context-model-link .model-arrow{display:inline-flex!important;width:12px!important;opacity:1!important;overflow:visible!important}
+@media(max-width:650px){.source-carousel-grid{grid-template-columns:minmax(0,1fr)}}
+.table-wrap>.orbital-preview.e001-prewarm{left:-12000px!important;top:0!important;width:900px!important;height:450px!important;visibility:hidden!important;pointer-events:none!important;mask-image:none!important;-webkit-mask-image:none!important}
+.table-wrap>.orbital-preview.e001-live{position:absolute;z-index:4;background:#fffcf6;pointer-events:none;mask-image:linear-gradient(90deg,transparent 0%,#0004 18%,#0009 35%,#000 48%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,#0004 18%,#0009 35%,#000 48%)}
+.table-wrap>.orbital-preview.e001-live.mini-editing-viewport{z-index:8;pointer-events:auto;mask-image:none;-webkit-mask-image:none}
+.table-wrap>.orbital-preview.e001-live.mini-editing-viewport iframe.e001-mini{pointer-events:auto}
+.table-wrap .expanded-row[data-episode-id="E-001"] .expanded-inner.has-visual{background:linear-gradient(90deg,#fffcf6 0%,#fffcf6e8 37%,transparent 72%)}

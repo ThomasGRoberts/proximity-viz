@@ -30,6 +30,7 @@ loadCurrentEpisodes().then(feed => {
   if (!episode) throw new Error(`${episodeId} missing from current Episodes sheet`);
   if (episodeId === "E-001") episodeUtcInterval(episode);
   const text = episodeId === "E-002" ? E002_DESCRIPTION : episode["Episode Description"];
+  if (!text && episodeId === "E-005") { description.hidden = true; return; }
   if (!text) throw new Error("Episode description unavailable");
   description.replaceChildren(sanitizeEpisodeDescription(text));
 }).catch(error => {

@@ -110,6 +110,8 @@ let caseNorads = [];         // NORAD numbers of the satellites in the case open
 const lastTleIndex = { A: null, B: null };   // the TLE each satellite used last time, to notice a switch
 const flashUntil = { A: 0, B: 0 };           // when each satellite's orbit-line flash ends (in performance.now() time)
 let currentMs = 0;           // The moment currently shown
+let miniWindows = [], miniActive = null, miniLoopStart = 0, miniLoopEnd = 0;
+const miniPinnedTles = new Map();
 let playing = false;
 let lastFrameTime = performance.now();
 let cameraTween = null;      // A smooth camera movement in progress, or null if none
@@ -201,6 +203,7 @@ function satcatInfo(norad) {
 // use a "binary search": check the middle, throw away the half that can't contain
 // the answer, repeat. Finds the answer among 5,000 TLEs in about 13 steps.
 function nearestTleIndex(lib, ms) {
+  if (miniPinnedTles.has(lib)) return miniPinnedTles.get(lib);
   const epochs = lib.epochsMs;
   let low = 0, high = epochs.length - 1;
   while (low < high) {
@@ -211,6 +214,15 @@ function nearestTleIndex(lib, ms) {
   // "low" is now the first TLE at or after ms. The one just before might be closer.
   if (low > 0 && ms - epochs[low - 1] < epochs[low] - ms) return low - 1;
   return low;
+}
+
+function pinMiniTles(ms) {
+  if (chapterMode.get("mini") !== "1") return;
+  miniPinnedTles.clear();
+  for (const slot of ["A", "B"]) {
+    const lib = library[pair[slot]];
+    if (lib?.epochsMs?.length) miniPinnedTles.set(lib, nearestTleIndex(lib, ms));
+  }
 }
 
 // satellite.js turns a TLE into a "satrec" (satellite record) before it can propagate.
@@ -308,7 +320,30 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2.4));
 // Earth is a sphere of radius 1. The country borders go inside the same group
 // so they rotate together with the sphere.
 const earthGroup = new THREE.Group();
-earthGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: 0xf7f7f7 })));
+const miniScene = chapterMode.get("mini") === "1";
+const miniEarthRest = 0xd8cbb9, miniEarthHover = 0xcfbea9;
+const miniReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+let miniSceneHover = false;
+const miniEarthColor = new THREE.Color(miniEarthRest);
+const earthSurfaceMaterial = miniScene ? new THREE.ShaderMaterial({
+  uniforms: { uColor: { value: miniEarthColor } },
+  polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
+  vertexShader: `varying vec3 vViewNormal;
+    void main() {
+      vViewNormal = normalize(normalMatrix * normal);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: `uniform vec3 uColor; varying vec3 vViewNormal;
+    void main() {
+      float facing = max(0.0, normalize(vViewNormal).z);
+      float shade = mix(0.81, 1.0, smoothstep(0.0, 0.95, facing));
+      gl_FragColor = vec4(uColor * shade, 1.0);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`,
+}) : new THREE.MeshBasicMaterial({ color: 0xf7f7f7 });
+const earthSurface = new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), earthSurfaceMaterial);
+earthGroup.add(earthSurface);
 const borderGroup = new THREE.Group();
 earthGroup.add(borderGroup);
 scene.add(earthGroup);
@@ -327,14 +362,60 @@ function latLonToPoint(lat, lon, radius = 1.001) {
 // Draw country borders. "async" means this function can wait for a file to download
 // without freezing the page.
 const borderLayers = { standard: null, detailed: null };
+let miniBorderMap = null;
+function buildMiniBorderMap(topology) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 1024;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.strokeStyle = "rgba(85, 85, 85, .82)";
+  context.lineWidth = 2;
+  context.lineJoin = "round";
+  context.lineCap = "round";
+  const width = canvas.width, height = canvas.height;
+  for (const feature of topojson.feature(topology, topology.objects.countries).features) {
+    const geometry = feature.geometry;
+    const rings = geometry.type === "Polygon" ? geometry.coordinates
+                : geometry.type === "MultiPolygon" ? geometry.coordinates.flat() : [];
+    for (const ring of rings) {
+      if (ring.length < 2) continue;
+      for (const wrap of [-1, 0, 1]) {
+        context.beginPath();
+        let previousX = null;
+        for (const [lon, lat] of ring) {
+          // SphereGeometry maps +X (Greenwich in latLonToPoint) to U=.5 and
+          // positive longitude toward -Z to increasing U.
+          const x = (.5 + lon / 360 + wrap) * width;
+          const y = (.5 - lat / 180) * height;
+          if (previousX === null || Math.abs(x - previousX) > width / 2) context.moveTo(x, y);
+          else context.lineTo(x, y);
+          previousX = x;
+        }
+        context.stroke();
+      }
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  return new THREE.Mesh(new THREE.SphereGeometry(1.003, 160, 160),
+    new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }));
+}
 async function buildBorders(url) {
     const response = await fetch(url);
     if (!response.ok) throw new Error("SBI country boundaries unavailable");
     const topology = await response.json();
+    if (miniScene && !miniBorderMap) {
+      miniBorderMap = buildMiniBorderMap(topology);
+      if (miniBorderMap) borderGroup.add(miniBorderMap);
+    }
     // Adjacent country polygons repeat their shared edges. Drawing every ring
     // separately produced overlapping translucent pixels and many draw calls,
     // which made borders flicker while the camera moved.
-    const seen = new Set(), positions = [], radius = 1.0017;
+    const seen = new Set(), positions = [], radius = miniScene ? 1.003 : 1.0017;
     const key = coordinate => `${coordinate[0].toFixed(5)},${coordinate[1].toFixed(5)}`;
     for (const feature of topojson.feature(topology, topology.objects.countries).features) {
       const geometry = feature.geometry;
@@ -382,6 +463,12 @@ async function loadBorders() {
 loadBorders();
 function updateBorderDetail() {
   if (!borderLayers.standard || !borderLayers.detailed) return;
+  if (miniScene) {
+    borderLayers.standard.visible = !miniBorderMap;
+    borderLayers.detailed.visible = false;
+    borderLayers.standard.material.opacity = .62;
+    return;
+  }
   const distance = Math.max(.01, camera.position.length());
   const diameter = renderer.domElement.getBoundingClientRect().height /
     (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * distance);
@@ -474,7 +561,7 @@ for (const slot of ["A", "B"]) {
   scene.add(dot);
   dots[slot] = dot;
 
-  const material = fadingTrailMaterial(slot);
+  const material = fadingTrailMaterial(slot, chapterMode.get("mini") === "1" ? 1.8 : 1.55);
   const trail = new THREE.Mesh(new THREE.BufferGeometry(), material);
   scene.add(trail);
   trails[slot] = trail;
@@ -670,17 +757,36 @@ function updateScene() {
     // The orbit line shows the last full orbit, all from the TLE in use right now
     // (so it doesn't jump when the nearest TLE changes partway along it).
     // satrec.no is the mean motion in radians per minute, so one orbit = 2π / no minutes.
-    const periodMs = localChapterReview && view === "earth" ? 30 * MINUTE_MS : view === "relative" || (view === "earth" && Math.hypot(...r) > HIGH_ORBIT_KM)
-      ? 2 * DAY_MS : (2 * Math.PI / satrecFor(lib, tleIndex).no) * MINUTE_MS;
     const points = [];
-    for (let i = 0; i <= TRAIL_POINTS; i++) {
-      const trailTime = currentMs - (localChapterReview ? Math.min(periodMs, Math.max(0, currentMs - startMs)) : periodMs) * (1 - i / TRAIL_POINTS);
-      const p = positionAt(norad, trailTime, tleIndex);
-      if (p) {
-        const point = eciToScene(p);
-        if (view === "relative") point.applyAxisAngle(earthAxis, earthAngle - sgp4.gstime(new Date(trailTime)));
-        else if (!localChapterReview) point.applyAxisAngle(earthAxis, -sgp4.gstime(new Date(trailTime)));
-        points.push(point);
+    if (localChapterReview && view === "earth") {
+      // Keep the ECI tail at the same visible length as the other episodes.
+      const orbitMs = (2 * Math.PI / satrecFor(lib, tleIndex).no) * MINUTE_MS;
+      const stepMs = Math.max(30 * 1000, Math.min(5 * MINUTE_MS, orbitMs / 120));
+      const lookbackMs = Math.min(12 * 60 * MINUTE_MS, Math.max(0, currentMs - startMs));
+      camera.updateMatrixWorld(true);
+      let previous = null, screenLength = 0;
+      for (let elapsed = 0; elapsed <= lookbackMs + stepMs / 2; elapsed += stepMs) {
+        const p = positionAt(norad, currentMs - Math.min(elapsed, lookbackMs), tleIndex);
+        if (!p) { if (points.length) break; continue; }
+        const point = eciToScene(p), projected = point.clone().project(camera);
+        const screen = new THREE.Vector2(projected.x * renderer.domElement.clientWidth / 2, projected.y * renderer.domElement.clientHeight / 2);
+        if (previous) screenLength += screen.distanceTo(previous);
+        previous = screen; points.push(point);
+        if (screenLength >= 260 || elapsed >= lookbackMs) break;
+      }
+      points.reverse();
+    } else {
+      const periodMs = view === "relative" || (view === "earth" && Math.hypot(...r) > HIGH_ORBIT_KM)
+        ? 2 * DAY_MS : (2 * Math.PI / satrecFor(lib, tleIndex).no) * MINUTE_MS;
+      for (let i = 0; i <= TRAIL_POINTS; i++) {
+        const trailTime = currentMs - periodMs * (1 - i / TRAIL_POINTS);
+        const p = positionAt(norad, trailTime, tleIndex);
+        if (p) {
+          const point = eciToScene(p);
+          if (view === "relative") point.applyAxisAngle(earthAxis, earthAngle - sgp4.gstime(new Date(trailTime)));
+          else point.applyAxisAngle(earthAxis, -sgp4.gstime(new Date(trailTime)));
+          points.push(point);
+        }
       }
     }
     trails[slot].geometry.dispose();
@@ -726,7 +832,18 @@ function updateScene() {
     trails.A.visible = trails.B.visible = true;
     relativeTrail.visible = false;
     localMotionTrail.visible = false;
-    localReferenceOrbit.visible = false;
+    const lib = library[pair[centre]];
+    const index = nearestTleIndex(lib, currentMs);
+    const periodMs = 2 * Math.PI / satrecFor(lib, index).no * MINUTE_MS;
+    const orbitPoints = [];
+    for (let i = 0; i <= 180; i++) {
+      const sample = sgp4.propagate(satrecFor(lib, index), new Date(currentMs + periodMs * (i / 180 - .5))).position;
+      if (sample) orbitPoints.push(eciToScene([sample.x, sample.y, sample.z]));
+    }
+    if (orbitPoints.length > 1) orbitPoints.push(orbitPoints[0].clone());
+    localReferenceOrbit.geometry.dispose();
+    localReferenceOrbit.geometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+    localReferenceOrbit.visible = orbitPoints.length > 1;
   }
 
   for (const slot of ["A", "B"]) {             // name labels follow their dots
@@ -801,9 +918,14 @@ function prepareAnalysis() {
   updateThresholds();
 }
 function durationText(ms) {
-  if (!Number.isFinite(ms)) return { value: "—", unit: "days" };
-  const hours = ms / 3600000;
-  return hours >= 48 ? { value: (hours / 24).toFixed(1), unit: "days" } : { value: hours.toFixed(1), unit: "hours" };
+  if (!Number.isFinite(ms)) return { value: "—", unit: "min" };
+  const minutes = Math.round(ms / 60000);
+  if (minutes >= 1440) return { value: String(Number((minutes / 1440).toFixed(1))), unit: "d" };
+  if (minutes >= 60) return { value: String(Number((minutes / 60).toFixed(1))), unit: "hr" };
+  return { value: String(minutes), unit: "min" };
+}
+function displaySatelliteName(value) {
+  return value === value.toUpperCase() ? value.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase()) : value;
 }
 let singleThresholdIntervals = [];
 function updateThresholds() {
@@ -828,6 +950,19 @@ function updateThresholds() {
   const dwell = durationText(analysisResult.totalMs);
   $("dwellStat").textContent = dwell.value;
   $("dwellUnit").textContent = dwell.unit;
+  const dwellKey = $("dwellMetric")?.querySelector(".dwellKey");
+  if (dwellKey) {
+    const chaser = document.createElement("em"), target = document.createElement("em");
+    const distanceValue = document.createElement("strong"), speedValue = document.createElement("strong");
+    const gray = document.createElement("strong"), gold = document.createElement("strong");
+    gray.className = "single"; gray.textContent = "Gray"; gold.className = "both"; gold.textContent = "gold";
+    chaser.textContent = displaySatelliteName(slotName("A")); target.textContent = displaySatelliteName(slotName("B"));
+    distanceValue.textContent = `${distance.toLocaleString()} km`;
+    speedValue.textContent = speed < 1000 ? `${speed.toLocaleString()} m/s` : `${Number((speed / 1000).toFixed(2))} km/s`;
+    dwellKey.replaceChildren("The cumulative time within this ", String(Math.round((endMs - startMs) / 3600000)), "-hour chapter during which ", chaser,
+      " is within ", distanceValue, " of ", target, " with a relative velocity at or below ", speedValue,
+      ". ", gray, " marks one threshold; ", gold, " marks both.");
+  }
   renderDwellSegments();
   const minimum = (id, item, unit, metric) => {
     renderEstimatedMinimum($(id), { episodeId: "E-001", metric, value: item?.value, unit, ms: item?.ms, onJump(ms) {
@@ -870,7 +1005,7 @@ function drawEpisodeCharts() {
     ]) {
       const canvas = $(canvasId), scale = localChartModule.drawOrbitalChart(canvas, samples, metric, {
         window, currentMs, threshold: Number($(thresholdId).value), title, maximum, qualifications,
-        markedMs: focusedMinimumMs, speedUnit: "m/s", connectSwitches: true, historyHours: 168
+        markedMs: focusedMinimumMs, speedUnit: "m/s", connectSwitches: true
       });
       chartGeometry.set(canvas, { top: scale.top, bottom: scale.bottom, left: scale.left, right: scale.right,
         yMax: scale.max, thresholdY: scale.thresholdY });
@@ -1520,8 +1655,8 @@ const formatTimeSeconds = ms => new Intl.DateTimeFormat("en-US", { year: "numeri
 
 // ---------------------------------------------------------------------------
 // Relative motion view (set up like the original storyline page):
-// satellite A sits still at the centre, and B is drawn where it is RELATIVE to A,
-// along A's own directions:
+// the selected reference satellite sits at the centre, and the other is drawn
+// relative to it along the reference satellite's own directions:
 //   radial      = straight up, away from Earth
 //   along-track = the direction A is travelling
 //   cross-track = sideways, out of A's orbit plane
@@ -1530,7 +1665,7 @@ const formatTimeSeconds = ms => new Intl.DateTimeFormat("en-US", { year: "numeri
 let view = "relative";               // "earth" (Earth-fixed globe) or "relative" (Relative motion)
 let preferredView = "relative";      // E-001 opens directly in Relative Motion
 let showAxes = false;                // direction axes on or off (the round button under the home button)
-let centre = "A";                    // which satellite sits at the centre of the relative view: "A" or "B"
+let centre = "B";                    // the target starts at the centre; the reader can switch to A
 const otherSlot = () => centre === "A" ? "B" : "A";   // the satellite that moves around it
 const RELATIVE_SCALE_KM = 1000;      // in the relative view, 1 scene unit = 1,000 km (as in the original)
 const HIGH_ORBIT_TRAIL_HOURS = 7 * 24;   // GEO satellites move slowly, so show a whole week (seven orbits)
@@ -1582,12 +1717,13 @@ scene.add(relativeAxes);
 // B's fading trail: one line whose colour goes from white (4 hours ago, blending into the
 // background) to grey (now), so older positions fade away.
 const relativeTrail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ vertexColors: true }));
+relativeTrail.renderOrder = 6;
 relativeTrail.userData = { solid: relativeTrail.material, dashed: new THREE.LineDashedMaterial({ vertexColors: true }) };
 relativeTrail.visible = false;
 scene.add(relativeTrail);
 const localMotionTrail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial("A"));
 localMotionTrail.visible = false;
-localMotionTrail.renderOrder = 9;
+localMotionTrail.renderOrder = 6;
 localMotionTrail.frustumCulled = false;
 scene.add(localMotionTrail);
 const localReferenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: .72, depthTest: true, depthWrite: false }));
@@ -1609,6 +1745,24 @@ function placeEarthRelative(stateA) {
     .multiply(turn)
     .multiply(new THREE.Matrix4().makeRotationY(sgp4.gstime(new Date(currentMs))))
     .multiply(new THREE.Matrix4().makeScale(size, size, size));
+  if (miniScene) {
+    // A sphere far from the camera's optical axis projects as a slight ellipse.
+    // Compensate only the miniature's Earth, including its border geometry.
+    camera.updateMatrixWorld(true);
+    const forward = camera.getWorldDirection(new THREE.Vector3());
+    const eyeToEarth = centre.clone().sub(camera.position);
+    const along = eyeToEarth.dot(forward);
+    const lateral = eyeToEarth.clone().addScaledVector(forward, -along);
+    if (along > 0 && lateral.lengthSq() > 1e-6) {
+      const axis = lateral.normalize();
+      const squeeze = Math.max(.85, along / eyeToEarth.length());
+      const rotation = new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), axis));
+      const correction = rotation.clone().multiply(new THREE.Matrix4().makeScale(squeeze, 1, 1)).multiply(rotation.clone().invert());
+      const aroundCentre = new THREE.Matrix4().makeTranslation(centre.x, centre.y, centre.z)
+        .multiply(correction).multiply(new THREE.Matrix4().makeTranslation(-centre.x, -centre.y, -centre.z));
+      earthGroup.matrix.premultiply(aroundCentre);
+    }
+  }
 }
 
 // In the relative view: A at the centre, B at its relative position, B's fading trail, Earth below.
@@ -1695,7 +1849,8 @@ function drawRelative() {
 function sizeSceneSprites() {
   const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   for (const slot of ["A", "B"]) {
-    dots[slot].scale.set(DOT_SCREEN_SIZE * lens, DOT_SCREEN_SIZE * lens, 1);
+    const dotSize = DOT_SCREEN_SIZE * lens * (miniScene ? 2.5 : 1);
+    dots[slot].scale.set(dotSize, dotSize, 1);
     labels[slot].scale.set(LABEL_SCREEN_SIZE * lens * 5.33, LABEL_SCREEN_SIZE * lens, 1);
   }
 }
@@ -2098,13 +2253,45 @@ if (localChapterReview) {
     play() { if (!playing) $("playBtn").click(); },
     pause() { if (playing) $("playBtn").click(); },
     capture() { $("captureViewBtn").click(); return JSON.parse($("cameraCaptureOutput").value); },
+    motionPreview(timeUtc, spanMinutes) {
+      const middle = Date.parse(timeUtc), half = spanMinutes * MINUTE_MS / 2;
+      const frameRect = window.frameElement?.getBoundingClientRect() || { left: 0, top: 0 };
+      const canvasRect = renderer.domElement.getBoundingClientRect();
+      const panelRect = $("ui")?.getBoundingClientRect();
+      const panelRight = panelRect ? frameRect.left + panelRect.right + 8 : 0;
+      const bounds = { left: Math.min(frameRect.left + canvasRect.right - 12, Math.max(frameRect.left + canvasRect.left, panelRight)), top: frameRect.top + canvasRect.top,
+        right: frameRect.left + canvasRect.right, bottom: frameRect.top + canvasRect.bottom };
+      camera.updateMatrixWorld(true);
+      const sampleCount = 49, midpoint = (sampleCount - 1) / 2;
+      const series = ["A", "B"].map(slot => ({ slot, label: slotName(slot), color: slot === "A" ? "#b48700" : "#686868", primary: true,
+        points: Array.from({ length: sampleCount }, (_, index) => {
+          const ms = Math.max(startMs, Math.min(endMs, middle + half * (index - midpoint) / midpoint));
+          const state = view === "relative" ? null : stateAt(pair[slot], ms);
+          const point = view === "relative" ? slot === centre ? new THREE.Vector3() : relativePointAt(ms) : state ? eciToScene(state.r) : null;
+          if (!point) return null;
+          const projected = point.project(camera);
+          const x = frameRect.left + canvasRect.left + (projected.x + 1) * canvasRect.width / 2;
+          const y = bounds.top + (1 - projected.y) * canvasRect.height / 2;
+          return { x, y, inside: x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom && projected.z >= -1 && projected.z <= 1,
+            visibleDepth: projected.z >= -1 && projected.z <= 1 };
+        }) }));
+      return { bounds, series };
+    },
     applyCamera(viewConfig) {
+      setView(viewConfig.cameraMode, ["A", "B"].includes(viewConfig.referenceSatellite) ? viewConfig.referenceSatellite : centre, true);
+      this.applyFraming(viewConfig);
+    },
+    applyFraming(viewConfig, anchorToCurrent = false) {
       for (const key of ["position", "target", "up"]) if (!Array.isArray(viewConfig[key]) || viewConfig[key].length !== 3 || !viewConfig[key].every(Number.isFinite)) throw new Error(`Invalid camera ${key}`);
       if (!Number.isFinite(viewConfig.fieldOfViewDeg) || !Number.isFinite(viewConfig.zoom)) throw new Error("Invalid camera optics");
-      setView(viewConfig.cameraMode, ["A", "B"].includes(viewConfig.referenceSatellite) ? viewConfig.referenceSatellite : centre, true);
       playing = false; $("playBtn").innerHTML = '<span class="playIcon"></span>';
       cameraTween = null; cameraEditMode = true; autoZoom = false; controls.enablePan = true;
-      camera.position.fromArray(viewConfig.position); controls.target.fromArray(viewConfig.target); camera.up.fromArray(viewConfig.up);
+      const savedTarget = new THREE.Vector3().fromArray(viewConfig.target);
+      const savedPosition = new THREE.Vector3().fromArray(viewConfig.position);
+      if (anchorToCurrent) savedPosition.add(controls.target.clone().sub(savedTarget));
+      camera.position.copy(savedPosition);
+      if (!anchorToCurrent) controls.target.copy(savedTarget);
+      camera.up.fromArray(viewConfig.up);
       camera.fov = viewConfig.fieldOfViewDeg; camera.zoom = viewConfig.zoom; camera.updateProjectionMatrix(); controls.update();
       chartDirty = true; updateScene();
     },
@@ -2201,7 +2388,7 @@ $("captureViewBtn").addEventListener("click", async () => {
 // Keep the 3D view beside the panel and the right size when the window is resized.
 function updateRendererLayout() {
   const desktop = innerWidth > 760;
-  const left = desktop ? Math.ceil($("ui").getBoundingClientRect().right + 18) : 0;
+  const left = chapterMode.get("mini") === "1" ? 0 : desktop ? Math.ceil($("ui").getBoundingClientRect().right + 18) : 0;
   const width = Math.max(1, innerWidth - left);
   renderer.domElement.style.left = `${left}px`;
   camera.aspect = width / innerHeight;
@@ -2229,6 +2416,12 @@ updateRendererLayout();
 function animate(now) {
   requestAnimationFrame(animate);   // Ask to be called again on the next frame
 
+  if (miniScene) {
+    const base = DOT_SCREEN_SIZE * 2.5 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const pulse = miniSceneHover && !miniReducedMotion.matches ? 1 + .32 * (.5 + .5 * Math.sin(now / 180)) : 1;
+    for (const slot of ["A", "B"]) dots[slot].scale.set(base * pulse, base * pulse, 1);
+  }
+
   if (analysisSamples.length && [...visibleCharts].some(canvas => !chartCueFinished.has(canvas)) && now - lastChartDraw > 50) {
     drawEpisodeCharts(); lastChartDraw = now;
   }
@@ -2236,7 +2429,7 @@ function animate(now) {
   if (playing && pair.A && library[pair.A] && library[pair.B]) {
     const secondsSinceLastFrame = Math.min((now - lastFrameTime) / 1000, 0.1);
     currentMs += secondsSinceLastFrame * Number($("speed").value) * 1000;   // speed = simulated seconds per real second
-    if (currentMs > endMs) currentMs = startMs;   // Loop back to the start
+    if (currentMs > (miniLoopEnd || endMs)) currentMs = miniLoopStart || startMs;   // Loop back to the start
     updateScene();
   }
 
@@ -2256,7 +2449,7 @@ function animate(now) {
     trails[slot].material.uniforms.uColor.value.set(SLOTS[slot].line).multiplyScalar(brightness);
     trails[slot].material.uniforms.uResolution.value.set(renderer.domElement.clientWidth, renderer.domElement.clientHeight);
   }
-  if (localChapterReview) localMotionTrail.material.uniforms.uResolution.value.set(renderer.domElement.clientWidth * renderer.getPixelRatio(), renderer.domElement.clientHeight * renderer.getPixelRatio());
+  if (localChapterReview) localMotionTrail.material.uniforms.uResolution.value.set(renderer.domElement.clientWidth, renderer.domElement.clientHeight);
 
 lastFrameTime = now;
   updateIdentityAges();
@@ -2374,11 +2567,76 @@ try {
   if (chapterMode.get("mini") === "1") {
     const chapter = episodeChapters(liveEpisode)[0];
     if (!chapter) throw new Error("E-001 mini scene has no published chapter");
+    miniWindows = episodeChapters(liveEpisode).map(item => ({ id: item.id, label: new Date(item.center).toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }), start: item.start, end: item.end, anchor: item.center }));
+    miniActive = miniWindows[0];
     const anchor = chapter.centerMs;
-    setWindow(anchor - 30 * MINUTE_MS, anchor + 30 * MINUTE_MS);
+    pinMiniTles(anchor);
+    setWindow(Date.parse(chapter.start), Date.parse(chapter.end));
     setView("relative", "A", true);
     $("speed").add(new Option("5 min/s", "300"));
     $("speed").value = "300";
+    {
+      miniLoopStart = Date.parse(chapter.start); miniLoopEnd = Date.parse(chapter.end);
+      currentMs = miniLoopStart; updateScene();
+      window.miniWorkshop = {
+        get ready() { return !!pair.A && !!pair.B; },
+        get windows() { return miniWindows; },
+        get window() { return miniActive; },
+        get current() { return currentMs; },
+        get playing() { return playing; },
+        get rate() { return Number($("speed").value); },
+        get loopStart() { return miniLoopStart; },
+        get loopEnd() { return miniLoopEnd; },
+        get frameMode() { return view === "earth" ? "inertial" : "relative"; },
+        get tleEpochs() { return Object.fromEntries(["A", "B"].map(slot => { const lib = library[pair[slot]], index = miniPinnedTles.get(lib); return [slot, lib?.tles[index]?.epoch ?? null]; })); },
+        get origins() { return [{ value: "A", label: slotName("A") }, { value: "B", label: slotName("B") }]; },
+        get origin() { return centre; },
+        setRate(value) { const rate = String(Math.max(60, Math.min(14400, Number(value) || 300))); if (![...$("speed").options].some(option => option.value === rate)) $("speed").add(new Option(`${Number(rate) / 60} min/s`, rate)); $("speed").value = rate; },
+        selectWindow(id) {
+          miniActive = miniWindows.find(item => item.id === id) || miniWindows[0];
+          pinMiniTles(Date.parse(miniActive.anchor));
+          setWindow(Date.parse(miniActive.start), Date.parse(miniActive.end));
+          miniLoopStart = Date.parse(miniActive.start);
+          miniLoopEnd = Date.parse(miniActive.end);
+          currentMs = miniLoopStart; playing = true; updateScene();
+        },
+        setTime(ms) { currentMs = Math.max(startMs, Math.min(endMs, Number(ms))); playing = false; updateScene(); },
+        setLoop(start, end) {
+          if (!Number.isFinite(start) || !Number.isFinite(end) || start < startMs || end > endMs || end - start < MINUTE_MS) throw new Error("Choose a loop of at least one minute inside this chapter.");
+          miniLoopStart = start; miniLoopEnd = end; pinMiniTles((start + end) / 2); currentMs = Math.max(start, Math.min(end, currentMs)); updateScene();
+        },
+        setPlaying(value) { if (value && currentMs >= miniLoopEnd) currentMs = miniLoopStart; playing = !!value; },
+        setEditing(value) { document.documentElement.classList.toggle("mini-editing", !!value); if (value) { cameraEditMode = true; autoZoom = false; controls.enablePan = true; cameraTween = null; } },
+        toggleFrame() { setView(view === "relative" ? "earth" : "relative", centre, true); },
+        setOrigin(slot) {
+          if (!["A", "B"].includes(slot)) throw new Error("Unknown origin satellite");
+          const editing = document.documentElement.classList.contains("mini-editing");
+          setView("relative", slot, true);
+          if (editing) { cameraEditMode = true; autoZoom = false; controls.enablePan = true; cameraTween = null; }
+        },
+        zoom(factor) { autoZoom = false; cameraTween = null; camera.position.sub(controls.target).multiplyScalar(1 / factor).add(controls.target); controls.update(); },
+        moveComposition(x, y) {
+          cameraEditMode = true; autoZoom = false; cameraTween = null; controls.enablePan = true;
+          camera.updateMatrixWorld();
+          const distance = camera.position.distanceTo(controls.target);
+          const step = distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * .16;
+          const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+          const up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+          const shift = right.multiplyScalar(-x * step).addScaledVector(up, -y * step);
+          camera.position.add(shift); controls.target.add(shift); controls.update();
+        },
+        setHover(value) { miniSceneHover = !!value; miniEarthColor.setHex(miniSceneHover ? miniEarthHover : miniEarthRest); },
+        resetCamera() { cameraEditMode = false; autoZoom = true; setView(view, centre, true); },
+        captureCamera(name = "Dynamic Table mini preview") { return { name, timestampUtc: new Date(currentMs).toISOString(), frameMode: view === "earth" ? "inertial" : "relative", referenceSatellite: centre, position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), fieldOfViewDeg: camera.fov, zoom: camera.zoom }; },
+        applyCamera(saved) {
+          setView(saved.frameMode === "inertial" ? "earth" : "relative", ["A", "B"].includes(saved.referenceSatellite) ? saved.referenceSatellite : centre, true);
+          cameraTween = null; cameraEditMode = true; autoZoom = false; controls.enablePan = true;
+          camera.position.fromArray(saved.position); controls.target.fromArray(saved.target); camera.up.fromArray(saved.up);
+          camera.fov = saved.fieldOfViewDeg; camera.zoom = saved.zoom; camera.updateProjectionMatrix(); controls.update(); updateScene();
+        },
+      };
+      parent.postMessage({ type: "espl-e001-mini-ready" }, location.origin);
+    }
   }
   setTimeout(() => {
     for (const id of ["separationChart", "speedChart"]) {

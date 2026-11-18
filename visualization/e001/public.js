@@ -1,5 +1,6 @@
 import { loadCurrentEpisodes, episodeChapters } from "../../shared/episode-feed.js";
 import { installChapterButtons } from "../dev/e001-review/panel-layout.js";
+import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 
 const $ = id => document.getElementById(id);
 const frame = $("episodeFrame");
@@ -23,10 +24,11 @@ function syncClock() {
   }
   const reference = doc().getElementById("referenceBtn");
   if (reference) {
+    reference.disabled = api().state.mode === "earth";
     const centered = api().state.referenceSatellite === "B";
     reference.classList.toggle("is-chaser", centered);
     reference.setAttribute("aria-pressed", String(centered));
-    reference.title = `Reference: ${names[centered ? 1 : 0] || "satellite"}. Switch to ${names[centered ? 0 : 1] || "other satellite"}`;
+    reference.title = reference.disabled ? "Reference switching applies in relative view" : `Reference: ${names[centered ? 1 : 0] || "satellite"}. Switch to ${names[centered ? 0 : 1] || "other satellite"}`;
     reference.setAttribute("aria-label", reference.title);
   }
 }
@@ -71,6 +73,7 @@ async function init() {
   for (let tries = 0; tries < 120 && !(api()?.state.start > 0); tries++) await new Promise(resolve => setTimeout(resolve, 250));
   if (!(api()?.state.start > 0)) throw new Error("E-001 visualization did not finish loading");
   installChapterButtons({ doc, api, syncClock, selectChapter, chapters, dateLabel, placePins: () => {}, frame });
+  void installGlossary(doc().getElementById("ui"), frame).catch(console.error);
   const first = chapters[0];
   api().setWindow(first.start, first.end);
   api().setTime(first.center);

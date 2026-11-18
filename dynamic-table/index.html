@@ -5,17 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Episodes of Concern · ESPL</title>
   <link rel="icon" type="image/png" href="./assets/polyhedron-icon.png">
-  <link rel="stylesheet" href="./style.css?v=19">
-  <script type="module" src="./app.js?v=22"></script>
+  <link rel="stylesheet" href="./style.css?v=20">
+  <script type="module" src="./app.js?v=24"></script>
 </head>
 <body>
-  <section id="tableReviewBar" class="table-review-bar" aria-label="Local Dynamic Table review tools" hidden>
-    <div class="table-review-line"><strong>E-002 mini preview</strong><button id="miniEditToggle" type="button" disabled>Adjust mini scene</button><label>Chapter <select id="miniChapter" disabled></select></label><button id="miniPlay" type="button" disabled>Pause</button><input id="miniTime" type="range" aria-label="Mini preview time" disabled><output id="miniClock">Select E-002</output><label>Speed <select id="miniSpeed" disabled><option value="60">1 min/s</option><option value="150" selected>2.5 min/s</option><option value="300">5 min/s</option><option value="600">10 min/s</option></select></label><button id="miniFrame" type="button" disabled>Relative view</button><button id="miniZoomOut" type="button" aria-label="Zoom out of mini scene" disabled>−</button><button id="miniZoomIn" type="button" aria-label="Zoom into mini scene" disabled>+</button><button id="miniReset" type="button" disabled>Reset camera</button></div>
-    <div class="table-review-line"><span class="mini-review-hint">Drag the globe in the table preview to set its angle.</span><button id="miniMarkStart" type="button" disabled>Set loop start</button><button id="miniMarkEnd" type="button" disabled>Set loop end</button><button id="miniSaveLoop" class="review-primary" type="button" disabled>Save preview loop &amp; camera</button><span id="miniLoopSummary" class="mini-loop-summary">Select E-002 to edit its mini preview.</span><span class="table-review-spacer"></span><button id="tableSpotMode" type="button" aria-pressed="false">✚ Spot comment</button><button id="tableCommentsToggle" type="button" aria-expanded="false">Comments <span id="tableCommentCount">0</span></button></div>
-    <p id="tableReviewStatus" class="table-review-status" role="status">Local table review. Saved loops and comments stay on this computer.</p>
-    <div id="tableCommentDrawer" class="table-comment-drawer" hidden><form id="tableCommentForm" hidden><label for="tableCommentText">Comment on <strong id="tableCommentLocation">—</strong></label><textarea id="tableCommentText" rows="3" maxlength="4000" required></textarea><button type="submit" class="review-primary">Save comment</button><button id="tableCancelComment" type="button">Cancel</button></form><div id="tableCommentList" class="table-comment-list"></div><button id="tableDownloadComments" type="button">Download table comments JSON</button></div>
-  </section>
-  <div id="tableSpotPins" class="table-spot-pins" aria-label="Saved table comment markers" hidden></div>
   <main class="component-wrap">
     <section class="library" aria-label="Episodes of Concern table">
       <div class="toolbar">

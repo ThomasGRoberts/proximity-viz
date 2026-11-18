@@ -30,10 +30,15 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   controls.dampingFactor = .08;
   controls.enablePan = true;
   scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2.4));
+  const miniEarthRest = 0xd8cbb9, miniEarthHover = 0xcfbea9;
+  const miniReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  let miniHover = false;
   const earth = new THREE.Group(); scene.add(earth);
-  earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: options.tableMini ? 0xedeae5 : 0xf7f7f7 })));
+  const earthSurface = new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: options.tableMini ? miniEarthRest : 0xf7f7f7 }));
+  earth.add(earthSurface);
   const relativeEarth = new THREE.Group();
-  relativeEarth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: options.tableMini ? 0xedeae5 : 0xf3f3f3 })));
+  const relativeEarthSurface = new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: options.tableMini ? miniEarthRest : 0xf3f3f3 }));
+  relativeEarth.add(relativeEarthSurface);
   relativeEarth.scale.setScalar(EARTH_KM / 1000);
   relativeEarth.visible = false;
   scene.add(relativeEarth);
@@ -68,14 +73,14 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   }).catch(() => {});
 
   const markers = {}, labels = {}, trails = {}, labelPlacement = {};
-  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: options.tableMini ? 0xbba767 : 0x222222, transparent: true, opacity: options.tableMini ? .44 : .72, depthTest: true, depthWrite: false }));
+  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: options.tableMini ? 0x5c513a : 0x222222, transparent: true, opacity: options.tableMini ? .88 : .72, depthTest: true, depthWrite: false }));
   referenceOrbit.frustumCulled = false; referenceOrbit.renderOrder = 2; referenceOrbit.visible = false; scene.add(referenceOrbit);
   for (const item of episode.participants) {
     const color = item.slot === "B" ? MARKER.B : MARKER.A;
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
     marker.renderOrder = 10;
     scene.add(marker); markers[item.slot] = marker;
-    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A"));
+    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A", options.tableMini ? 1.8 : 1.55));
     trail.material.depthTest = true;
     trail.renderOrder = 9;
     trail.frustumCulled = false;
@@ -171,8 +176,10 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
-    for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width * renderer.getPixelRatio(), height * renderer.getPixelRatio());
-    markerScale = DOT_SCREEN_SIZE * 2.85 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 275 / height * MARKER.diameterPx / 12;
+    for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height);
+    markerScale = options.tableMini
+      ? DOT_SCREEN_SIZE * 2.5 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+      : DOT_SCREEN_SIZE * 2.85 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 275 / height * MARKER.diameterPx / 12;
     for (const marker of Object.values(markers)) marker.scale.set(markerScale, markerScale, 1);
   }
   new ResizeObserver(resize).observe(mount);
@@ -184,7 +191,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   }
   function drawReferenceOrbit(window, ms, frame) {
     const reference = activeReference(frame);
-    referenceOrbit.visible = mode === "relative" && !!reference;
+    referenceOrbit.visible = !!reference;
     if (!referenceOrbit.visible) {
       stage.dataset.orbitMode = "hidden";
       stage.dataset.orbitPoints = "0";
@@ -334,15 +341,15 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     stage.dataset.cameraMode = "auto";
   }
   function refreshTrails(window, ms) {
-    const durationMinutes = mode === "relative" ? 240 : 30;
+    const durationMinutes = mode === "relative" ? 240 : 720;
     const duration = durationMinutes * 60000;
-    const step = duration / (mode === "relative" ? 240 : 30);
+    const step = duration / (mode === "relative" ? 240 : 144);
     const first = Math.max(Date.parse(window.start), ms - duration);
     const times = [];
     for (let t = first; t < ms; t += step) times.push(t);
     times.push(ms);
-    // Match E-001's trail behavior: hold today's selected elements across the
-    // four-hour tail, so a nearest-element boundary never creates a kink.
+    // Hold the selected elements across the trailing path so a nearest-element
+    // boundary never creates a kink. Trim both view modes to screen length below.
     const samples = times.map(time => ({ time, frame: model.frame(window, time, ms) }));
     camera.updateMatrixWorld(true);
     const screenPoint = point => {
@@ -362,7 +369,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
       }
       // Keep roughly the published E-001 trail length on screen at this zoom.
       // The points still follow the actual modeled path rather than a straight cue.
-      if (mode === "relative" && camera.position.length() > .1) {
+      if (camera.position.length() > .1) {
         let pixelLength = 0;
         for (let index = allPoints.length - 1; index > 0; index--) {
           const newer = screenPoint(allPoints[index]), older = screenPoint(allPoints[index - 1]);
@@ -429,18 +436,16 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     if (currentWindow?.id !== window.id || focus !== selected) relativeEarth.userData.anchored = false;
     currentWindow = window; currentMs = ms; focus = selected === "C" ? "C" : "A";
     syncModeButton();
+    syncReferenceButton();
     const frame = model.frame(window, ms), reference = activeReference(frame);
     if (mode === "eci" && reference) {
       const r = eciVector(reference.position), v = eciVector(reference.velocity);
       const normal = r.cross(v).normalize();
-      eciEye.copy(toScene({ x: normal.x, y: normal.y, z: normal.z }).normalize().multiplyScalar(4.2));
+      const orbitRadius = Math.max(1, ...episode.participants.map(item => frame[item.slot]?.position ? eciVector(frame[item.slot].position).length() / EARTH_KM : 1));
+      const fitDistance = Math.max(4.2, orbitRadius * 1.4 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.max(1, 1 / camera.aspect));
+      eciEye.copy(toScene({ x: normal.x, y: normal.y, z: normal.z }).normalize().multiplyScalar(fitDistance));
       stage.dataset.eciNormal = [normal.x, normal.y, normal.z].map(value => value.toFixed(4)).join(",");
-      const path = auto && !forcedEci ? learnedCameraPath(window.id, ms, selected, "eci") : null;
-      if (path) {
-        eciEye.copy(path.direction).multiplyScalar(path.distance);
-        preferredTarget.copy(path.target);
-        stage.dataset.cameraPresetId = path.source;
-      } else preferredTarget.set(0, 0, 0);
+      preferredTarget.set(0, 0, 0);
     }
     drawReferenceOrbit(window, ms, frame);
     const axes = reference && referenceAxes(reference);
@@ -484,11 +489,13 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   document.getElementById("modeBtn").addEventListener("click", () => {
     if (fullEarthEci(currentWindow?.id, focus)) return;
     mode = mode === "relative" ? "eci" : "relative"; auto = true; followSavedMode = false; syncModeButton();
+    syncReferenceButton();
     if (mode === "relative") relativeEarth.userData.anchored = false;
     if (currentWindow) update(currentWindow, currentMs, focus, true);
   });
   const referenceButton = document.getElementById("referenceBtn");
   function syncReferenceButton() {
+    referenceButton.disabled = mode === "eci";
     const target = referenceMode === "target";
     const description = target ? `Reference: ${names.B}. Switch to selected ${names[focus]}` : `Reference: ${names[focus]}. Switch to ${names.B}`;
     referenceButton.title = description;
@@ -611,6 +618,10 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
       markers[slot].scale.setScalar(markerScale);
       markers[slot].renderOrder = pairOverlap && inactive ? 9 : 10;
     }
+    if (options.tableMini) {
+      const pulse = miniHover && !miniReducedMotion.matches ? 1 + .32 * (.5 + .5 * Math.sin(performance.now() / 180)) : 1;
+      for (const marker of Object.values(markers)) marker.scale.set(markerScale * pulse, markerScale * pulse, 1);
+    }
     for (const item of episode.participants) {
       const trail = trails[item.slot], point = positions[item.slot];
       if (!trail.visible || !point) continue;
@@ -629,6 +640,40 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   requestAnimationFrame(animate);
   return {
     update,
+    setMiniHover(value) {
+      if (!options.tableMini) return;
+      miniHover = !!value;
+      const color = miniHover ? miniEarthHover : miniEarthRest;
+      earthSurface.material.color.setHex(color);
+      relativeEarthSurface.material.color.setHex(color);
+    },
+    motionPreview(window, middle, selected, spanMinutes) {
+      const half = spanMinutes * 60000 / 2, rect = renderer.domElement.getBoundingClientRect();
+      const panel = document.getElementById("panelColumn")?.getBoundingClientRect();
+      const left = panel && panel.right > rect.left && panel.left < rect.right && panel.top < rect.bottom
+        ? Math.min(rect.right - 12, Math.max(rect.left, panel.right + 8)) : rect.left;
+      const bounds = { left, top: rect.top, right: rect.right, bottom: rect.bottom };
+      camera.updateMatrixWorld(true);
+      const sampleCount = 49, midpoint = (sampleCount - 1) / 2;
+      const start = Date.parse(window.start), end = Date.parse(window.end);
+      const frames = Array.from({ length: sampleCount }, (_, index) => {
+        const ms = Math.max(start, Math.min(end, middle + half * (index - midpoint) / midpoint));
+        return model.frame(window, ms);
+      });
+      const series = episode.participants.map(item => ({ slot: item.slot, label: names[item.slot],
+        color: item.slot === "B" ? "#686868" : item.slot === selected ? "#b48700" : "#8b806d",
+        primary: item.slot === "B" || item.slot === selected,
+        points: frames.map(frame => {
+          const body = frame[item.slot];
+          const reference = referenceMode === "target" ? frame.B : frame[selected];
+          if (!body || mode === "relative" && !reference) return null;
+          const point = mode === "relative" ? relativePoint(reference, body, referenceAxes(reference)) : toScene(body.position);
+          const projected = point.project(camera), x = rect.left + (projected.x + 1) * rect.width / 2, y = rect.top + (1 - projected.y) * rect.height / 2;
+          return { x, y, inside: x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom && projected.z >= -1 && projected.z <= 1,
+            visibleDepth: projected.z >= -1 && projected.z <= 1 };
+        }) }));
+      return { bounds, series };
+    },
     getMode() { return mode; },
     setCameraViews(views) { cameraViews = [...views]; indexCameraViews(); },
     useLearnedPath() {

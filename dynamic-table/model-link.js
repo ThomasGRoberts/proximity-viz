@@ -44,7 +44,7 @@ export function decorateModelLink(link) {
     orbitRoot.add(orbit);
     const setOrbit = value => geometry.setDrawRange(0, Math.floor(segmentCount * Math.max(0, Math.min(1, value))) * 6 * 6);
     const render = () => renderer.render(scene, camera);
-    setOrbit(0); render();
+    setOrbit(1); render();
     canvas.classList.add("model-canvas-ready");
     if (canvas.previousElementSibling) canvas.previousElementSibling.hidden = true;
     let frame = 0, open = false, started = 0;
@@ -56,7 +56,8 @@ export function decorateModelLink(link) {
       const elapsed = now - started;
       link.dataset.modelStage = elapsed < 220 ? "enter" : elapsed < 440 ? "spin" : elapsed < 720 ? "orbit" : elapsed < 1070 ? "text" : "arrow";
       globe.rotation.y = restingRotation + 1.05 * portion(elapsed, 220, 220);
-      const orbitProgress = portion(elapsed, 440, 280);
+      // The complete orbit is visible before hover. Trace it out and back in.
+      const orbitProgress = elapsed < 220 ? 1 - portion(elapsed, 0, 220) : portion(elapsed, 220, 500);
       setOrbit(orbitProgress);
       link.dataset.orbitProgress = orbitProgress.toFixed(2);
       render();
@@ -66,8 +67,8 @@ export function decorateModelLink(link) {
       if (open === value) return;
       cancelAnimationFrame(frame);
       open = value; link.classList.toggle("is-open", value);
-      globe.rotation.y = restingRotation; setOrbit(0); render();
-      link.dataset.orbitProgress = "0.00";
+      globe.rotation.y = restingRotation; setOrbit(1); render();
+      link.dataset.orbitProgress = "1.00";
       link.dataset.modelStage = value ? "enter" : "idle";
       if (!value) return;
       if (reducedMotion.matches) {

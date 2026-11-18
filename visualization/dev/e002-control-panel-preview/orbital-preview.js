@@ -117,7 +117,14 @@ export async function loadOrbitalPreview(episode) {
   return { series, minimum, qualifications, frame };
 }
 
-export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, threshold, title, maximum, qualifications, markedMs = null, speedUnit = "km/s", connectSwitches = false, historyHours = 12 }) {
+const HOUR = 3600000;
+export function chapterTickHours(widthHours) {
+  const choices = [1, 2, 3, 4, 6, 12, 24, 48, 72, 96, 168, 336];
+  const target = widthHours / 2.5;
+  return choices.reduce((best, choice) => Math.abs(choice - target) < Math.abs(best - target) ? choice : best);
+}
+
+export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, threshold, title, maximum, qualifications, markedMs = null, speedUnit = "km/s", connectSwitches = false, maxConnectionGapMs = Infinity, minimumTickHours = 0, contextSamples = null, fixedWindow = false }) {
   const width = Math.max(260, Math.round(canvas.clientWidth || 306)), height = 155;
   const ratio = Math.min(Math.max(globalThis.devicePixelRatio || 1, 2), 3), context = canvas.getContext("2d");
   canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); context.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -125,8 +132,10 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   let left = 52;
   const right = width - 122, top = 11, bottom = height - 38;
   const start = Date.parse(window.start), end = Date.parse(window.end);
-  const viewSpan = Math.min(end - start, historyHours * 3600000);
-  const viewStart = currentMs - viewSpan, viewEnd = currentMs;
+  const viewSpan = end - start;
+  const viewStart = fixedWindow ? start : currentMs - viewSpan, viewEnd = fixedWindow ? end : currentMs;
+  const tickMs = Math.max(chapterTickHours(viewSpan / HOUR), minimumTickHours) * HOUR;
+  canvas.dataset.timeTickHours = String(tickMs / HOUR);
   const speedScale = metric === "speedMs" && speedUnit !== "m/s" ? 1000 : 1;
   const visibleThreshold = threshold / speedScale;
   const values = samples.filter(sample => sample.ms >= viewStart && sample.ms <= currentMs && Number.isFinite(sample[metric])).map(sample => sample[metric] / speedScale);
@@ -162,31 +171,36 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   context.fillText(title, 0, 0); context.restore();
   context.strokeStyle = CHART_COLOR.threshold; context.lineWidth = 1;
   context.beginPath(); context.moveTo(left, y(visibleThreshold)); context.lineTo(right + 69, y(visibleThreshold)); context.stroke();
-  if (Number.isFinite(markedMs) && markedMs >= viewStart && markedMs <= viewEnd) {
+  if (Number.isFinite(markedMs) && markedMs >= viewStart && markedMs <= Math.min(viewEnd, currentMs)) {
     context.setLineDash([2, 3]); context.strokeStyle = "#8b806a"; context.lineWidth = 1;
     context.beginPath(); context.moveTo(x(markedMs), top); context.lineTo(x(markedMs), bottom); context.stroke(); context.setLineDash([]);
   }
   canvas.dataset.minimumMarkerUtc = Number.isFinite(markedMs) ? new Date(markedMs).toISOString() : "";
   canvas.dataset.visibleStartUtc = new Date(viewStart).toISOString();
   canvas.dataset.visibleEndUtc = new Date(viewEnd).toISOString();
-  function trace(until, color, lineWidth) {
+  function trace(source, until, color, lineWidth) {
     context.strokeStyle = color; context.lineWidth = lineWidth; context.beginPath();
     let drawing = false, previous = null;
-    for (const sample of samples) {
+    for (const sample of source) {
       const value = Number.isFinite(sample[metric]) ? sample[metric] / speedScale : null;
       if (sample.ms > until) break;
       if (sample.ms < viewStart) continue;
       if (!Number.isFinite(value)) { drawing = false; previous = null; continue; }
-      if (drawing && (previous?.tleA === sample.tleA && previous?.tleB === sample.tleB || connectSwitches && previous?.kind === "switch-before" && sample.kind === "switch-after" && previous.ms === sample.ms)) context.lineTo(x(sample.ms), y(value));
+      if (drawing && (previous?.tleA === sample.tleA && previous?.tleB === sample.tleB || connectSwitches && sample.ms - previous.ms <= maxConnectionGapMs)) context.lineTo(x(sample.ms), y(value));
       else context.moveTo(x(sample.ms), y(value));
       drawing = true; previous = sample;
     }
     context.stroke();
   }
-  trace(currentMs, "#6f6f6f", 1.4);
+  if (contextSamples) {
+    context.save(); context.setLineDash([3, 3]);
+    trace(contextSamples, currentMs, "#b5b5b5", 1.1);
+    context.restore();
+  }
+  trace(samples, currentMs, "#6f6f6f", 1.4);
   canvas.dataset.drawnUntilUtc = new Date(currentMs).toISOString();
-  for (const factor of [0, .5, 1]) {
-    const ms = viewStart + viewSpan * factor, px = x(ms);
+  for (let ms = Math.ceil(viewStart / tickMs) * tickMs; ms <= viewEnd; ms += tickMs) {
+    const px = x(ms);
     context.strokeStyle = "#aaa"; context.beginPath(); context.moveTo(px, bottom); context.lineTo(px, bottom + 4); context.stroke();
     context.fillStyle = CHART_COLOR.text; context.textAlign = "center"; context.font = '9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     context.fillText(axisTime(ms), px, height - 20);
@@ -195,7 +209,7 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   for (const [intervals, color] of [[qualifications?.single || [], "#a9a9a9"], [qualifications?.both.intervals || [], "#eaaa00"]]) {
     context.fillStyle = color;
     for (const interval of intervals) {
-      const from = Math.max(viewStart, interval.start), to = Math.min(viewEnd, interval.end);
+      const from = Math.max(viewStart, interval.start), to = Math.min(viewEnd, currentMs, interval.end);
       if (to > from) context.fillRect(x(from), bottom + 5, Math.max(3, x(to) - x(from)), 4);
     }
   }
@@ -206,7 +220,7 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   edge.hidden = false;
   edge.style.top = `${canvas.offsetTop + y(visibleThreshold)}px`; edge.textContent = `${Number(visibleThreshold.toFixed(2)).toLocaleString()} ${unit}`;
   edge.setAttribute("aria-valuenow", String(visibleThreshold));
-  edge.setAttribute("aria-valuemax", String(maximum));
+  edge.setAttribute("aria-valuemax", String(maximum / speedScale));
   const sample = samples.find(item => item.ms === currentMs && Number.isFinite(item[metric]));
   current.hidden = !sample;
   if (sample) {
@@ -217,7 +231,7 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   group.querySelector(".chart-time-context")?.remove();
   if (!values.length) {
     context.fillStyle = "#777"; context.textAlign = "center";
-    context.fillText("No supported one-minute samples", (left + right) / 2, (top + bottom) / 2);
+    context.fillText(contextSamples ? "No recent TLE samples" : "No supported one-minute samples", (left + right) / 2, (top + bottom) / 2);
   }
-  return { top, bottom, left, right, max, thresholdY: y(visibleThreshold), viewStart, viewEnd };
+  return { top, bottom, left, right, max, unit, thresholdY: y(visibleThreshold), viewStart, viewEnd };
 }

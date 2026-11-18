@@ -33,8 +33,8 @@ function readEntries(csv, project) {
     }));
 }
 
-export async function installGlossary(panel, frame) {
-  const data = await fetch("./glossary-data.json", { cache: "no-store" }).then(response => response.json());
+export async function installGlossary(panel, frame = null) {
+  const data = await fetch(new URL("./glossary-data.json", import.meta.url), { cache: "no-store" }).then(response => response.json());
   let entries = data.entries;
   try {
     const response = await fetch(`${data.sourceUrl}&refresh=${Date.now()}`, { cache: "no-store" });
@@ -70,7 +70,7 @@ export async function installGlossary(panel, frame) {
     });
     popover.replaceChildren(heading, definition, sources); popover.hidden = false;
     const rect = trigger.getBoundingClientRect();
-    const host = trigger.ownerDocument === document ? { left: 0, top: 0 } : frame.getBoundingClientRect();
+    const host = trigger.ownerDocument === document ? { left: 0, top: 0 } : frame?.getBoundingClientRect() || { left: 0, top: 0 };
     const left = Math.max(10, Math.min(rect.left + host.left, innerWidth - popover.offsetWidth - 10));
     const below = rect.bottom + host.top + 7;
     const top = below + popover.offsetHeight > innerHeight ? rect.top + host.top - popover.offsetHeight - 7 : below;
@@ -91,7 +91,7 @@ export async function installGlossary(panel, frame) {
     const doc = root.ownerDocument;
     const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
-        if (!node.nodeValue.trim() || node.parentElement?.closest(".glossaryTrigger,button,a,select,option,script,style,textarea")) return NodeFilter.FILTER_REJECT;
+        if (!node.nodeValue.trim() || node.parentElement?.closest(".glossaryTrigger,button,a,select,option,script,style,textarea,.satCard[hidden]")) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
     });
@@ -116,14 +116,15 @@ export async function installGlossary(panel, frame) {
   }
   watch(panel);
   function watchFrame() {
-    const doc = frame.contentDocument, root = doc?.getElementById("preview");
+    const doc = frame.contentDocument, root = doc?.getElementById("preview") || doc?.getElementById("ui");
     if (!root || root.dataset.glossaryAttached) return;
     root.dataset.glossaryAttached = "true";
     const style = doc.createElement("style");
-    style.textContent = ".glossaryTrigger{border-bottom:1px dotted #8b8b8b;cursor:help}.glossaryTrigger:focus-visible{outline:2px solid #8b773c;outline-offset:2px;border-radius:2px}";
-    doc.head.append(style); watch(root);
+    style.textContent = ".glossaryTrigger{text-decoration:underline dotted #8b8b8b;text-underline-offset:2px;cursor:help}.glossaryTrigger:focus-visible{outline:2px solid #8b773c;outline-offset:2px;border-radius:2px}";
+    doc.head.append(style);
+    if (root !== panel) watch(root);
   }
-  frame.addEventListener("load", watchFrame); watchFrame();
+  if (frame) { frame.addEventListener("load", watchFrame); watchFrame(); }
   popover.addEventListener("mouseenter", () => clearTimeout(hideTimer));
   popover.addEventListener("mouseleave", scheduleClose);
   document.addEventListener("click", event => { if (!popover.contains(event.target) && !event.target.closest?.(".glossaryTrigger")) close(); });
