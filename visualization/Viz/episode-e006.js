@@ -5,7 +5,7 @@ import { OrbitControls } from "./vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "./vendor/topojson/topojson-client.js";
 import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=2";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
-import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js";
+import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js";
 import { wireTimelineHover } from "./playback-shared.js";
 import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
@@ -169,7 +169,7 @@ async function start() {
   referenceOrbit.renderOrder = 2; referenceOrbit.frustumCulled = false; scene.add(referenceOrbit);
   for (const item of participants) {
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
-    const dotSize = miniScene ? DOT_SCREEN_SIZE * 2.5 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) : DOT_SCREEN_SIZE;
+    const dotSize = miniScene ? miniMarkerScale(camera, sceneHost.clientHeight) : DOT_SCREEN_SIZE;
     marker.scale.set(dotSize, dotSize, 1); marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
     const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "A" ? "A" : "B", miniScene ? 1.8 : 1.55));
     trail.renderOrder = 5; scene.add(trail); trails[item.slot] = trail;
@@ -557,6 +557,7 @@ async function start() {
       for (const item of participants) { trails[item.slot].geometry.dispose(); trails[item.slot].geometry = fadingTrailGeometry(trails[item.slot].visible ? trailPoints(item.slot, current, states[item.slot], states[referenceSlot]) : []); }
     }
     controls.update(); updateScreenLabels();
+    if (miniScene) for (const marker of Object.values(markers)) marker.scale.setScalar(miniMarkerScale(camera, sceneHost.clientHeight));
     renderer.render(scene, camera);
     const pair = pairAt(selected, current), age = Math.max(states.A.ageHours, states[selected].ageHours);
     $("rangeStat").textContent = pair ? `${Math.round(pair.distanceKm).toLocaleString()} km` : "—";

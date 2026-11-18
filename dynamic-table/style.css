@@ -672,6 +672,10 @@ body .table-wrap .expanded-row[data-episode-id="E-001"]:has(.expanded-inner.has-
 .object-meta div{grid-template-columns:78px 1fr;gap:7px}
 .news-indicator{position:relative}
 .news-indicator .news-count{position:absolute;left:calc(50% + 7px);top:-1px;display:grid;place-items:center;min-width:15px;height:15px;padding:0 2px;border:1px solid #fff;border-radius:9px;background:#8f742e;color:#fff;font-size:9px;font-weight:700;line-height:1}
+.news-indicator .news-mini-stack{width:var(--record-stack-width)!important;flex:0 0 var(--record-stack-width)!important;margin:0!important;overflow:visible}
+.news-indicator .news-mini-stack .news-mini{left:var(--stack-offset)!important;transform:rotate(var(--stack-angle))!important}
+.table-wrap>.orbital-preview.e005-live{z-index:9;visibility:visible!important}
+.table-wrap>.orbital-preview.e005-live.mini-editing-viewport{z-index:12}
 .expanded-inner.has-visual{position:relative}
 .mini-dot-overlay{position:absolute;z-index:30;inset:0;pointer-events:none}
 .mini-dot-overlay[hidden],.mini-dot-clone[hidden]{display:none}

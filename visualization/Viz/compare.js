@@ -732,6 +732,10 @@ function describeAge(ageMs) {
 // Called every time the time changes: move the dots, update numbers, chart and panel.
 function updateScene() {
   if (!pair.A || !pair.B) return;
+  // A miniature is one scene. Keep its last complete frame when a sparse
+  // propagation sample fails, instead of hiding individual spacecraft.
+  if (miniScene && (["A", "B"].some(slot => positionAt(pair[slot], currentMs, nearestTleIndex(library[pair[slot]], currentMs)) === null)
+    || view === "relative" && relativePointAt(currentMs) === null)) return;
   const positions = {};
   const earthAngle = sgp4.gstime(new Date(currentMs));
 

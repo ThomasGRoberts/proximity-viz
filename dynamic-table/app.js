@@ -431,6 +431,12 @@ const reviewedSourceMetadata = {
     imagePath: "./assets/source-previews/e008-csis-sj17.jpg",
     imageAlt: "Social sharing image for the CSIS analysis of SJ-17",
   },
+  "https://www.airuniversity.af.edu/Portals/10/AEtherJournal/Journals/Volume-1_Number-4/Weeden_Mitigating_Noncooperative_RPOs_.pdf": {
+    publisher: "Johnson, Roberts, and Weeden",
+  },
+  "https://breakingdefense.com/2021/10/us-china-russia-test-new-space-war-tactics-sats-buzzing-spoofing-spying/": {
+    title: "US, China, Russia Test New Space War Tactics: Sats Buzzing, Spoofing, Spying",
+  },
   "https://www.swfound.org/publications-and-reports/u-s-military-and-intelligence-rendezvous-and-proximity-operations-fact-sheet": {
     kind: "document",
     title: "US Military and Intelligence Rendezvous and Proximity Operations Fact Sheet",
@@ -607,29 +613,43 @@ function loadingDetail(row, data) {
   return wrap;
 }
 function animateIn(node) { if (!reducedMotion.matches) node.animate([{ opacity: 0, transform: "translateY(-5px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 190, easing: "ease-out" }); }
-let scrollFrame = 0;
-function toggleRow(row) {
-  cancelAnimationFrame(scrollFrame);
-  closeObject(); state.selected = state.selected === row ? null : row; render();
-  const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
-  if (state.selected) requestAnimationFrame(() => {
-    const selected = [...document.querySelectorAll(".episode-row")].find(item => item.dataset.episodeId === field(row, "ID"));
-    if (!selected) return;
-    const stickyHeader = document.querySelector(".table-wrap thead th");
-    const headerOffset = stickyHeader?.getBoundingClientRect().height || 0;
-    const reviewOffset = document.getElementById("tableReviewBar")?.hidden ? 0 : document.getElementById("tableReviewBar").getBoundingClientRect().height;
-    const destination = Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - reviewOffset - 14);
-    if (reducedMotion.matches) { window.scrollTo(0, destination); return; }
+let scrollFrame = 0, scrollResolve = null, selectionToken = 0, collapseAnimation = null;
+async function toggleRow(row) {
+  const token = ++selectionToken, sameRow = state.selected === row;
+  cancelAnimationFrame(scrollFrame); scrollResolve?.(); scrollResolve = null; collapseAnimation?.cancel(); closeObject();
+  const current = document.querySelector(".expanded-row .expanded-inner");
+  if (current && !reducedMotion.matches) {
+    collapseAnimation = current.animate([{ maxHeight: `${current.getBoundingClientRect().height}px`, opacity: 1 }, { maxHeight: "0px", opacity: 0 }], { duration: 220, easing: "ease-in", fill: "forwards" });
+    try { await collapseAnimation.finished; } catch { return; }
+    if (token !== selectionToken) return;
+  }
+  state.selected = null; render();
+  if (sameRow || token !== selectionToken) return;
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  if (token !== selectionToken) return;
+  const selected = [...document.querySelectorAll(".episode-row")].find(item => item.dataset.episodeId === field(row, "ID"));
+  if (!selected) return;
+  const stickyHeader = document.querySelector(".table-wrap thead th");
+  const headerOffset = stickyHeader?.getBoundingClientRect().height || 0;
+  const reviewBar = document.getElementById("tableReviewBar");
+  const reviewOffset = reviewBar?.hidden ? 0 : reviewBar?.getBoundingClientRect().height || 0;
+  const destination = Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - reviewOffset - 14);
+  if (reducedMotion.matches) window.scrollTo(0, destination);
+  else await new Promise(resolve => {
+    scrollResolve = resolve;
     const origin = scrollY, distance = destination - origin, started = performance.now();
-    const duration = Math.min(1500, Math.max(850, Math.abs(distance) * .7));
+    const duration = Math.min(1050, Math.max(380, Math.abs(distance) * .55));
     const step = now => {
+      if (token !== selectionToken) { scrollResolve = null; resolve(); return; }
       const fraction = Math.min(1, (now - started) / duration);
-      const eased = 1 - (1 - fraction) ** 3;
-      window.scrollTo(0, origin + distance * eased);
-      if (fraction < 1) scrollFrame = requestAnimationFrame(step);
+      window.scrollTo(0, origin + distance * (1 - (1 - fraction) ** 3));
+      if (fraction < 1) scrollFrame = requestAnimationFrame(step); else { scrollResolve = null; resolve(); }
     };
     scrollFrame = requestAnimationFrame(step);
   });
+  if (token !== selectionToken) return;
+  state.selected = row; render();
+  const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
 }
 function periodNode(row) { const node = el("span", "period-label", periodInfo(row).label); const chapters = episodeChapters(row); node.title = chapters.length ? chapters.map(item => `${item.center} · ${item.widthHours} hours`).join("\n") : [fullDate(field(row, "Start Date", "Date")), fullDate(field(row, "End Date"))].filter(Boolean).join(" to "); return node; }
 function proximityNode(row, key) {
@@ -675,12 +695,25 @@ async function applyPublishedMiniConfig(frame, episodeId) {
     return;
   }
 }
+function revealMiniAsOneScene(frame) {
+  frame.style.opacity = "0";
+  frame.style.transition = "opacity 220ms ease";
+  let tries = 0;
+  const check = () => {
+    if (!frame.isConnected) { if (++tries < 125) setTimeout(check, 80); return; }
+    if (frame.contentWindow?.miniWorkshop?.ready || ++tries >= 125) {
+      setTimeout(() => { if (frame.isConnected) frame.style.opacity = "1"; }, 400);
+    } else setTimeout(check, 80);
+  };
+  check();
+}
 function prewarmE001() {
   if (warmedE001Host) return;
   const table = document.querySelector(".table-wrap");
   if (!table) return;
   warmedE001Host = el("div", "orbital-preview e001-prewarm");
   warmedE001Frame = el("iframe", "e001-mini");
+  revealMiniAsOneScene(warmedE001Frame);
   warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=28", location.href).href;
   warmedE001Frame.title = "Animated E-001 satellite-centered orbital reconstruction";
   warmedE001Frame.tabIndex = -1; warmedE001Frame.setAttribute("aria-hidden", "true");
@@ -697,6 +730,7 @@ function prewarmE002() {
   if (!table) return;
   warmedE002Host = el("div", "orbital-preview e002-prewarm");
   warmedE002Frame = el("iframe", "e002-mini");
+  revealMiniAsOneScene(warmedE002Frame);
   warmedE002Frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=28", location.href).href;
   warmedE002Frame.title = "Animated E-002 miniature orbital reconstruction";
   warmedE002Frame.tabIndex = -1; warmedE002Frame.setAttribute("aria-hidden", "true");
@@ -713,6 +747,7 @@ function prewarmE005() {
   if (!table) return;
   warmedE005Host = el("div", "orbital-preview e005-prewarm");
   warmedE005Frame = el("iframe", "e005-mini");
+  revealMiniAsOneScene(warmedE005Frame);
   warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-005&table=28", location.href).href;
   warmedE005Frame.title = "Animated E-005 miniature orbital reconstruction";
   warmedE005Frame.tabIndex = -1; warmedE005Frame.setAttribute("aria-hidden", "true");
@@ -859,6 +894,7 @@ function startPreview(row) {
       miniResizeObserver.observe(header); miniResizeObserver.observe(expanded);
     }
     if (frame !== warmedE002Frame) {
+      revealMiniAsOneScene(frame);
       frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=28", location.href).href;
       frame.title = "Animated E-002 miniature orbital reconstruction";
       frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
@@ -881,6 +917,7 @@ function startPreview(row) {
   }
   if (["E-003", "E-005", "E-006", "E-008", "E-016"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
+    revealMiniAsOneScene(frame);
     frame.src = new URL(`../visualization/Viz/compare.html?mini=1&episode=${episodeId}&table=28`, location.href).href;
     frame.title = `Animated ${episodeId} miniature orbital reconstruction`;
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
@@ -936,10 +973,13 @@ function newsIndicator(row, count) {
   const wrap = el(count ? "button" : "span", "news-indicator");
   if (count) { wrap.type = "button"; wrap.setAttribute("aria-label", `Show ${count} linked ${count === 1 ? "record" : "records"} for ${title(row)}`); wrap.addEventListener("click", event => { event.stopPropagation(); toggleRow(row); }); }
   else wrap.setAttribute("aria-label", "0 linked records");
-  const stack = el("span", `news-mini-stack cards-${Math.min(3, count)}`); stack.setAttribute("aria-hidden", "true");
-  for (let index = 0; index < Math.min(3, count); index++) stack.append(el("span", "news-mini"));
+  const stack = el("span", "news-mini-stack"); stack.setAttribute("aria-hidden", "true");
+  stack.style.setProperty("--record-stack-width", `${count ? 16 + 6 * (count - 1) : 0}px`);
+  for (let index = 0; index < count; index++) {
+    const card = el("span", "news-mini"); card.style.setProperty("--stack-offset", `${index * 6}px`);
+    card.style.setProperty("--stack-angle", `${index % 2 ? 3 : -3}deg`); stack.append(card);
+  }
   wrap.title = `${count} linked ${count === 1 ? "record" : "records"}`; wrap.append(stack);
-  if (count > 3) wrap.append(el("span", "news-count", String(count)));
   return wrap;
 }
 function render() {
