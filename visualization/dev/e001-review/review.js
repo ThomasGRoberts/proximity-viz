@@ -2,6 +2,7 @@ import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-fe
 import { createCameraWorkshop } from "../e002-control-panel-preview/camera-workshop.js";
 import { installGlossary } from "../e002-control-panel-preview/glossary.js";
 import { installChapterButtons } from "./panel-layout.js";
+import { reviewHref } from "../review-shell.js";
 
 const $ = id => document.getElementById(id);
 const frame = $("episodeFrame");
@@ -67,7 +68,7 @@ function renderComments() {
     remove.addEventListener("click", async () => { try { comments = (await request("/api/review-comments", { action: "delete", id: item.id })).comments; renderComments(); } catch (error) { message(error.message); } });
     card.append(title, scope, body);
     if (item.surface !== "E-001") {
-      const jump = document.createElement("a"); jump.href = item.surface === "E-002" ? "../e002-control-panel-preview/" : item.surface === "E-005" ? "../../Viz/compare.html?dev=1&episode=E-005" : "../../../dynamic-table/";
+      const jump = document.createElement("a"); jump.href = reviewHref(item.surface);
       jump.textContent = `Open ${item.surface}`; card.append(jump);
     }
     card.append(remove); list.append(card);

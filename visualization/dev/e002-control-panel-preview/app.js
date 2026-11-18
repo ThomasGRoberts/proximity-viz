@@ -1,5 +1,6 @@
 import { loadOrbitalPreview, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js";
 import { createGlobePreview } from "./globe-preview.js";
+import { reviewHref } from "../review-shell.js";
 import { loadCurrentEpisodes, episodeUtcInterval } from "../../../shared/episode-feed.js";
 import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.js";
 import { installGlossary } from "./glossary.js";
@@ -148,7 +149,7 @@ function renderComments() {
     const item = document.createElement("article"); item.className = "comment-item"; item.dataset.id = comment.id;
     const head = document.createElement("div"); head.className = "comment-item-head";
     const jump = document.createElement("button"); jump.type = "button"; jump.className = "comment-jump"; jump.textContent = `${index + 1}. ${comment.label}`;
-    jump.addEventListener("click", () => { if (comment.surface === "E-002") jumpTo(comment); else location.href = comment.surface === "E-001" ? "../e001-review/" : comment.surface === "E-005" ? "../../Viz/compare.html?dev=1&episode=E-005" : "../../../dynamic-table/"; });
+    jump.addEventListener("click", () => { if (comment.surface === "E-002") jumpTo(comment); else location.href = reviewHref(comment.surface); });
     const remove = document.createElement("button"); remove.type = "button"; remove.className = "delete-comment"; remove.textContent = "Delete"; remove.setAttribute("aria-label", `Delete comment ${index + 1}`);
     remove.addEventListener("click", async () => {
       try { comments = await saveAction({ action: "delete", id: comment.id }); renderComments(); message("Comment deleted."); }

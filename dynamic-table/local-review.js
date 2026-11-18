@@ -104,7 +104,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
     beginComment(anchor, (event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height, spotLabel(key));
   };
   const sync = () => {
-    const m = model(), ready = !!m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008"].includes(getSelectedEpisode());
+    const m = model(), ready = !!m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(getSelectedEpisode());
     if (ready && getSelectedEpisode() === "E-005") {
       const row = document.querySelector('.episode-row[data-episode-id="E-005"]');
       if (row) row.dataset.miniSelected = m.selected === "C" ? "C" : "B";
@@ -138,6 +138,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
       m.setLoop(Date.parse(savedConfig.loopStartUtc), Date.parse(savedConfig.loopEndUtc));
       m.setRate(savedConfig.rate); m.setPlaying(true);
       loopStart = m.loopStart; loopEnd = m.loopEnd; frameApplied = getFrame();
+      getFrame().dataset.miniConfigured = "1";
     } catch (error) { say(`Saved mini view could not be applied: ${error.message}`); }
   };
   let frameApplied = null;
@@ -157,6 +158,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
       const offset = savedConfigs[getSelectedEpisode()]?.camera?.viewportOffset;
       viewportOffset = { x: Number(offset?.x) || 0, y: Number(offset?.y) || 0 }; placeScene();
       applySaved(m);
+      frame.dataset.miniConfigured = "1";
       loopStart = m.loopStart; loopEnd = m.loopEnd;
       frame.contentDocument.addEventListener("click", event => {
         if (!spotMode) return;
@@ -213,7 +215,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
   });
   $("miniExportSettings").addEventListener("click", () => {
     const m = model(), episodeId = getSelectedEpisode();
-    const draft = m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008"].includes(episodeId) ? {
+    const draft = m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId) ? {
       episodeId, windowId: m.window.id, frameMode: m.frameMode,
       loopStartUtc: new Date(loopStart ?? m.loopStart).toISOString(),
       loopEndUtc: new Date(loopEnd ?? m.loopEnd).toISOString(), rate: m.rate,
@@ -238,7 +240,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
   $("tableDownloadComments").addEventListener("click", () => { const blob = new Blob([JSON.stringify({ schema: "espl-shared-review-v1", comments }, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "review-comments.json"; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); });
   new MutationObserver(markAnchors).observe($("rows"), { childList: true, subtree: true });
   window.addEventListener("scroll", placePins, { passive: true }); window.addEventListener("resize", placePins);
-  window.addEventListener("message", event => { if (event.origin === location.origin && ["espl-e001-mini-ready", "espl-e002-mini-ready", "espl-e005-mini-ready", "espl-e006-mini-ready", "espl-e008-mini-ready"].includes(event.data?.type) && getFrame()) attachMini(getFrame()); });
+  window.addEventListener("message", event => { if (event.origin === location.origin && ["espl-e001-mini-ready", "espl-e002-mini-ready", "espl-e005-mini-ready", "espl-e006-mini-ready", "espl-e008-mini-ready", "espl-e016-mini-ready", "espl-e059-mini-ready"].includes(event.data?.type) && getFrame()) attachMini(getFrame()); });
   setInterval(sync, 250);
   async function primeMini(frame, episodeId) {
     await savedReady;
@@ -246,7 +248,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
     if (!config) return;
     for (let attempts = 0; attempts < 240 && !frame.contentWindow?.miniWorkshop?.ready; attempts++) await new Promise(resolve => setTimeout(resolve, 100));
     const m = frame.contentWindow?.miniWorkshop;
-    if (!m?.ready || !frame.parentElement?.matches(".e001-prewarm, .e002-prewarm")) return;
+    if (!m?.ready || !frame.parentElement?.matches(".e001-prewarm, .e002-prewarm, .e005-prewarm")) return;
     try {
       m.selectWindow(config.windowId);
       m.setTime(Date.parse(config.camera.timestampUtc || config.loopStartUtc));
@@ -257,6 +259,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
       const offset = config.camera?.viewportOffset;
       frame.style.transform = `translate(${Number(offset?.x) || 0}px, ${Number(offset?.y) || 0}px)`;
       frame.dataset.prewarmedEpisode = episodeId;
+      frame.dataset.miniConfigured = "1";
     } catch (error) { say(`Saved mini view could not be preloaded: ${error.message}`); }
   }
   return { attachMini, primeMini, markAnchors, previewStopped() { activeFrame = null; frameApplied = null; editing = false; loopStart = loopEnd = null; viewportOffset = { x: 0, y: 0 }; enabled(false); sync(); } };

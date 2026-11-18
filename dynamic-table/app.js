@@ -624,6 +624,20 @@ function loadingDetail(row, data) {
   wrap.append(context, el("p", "partial-records", `${linkedDescriptions(row, data).length} linked records; details loading…`));
   return wrap;
 }
+async function measureExpandedRowHeight() {
+  const rows = state.live?.episodes?.filter(row => hasEpisodeVisual(field(row, "ID"))) || [];
+  const longest = rows.reduce((best, row) => episodeDescription(row).length > episodeDescription(best).length ? row : best, rows[0]);
+  if (!longest) return;
+  const detail = await ensureDetail(longest);
+  const sample = el("tr", "expanded-row"); sample.dataset.episodeId = field(longest, "ID");
+  const cell = el("td"); cell.colSpan = 7; sample.append(cell);
+  sample.style.visibility = "hidden"; sample.style.pointerEvents = "none";
+  cell.append(expandedContent(detail.row, detail));
+  document.querySelector("#rows").append(sample);
+  const height = Math.ceil(cell.querySelector(".expanded-inner").scrollHeight) + 4;
+  sample.remove(); sourceCarouselCleanup(); sourceCarouselCleanup = () => {};
+  document.documentElement.style.setProperty("--review-expanded-height", `${height}px`);
+}
 function animateIn(node) { if (!reducedMotion.matches) node.animate([{ opacity: 0, transform: "translateY(-5px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 190, easing: "ease-out" }); }
 let scrollFrame = 0, scrollResolve = null, selectionToken = 0, collapseAnimation = null;
 async function toggleRow(row) {
@@ -737,6 +751,7 @@ function prewarmE001() {
   if (!table) return;
   warmedE001Host = el("div", "orbital-preview e001-prewarm");
   warmedE001Frame = el("iframe", "e001-mini");
+  warmedE001Frame.dataset.miniBaseHeight = "450";
   revealMiniAsOneScene(warmedE001Frame);
   warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=28", location.href).href;
   warmedE001Frame.title = "Animated E-001 satellite-centered orbital reconstruction";
@@ -890,7 +905,8 @@ function updateE001BackdropBounds(host, tableWrap, expanded) {
   const detail = expanded.getBoundingClientRect();
   const header = host.classList.contains("e001-live") ? expanded.previousElementSibling?.getBoundingClientRect() : null;
   const top = header?.top ?? rect.top;
-  Object.assign(host.style, { top: `${top - origin.top}px`, left: `${rect.left - origin.left}px`, width: `${detail.right - rect.left}px`, height: `${detail.bottom - top}px` });
+  const table = tableWrap.querySelector("table")?.getBoundingClientRect() || origin;
+  Object.assign(host.style, { top: `${top - origin.top}px`, left: `${table.left - origin.left}px`, width: `${table.width}px`, height: `${detail.bottom - top}px` });
 }
 function startPreview(row) {
   const episodeId = field(row, "ID");
@@ -1103,7 +1119,11 @@ async function init() {
   }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
   const reviewEpisode = new URLSearchParams(location.search).get("review");
   if (localReviewMode && hasEpisodeVisual(reviewEpisode)) state.selected = state.live.episodes?.find(row => field(row, "ID") === reviewEpisode) || null;
+  const initialSelection = state.selected;
+  state.selected = null;
   setStatus(); render();
+  await measureExpandedRowHeight().catch(error => console.warn("Expanded-row measurement unavailable", error));
+  state.selected = initialSelection; render();
   for (const id of ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"]) {
     const row = state.live.episodes?.find(item => item.ID === id);
     if (!row) continue;

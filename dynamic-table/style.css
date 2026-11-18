@@ -693,8 +693,10 @@ body .table-wrap .expanded-row[data-episode-id="E-001"]:has(.expanded-inner.has-
 
 /* The selected row and its miniature form one edge-to-edge review surface. */
 .table-wrap{overflow-anchor:none}
-.table-wrap td.episode-cell{text-align:center}
-.table-wrap td.episode-cell .episode-secondary-line{justify-content:center}
+.table-wrap td.episode-cell{text-align:left}
+.table-wrap td.episode-cell .episode-secondary-line{justify-content:flex-start}
+.table-wrap td.orbit-cell{text-align:center}
+.table-wrap td.orbit-cell .orbit-tag{margin-inline:auto}
 .table-wrap .expanded-row[data-episode-id="E-005"]>td{background:transparent!important}
 .table-wrap .expanded-row[data-episode-id="E-005"] .expanded-inner.has-visual{background:linear-gradient(90deg,#fffcf6 0%,#fffcf6f2 27%,#fffcf69a 48%,transparent 72%)!important}
 .table-wrap>.orbital-preview.e005-live{z-index:4}
@@ -705,7 +707,8 @@ body .table-wrap .expanded-row[data-episode-id="E-001"]:has(.expanded-inner.has-
 .table-wrap .expanded-row .source-stack{z-index:1}
 .table-wrap .expanded-row .source-stack:hover,.table-wrap .expanded-row .source-stack:focus-within{z-index:30}
 .table-wrap .expanded-row[data-episode-id="E-002"] .context-block::before{background:linear-gradient(90deg,#fffcf6 0%,#fffcf6f5 35%,#fffcf6c9 58%,#fffcf600 100%)}
-.table-wrap>.orbital-preview.e001-live{width:calc(100% + 2px)!important}
+.table-wrap>.orbital-preview.e001-live{max-width:100%;overflow:hidden}
+body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden!important}
 @media(min-width:901px){
   .table-wrap .expanded-row .expanded-inner.has-visual .context-block{min-height:0;padding-bottom:0}
   .table-wrap .expanded-row .expanded-inner.has-visual{row-gap:8px}
@@ -716,3 +719,6 @@ body .table-wrap .expanded-row[data-episode-id="E-001"]:has(.expanded-inner.has-
 }
 .orbital-preview iframe.e059-mini{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#fffcf6}
 .expanded-row[data-episode-id="E-059"] .orbital-preview.mini-editing-viewport iframe.e059-mini{pointer-events:auto}
+@media(min-width:901px){
+  .table-wrap .expanded-row .expanded-inner.has-visual{min-height:var(--review-expanded-height,auto);box-sizing:border-box}
+}

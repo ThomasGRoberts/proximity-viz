@@ -1,3 +1,5 @@
+import { placeEpisodeScreenLabels } from "./screen-label-layout.js";
+import { renderSharedCommentList } from "../dev/review-shell.js";
 /* Local first pass for E-016. Two spacecraft remain visible; nearest dated
    Space-Track elements drive playback. Statistical chart gaps mark old TLEs. */
 import * as THREE from "./vendor/three/three.module.js";
@@ -420,7 +422,7 @@ async function start() {
         const addRow = (dl, label, value, href) => { if (value == null || value === "") return; const row = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = label; if (href) { const link = document.createElement("a"); link.className = "espl-news-external"; link.href = href; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = value; link.insertAdjacentHTML("beforeend", svgLink); dd.append(link); } else dd.textContent = value; if (label === "TLE age") dd.className = "tleAgeValue"; row.append(dt, dd); dl.append(row); };
         const identity = makeSection("Satellite Details");
         const flags = { AFETR: " 🇺🇸", FRGUI: " 🇫🇷", JSC: " 🇨🇳", WSC: " 🇨🇳", TYMSC: " 🇰🇿 🇷🇺", TTMTR: " 🇰🇿 🇷🇺", XICLF: " 🇨🇳" };
-        const country = { PRC: "China (PRC) 🇨🇳", US: "United States 🇺🇸", CIS: "Russia 🇷🇺", ITSO: "International operator 🌐" }[record.COUNTRY] || record.COUNTRY;
+        const country = { PRC: "China (PRC) 🇨🇳", US: "United States 🇺🇸", CIS: "Russia 🇷🇺", ITSO: "Intelsat" }[record.COUNTRY] || record.COUNTRY;
         addRow(identity.dl, "COSPAR ID", item.cospar); addRow(identity.dl, "NORAD ID", item.norad);
         addRow(identity.dl, "Country / org.", country); addRow(identity.dl, "Object type", record.OBJECT_TYPE === "PAYLOAD" ? "Payload" : record.OBJECT_TYPE);
         addRow(identity.dl, "Launch date", shortUtc(item.launchMs)); addRow(identity.dl, "Launch site", `${catalog.launchSiteNames?.[record.SITE] || record.SITE || "Unknown"}${flags[record.SITE] || ""}`);
@@ -442,31 +444,7 @@ async function start() {
     }
   }
   function updateScreenLabels() {
-    camera.updateMatrixWorld(true);
-    const width = sceneHost.clientWidth, height = sceneHost.clientHeight;
-    const ordered = [participants[0], participants.find(item => item.slot === selected)].filter(Boolean);
-    const placed = [];
-    for (const item of ordered) {
-      const label = labels[item.slot], marker = markers[item.slot];
-      if (!marker.userData.available) { marker.visible = false; label.hidden = true; continue; }
-      const projected = marker.position.clone().project(camera);
-      const x = (projected.x + 1) * width / 2, y = (1 - projected.y) * height / 2;
-      const ray = marker.position.clone().sub(camera.position), fromEarth = camera.position.clone().sub(earth.position);
-      const fraction = THREE.MathUtils.clamp(-fromEarth.dot(ray) / (ray.lengthSq() || 1), 0, 1);
-      const occluded = fromEarth.addScaledVector(ray, fraction).length() < 1 && fraction < .99;
-      const visible = projected.z < 1 && x > 8 && x < width - 8 && y > 8 && y < height - 8 && !occluded;
-      marker.visible = visible; label.hidden = !visible;
-      if (visible) {
-        const left = item.slot === "A" && x - label.offsetWidth - 10 > 8 ? x - label.offsetWidth - 10 : x + 10;
-        const labelWidth = label.offsetWidth, labelHeight = label.offsetHeight || 12;
-        const candidates = [y, y + 18, y - 18, y + 36, y - 36];
-        const top = candidates.find(candidate => candidate > 8 && candidate < height - 8 && placed.every(box =>
-          left + labelWidth + 4 < box.left || left > box.right + 4 || candidate + labelHeight / 2 + 4 < box.top || candidate - labelHeight / 2 > box.bottom + 4)) ?? y;
-        label.style.left = `${left}px`; label.style.top = `${top}px`;
-        placed.push({ left, right: left + labelWidth, top: top - labelHeight / 2, bottom: top + labelHeight / 2 });
-        label.classList.toggle("is-muted", item.slot !== "A" && item.slot !== selected);
-      }
-    }
+    placeEpisodeScreenLabels({ camera, sceneHost, participants, markers, labels, earth, selected });
   }
   function render() {
     document.body.classList.toggle("e016-eci", mode === "eci");
@@ -734,8 +712,8 @@ function makeReviewBar() {
   document.body.append(drawer);
   const pinLayer = document.createElement("div"); pinLayer.className = "e016-pin-layer"; document.body.append(pinLayer);
   let comments = [], commenting = false, draft = null;
-  const placePins = () => { pinLayer.replaceChildren(); comments.forEach((item, index) => { const anchor = document.getElementById(item.key) || $("scene"), rect = anchor.getBoundingClientRect(); const x = rect.left + rect.width * item.x, y = rect.top + rect.height * item.y; if (x < 0 || x > innerWidth || y < 60 || y > innerHeight) return; const pin = document.createElement("button"); pin.className = "e016-spot-pin"; pin.type = "button"; pin.textContent = String(index + 1); pin.title = `${item.label}: ${item.text}`; pin.style.left = `${x}px`; pin.style.top = `${y}px`; pin.addEventListener("click", () => { drawer.hidden = false; sessionStorage.setItem("espl-e016-comments-open", "1"); }); pinLayer.append(pin); }); };
-  const refresh = async () => { const result = await fetch("/api/review-comments").then(r => r.json()); comments = (result.comments || []).filter(item => item.surface === "E-016"); $("e016CommentCount").textContent = String(comments.length); $("e016CommentList").replaceChildren(...comments.map(item => { const div = document.createElement("div"); div.className = "e016-review-item"; const title = document.createElement("strong"); title.textContent = item.label; const body = document.createElement("p"); body.textContent = item.text; div.append(title, body); return div; })); placePins(); };
+  const placePins = () => { pinLayer.replaceChildren(); comments.forEach((item, index) => { if (item.surface !== "E-016" && !item.appliesToAllEpisodes) return; const anchor = document.getElementById(item.key) || $("scene"), rect = anchor.getBoundingClientRect(); const x = rect.left + rect.width * item.x, y = rect.top + rect.height * item.y; if (x < 0 || x > innerWidth || y < 60 || y > innerHeight) return; const pin = document.createElement("button"); pin.className = "e016-spot-pin"; pin.type = "button"; pin.textContent = String(index + 1); pin.title = `${item.label}: ${item.text}`; pin.style.left = `${x}px`; pin.style.top = `${y}px`; pin.addEventListener("click", () => { drawer.hidden = false; sessionStorage.setItem("espl-e016-comments-open", "1"); }); pinLayer.append(pin); }); };
+  const refresh = async () => { const result = await fetch("/api/review-comments").then(r => r.json()); comments = result.comments || []; $("e016CommentCount").textContent = String(comments.length); renderSharedCommentList($("e016CommentList"), comments, "E-016"); placePins(); };
   refresh().catch(console.warn);
   window.addEventListener("resize", placePins);
   $("ui").addEventListener("scroll", placePins, { passive: true });
