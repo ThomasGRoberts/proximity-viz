@@ -1,0 +1,180 @@
+{
+  "schema": "espl-mini-preview-v2",
+  "configs": {
+    "E-002": {
+      "episodeId": "E-002",
+      "windowId": "dec30",
+      "frameMode": "relative",
+      "loopStartUtc": "2019-12-30T16:12:05.204Z",
+      "loopEndUtc": "2019-12-30T21:42:00.612Z",
+      "rate": 600,
+      "camera": {
+        "name": "Dynamic Table mini preview",
+        "timestampUtc": "2019-12-30T21:34:20.084Z",
+        "frameMode": "relative",
+        "position": [
+          26.171245985829,
+          5.204031584307,
+          20.472380633938
+        ],
+        "target": [
+          0.19874119710071553,
+          0.1305026622633437,
+          -0.7174926295799214
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "fieldOfViewDeg": 35,
+        "zoom": 1,
+        "viewportOffset": {
+          "x": -350,
+          "y": 0
+        }
+      }
+    },
+    "E-001": {
+      "episodeId": "E-001",
+      "windowId": "chapter-2",
+      "frameMode": "relative",
+      "loopStartUtc": "2017-11-20T15:29:00.000Z",
+      "loopEndUtc": "2017-11-27T15:29:00.000Z",
+      "rate": 14400,
+      "camera": {
+        "name": "Dynamic Table mini preview",
+        "timestampUtc": "2017-11-26T21:02:43.200Z",
+        "frameMode": "relative",
+        "referenceSatellite": "B",
+        "position": [
+          0.637452896185,
+          0.18823537352,
+          1.674866768699
+        ],
+        "target": [
+          0.11758595681905992,
+          -0.11727832671449517,
+          -0.01675907675807775
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "fieldOfViewDeg": 35,
+        "zoom": 1,
+        "viewportOffset": {
+          "x": -180,
+          "y": -24
+        }
+      }
+    },
+    "E-005": {
+      "episodeId": "E-005",
+      "windowId": "chapter-1",
+      "frameMode": "relative",
+      "loopStartUtc": "2022-01-04T16:24:00.000Z",
+      "loopEndUtc": "2022-01-11T16:24:00.000Z",
+      "rate": 14400,
+      "camera": {
+        "name": "Dynamic Table mini preview",
+        "timestampUtc": "2022-01-09T15:05:48.600Z",
+        "frameMode": "relative",
+        "referenceSatellite": "B",
+        "position": [
+          0.33213039286538804,
+          0.03443049016892081,
+          0.9028173940700208
+        ],
+        "target": [
+          0.0013937593068171403,
+          -0.0425173754407192,
+          0.0034713604814560054
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "fieldOfViewDeg": 35,
+        "zoom": 1,
+        "viewportOffset": {
+          "x": 12,
+          "y": -96
+        }
+      }
+    },
+    "E-003": {
+      "episodeId": "E-003",
+      "windowId": "chapter-2",
+      "frameMode": "relative",
+      "loopStartUtc": "2020-08-25T02:36:00.000Z",
+      "loopEndUtc": "2020-08-29T01:26:27.059Z",
+      "rate": 7200,
+      "camera": {
+        "name": "Dynamic Table mini preview",
+        "timestampUtc": "2020-08-29T01:26:27.059Z",
+        "frameMode": "relative",
+        "referenceSatellite": "B",
+        "position": [
+          0.028339632461641062,
+          0.007688998335282251,
+          0.052697918603507185
+        ],
+        "target": [
+          0.008504580581749821,
+          -1.0439877610005787e-20,
+          -0.003027161159319698
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "fieldOfViewDeg": 35,
+        "zoom": 1,
+        "viewportOffset": {
+          "x": -156,
+          "y": 36
+        }
+      }
+    },
+    "E-006": {
+      "episodeId": "E-006",
+      "windowId": "chapter-1",
+      "frameMode": "relative",
+      "loopStartUtc": "2015-06-19T02:44:40.821Z",
+      "loopEndUtc": "2015-06-23T12:59:39.220Z",
+      "rate": 3600,
+      "camera": {
+        "name": "Current unsaved mini preview",
+        "timestampUtc": "2015-06-23T12:59:39.220Z",
+        "frameMode": "relative",
+        "referenceSatellite": "B",
+        "position": [
+          0.7010600932140852,
+          0.09512870099454239,
+          0.9150108879098363
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "fieldOfViewDeg": 35,
+        "zoom": 1,
+        "viewportOffset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    }
+  },
+  "savedAt": "2026-11-18T06:05:00+00:00"
+}

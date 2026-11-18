@@ -335,7 +335,7 @@ function renderDwellDescription(node, chaser, distance, speed) {
   const distanceValue = document.createElement("strong"), speedValue = document.createElement("strong");
   const gray = document.createElement("strong"), gold = document.createElement("strong");
   gray.className = "single"; gray.textContent = "Gray"; gold.className = "both"; gold.textContent = "gold";
-  first.textContent = chaser.replace(/^COSMOS\s+/i, "Cosmos "); target.textContent = catalogNames.B || "USA 245";
+  first.textContent = chaser.toUpperCase(); target.textContent = (catalogNames.B || "USA 245").toUpperCase();
   distanceValue.textContent = `${distance.toLocaleString()} km`;
   speedValue.textContent = `${(speed / 1000).toFixed(2).replace(/0+$/, "").replace(/\.$/, "")} km/s`;
   const hours = currentWindow ? (Date.parse(currentWindow.end) - Date.parse(currentWindow.start)) / 3600000 : 36;
@@ -629,7 +629,7 @@ async function buildPanel() {
     stickyMenu.append(button);
   }
   stickyChoices.append(stickyToggle, stickyMenu);
-  const stickyIntro = document.createElement("span"); stickyIntro.className = "pair-sticky-intro"; stickyIntro.textContent = "Current episode:";
+  const stickyIntro = document.createElement("span"); stickyIntro.className = "pair-sticky-intro"; stickyIntro.textContent = "Current Episode:";
   sticky.append(stickyIntro, stickyChoices);
   const stickyTarget = document.createElement("span"); stickyTarget.className = "pair-sticky-target"; stickyTarget.innerHTML = "<i></i><b></b>"; stickyTarget.querySelector("b").textContent = catalogNames.B;
   sticky.append("+", stickyTarget);

@@ -16,7 +16,8 @@ sys.path.insert(0, str(HERE.parent))
 from review_store import (review_comments, change_comment, camera_moments, change_moment,
                           e001_views, e001_speeds, change_e001_view, change_e001_speed,
                           e005_views, change_e005_view, e003_views, change_e003_view,
-                          e006_views, change_e006_view)
+                          e006_views, change_e006_view, e008_views, change_e008_view,
+                          e016_views, change_e016_view)
 COMMENTS = HERE / "spot-comments.json"
 CAMERA_VIEWS = HERE / "saved-camera-views.json"
 TABLE_COMMENTS = HERE / "table-comments.json"
@@ -114,6 +115,10 @@ class Handler(SimpleHTTPRequestHandler):
             return self.respond(200, {"views": e003_views()})
         if self.path == "/api/e006-camera-views":
             return self.respond(200, {"views": e006_views()})
+        if self.path == "/api/e008-camera-views":
+            return self.respond(200, {"views": e008_views()})
+        if self.path == "/api/e016-camera-views":
+            return self.respond(200, {"views": e016_views()})
         if self.path == "/api/e001-speed-preferences":
             return self.respond(200, {"preferences": e001_speeds()})
         if self.path == "/api/spot-comments":
@@ -132,7 +137,7 @@ class Handler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
-        if self.path not in ("/api/spot-comments", "/api/camera-views", "/api/table-comments", "/api/table-preview", "/api/review-comments", "/api/camera-moments", "/api/e001-camera-views", "/api/e003-camera-views", "/api/e005-camera-views", "/api/e006-camera-views", "/api/e001-speed-preferences"):
+        if self.path not in ("/api/spot-comments", "/api/camera-views", "/api/table-comments", "/api/table-preview", "/api/review-comments", "/api/camera-moments", "/api/e001-camera-views", "/api/e003-camera-views", "/api/e005-camera-views", "/api/e006-camera-views", "/api/e008-camera-views", "/api/e016-camera-views", "/api/e001-speed-preferences"):
             self.respond(404, {"error": "Unknown endpoint"})
             return
         try:
@@ -152,12 +157,16 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.respond(200, {"views": change_e003_view(request)})
             if self.path == "/api/e006-camera-views":
                 return self.respond(200, {"views": change_e006_view(request)})
+            if self.path == "/api/e008-camera-views":
+                return self.respond(200, {"views": change_e008_view(request)})
+            if self.path == "/api/e016-camera-views":
+                return self.respond(200, {"views": change_e016_view(request)})
             if self.path == "/api/e001-speed-preferences":
                 return self.respond(200, {"preferences": change_e001_speed(request)})
             if self.path == "/api/table-preview":
                 config = request.get("config")
                 episode_id = config.get("episodeId", "E-002") if isinstance(config, dict) else None
-                valid_window = config.get("windowId") in ("dec9", "dec30") if episode_id == "E-002" else str(config.get("windowId", "")).startswith("chapter-") if episode_id in ("E-001", "E-003", "E-005", "E-006") else False
+                valid_window = config.get("windowId") in ("dec9", "dec30") if episode_id == "E-002" else str(config.get("windowId", "")).startswith("chapter-") if episode_id in ("E-001", "E-003", "E-005", "E-006", "E-008") else False
                 if not isinstance(config, dict) or not valid_window or config.get("frameMode") not in ("relative", "inertial"):
                     raise ValueError("Invalid miniature preview chapter or camera frame")
                 start = datetime.fromisoformat(str(config.get("loopStartUtc", "")).replace("Z", "+00:00"))

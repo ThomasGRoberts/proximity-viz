@@ -14,7 +14,9 @@ E001_SPEEDS = ROOT / "e001-review" / "speed-preferences.json"
 E005_VIEWS = ROOT / "e005" / "saved-camera-views.json"
 E003_VIEWS = ROOT / "e003" / "saved-camera-views.json"
 E006_VIEWS = ROOT / "e006" / "saved-camera-views.json"
-SURFACES = {"E-001", "E-002", "E-003", "E-005", "E-006", "Library"}
+E008_VIEWS = ROOT / "e008" / "saved-camera-views.json"
+E016_VIEWS = ROOT / "e016" / "saved-camera-views.json"
+SURFACES = {"E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "Library"}
 
 
 def read(path, key):
@@ -163,6 +165,59 @@ def change_e003_view(request):
     else:
         raise ValueError("Unknown E-003 camera action")
     write(E003_VIEWS, "views", items)
+    return items
+
+
+def e016_views():
+    return read(E016_VIEWS, "views")
+
+def change_e016_view(request):
+    return change_two_object_view(request, E016_VIEWS, "E-016")
+
+def e008_views():
+    return read(E008_VIEWS, "views")
+
+
+def change_e008_view(request):
+    return change_two_object_view(request, E008_VIEWS, "E-008")
+
+
+def change_two_object_view(request, path, episode_id):
+    items = read(path, "views")
+    action = request.get("action")
+    if action == "delete":
+        items = [item for item in items if item.get("id") != request.get("id")]
+    elif action == "add":
+        view = request.get("view")
+        if not isinstance(view, dict) or view.get("selected") not in ("B",) or view.get("referenceSlot") not in ("A", "B"):
+            raise ValueError(f"Invalid {episode_id} camera configuration")
+        if view["referenceSlot"] not in ("A", view["selected"]):
+            raise ValueError("Invalid camera origin")
+        if not str(view.get("chapterId", "")).startswith("chapter-") or len(str(view["chapterId"])) > 50:
+            raise ValueError("Invalid camera chapter")
+        datetime.fromisoformat(str(view.get("timeUtc", "")).replace("Z", "+00:00"))
+        for key in ("position", "target", "up"):
+            coordinates = view.get(key)
+            if not isinstance(coordinates, list) or len(coordinates) != 3 or not all(isinstance(v, (int, float)) and math.isfinite(v) for v in coordinates):
+                raise ValueError("Invalid camera coordinates")
+        for key in ("zoom", "fov"):
+            if not isinstance(view.get(key), (int, float)) or not math.isfinite(view[key]) or not 0 < view[key] <= 100:
+                raise ValueError("Invalid camera optics")
+        note = str(view.get("note", "")).strip()
+        if len(note) > 4000:
+            raise ValueError("Invalid camera note")
+        items.append({"id": uuid4().hex, "createdAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                      **{key: view[key] for key in ("chapterId", "timeUtc", "selected", "referenceSlot", "position", "target", "up", "zoom", "fov")}, "note": note})
+    elif action == "annotate":
+        note = str(request.get("note", "")).strip()
+        if len(note) > 4000 or not any(item.get("id") == request.get("id") for item in items):
+            raise ValueError("Invalid camera view note")
+        for item in items:
+            if item["id"] == request["id"]:
+                item["note"] = note
+    else:
+        raise ValueError(f"Unknown {episode_id} camera action")
+    write(path, "views", items)
     return items
 
 
