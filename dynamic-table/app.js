@@ -1,6 +1,6 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
-import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js?v=2";
+import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js?v=3";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
@@ -288,12 +288,8 @@ function rowMetric(row, key) {
 }
 function visibleRows() {
   const data = currentData(); if (!data) return [];
-  const approved = new Set(data.approvedEpisodeIds || []);
-  const publicRows = state.usePreview || (localE003Review && data.source === "live")
-    ? data.episodes
-    : data.episodes.filter(row => approved.has(field(row, "ID")));
   const query = state.query.toLocaleLowerCase();
-  const rows = publicRows.filter(row => {
+  const rows = data.episodes.filter(row => {
     if (!query) return true;
     const terms = [field(row, "ID"), title(row), episodeDescription(row), account(row), regime(row), regimeShort(row), ...["A", "B", "C"].flatMap(role => { const info = objectInfo(row, role, data); return info ? [info.name, info.cospar, info.norad, info.owner, ownerDisplay(info)] : []; })];
     return terms.join(" ").toLocaleLowerCase().includes(query);
@@ -907,7 +903,7 @@ function render() {
   const data = currentData(), rows = visibleRows();
   if (state.selected && !rows.includes(state.selected)) state.selected = null;
   $("#count").textContent = state.query ? `${rows.length} matching episodes` : `${rows.length} episodes`;
-  $("#count").title = data?.source === "live" && !state.usePreview ? "Rows shown here must be marked for frontend in the sheet and approved for public display." : "";
+  $("#count").title = data?.source === "live" && !state.usePreview ? "Rows marked TRUE in the Episodes sheet’s Frontend column." : "";
   const body = $("#rows"); body.replaceChildren();
   for (const [index, row] of rows.entries()) {
     const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);

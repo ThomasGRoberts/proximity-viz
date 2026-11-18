@@ -4,7 +4,6 @@ const SHEET_ID = "1IEQ3tmerXXxEty8BcZeaonWhQbHUfA2Z5b44IuCsQ8I";
 const PUBLISHED_ID = "2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera";
 export const EPISODES_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
 export const DESCRIPTIONS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=541287173`;
-const PUBLISHED_EPISODES_CSV = `https://docs.google.com/spreadsheets/d/e/${PUBLISHED_ID}/pub?output=csv&gid=0&single=true`;
 const PUBLISHED_DESCRIPTIONS_CSV = `https://docs.google.com/spreadsheets/d/e/${PUBLISHED_ID}/pub?output=csv&gid=541287173&single=true`;
 
 async function fetchCsv(primary, fallback) {
@@ -12,6 +11,7 @@ async function fetchCsv(primary, fallback) {
     .then(response => { if (!response.ok) throw new Error(`Sheet returned ${response.status}`); return response.text(); });
   try { return await request(primary); }
   catch (error) {
+    if (!fallback) throw error;
     console.warn("Direct sheet export unavailable; using published copy", error);
     return request(fallback);
   }
@@ -52,7 +52,7 @@ export function parseCsv(text, requiredHeaders = ["ID"]) {
 
 let request;
 export function loadCurrentEpisodes() {
-  return request ||= fetchCsv(EPISODES_CSV, PUBLISHED_EPISODES_CSV)
+  return request ||= fetchCsv(EPISODES_CSV)
     .then(parseCsv).then(episodes => {
       if (!episodes.length) throw new Error("Episodes sheet returned no episode records");
       return { episodes, fetchedUtc: new Date().toISOString() };
