@@ -7,4 +7,5 @@ else if (episodeId === "E-003") import("./episode-e003.js?v=4");
 else if (episodeId === "E-006") import("./episode-e006.js?v=9");
 else if (episodeId === "E-008") import("./episode-e008.js?v=2");
 else if (episodeId === "E-016") import("./episode-e016.js?v=1");
+else if (episodeId === "E-059") import("./episode-e059.js?v=1");
 else document.getElementById("episodeTitle").textContent = `${episodeId}: visualization unavailable`;

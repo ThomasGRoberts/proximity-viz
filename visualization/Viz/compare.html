@@ -10,7 +10,7 @@
     if (query.get("episode") === "E-002") location.replace(new URL("../e002/", location.href));
     else if (query.get("mini") === "1") document.documentElement.classList.add("mini-scene", "episode-initializing");
     else if (!query.has("dev") && !query.has("published") && (!query.has("episode") || query.get("episode") === "E-001") && (!query.has("case") || query.get("case") === "E-001")) location.replace(new URL("../e001/", location.href));
-    else if (["E-003", "E-005", "E-006", "E-008", "E-016"].includes(query.get("episode"))) document.documentElement.classList.add("episode-initializing");
+    else if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(query.get("episode"))) document.documentElement.classList.add("episode-initializing");
   </script>
   <title>Visualizing Proximity in Space</title>
   <link rel="icon" type="image/png" href="../../dynamic-table/assets/polyhedron-icon.png">

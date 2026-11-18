@@ -642,6 +642,12 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   requestAnimationFrame(animate);
   return {
     update,
+    getMarkerPositions() { return Object.entries(markers).map(([slot, marker]) => {
+      const point = marker.position.clone().project(camera);
+      return { slot, x: (point.x + 1) / 2, y: (1 - point.y) / 2,
+        visible: marker.visible && point.z >= -1 && point.z <= 1,
+        color: slot === "B" ? "#a9a9a9" : "#eaaa00", opacity: marker.material.opacity };
+    }); },
     setMiniTleAnchor(ms) {
       if (!options.tableMini) return;
       miniTleAnchorMs = ms;

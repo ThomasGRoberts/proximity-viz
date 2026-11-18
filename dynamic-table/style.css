@@ -659,3 +659,30 @@ body .table-wrap .expanded-row[data-episode-id="E-001"]:has(.expanded-inner.has-
 @media(min-width:901px){
   .table-wrap .expanded-row[data-episode-id="E-003"] .visual-block{overflow:visible}
 }
+/* E-016 uses the same editable scene viewport as the other two-object chapters. */
+.orbital-preview iframe.e016-mini{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#fffcf6}
+.expanded-row[data-episode-id="E-016"] .orbital-preview.mini-editing-viewport iframe.e016-mini{pointer-events:auto}
+@media(min-width:901px){
+  .table-wrap .expanded-row[data-episode-id="E-016"] .orbital-preview{position:absolute;left:calc(-44.9275% - 18px);width:calc(144.9275% + 18px);height:100%;mask-image:linear-gradient(90deg,transparent 0%,#0004 18%,#0009 35%,#000 48%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,#0004 18%,#0009 35%,#000 48%)}
+  .expanded-row[data-episode-id="E-016"] .visual-block.mini-workshop-active{position:relative;z-index:8}
+  .expanded-row[data-episode-id="E-016"] .visual-block.mini-workshop-active .visual-link.model-link{pointer-events:none}
+  .expanded-row[data-episode-id="E-016"] .orbital-preview.mini-editing-viewport{z-index:9;pointer-events:auto;mask-image:none;-webkit-mask-image:none}
+}
+.table-wrap th:nth-child(2){text-align:center}
+.object-meta div{grid-template-columns:78px 1fr;gap:7px}
+.news-indicator{position:relative}
+.news-indicator .news-count{position:absolute;left:calc(50% + 7px);top:-1px;display:grid;place-items:center;min-width:15px;height:15px;padding:0 2px;border:1px solid #fff;border-radius:9px;background:#8f742e;color:#fff;font-size:9px;font-weight:700;line-height:1}
+.expanded-inner.has-visual{position:relative}
+.mini-dot-overlay{position:absolute;z-index:30;inset:0;pointer-events:none}
+.mini-dot-overlay[hidden],.mini-dot-clone[hidden]{display:none}
+.mini-dot-clone{position:absolute;display:block;box-sizing:border-box;width:12px;height:12px;border:2px solid #191919;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 1px #fff7}
+.context-model-link .model-arrow,.context-model-link.is-open .model-arrow,.context-model-link[data-model-stage] .model-arrow{transform:translateY(-1px)}
+.context-model-link:hover .model-arrow,.context-model-link:focus-visible .model-arrow,.detail-overview:has(.visual-block:hover) .context-block .model-arrow{transform:translate(4px,-1px)}
+@media(min-width:901px){
+  /* E-002 has the longest current description (648 characters). */
+  .expanded-inner.has-visual .context-block{min-height:290px;box-sizing:border-box}
+  .table-wrap .expanded-row .expanded-inner.has-visual{position:relative}
+  .table-wrap .expanded-row .expanded-inner.has-visual::after{content:"";position:absolute;z-index:50;inset:0 auto 0 0;width:3px;background:var(--espl-gold);pointer-events:none}
+  .table-wrap .expanded-row .expanded-inner.has-visual .context-block::before{background:radial-gradient(ellipse 110% 92% at 32% 40%,#fffcf6 0%,#fffcf6ee 57%,#fffcf600 100%)}
+  .expanded-inner.has-visual .evidence-section{position:relative;z-index:20}
+}

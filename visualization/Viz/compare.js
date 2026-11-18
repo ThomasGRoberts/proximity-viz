@@ -2598,6 +2598,12 @@ try {
       miniLoopStart = Date.parse(chapter.start); miniLoopEnd = Date.parse(chapter.end);
       currentMs = miniLoopStart; updateScene();
       window.miniWorkshop = {
+        getMarkerPositions() { return ["A", "B"].map(slot => {
+          const marker = dots[slot], point = marker.position.clone().project(camera);
+          return { slot, x: (point.x + 1) / 2, y: (1 - point.y) / 2,
+            visible: marker.visible && point.z >= -1 && point.z <= 1,
+            color: SLOTS[slot].dot, opacity: marker.material.opacity };
+        }); },
         get ready() { return !!pair.A && !!pair.B; },
         get windows() { return miniWindows; },
         get window() { return miniActive; },

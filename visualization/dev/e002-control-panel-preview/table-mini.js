@@ -33,6 +33,7 @@ async function start() {
   update(true);
   const api = {
     get ready() { return true; },
+    getMarkerPositions() { return globe.getMarkerPositions(); },
     get windows() { return windows; },
     get window() { return active; },
     get current() { return current; },

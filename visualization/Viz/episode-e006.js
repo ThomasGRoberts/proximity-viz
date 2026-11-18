@@ -662,6 +662,12 @@ async function start() {
       position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), fieldOfViewDeg: camera.fov, zoom: camera.zoom });
     const seekMiniTime = ms => setTime(ms);
     window.miniWorkshop = {
+      getMarkerPositions() { return participants.map(item => {
+        const marker = markers[item.slot], point = marker.position.clone().project(camera);
+        return { slot: item.slot, x: (point.x + 1) / 2, y: (1 - point.y) / 2,
+          visible: marker.visible && point.z >= -1 && point.z <= 1,
+          color: item.color, opacity: marker.material.opacity };
+      }); },
       get ready() { return true; },
       get windows() { return chapters.map(item => ({ id: item.id, label: shortUtc(item.centerMs), start: new Date(item.startMs).toISOString(), end: new Date(item.endMs).toISOString() })); },
       get window() { return { id: chapter.id, start: new Date(chapter.startMs).toISOString(), end: new Date(chapter.endMs).toISOString() }; },

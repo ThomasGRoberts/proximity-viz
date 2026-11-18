@@ -18,7 +18,7 @@ const field = (row, ...names) => {
 const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
 const EARTH_COLOR = 0xedeae5;
 const localE003Review = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
-const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008"].includes(id);
+const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016"].includes(id);
 const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, historicalMetrics: {}, usePreview: false, selected: null, query: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 let sourceCarouselCleanup = () => {};
@@ -92,7 +92,11 @@ function organizationKind(info) {
 }
 function ownerDisplay(info) {
   if (info.owner === "CIS") return "Russia (CIS)";
-  if (info.owner === "FRIT") return "France / Italy";
+  if (info.owner === "FRIT") return "France 🇫🇷 / Italy 🇮🇹";
+  if (info.owner === "PRC") return "China (PRC)";
+  if (info.owner === "US") return "United States (US)";
+  if (info.owner === "UK") return "United Kingdom (UK)";
+  if (info.owner === "ITSO") return "Intelsat (ITSO)";
   return info.ownerName || info.owner;
 }
 function ownerIndicators(info, compact = false) {
@@ -189,7 +193,7 @@ function buildObjectPopover(info) {
   addMetadata(dl, "NORAD ID", s.NORAD_CAT_ID);
   const ownerRow = el("div"), ownerValue = el("dd"); ownerRow.append(el("dt", "", "Country"));
   ownerValue.append(document.createTextNode(ownerDisplay(info)));
-  if (!organizationKind(info)) for (const flag of emojiForOwner(info.owner)) ownerValue.append(document.createTextNode(` ${flag}`));
+  if (!organizationKind(info) && info.owner !== "FRIT") for (const flag of emojiForOwner(info.owner)) ownerValue.append(document.createTextNode(` ${flag}`));
   ownerRow.append(ownerValue); dl.append(ownerRow);
   addMetadata(dl, "Object type", objectTypes[s.OBJECT_TYPE] || s.OBJECT_TYPE);
   addMetadata(dl, "Launch date", fullDate(s.LAUNCH || s.LAUNCH_DATE));
@@ -420,6 +424,13 @@ const reviewedSourceMetadata = {
   "https://vpk.name/news/376303_v_mid_otvetili_na_obvineniya_ssha_v_presledovanii_amerikanskogo_sputnika.html": {
     publisher: "VPK.name",
   },
+  "https://aerospace.csis.org/data/unusual-behavior-in-geo-sj-17/": {
+    title: "Unusual Behavior in GEO: SJ-17",
+    publisher: "CSIS Aerospace Security",
+    publishedDate: "2022-09-01",
+    imagePath: "./assets/source-previews/e008-csis-sj17.jpg",
+    imageAlt: "Social sharing image for the CSIS analysis of SJ-17",
+  },
   "https://www.swfound.org/publications-and-reports/u-s-military-and-intelligence-rendezvous-and-proximity-operations-fact-sheet": {
     kind: "document",
     title: "US Military and Intelligence Rendezvous and Proximity Operations Fact Sheet",
@@ -492,7 +503,7 @@ function expandedContent(row, data) {
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
   if (hasEpisodeVisual(episodeId)) {
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : episodeId === "E-002" ? "../visualization/e002/" : episodeId === "E-003" ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=E-003` : episodeId === "E-008" ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=E-008` : episodeId === "E-006" ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=E-006` : "../visualization/Viz/compare.html?episode=E-005", location.href).href;
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : episodeId === "E-002" ? "../visualization/e002/" : ["E-003", "E-006", "E-008", "E-016"].includes(episodeId) ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${episodeId}` : "../visualization/Viz/compare.html?episode=E-005", location.href).href;
     viz.setAttribute("aria-label", `${episodeId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -633,6 +644,7 @@ function proximityNode(row, key) {
   return cell;
 }
 let previewScene = null, previewToken = 0;
+let miniDotFrame = 0;
 let miniFrame = null, miniBackdropHost = null, miniEditing = false, miniOriginalBounds = null, miniResizeObserver = null, localReview = null;
 let warmedE002Host = null, warmedE002Frame = null;
 let warmedE001Host = null, warmedE001Frame = null;
@@ -712,6 +724,7 @@ function prewarmE005() {
   });
 }
 function stopPreview() {
+  cancelAnimationFrame(miniDotFrame); miniDotFrame = 0;
   previewToken++; previewScene?.dispose(); previewScene = null;
   miniFrame?.contentWindow?.miniWorkshop?.setHover?.(false);
   miniResizeObserver?.disconnect(); miniResizeObserver = null;
@@ -733,6 +746,31 @@ function stopPreview() {
   }
   document.querySelectorAll(".table-wrap > .orbital-preview").forEach(host => { if (host !== warmedE002Host && host !== warmedE001Host && host !== warmedE005Host) host.remove(); });
 }
+function showMiniDotsOverDescription() {
+  const expanded = document.querySelector(".expanded-row .expanded-inner.has-visual");
+  const context = expanded?.querySelector(".context-block");
+  if (!expanded || !context) return;
+  cancelAnimationFrame(miniDotFrame); expanded.querySelector(".mini-dot-overlay")?.remove();
+  const overlay = el("div", "mini-dot-overlay"); overlay.setAttribute("aria-hidden", "true"); expanded.append(overlay);
+  const dots = new Map(); let last = 0;
+  const paint = now => {
+    if (!expanded.isConnected || !state.selected) return;
+    miniDotFrame = requestAnimationFrame(paint);
+    if (now - last < 40 || miniEditing) { overlay.hidden = miniEditing; return; }
+    last = now; overlay.hidden = false;
+    const positions = miniFrame?.contentWindow?.miniWorkshop?.getMarkerPositions?.();
+    if (!positions) return;
+    const frame = miniFrame.getBoundingClientRect(), area = expanded.getBoundingClientRect(), text = context.getBoundingClientRect();
+    for (const marker of positions) {
+      let dot = dots.get(marker.slot);
+      if (!dot) { dot = el("span", "mini-dot-clone"); overlay.append(dot); dots.set(marker.slot, dot); }
+      const x = frame.left + frame.width * marker.x, y = frame.top + frame.height * marker.y;
+      dot.hidden = !marker.visible || x < text.left || x > text.right || y < text.top || y > text.bottom;
+      if (!dot.hidden) { dot.style.left = `${x - area.left + expanded.scrollLeft}px`; dot.style.top = `${y - area.top + expanded.scrollTop}px`; dot.style.background = marker.color; dot.style.opacity = String(marker.opacity ?? 1); }
+    }
+  };
+  miniDotFrame = requestAnimationFrame(paint);
+}
 function setMiniEditing(open) {
   if (!miniFrame || !miniBackdropHost) return false;
   const episodeId = field(state.selected || {}, "ID");
@@ -741,7 +779,7 @@ function setMiniEditing(open) {
   miniEditing = open; block.classList.toggle("mini-workshop-active", open);
   miniBackdropHost.classList.toggle("mini-editing-viewport", open);
   miniFrame.contentWindow?.miniWorkshop?.setEditing?.(open);
-  if (["E-001", "E-003", "E-005", "E-006", "E-008"].includes(episodeId)) {
+  if (["E-001", "E-003", "E-005", "E-006", "E-008", "E-016"].includes(episodeId)) {
     miniFrame.tabIndex = open ? 0 : -1;
     if (open) miniFrame.removeAttribute("aria-hidden"); else miniFrame.setAttribute("aria-hidden", "true");
     return true;
@@ -798,6 +836,7 @@ function startPreview(row) {
   const episodeId = field(row, "ID");
   if (!hasEpisodeVisual(episodeId)) return;
   const host = document.querySelector(".expanded-row .orbital-preview"); if (!host) return;
+  showMiniDotsOverDescription();
   // One live scene spans the header, overview, and records. The link remains
   // the interaction target while the canvas is a clipped background layer.
   const tableWrap = document.querySelector(".table-wrap"), header = document.querySelector(".episode-row.selected"), expanded = document.querySelector(".expanded-row");
@@ -840,32 +879,28 @@ function startPreview(row) {
     localReview?.attachMini(warmedE005Frame);
     return;
   }
-  if (["E-003", "E-005", "E-006", "E-008"].includes(episodeId)) {
+  if (["E-003", "E-005", "E-006", "E-008", "E-016"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
     frame.src = new URL(`../visualization/Viz/compare.html?mini=1&episode=${episodeId}&table=28`, location.href).href;
     frame.title = `Animated ${episodeId} miniature orbital reconstruction`;
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
     host.replaceChildren(frame);
     miniFrame = frame; miniBackdropHost = host;
-    if (episodeId === "E-003") {
+    if (["E-003", "E-006", "E-008", "E-016"].includes(episodeId)) {
       const expanded = document.querySelector(".expanded-row");
-      const baseHeight = host.getBoundingClientRect().height;
-      const overscan = 100;
-      frame.dataset.miniBaseHeight = String(baseHeight);
-      const extendToRowEdges = () => {
+      const fillExpandedRow = () => {
         if (!expanded?.isConnected || !host.isConnected) return;
-        const area = expanded.getBoundingClientRect(), scene = host.getBoundingClientRect();
-        host.style.width = `${Math.max(1, area.right - scene.left)}px`;
-        host.style.height = `${baseHeight + overscan}px`;
-        Object.assign(frame.style, { position: "absolute", top: `${-overscan}px`, left: "0", width: "100%", height: `${baseHeight + overscan * 2}px` });
+        const area = expanded.getBoundingClientRect(), link = host.parentElement.getBoundingClientRect();
+        Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top}px`, width: `${area.width}px`, height: `${area.height}px` });
+        Object.assign(frame.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
       };
-      extendToRowEdges();
+      fillExpandedRow();
       miniResizeObserver?.disconnect();
-      miniResizeObserver = new ResizeObserver(extendToRowEdges);
+      miniResizeObserver = new ResizeObserver(fillExpandedRow);
       miniResizeObserver.observe(expanded);
     }
     frame.addEventListener("load", () => localReview?.attachMini(frame));
-    if (["E-003", "E-005", "E-006", "E-008"].includes(episodeId)) frame.addEventListener("load", () => void applyPublishedMiniConfig(frame, episodeId));
+    if (["E-003", "E-005", "E-006", "E-008", "E-016"].includes(episodeId)) frame.addEventListener("load", () => void applyPublishedMiniConfig(frame, episodeId));
     localReview?.attachMini(frame);
     return;
   }
@@ -903,7 +938,9 @@ function newsIndicator(row, count) {
   else wrap.setAttribute("aria-label", "0 linked records");
   const stack = el("span", `news-mini-stack cards-${Math.min(3, count)}`); stack.setAttribute("aria-hidden", "true");
   for (let index = 0; index < Math.min(3, count); index++) stack.append(el("span", "news-mini"));
-  wrap.title = `${count} linked ${count === 1 ? "record" : "records"}`; wrap.append(stack); return wrap;
+  wrap.title = `${count} linked ${count === 1 ? "record" : "records"}`; wrap.append(stack);
+  if (count > 3) wrap.append(el("span", "news-count", String(count)));
+  return wrap;
 }
 function render() {
   sourceCarouselCleanup(); sourceCarouselCleanup = () => {};

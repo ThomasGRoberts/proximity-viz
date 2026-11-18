@@ -612,6 +612,12 @@ async function start() {
       position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), fieldOfViewDeg: camera.fov, zoom: camera.zoom / miniProjectionScale });
     const seekMiniTime = ms => setTime(ms);
     window.miniWorkshop = {
+      getMarkerPositions() { return participants.map(item => {
+        const marker = markers[item.slot], point = marker.position.clone().project(camera);
+        return { slot: item.slot, x: (point.x + 1) / 2, y: (1 - point.y) / 2,
+          visible: marker.visible && point.z >= -1 && point.z <= 1,
+          color: item.color, opacity: marker.material.opacity };
+      }); },
       get ready() { return true; },
       get windows() { return chapters.map(item => ({ id: item.id, label: shortUtc(item.centerMs), start: new Date(item.startMs).toISOString(), end: new Date(item.endMs).toISOString() })); },
       get window() { return { id: chapter.id, start: new Date(chapter.startMs).toISOString(), end: new Date(chapter.endMs).toISOString() }; },
@@ -721,7 +727,7 @@ async function start() {
 function makeReviewBar() {
   document.body.classList.add("e016-review");
   const bar = document.createElement("header"); bar.className = "e016-review-bar";
-  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-005</a><a href="compare.html?dev=1&amp;episode=E-006">E-006</a><a href="compare.html?dev=1&amp;episode=E-008">E-008</a><a href="compare.html?dev=1&amp;episode=E-016" aria-current="page">E-016</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-016 review tools"><button id="e016CommentMode" type="button">✚ Spot comment</button><button id="e016CommentsToggle" type="button">Comments <span id="e016CommentCount">0</span></button></nav>';
+  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-005</a><a href="compare.html?dev=1&amp;episode=E-006">E-006</a><a href="compare.html?dev=1&amp;episode=E-008">E-008</a><a href="compare.html?dev=1&amp;episode=E-016" aria-current="page">E-016</a><a href="compare.html?dev=1&amp;episode=E-059">E-059</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-016 review tools"><button id="e016CommentMode" type="button">✚ Spot comment</button><button id="e016CommentsToggle" type="button">Comments <span id="e016CommentCount">0</span></button></nav>';
   document.body.append(bar);
   const drawer = document.createElement("aside"); drawer.className = "e016-review-drawer"; drawer.hidden = true;
   drawer.innerHTML = '<strong>E-016 spot comments</strong><form id="e016CommentForm" hidden><p id="e016CommentLocation"></p><textarea id="e016CommentText" required maxlength="4000"></textarea><label><input id="e016AllEpisodes" type="checkbox"> Applies to all full episode views</label><button type="submit">Save comment</button></form><div id="e016CommentList"></div><button id="e016ExportComments" type="button">Export comments JSON</button>';
