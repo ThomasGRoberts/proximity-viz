@@ -148,19 +148,19 @@
       "loopEndUtc": "2015-06-23T12:59:39.220Z",
       "rate": 3600,
       "camera": {
-        "name": "Current unsaved mini preview",
-        "timestampUtc": "2015-06-23T12:59:39.220Z",
+        "name": "Dynamic Table mini preview",
+        "timestampUtc": "2015-06-19T18:28:09.381Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
-          0.7010600932140852,
-          0.09512870099454239,
-          0.9150108879098363
+          1.1118399084900068,
+          0.05840056965929895,
+          1.4511532345492697
         ],
         "target": [
-          0,
-          0,
-          0
+          0.004609707565545523,
+          -0.0918424291013014,
+          0.006016506506905753
         ],
         "up": [
           0,
@@ -171,7 +171,7 @@
         "zoom": 1,
         "viewportOffset": {
           "x": 0,
-          "y": 0
+          "y": -60
         }
       }
     },
@@ -184,18 +184,18 @@
       "rate": 3600,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2018-03-01T16:45:46.611Z",
+        "timestampUtc": "2018-03-02T02:53:07.971Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
-          6.1978037858910335,
-          0.5769931189078901,
-          5.904448663515772
+          4.682377313640563,
+          0.44564492277267476,
+          4.460750521747425
         ],
         "target": [
-          0.20059078675758532,
-          -1.2535854741317458,
-          0.19109640183843424
+          0.1500594703976415,
+          -0.9377916871811293,
+          0.14295683923621655
         ],
         "up": [
           0,
@@ -207,6 +207,41 @@
         "viewportOffset": {
           "x": 0,
           "y": -16
+        }
+      }
+    },
+    "E-016": {
+      "episodeId": "E-016",
+      "windowId": "chapter-1",
+      "frameMode": "relative",
+      "loopStartUtc": "2019-10-28T12:11:00.000Z",
+      "loopEndUtc": "2019-10-28T16:11:00.000Z",
+      "rate": 3600,
+      "camera": {
+        "name": "Dynamic Table mini preview",
+        "timestampUtc": "2019-10-28T15:02:48.600Z",
+        "frameMode": "relative",
+        "referenceSatellite": "B",
+        "position": [
+          0.005517239310806036,
+          0.0011052542031280354,
+          0.020326322956676843
+        ],
+        "target": [
+          -0.002909107770716773,
+          3.2038360798953186e-12,
+          0.0018296657708148595
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "fieldOfViewDeg": 35,
+        "zoom": 1,
+        "viewportOffset": {
+          "x": -180,
+          "y": -100
         }
       }
     }

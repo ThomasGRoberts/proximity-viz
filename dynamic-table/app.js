@@ -18,7 +18,7 @@ const field = (row, ...names) => {
 const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
 const EARTH_COLOR = 0xedeae5;
 const localE003Review = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
-const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016"].includes(id);
+const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(id);
 const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, historicalMetrics: {}, usePreview: false, selected: null, query: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 let sourceCarouselCleanup = () => {};
@@ -458,6 +458,14 @@ const reviewedSourceMetadata = {
     previewPath: "./assets/source-previews/d041-serrano-first-page.jpg",
     imageAlt: "First page of Serrano and colleagues’ 2024 AMOS paper",
   },
+  "https://estatements.un.org/estatements/11.0010/20261021100000000/VCYntJPvffMzJVH/ElYgHPjnLTLPRvy_nyc_en.pdf": {
+    kind: "document",
+    title: "Statement by the United States",
+    publisher: "UNGA First Committee",
+    publishedDate: "2026-10-21",
+    previewPath: "./assets/source-previews/e059-us-statement-first-page.png",
+    imageAlt: "First page of the United States statement to the United Nations First Committee on October 21, 2026",
+  },
 };
 function sourceCard(group, data) {
   const { url, ref, items } = group, d = items[0].row, meta = { ...(data.sourceMetadata?.[ref] || {}), ...(reviewedSourceMetadata[ref] || {}) };
@@ -509,7 +517,7 @@ function expandedContent(row, data) {
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
   if (hasEpisodeVisual(episodeId)) {
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : episodeId === "E-002" ? "../visualization/e002/" : ["E-003", "E-006", "E-008", "E-016"].includes(episodeId) ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${episodeId}` : "../visualization/Viz/compare.html?episode=E-005", location.href).href;
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : episodeId === "E-002" ? "../visualization/e002/" : ["E-003", "E-006", "E-008", "E-016", "E-059"].includes(episodeId) ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${episodeId}` : "../visualization/Viz/compare.html?episode=E-005", location.href).href;
     viz.setAttribute("aria-label", `${episodeId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -597,7 +605,11 @@ function expandedContent(row, data) {
       previous.addEventListener("click", () => show(first - 1, true)); next.addEventListener("click", () => show(first + 1, true));
       nav.append(previous, dots, next); evidence.append(nav); show(0);
       const onResize = () => show(first);
-      window.addEventListener("resize", onResize); sourceCarouselCleanup = () => window.removeEventListener("resize", onResize);
+      let advance = 0;
+      const restart = () => { clearInterval(advance); advance = window.setInterval(() => { if (grid.isConnected && !document.hidden) show(first + 1, true); }, 10000); };
+      for (const control of [previous, next, ...dots.children]) control.addEventListener("click", restart);
+      restart();
+      window.addEventListener("resize", onResize); sourceCarouselCleanup = () => { window.removeEventListener("resize", onResize); clearInterval(advance); };
     }
   }
   wrap.append(overview);
@@ -633,7 +645,7 @@ async function toggleRow(row) {
   const headerOffset = stickyHeader?.getBoundingClientRect().height || 0;
   const reviewBar = document.getElementById("tableReviewBar");
   const reviewOffset = reviewBar?.hidden ? 0 : reviewBar?.getBoundingClientRect().height || 0;
-  const destination = Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - reviewOffset - 14);
+  const destination = Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - reviewOffset - 1);
   if (reducedMotion.matches) window.scrollTo(0, destination);
   else await new Promise(resolve => {
     scrollResolve = resolve;
@@ -650,13 +662,23 @@ async function toggleRow(row) {
   if (token !== selectionToken) return;
   state.selected = row; render();
   const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
+  requestAnimationFrame(() => {
+    if (token !== selectionToken) return;
+    const heading = document.querySelector(`.episode-row.selected`);
+    if (!heading) return;
+    const sticky = document.querySelector(".table-wrap thead th")?.getBoundingClientRect().height || 0;
+    const review = document.getElementById("tableReviewBar");
+    const reviewHeight = review?.hidden ? 0 : review?.getBoundingClientRect().height || 0;
+    const difference = heading.getBoundingClientRect().top - sticky - reviewHeight - 1;
+    if (Math.abs(difference) > 2) scrollBy(0, difference);
+  });
 }
 function periodNode(row) { const node = el("span", "period-label", periodInfo(row).label); const chapters = episodeChapters(row); node.title = chapters.length ? chapters.map(item => `${item.center} · ${item.widthHours} hours`).join("\n") : [fullDate(field(row, "Start Date", "Date")), fullDate(field(row, "End Date"))].filter(Boolean).join(" to "); return node; }
 function proximityNode(row, key) {
   const cell = el("div", "proximity-cell");
   const id = field(row, "ID"), metric = rowMetric(row, key);
-  if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", id === "E-001" && !state.series || id === "E-002" && !state.e002Metrics || ["E-003", "E-005", "E-006", "E-008"].includes(id) && !state.historicalMetrics[id] ? "Loading…" : "Unavailable")); return cell; }
-  const value = estimatedValue(metric.value, key === "distance" ? "separationKm" : "relativeSpeedMps", field(row, "ID"));
+  if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", id === "E-001" && !state.series || id === "E-002" && !state.e002Metrics || ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(id) && !state.historicalMetrics[id] ? "Loading…" : "Unavailable")); return cell; }
+  const value = metric.value > 0 && metric.value < 1 ? "<1" : estimatedValue(metric.value, key === "distance" ? "separationKm" : "relativeSpeedMps", field(row, "ID"));
   cell.append(el("strong", "minimum-value", value), el("span", "minimum-unit", key === "distance" ? "km" : "m/s"));
   const pair = metric.pair?.split(":");
   const pairLabel = pair?.length === 2 ? `${objectInfo(row, pair[0], currentData())?.name || pair[0]} to ${objectInfo(row, pair[1], currentData())?.name || pair[1]}; ` : "";
@@ -675,7 +697,8 @@ const publishedMiniSettings = fetch("./data/mini-preview-settings.json", { cache
 async function applyPublishedMiniConfig(frame, episodeId) {
   if (localReview) return;
   const config = (await publishedMiniSettings)[episodeId];
-  if (!config || !frame.isConnected) return;
+  if (!config) { frame.dataset.miniConfigured = "1"; return; }
+  if (!frame.isConnected) return;
   for (let attempt = 0; attempt < 240 && frame.isConnected; attempt++) {
     const mini = frame.contentWindow?.miniWorkshop;
     if (!mini?.ready) { await new Promise(resolve => setTimeout(resolve, 100)); continue; }
@@ -691,6 +714,7 @@ async function applyPublishedMiniConfig(frame, episodeId) {
       frame.style.width = x < 0 ? `calc(100% + ${-x}px)` : "100%";
       frame.style.height = y < 0 ? `calc(100% + ${-y}px)` : "100%";
       mini.setPlaying(true);
+      frame.dataset.miniConfigured = "1";
     } catch (error) { console.warn(`${episodeId} mini settings could not be applied`, error); }
     return;
   }
@@ -701,8 +725,8 @@ function revealMiniAsOneScene(frame) {
   let tries = 0;
   const check = () => {
     if (!frame.isConnected) { if (++tries < 125) setTimeout(check, 80); return; }
-    if (frame.contentWindow?.miniWorkshop?.ready || ++tries >= 125) {
-      setTimeout(() => { if (frame.isConnected) frame.style.opacity = "1"; }, 400);
+    if ((frame.contentWindow?.miniWorkshop?.ready && frame.dataset.miniConfigured === "1") || ++tries >= 300) {
+      setTimeout(() => { if (frame.isConnected) frame.style.opacity = "1"; }, 150);
     } else setTimeout(check, 80);
   };
   check();
@@ -814,7 +838,7 @@ function setMiniEditing(open) {
   miniEditing = open; block.classList.toggle("mini-workshop-active", open);
   miniBackdropHost.classList.toggle("mini-editing-viewport", open);
   miniFrame.contentWindow?.miniWorkshop?.setEditing?.(open);
-  if (["E-001", "E-003", "E-005", "E-006", "E-008", "E-016"].includes(episodeId)) {
+  if (["E-001", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
     miniFrame.tabIndex = open ? 0 : -1;
     if (open) miniFrame.removeAttribute("aria-hidden"); else miniFrame.setAttribute("aria-hidden", "true");
     return true;
@@ -822,15 +846,16 @@ function setMiniEditing(open) {
   if (open) {
     if (!miniOriginalBounds) miniOriginalBounds = { top: miniBackdropHost.style.top, left: miniBackdropHost.style.left, width: miniBackdropHost.style.width, height: miniBackdropHost.style.height };
     const table = document.querySelector(".table-wrap").getBoundingClientRect(), rect = block.getBoundingClientRect();
-    miniBackdropHost.style.top = `${rect.top - table.top}px`;
+    const detail = block.closest(".expanded-row").getBoundingClientRect();
+    miniBackdropHost.style.top = `${detail.top - table.top}px`;
     miniBackdropHost.style.left = `${rect.left - table.left}px`;
     miniBackdropHost.style.width = `${rect.width}px`;
-    miniBackdropHost.style.height = `${rect.height}px`;
+    miniBackdropHost.style.height = `${detail.height}px`;
     const heading = document.querySelector(".episode-row.selected").getBoundingClientRect();
     const featherWidth = Math.min(200, Math.max(0, rect.left - heading.left - 24));
     // Keep one canvas size while editing and while viewing the saved preview.
     // Changing its height after Save made the same camera look much closer.
-    Object.assign(miniFrame.style, { position: "absolute", left: `${-featherWidth}px`, top: "0px", width: `${rect.width + featherWidth}px`, height: `${rect.height}px` });
+    Object.assign(miniFrame.style, { position: "absolute", left: `${-featherWidth}px`, top: "0px", width: `${heading.right - rect.left + featherWidth}px`, height: `${detail.height}px` });
     miniFrame.tabIndex = 0; miniFrame.removeAttribute("aria-hidden");
   } else {
     if (miniOriginalBounds) Object.assign(miniBackdropHost.style, miniOriginalBounds);
@@ -854,7 +879,7 @@ function updateMiniBackdropBounds(host, tableWrap, header, expanded) {
     // Match the editable canvas dimensions so saving a camera cannot change
     // its apparent zoom when the scene returns behind the expanded row.
     const featherWidth = Math.min(200, Math.max(0, rect.left - heading.left - 24));
-    Object.assign(frame.style, { position: "absolute", left: `${rect.left - heading.left - featherWidth}px`, top: `${detail.top - heading.top}px`, width: `${heading.right - rect.left + featherWidth}px`, height: `${detail.bottom - rect.top}px` });
+    Object.assign(frame.style, { position: "absolute", left: `${rect.left - heading.left - featherWidth}px`, top: `${detail.top - heading.top}px`, width: `${heading.right - rect.left + featherWidth}px`, height: `${detail.height}px` });
   }
 }
 function updateE001BackdropBounds(host, tableWrap, expanded) {
@@ -915,7 +940,7 @@ function startPreview(row) {
     localReview?.attachMini(warmedE005Frame);
     return;
   }
-  if (["E-003", "E-005", "E-006", "E-008", "E-016"].includes(episodeId)) {
+  if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
     revealMiniAsOneScene(frame);
     frame.src = new URL(`../visualization/Viz/compare.html?mini=1&episode=${episodeId}&table=28`, location.href).href;
@@ -923,7 +948,7 @@ function startPreview(row) {
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
     host.replaceChildren(frame);
     miniFrame = frame; miniBackdropHost = host;
-    if (["E-003", "E-006", "E-008", "E-016"].includes(episodeId)) {
+    if (["E-003", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
       const expanded = document.querySelector(".expanded-row");
       const fillExpandedRow = () => {
         if (!expanded?.isConnected || !host.isConnected) return;
@@ -937,7 +962,7 @@ function startPreview(row) {
       miniResizeObserver.observe(expanded);
     }
     frame.addEventListener("load", () => localReview?.attachMini(frame));
-    if (["E-003", "E-005", "E-006", "E-008", "E-016"].includes(episodeId)) frame.addEventListener("load", () => void applyPublishedMiniConfig(frame, episodeId));
+    if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) frame.addEventListener("load", () => void applyPublishedMiniConfig(frame, episodeId));
     localReview?.attachMini(frame);
     return;
   }
@@ -1063,9 +1088,12 @@ async function init() {
     fetch("./data/space-track-satcat.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Space-Track catalog returned ${response.status}`); return response.json(); }),
     fetch("./data/e002-metrics.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`E-002 metrics returned ${response.status}`); return response.json(); }),
     localE003Review ? fetch("../visualization/dev/e003/space-track-e003.json", { cache: "no-store" }).then(response => response.json()) : Promise.resolve(null),
-  ]).then(([snapshot, feed, descriptionFeed, spaceTrack, e002Metrics, e003Catalog]) => {
+    fetch("../visualization/dev/e016/space-track-e016.json", { cache: "no-store" }).then(response => response.json()),
+    fetch("../visualization/dev/e059/space-track-e059.json", { cache: "no-store" }).then(response => response.json()),
+  ]).then(([snapshot, feed, descriptionFeed, spaceTrack, e002Metrics, e003Catalog, e016Catalog, e059Catalog]) => {
     state.e002Metrics = e002Metrics;
     if (e003Catalog?.records) spaceTrack.records = { ...spaceTrack.records, ...e003Catalog.records };
+    spaceTrack.records = { ...spaceTrack.records, ...e016Catalog.records, ...e059Catalog.records };
     const supporting = new Map(snapshot.episodes.map(row => [field(row, "ID"), row]));
     const episodes = feed.episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || ""))
       .map(row => ({ ...(supporting.get(row.ID) || {}), ...row }));
@@ -1076,7 +1104,7 @@ async function init() {
   const reviewEpisode = new URLSearchParams(location.search).get("review");
   if (localReviewMode && hasEpisodeVisual(reviewEpisode)) state.selected = state.live.episodes?.find(row => field(row, "ID") === reviewEpisode) || null;
   setStatus(); render();
-  for (const id of ["E-003", "E-005", "E-006", "E-008"]) {
+  for (const id of ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"]) {
     const row = state.live.episodes?.find(item => item.ID === id);
     if (!row) continue;
     historicalEpisodeMetrics(row, state.live.spaceTrack).then(metrics => {
