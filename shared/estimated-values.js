@@ -2,6 +2,8 @@
 export const ESTIMATE_DISPLAY = Object.freeze({
   "E-001": { separationKm: 5, relativeSpeedMps: 1, scope: "in this reconstruction" },
   "E-002": { separationKm: 5, relativeSpeedMps: 1, scope: "in this interval" },
+  "E-003": { separationKm: 5, relativeSpeedMps: 1, scope: "in this reconstruction" },
+  "E-005": { separationKm: 5, relativeSpeedMps: 1, scope: "in this reconstruction" },
 });
 
 export function estimatedValue(value, metric, episodeId) {

@@ -3,13 +3,15 @@
 import * as THREE from "./vendor/three/three.module.js";
 import { OrbitControls } from "./vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "./vendor/topojson/topojson-client.js";
-import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js";
+import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=2";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js";
 import { wireTimelineHover } from "./playback-shared.js";
 import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
+import { formatDwellDuration } from "../../shared/format-duration.js";
+import { safeEpisodeName } from "../../shared/episode-name.js";
 
 const $ = id => document.getElementById(id);
 const panelPreview = new URLSearchParams(location.search).get("panelPreview") === "1";
@@ -96,7 +98,7 @@ async function start() {
   document.body.classList.add("e005-shared");
   document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css"><link rel="stylesheet" href="episode-e005.css">');
   $("ui").querySelector(".episodeHeader h1").textContent = "Visualizing Proximity in the Space Domain";
-  $("episodeTitle").textContent = row["Episode Name"];
+  $("episodeTitle").replaceChildren(safeEpisodeName(row["Episode Name"]));
   const oldBack = $("ui").querySelector(".backEpisodes");
   const focus = document.createElement("section"); focus.id = "episodeFocus"; focus.className = "episode-focus";
   const focusLink = document.createElement("a"); focusLink.className = "episode-focus-link"; focusLink.href = "../../dynamic-table/";
@@ -160,12 +162,14 @@ async function start() {
     earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: .8, depthWrite: false })));
   }).catch(() => {});
   const markers = {}, trails = {}, cards = {}, labels = {};
+  const miniDotSize = miniScene ? DOT_SCREEN_SIZE * 3.1 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) : DOT_SCREEN_SIZE;
+  const miniReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  let miniHover = false;
   const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: .68, depthTest: true, depthWrite: false }));
   referenceOrbit.renderOrder = 2; referenceOrbit.frustumCulled = false; scene.add(referenceOrbit);
   for (const item of participants) {
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
-    const dotSize = miniScene ? DOT_SCREEN_SIZE * 2.5 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) : DOT_SCREEN_SIZE;
-    marker.scale.set(dotSize, dotSize, 1); marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
+    marker.scale.set(miniDotSize, miniDotSize, 1); marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
     const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "A" ? "A" : "B", miniScene ? 1.8 : 1.55));
     trail.renderOrder = 5; scene.add(trail); trails[item.slot] = trail;
     const screenLabel = document.createElement("span"); screenLabel.className = `e005-screen-label slot${item.slot}`;
@@ -385,9 +389,8 @@ async function start() {
     chartScales.set("distanceChartGroup", drawOrbitalChart($("separationChart"), drawnSamples, "distanceKm", { window, currentMs: current, threshold: distance, title: "Separation distance (km)", maximum: Number($("distanceThresholdSlider").max) || 50000, qualifications, markedMs: focusedMinimumMs === distanceMin?.ms ? focusedMinimumMs : null, minimumTickHours, connectSwitches: true, maxConnectionGapMs }));
     chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), drawnSamples, "speedMs", { window, currentMs: current, threshold: speed, title: `Relative velocity (${speedUnit})`, maximum: Number($("speedThresholdSlider").max) || 20000, qualifications, markedMs: focusedMinimumMs === speedMin?.ms ? focusedMinimumMs : null, minimumTickHours, connectSwitches: true, maxConnectionGapMs, speedUnit }));
     $("thresholdSummary").textContent = `${distance.toLocaleString()} km · ${speed.toLocaleString()} m/s`;
-    const dwellMinutes = Math.round(qualifications.both.totalMs / 60000);
-    $("dwellStat").textContent = qualifications.both.validSamples ? dwellMinutes >= 60 ? (dwellMinutes / 60).toFixed(1) : String(dwellMinutes) : "—";
-    $("dwellUnit").textContent = dwellMinutes >= 60 ? "hr" : "min";
+    $("dwellStat").textContent = qualifications.both.validSamples ? formatDwellDuration(qualifications.both.totalMs) : "—";
+    $("dwellUnit").textContent = "";
     $("dwellLabel").textContent = "Dwell time";
     const dwellKey = $("dwellMetric").querySelector(".dwellKey"), dwellStamp = `${selected}:${distance}:${speed}`;
     if (dwellKey.dataset.stamp !== dwellStamp) {
@@ -668,7 +671,7 @@ async function start() {
       zoom(factor) { autoCamera = false; camera.position.sub(controls.target).multiplyScalar(1 / factor).add(controls.target); controls.update(); render(); },
       moveComposition(x, y) { autoCamera = false; camera.updateMatrixWorld(); const step = camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * .16; const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1); const shift = right.multiplyScalar(-x * step).addScaledVector(up, -y * step); camera.position.add(shift); controls.target.add(shift); render(); },
       resetCamera() { autoCamera = true; camera.zoom = 1; camera.updateProjectionMatrix(); render(); },
-      setHover(value) { earthSurface.material.color.setHex(value ? 0xcfbea9 : 0xd8cbb9); },
+      setHover(value) { miniHover = !!value; earthSurface.material.color.setHex(miniHover ? 0xcfbea9 : 0xd8cbb9); },
       get tleEpochs() { return Object.fromEntries(participants.map(item => [item.slot, libraries[item.slot][miniPinnedTles[item.slot]]?.epoch || null])); },
       captureCamera,
       applyCamera(saved) { mode = saved.frameMode === "inertial" ? "eci" : "relative"; referenceSlot = saved.referenceSatellite === "A" ? "A" : selected; camera.position.fromArray(saved.position); controls.target.fromArray(saved.target); camera.up.fromArray(saved.up); camera.fov = saved.fieldOfViewDeg || 35; camera.zoom = saved.zoom || 1; camera.updateProjectionMatrix(); autoCamera = false; lastReferenceOrbitKey = ""; render(); },
@@ -679,6 +682,10 @@ async function start() {
   let previous = performance.now(), lastPanelPaint = 0, lastCameraTrailPaint = 0, lastCameraTrailSignature = "";
   function animate(now) {
     requestAnimationFrame(animate);
+    if (miniScene) {
+      const pulse = miniHover && !miniReducedMotion.matches ? 1 + .32 * (.5 + .5 * Math.sin(now / 180)) : 1;
+      for (const marker of Object.values(markers)) marker.scale.setScalar(miniDotSize * pulse);
+    }
     const elapsed = Math.min(.1, (now - previous) / 1000); previous = now;
     if (playing) {
       current += elapsed * rate * 1000;

@@ -158,6 +158,8 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     return { direction, distance, target: new THREE.Vector3(...left.target).lerp(new THREE.Vector3(...right.target), eased), source: left.id === right.id ? left.id : `${left.id}:${right.id}` };
   }
   let orbitSourceKey = "", orbitSourcePoints = [], referenceSwingUntil = 0;
+  let miniTleAnchorMs = NaN;
+  const frameAt = (window, ms, selectionMs = ms) => model.frame(window, ms, options.tableMini && Number.isFinite(miniTleAnchorMs) ? miniTleAnchorMs : selectionMs);
   let positions = {}, earthRadius = EARTH_KM / 1000, earthCenter = new THREE.Vector3();
   const earthTargetQuaternion = new THREE.Quaternion();
   let markerScale = .1, desiredDistance = .55, lastTrailPaint = 0;
@@ -178,7 +180,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     renderer.setSize(width, height, false);
     for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height);
     markerScale = options.tableMini
-      ? DOT_SCREEN_SIZE * 2.5 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+      ? DOT_SCREEN_SIZE * 2.1 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
       : DOT_SCREEN_SIZE * 2.85 * 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 275 / height * MARKER.diameterPx / 12;
     for (const marker of Object.values(markers)) marker.scale.set(markerScale, markerScale, 1);
   }
@@ -206,7 +208,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
       orbitSourcePoints = [];
       for (let index = 0; index < 240; index++) {
         const time = ms + (index / 240 - .5) * periodMs;
-        const state = model.frame(window, time, ms)[slot];
+        const state = frameAt(window, time, ms)[slot];
         if (state) orbitSourcePoints.push(eciVector(state.position));
       }
       orbitSourceKey = key;
@@ -350,7 +352,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     times.push(ms);
     // Hold the selected elements across the trailing path so a nearest-element
     // boundary never creates a kink. Trim both view modes to screen length below.
-    const samples = times.map(time => ({ time, frame: model.frame(window, time, ms) }));
+    const samples = times.map(time => ({ time, frame: frameAt(window, time, ms) }));
     camera.updateMatrixWorld(true);
     const screenPoint = point => {
       const projected = point.clone().project(camera);
@@ -437,7 +439,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     currentWindow = window; currentMs = ms; focus = selected === "C" ? "C" : "A";
     syncModeButton();
     syncReferenceButton();
-    const frame = model.frame(window, ms), reference = activeReference(frame);
+    const frame = frameAt(window, ms), reference = activeReference(frame);
     if (mode === "eci" && reference) {
       const r = eciVector(reference.position), v = eciVector(reference.velocity);
       const normal = r.cross(v).normalize();
@@ -640,6 +642,29 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   requestAnimationFrame(animate);
   return {
     update,
+    setMiniTleAnchor(ms) {
+      if (!options.tableMini) return;
+      miniTleAnchorMs = ms;
+      orbitSourceKey = "";
+      referenceOrbit.userData.drawKey = "";
+      lastTrailPaint = 0;
+    },
+    lockMiniCamera(view = null) {
+      if (!options.tableMini || mode !== "relative") return;
+      auto = false;
+      followSavedMode = false;
+      if (view?.position?.length === 3 && view?.target?.length === 3) {
+        camera.position.fromArray(view.position);
+        controls.target.fromArray(view.target);
+        if (view.up?.length === 3) camera.up.fromArray(view.up);
+        camera.fov = view.fieldOfViewDeg || camera.fov;
+        camera.zoom = view.zoom || 1;
+        camera.updateProjectionMatrix();
+        camera.lookAt(controls.target);
+      }
+      controls.update();
+      stage.dataset.cameraMode = "fixed-mini";
+    },
     setMiniHover(value) {
       if (!options.tableMini) return;
       miniHover = !!value;
@@ -658,7 +683,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
       const start = Date.parse(window.start), end = Date.parse(window.end);
       const frames = Array.from({ length: sampleCount }, (_, index) => {
         const ms = Math.max(start, Math.min(end, middle + half * (index - midpoint) / midpoint));
-        return model.frame(window, ms);
+        return frameAt(window, ms);
       });
       const series = episode.participants.map(item => ({ slot: item.slot, label: names[item.slot],
         color: item.slot === "B" ? "#686868" : item.slot === selected ? "#b48700" : "#8b806d",

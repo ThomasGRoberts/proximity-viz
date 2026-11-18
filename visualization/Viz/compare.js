@@ -37,11 +37,12 @@ import { relativeCameraFrame, relativeFitDistance } from "./relative-camera.js";
 import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial } from "./relative-rendering.js?v=3";
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
-import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js";
+import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js?v=2";
 import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=3";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
 import { CHART_PADDING } from "./chart-style.js";
+import { formatDwellDuration } from "../../shared/format-duration.js";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
 // "window" (the browser's global object). We give it a short name here.
@@ -917,13 +918,6 @@ function prepareAnalysis() {
   $("thresholdRangeNote").textContent = changes.join("; ");
   updateThresholds();
 }
-function durationText(ms) {
-  if (!Number.isFinite(ms)) return { value: "—", unit: "min" };
-  const minutes = Math.round(ms / 60000);
-  if (minutes >= 1440) return { value: String(Number((minutes / 1440).toFixed(1))), unit: "d" };
-  if (minutes >= 60) return { value: String(Number((minutes / 60).toFixed(1))), unit: "hr" };
-  return { value: String(minutes), unit: "min" };
-}
 function displaySatelliteName(value) {
   return value === value.toUpperCase() ? value.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase()) : value;
 }
@@ -947,9 +941,8 @@ function updateThresholds() {
   const distanceIntervals = analyzeEpisode(analysisSamples, distance, Infinity, analysisStepMs).intervals;
   const speedIntervals = analyzeEpisode(analysisSamples, Infinity, speed, analysisStepMs).intervals;
   singleThresholdIntervals = exclusiveQualificationIntervals(distanceIntervals, speedIntervals).single;
-  const dwell = durationText(analysisResult.totalMs);
-  $("dwellStat").textContent = dwell.value;
-  $("dwellUnit").textContent = dwell.unit;
+  $("dwellStat").textContent = formatDwellDuration(analysisResult.totalMs);
+  $("dwellUnit").textContent = "";
   const dwellKey = $("dwellMetric")?.querySelector(".dwellKey");
   if (dwellKey) {
     const chaser = document.createElement("em"), target = document.createElement("em");
@@ -1849,7 +1842,7 @@ function drawRelative() {
 function sizeSceneSprites() {
   const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   for (const slot of ["A", "B"]) {
-    const dotSize = DOT_SCREEN_SIZE * lens * (miniScene ? 2.5 : 1);
+    const dotSize = DOT_SCREEN_SIZE * lens * (miniScene ? 3.2 : 1);
     dots[slot].scale.set(dotSize, dotSize, 1);
     labels[slot].scale.set(LABEL_SCREEN_SIZE * lens * 5.33, LABEL_SCREEN_SIZE * lens, 1);
   }

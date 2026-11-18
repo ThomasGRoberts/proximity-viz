@@ -1,12 +1,13 @@
 /* E-002 uses the established episode shell. Each chapter fixes one dated
    element per spacecraft; charts use the stricter statistical age gate. */
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=2";
-import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js";
+import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js?v=2";
 import { E002_TITLE_MARKUP } from "../../shared/episode-copy.js";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
 import { CHART_PADDING, CHART_COLOR } from "./chart-style.js";
+import { formatDwellDuration } from "../../shared/format-duration.js";
 
 const $ = id => document.getElementById(id);
 const episode = await fetch(new URL("../dev/e002/episode.json", import.meta.url)).then(response => response.json());
@@ -205,14 +206,14 @@ function updateCharts() {
     return { label: comparison.short, color: comparison.color, count: valid.length < 2 ? null : minutes };
   });
   const count = dwell[0]?.count;
-  $("dwellStat").textContent = count === null || count === undefined ? "—" : count.toFixed(0);
-  $("dwellUnit").textContent = "min";
+  $("dwellStat").textContent = count === null || count === undefined ? "—" : formatDwellDuration(count * 60000);
+  $("dwellUnit").textContent = "";
   const explanation = $("dwellMetric").querySelector(".dwellKey");
   explanation.textContent = "Approximate chapter duration between consecutive supported one-minute samples that meet both thresholds.";
   if (comparisons.length > 1) {
     let rows = $("dwellMetric").querySelector(".e002-dwell-pairs");
     if (!rows) { rows = document.createElement("div"); rows.className = "e002-dwell-pairs"; explanation.after(rows); }
-    rows.replaceChildren(...dwell.map(item => { const row = document.createElement("div"), dot = document.createElement("i"), value = document.createElement("strong"); dot.style.background = item.color; value.textContent = item.count === null ? "unavailable" : `${item.count.toFixed(0)} min`; row.append(dot, document.createTextNode(item.label), value); return row; }));
+    rows.replaceChildren(...dwell.map(item => { const row = document.createElement("div"), dot = document.createElement("i"), value = document.createElement("strong"); dot.style.background = item.color; value.textContent = item.count === null ? "unavailable" : formatDwellDuration(item.count * 60000); row.append(dot, document.createTextNode(item.label), value); return row; }));
   }
 }
 function tick() {

@@ -1,6 +1,21 @@
-/* The public Episodes tab is the authority for episode metadata on every load. */
-export const EPISODES_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera/pub?output=csv&gid=0&single=true";
-export const DESCRIPTIONS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera/pub?output=csv&gid=541287173&single=true";
+/* Direct exports read the shared source sheet on refresh. Published exports can
+   lag behind edits, so retain them only as a fallback if direct access fails. */
+const SHEET_ID = "1IEQ3tmerXXxEty8BcZeaonWhQbHUfA2Z5b44IuCsQ8I";
+const PUBLISHED_ID = "2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera";
+export const EPISODES_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+export const DESCRIPTIONS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=541287173`;
+const PUBLISHED_EPISODES_CSV = `https://docs.google.com/spreadsheets/d/e/${PUBLISHED_ID}/pub?output=csv&gid=0&single=true`;
+const PUBLISHED_DESCRIPTIONS_CSV = `https://docs.google.com/spreadsheets/d/e/${PUBLISHED_ID}/pub?output=csv&gid=541287173&single=true`;
+
+async function fetchCsv(primary, fallback) {
+  const request = url => fetch(`${url}&_=${Date.now()}`, { cache: "no-store", credentials: "omit" })
+    .then(response => { if (!response.ok) throw new Error(`Sheet returned ${response.status}`); return response.text(); });
+  try { return await request(primary); }
+  catch (error) {
+    console.warn("Direct sheet export unavailable; using published copy", error);
+    return request(fallback);
+  }
+}
 
 // Only entire spacecraft cells, never identifiers embedded in notes, select plotted objects.
 export function cleanCospar(value) {
@@ -37,8 +52,7 @@ export function parseCsv(text, requiredHeaders = ["ID"]) {
 
 let request;
 export function loadCurrentEpisodes() {
-  return request ||= fetch(`${EPISODES_CSV}&_=${Date.now()}`, { cache: "no-store", credentials: "omit" })
-    .then(response => { if (!response.ok) throw new Error(`Episodes sheet returned ${response.status}`); return response.text(); })
+  return request ||= fetchCsv(EPISODES_CSV, PUBLISHED_EPISODES_CSV)
     .then(parseCsv).then(episodes => {
       if (!episodes.length) throw new Error("Episodes sheet returned no episode records");
       return { episodes, fetchedUtc: new Date().toISOString() };
@@ -47,8 +61,7 @@ export function loadCurrentEpisodes() {
 
 let descriptionRequest;
 export function loadCurrentDescriptions() {
-  return descriptionRequest ||= fetch(`${DESCRIPTIONS_CSV}&_=${Date.now()}`, { cache: "no-store", credentials: "omit" })
-    .then(response => { if (!response.ok) throw new Error(`Descriptions sheet returned ${response.status}`); return response.text(); })
+  return descriptionRequest ||= fetchCsv(DESCRIPTIONS_CSV, PUBLISHED_DESCRIPTIONS_CSV)
     .then(text => parseCsv(text, ["ID", "Episode", "Source URL", "Description type"]))
     .then(descriptions => {
       if (!descriptions.length) throw new Error("Descriptions sheet returned no records");

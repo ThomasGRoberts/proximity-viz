@@ -1,6 +1,6 @@
-import { loadCurrentEpisodes, cleanCospar } from "../../../shared/episode-feed.js";
+import { loadCurrentEpisodes, cleanCospar } from "../../../shared/episode-feed.js?v=2";
 import { loadOrbitalPreview } from "./orbital-preview.js";
-import { createGlobePreview } from "./globe-preview.js?tablemini=6";
+import { createGlobePreview } from "./globe-preview.js?tablemini=7";
 
 const $ = id => document.getElementById(id);
 const minute = 60000;
@@ -28,6 +28,7 @@ async function start() {
   const globe = createGlobePreview(orbital, episode, names, originalViews, { tableMini: true });
   let active = windows[0], loopStart = Date.parse(active.anchor) - 15 * minute, loopEnd = loopStart + 45 * minute;
   let current = loopStart, playing = true, rate = 150, last = performance.now();
+  globe.setMiniTleAnchor((loopStart + loopEnd) / 2);
   const update = force => globe.update(active, current, "A", force);
   update(true);
   const api = {
@@ -46,24 +47,25 @@ async function start() {
       active = windows.find(window => window.id === id) || windows[0];
       loopStart = Date.parse(active.anchor) - 15 * minute; loopEnd = loopStart + 45 * minute;
       current = loopStart; playing = true;
+      globe.setMiniTleAnchor((loopStart + loopEnd) / 2);
       globe.setCameraViews(originalViews); update(true); globe.useLearnedPath();
     },
     setTime(ms) { current = Math.max(Date.parse(active.start), Math.min(Date.parse(active.end), Number(ms))); playing = false; update(); },
     setLoop(start, end) {
       if (!Number.isFinite(start) || !Number.isFinite(end) || start < Date.parse(active.start) || end > Date.parse(active.end) || end - start < minute) throw new Error("Choose a loop of at least one minute inside this chapter.");
-      loopStart = start; loopEnd = end; current = Math.max(start, Math.min(end, current)); update();
+      loopStart = start; loopEnd = end; current = Math.max(start, Math.min(end, current)); globe.setMiniTleAnchor((start + end) / 2); update(true);
     },
     setPlaying(value) { if (value && current >= loopEnd) current = loopStart; playing = !!value; },
-    toggleFrame() { $("modeBtn").click(); update(true); },
+    toggleFrame() { $("modeBtn").click(); update(true); globe.lockMiniCamera(); },
     zoom(factor) { $(factor >= 1 ? "zoomInBtn" : "zoomOutBtn").click(); },
-    resetCamera() { globe.setCameraViews(originalViews); globe.useLearnedPath(); },
+    resetCamera() { globe.setCameraViews(originalViews); globe.useLearnedPath(); globe.lockMiniCamera(); },
     captureCamera(name = "Dynamic Table mini preview") {
       const view = globe.captureCameraView();
       return { name, timestampUtc: new Date(current).toISOString(), frameMode: view.mode === "eci" ? "inertial" : "relative", position: view.position, target: view.target, up: view.up, fieldOfViewDeg: view.fov, zoom: view.zoom };
     },
     applyCamera(view) {
       const savedView = { id: "dynamic-table-mini", windowId: active.id, timeUtc: view.timestampUtc || new Date(current).toISOString(), selected: "A", mode: view.frameMode === "inertial" ? "eci" : "relative", referenceMode: "target", auto: false, position: view.position, target: view.target, up: view.up, fov: view.fieldOfViewDeg, zoom: view.zoom };
-      globe.setCameraViews([savedView]); globe.useLearnedPath(); update(true);
+      globe.setCameraViews([savedView]); globe.useLearnedPath(); update(true); globe.lockMiniCamera(view);
     },
     moveComposition(x, y) {
       const view = this.captureCamera();

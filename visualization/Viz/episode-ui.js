@@ -1,5 +1,5 @@
 // Only the editorial markup used in the published Episodes sheet is displayed.
-import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js";
+import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js?v=2";
 import { E002_DESCRIPTION } from "../../shared/episode-copy.js";
 // Parse in an inert document, then create fresh, explicitly allowed DOM nodes.
 const allowed = new Set(["P", "BR", "I", "EM", "B", "STRONG"]);
@@ -30,7 +30,7 @@ loadCurrentEpisodes().then(feed => {
   if (!episode) throw new Error(`${episodeId} missing from current Episodes sheet`);
   if (episodeId === "E-001") episodeUtcInterval(episode);
   const text = episodeId === "E-002" ? E002_DESCRIPTION : episode["Episode Description"];
-  if (!text && episodeId === "E-005") { description.hidden = true; return; }
+  if (!text && ["E-003", "E-005", "E-006"].includes(episodeId)) { description.hidden = true; return; }
   if (!text) throw new Error("Episode description unavailable");
   description.replaceChildren(sanitizeEpisodeDescription(text));
 }).catch(error => {
