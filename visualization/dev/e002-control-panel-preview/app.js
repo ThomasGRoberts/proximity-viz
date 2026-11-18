@@ -1,7 +1,7 @@
 import { loadOrbitalPreview, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js";
 import { createGlobePreview } from "./globe-preview.js";
-import { reviewHref } from "../review-shell.js";
-import { loadCurrentEpisodes, episodeUtcInterval } from "../../../shared/episode-feed.js";
+import { reviewHref } from "../review-shell.js?v=2";
+import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../../shared/episode-feed.js?v=4";
 import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.js";
 import { installGlossary } from "./glossary.js";
 import { createCameraWorkshop } from "./camera-workshop.js";
@@ -573,7 +573,14 @@ async function buildPanel() {
     start: "2019-12-29T23:29:00Z", end: "2019-12-31T11:29:00Z",
     anchor: "2019-12-30T17:29:00Z", visualAgeHours: 120,
   };
-  episodeConfig = { ...episode, windows: [firstWindow, secondWindow], maximumDisplayTleAgeHours: 120, maximumStatisticTleAgeHours: 120 };
+  const sheetChapters = episodeChapters(row);
+  const configuredWindows = sheetChapters.map((chapter, index) => {
+    const base = [firstWindow, secondWindow][index] || {};
+    const label = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(chapter.centerMs));
+    return { ...base, id: base.id || chapter.id, chapterShort: label.replace(/,? \d{4}$/, ""), chapterLabel: label,
+      chapterTitle: label, start: chapter.start, end: chapter.end, anchor: chapter.center };
+  });
+  episodeConfig = { ...episode, windows: configuredWindows.length ? configuredWindows : [firstWindow, secondWindow], maximumDisplayTleAgeHours: 120, maximumStatisticTleAgeHours: 120 };
   for (const participant of episode.participants) {
     const record = satcat.records?.[participant.cospar];
     if (!record || record.NORAD_CAT_ID !== participant.norad) throw new Error(`Space-Track catalog record does not match ${participant.cospar}`);

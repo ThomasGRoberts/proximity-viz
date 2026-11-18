@@ -16,7 +16,8 @@ E003_VIEWS = ROOT / "e003" / "saved-camera-views.json"
 E006_VIEWS = ROOT / "e006" / "saved-camera-views.json"
 E008_VIEWS = ROOT / "e008" / "saved-camera-views.json"
 E016_VIEWS = ROOT / "e016" / "saved-camera-views.json"
-SURFACES = {"E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "Library"}
+E059_VIEWS = ROOT / "e059" / "saved-camera-views.json"
+SURFACES = {"E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "Library"}
 
 
 def read(path, key):
@@ -173,6 +174,14 @@ def e016_views():
 
 def change_e016_view(request):
     return change_two_object_view(request, E016_VIEWS, "E-016")
+
+
+def e059_views():
+    return read(E059_VIEWS, "views")
+
+
+def change_e059_view(request):
+    return change_two_object_view(request, E059_VIEWS, "E-059")
 
 def e008_views():
     return read(E008_VIEWS, "views")

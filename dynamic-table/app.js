@@ -1,6 +1,6 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
-import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js?v=3";
+import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js?v=4";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
@@ -77,7 +77,7 @@ function sourceGroups(row, data) {
     groups.get(key).items.push(item);
   }
   const publicationDay = group => {
-    const value = reviewedSourceMetadata[group.ref]?.publishedDate || data.sourceMetadata?.[group.ref]?.publishedDate || field(group.items[0]?.row, "Publication date", "Published date");
+    const value = field(group.items[0]?.row, "Override Date") || reviewedSourceMetadata[group.ref]?.publishedDate || data.sourceMetadata?.[group.ref]?.publishedDate || field(group.items[0]?.row, "Publication date", "Published date");
     const iso = String(value || "").match(/^\d{4}-\d{2}-\d{2}$/)?.[0];
     return iso && fullDate(iso) ? Date.parse(`${iso}T00:00:00Z`) : Infinity;
   };
@@ -125,6 +125,7 @@ function objectInfo(row, role, data) {
     launchSiteFromCsis: !!data.celestrak?.csisLaunchSites?.[satcat?.LAUNCH_SITE], csisSourceUrl: data.celestrak?.csisSourceUrl || "" };
 }
 function titleMarkup(row) { return field(row, "Episode Name", "Episode label", "Episode Title", "Title") || field(row, "ID") || "Unnamed episode"; }
+function publicEpisodeId(row) { return field(row, "Episode ID", "ID"); }
 function title(row) { return episodeNameText(titleMarkup(row)); }
 function episodeDescription(row) { return field(row, "Episode Description"); }
 function formattedDescription(value) {
@@ -295,7 +296,7 @@ function visibleRows() {
   const query = state.query.toLocaleLowerCase();
   const rows = data.episodes.filter(row => {
     if (!query) return true;
-    const terms = [field(row, "ID"), title(row), episodeDescription(row), account(row), regime(row), regimeShort(row), ...["A", "B", "C"].flatMap(role => { const info = objectInfo(row, role, data); return info ? [info.name, info.cospar, info.norad, info.owner, ownerDisplay(info)] : []; })];
+    const terms = [publicEpisodeId(row), field(row, "ID"), title(row), episodeDescription(row), account(row), regime(row), regimeShort(row), ...["A", "B", "C"].flatMap(role => { const info = objectInfo(row, role, data); return info ? [info.name, info.cospar, info.norad, info.owner, ownerDisplay(info)] : []; })];
     return terms.join(" ").toLocaleLowerCase().includes(query);
   });
   const { key, direction } = state.sort, sign = direction === "asc" ? 1 : -1;
@@ -390,6 +391,8 @@ function scheduleDetailPrefetch() {
   });
 }
 function recordCategory(row) {
+  const category = field(row, "Category");
+  if (category) return [category, /reaction/i.test(category) ? "announcement" : /commentary|reporting/i.test(category) ? "press" : "document"];
   const type = field(row, "Description type", "Voice type").toUpperCase();
   if (type.startsWith("T01")) return ["Official reaction", "announcement"];
   if (type.startsWith("T03")) return ["Technical account", "document"];
@@ -469,6 +472,9 @@ const reviewedSourceMetadata = {
 };
 function sourceCard(group, data) {
   const { url, ref, items } = group, d = items[0].row, meta = { ...(data.sourceMetadata?.[ref] || {}), ...(reviewedSourceMetadata[ref] || {}) };
+  if (field(d, "Override Title")) { meta.title = field(d, "Override Title"); meta.titleEnglish = ""; }
+  if (field(d, "Override Date")) { meta.publishedDate = field(d, "Override Date"); meta.publishedLabel = ""; }
+  if (field(d, "Override Source Name")) meta.publisher = field(d, "Override Source Name");
   const card = el("article", `source-card${url ? " source-clickable" : ""}`);
   if (url) {
     card.tabIndex = 0; card.setAttribute("role", "link"); card.setAttribute("aria-label", `Open original source: ${meta.titleEnglish || meta.title || ref}`);
@@ -1029,7 +1035,7 @@ function render() {
   const data = currentData(), rows = visibleRows();
   if (state.selected && !rows.includes(state.selected)) state.selected = null;
   $("#count").textContent = state.query ? `${rows.length} matching episodes` : `${rows.length} episodes`;
-  $("#count").title = data?.source === "live" && !state.usePreview ? "Rows marked TRUE in the Episodes sheet’s Frontend column." : "";
+  $("#count").title = data?.source === "live" && !state.usePreview ? "Episodes with titles in the current Episodes tab." : "";
   const body = $("#rows"); body.replaceChildren();
   for (const [index, row] of rows.entries()) {
     const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);
@@ -1040,8 +1046,7 @@ function render() {
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");
     const badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row);
     const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
-    const secondary = el("span", "episode-secondary-line"); secondary.append(el("span", "episode-id", field(row, "ID")));
-    heading.append(name, secondary);
+    heading.append(name);
     episode.append(heading); tr.append(episode);
     const orbitCell = el("td", "orbit-cell"); orbitCell.append(badge); tr.append(orbitCell);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
@@ -1110,12 +1115,10 @@ async function init() {
     state.e002Metrics = e002Metrics;
     if (e003Catalog?.records) spaceTrack.records = { ...spaceTrack.records, ...e003Catalog.records };
     spaceTrack.records = { ...spaceTrack.records, ...e016Catalog.records, ...e059Catalog.records };
-    const supporting = new Map(snapshot.episodes.map(row => [field(row, "ID"), row]));
-    const episodes = feed.episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || ""))
-      .map(row => ({ ...(supporting.get(row.ID) || {}), ...row }));
+    const episodes = feed.episodes;
     const e001 = episodes.find(row => field(row, "ID") === "E-001");
     if (e001) episodeUtcInterval(e001);
-    return { ...snapshot, descriptions: descriptionFeed.descriptions, episodes, spaceTrack, publishedEpisodes: feed.episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || "")).length, source: "live", snapshotUtc: feed.fetchedUtc, descriptionsCheckedUtc: descriptionFeed.fetchedUtc, descriptionError: descriptionFeed.error || "" };
+    return { ...snapshot, descriptions: descriptionFeed.descriptions, episodes, spaceTrack, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc, descriptionsCheckedUtc: descriptionFeed.fetchedUtc, descriptionError: descriptionFeed.error || "" };
   }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
   const reviewEpisode = new URLSearchParams(location.search).get("review");
   if (localReviewMode && hasEpisodeVisual(reviewEpisode)) state.selected = state.live.episodes?.find(row => field(row, "ID") === reviewEpisode) || null;

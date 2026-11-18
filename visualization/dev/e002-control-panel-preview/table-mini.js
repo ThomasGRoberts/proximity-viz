@@ -1,10 +1,10 @@
-import { loadCurrentEpisodes, cleanCospar } from "../../../shared/episode-feed.js?v=2";
+import { loadCurrentEpisodes, episodeChapters, cleanCospar } from "../../../shared/episode-feed.js?v=4";
 import { loadOrbitalPreview } from "./orbital-preview.js";
 import { createGlobePreview } from "./globe-preview.js?tablemini=8";
 
 const $ = id => document.getElementById(id);
 const minute = 60000;
-const windows = [
+let windows = [
   { id: "dec9", label: "December 9, 2019", start: "2019-12-08T17:40:00Z", end: "2019-12-10T05:40:00Z", anchor: "2019-12-09T11:40:00Z", visualAgeHours: 120 },
   { id: "dec30", label: "December 30, 2019", start: "2019-12-29T23:29:00Z", end: "2019-12-31T11:29:00Z", anchor: "2019-12-30T17:29:00Z", visualAgeHours: 120 },
 ];
@@ -18,6 +18,12 @@ async function start() {
   ]);
   const published = sheet.episodes.find(row => row.ID === "E-002");
   if (!published) throw new Error("E-002 is absent from the published sheet");
+  const sheetChapters = episodeChapters(published);
+  if (sheetChapters.length) windows = sheetChapters.map((chapter, index) => ({
+    id: ["dec9", "dec30"][index] || chapter.id,
+    label: new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(chapter.centerMs)),
+    start: chapter.start, end: chapter.end, anchor: chapter.center, visualAgeHours: 120,
+  }));
   for (const item of episodeBase.participants) {
     if (cleanCospar(published[`Object ${item.slot}`]) !== item.cospar || catalog.records[item.cospar]?.NORAD_CAT_ID !== item.norad) throw new Error(`Published Object ${item.slot} does not match the reviewed orbital record`);
   }

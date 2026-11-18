@@ -1,8 +1,7 @@
 /* E-002 uses the established episode shell. Each chapter fixes one dated
    element per spacecraft; charts use the stricter statistical age gate. */
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=2";
-import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js?v=2";
-import { E002_TITLE_MARKUP } from "../../shared/episode-copy.js";
+import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js?v=4";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
@@ -54,7 +53,7 @@ const coverage = document.createElement("details"); coverage.className = "e002-c
 const coverageSummary = document.createElement("summary"); coverageSummary.textContent = "Reconstruction coverage";
 const coverageBody = document.createElement("p"); coverageBody.className = "methodNote";
 coverage.append(coverageSummary, coverageBody); note.append(context, coverage);
-$("episodeTitle").replaceChildren(safeEpisodeName(E002_TITLE_MARKUP));
+$("episodeTitle").replaceChildren(safeEpisodeName(published["Episode Name"]));
 $("separationTitle").textContent = "Kosmos 2542 relative to USA 245";
 $("separationTitle").hidden = true;
 $("thresholdRangeNote").textContent = "Statistics use one-minute samples within 12 hours of both selected TLE epochs.";

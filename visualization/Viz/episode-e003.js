@@ -1,11 +1,11 @@
 import { placeEpisodeScreenLabels } from "./screen-label-layout.js";
-import { renderSharedCommentList } from "../dev/review-shell.js";
+import { renderSharedCommentList } from "../dev/review-shell.js?v=2";
 /* Local first pass for E-003. Two spacecraft remain visible; nearest dated
    Space-Track elements drive playback. Statistical chart gaps mark old TLEs. */
 import * as THREE from "./vendor/three/three.module.js";
 import { OrbitControls } from "./vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "./vendor/topojson/topojson-client.js";
-import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=2";
+import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=4";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
 import { wireTimelineHover } from "./playback-shared.js";
@@ -704,7 +704,7 @@ async function start() {
 function makeReviewBar() {
   document.body.classList.add("e003-review");
   const bar = document.createElement("header"); bar.className = "e003-review-bar";
-  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003" aria-current="page">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-005</a><a href="compare.html?dev=1&amp;episode=E-006">E-006</a><a href="compare.html?dev=1&amp;episode=E-008">E-008</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-003 review tools"><button id="e003CommentMode" type="button">✚ Spot comment</button><button id="e003CommentsToggle" type="button">Comments <span id="e003CommentCount">0</span></button></nav>';
+  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003" aria-current="page">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-004</a><a href="compare.html?dev=1&amp;episode=E-006">E-005</a><a href="compare.html?dev=1&amp;episode=E-008">E-006</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-003 review tools"><button id="e003CommentMode" type="button">✚ Spot comment</button><button id="e003CommentsToggle" type="button">Comments <span id="e003CommentCount">0</span></button></nav>';
   document.body.append(bar);
   const drawer = document.createElement("aside"); drawer.className = "e003-review-drawer"; drawer.hidden = true;
   drawer.innerHTML = '<strong>E-003 spot comments</strong><form id="e003CommentForm" hidden><p id="e003CommentLocation"></p><textarea id="e003CommentText" required maxlength="4000"></textarea><label><input id="e003AllEpisodes" type="checkbox"> Applies to all full episode views</label><button type="submit">Save comment</button></form><div id="e003CommentList"></div><button id="e003ExportComments" type="button">Export comments JSON</button>';

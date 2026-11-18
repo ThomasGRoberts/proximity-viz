@@ -1,6 +1,8 @@
 /* Shared navigation and comment presentation for the local design review. */
+import { loadCurrentEpisodes } from "../../shared/episode-feed.js?v=4";
 const root = new URL("../../", import.meta.url);
 const surfaces = ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "Library"];
+const publicLabels = new Map([["E-001", "E-001"], ["E-002", "E-002"], ["E-003", "E-003"], ["E-005", "E-004"], ["E-006", "E-005"], ["E-008", "E-006"], ["E-016", "E-007"], ["E-059", "E-008"]]);
 
 export function reviewHref(surface) {
   if (surface === "Library") return new URL("dynamic-table/", root).href;
@@ -37,13 +39,14 @@ export function renderSharedCommentList(list, comments, currentSurface) {
 function updateNavigation() {
   if (location.hostname !== "127.0.0.1" && location.hostname !== "localhost") return;
   const current = currentReviewSurface();
+  const signature = `${current}:${surfaces.map(surface => publicLabels.get(surface) || surface).join(",")}`;
   for (const nav of document.querySelectorAll('nav[aria-label="Local design review"]')) {
-    if (nav.dataset.unifiedReview === current) continue;
-    nav.dataset.unifiedReview = current;
+    if (nav.dataset.unifiedReview === signature) continue;
+    nav.dataset.unifiedReview = signature;
     nav.classList.add("review-switcher");
     nav.replaceChildren(...surfaces.map(surface => {
       const link = document.createElement("a"); link.href = reviewHref(surface);
-      link.textContent = surface === "Library" ? "Dynamic Library" : surface;
+      link.textContent = surface === "Library" ? "Library" : publicLabels.get(surface) || surface;
       if (surface === current) link.setAttribute("aria-current", "page");
       return link;
     }));
@@ -54,4 +57,8 @@ function updateNavigation() {
 if (location.port === "8769") {
   updateNavigation();
   new MutationObserver(updateNavigation).observe(document.documentElement, { childList: true, subtree: true });
+  loadCurrentEpisodes().then(({ episodes }) => {
+    for (const row of episodes) publicLabels.set(row.ID, row["Episode ID"]);
+    updateNavigation();
+  }).catch(error => console.warn("Current review labels unavailable", error));
 }
