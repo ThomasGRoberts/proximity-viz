@@ -73,7 +73,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   }).catch(() => {});
 
   const markers = {}, labels = {}, trails = {}, labelPlacement = {};
-  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: options.tableMini ? 0x5c513a : 0x222222, transparent: true, opacity: options.tableMini ? .88 : .72, depthTest: !options.tableMini, depthWrite: false }));
+  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: options.tableMini ? 0x5c513a : 0x222222, transparent: true, opacity: options.tableMini ? .88 : .72, depthTest: true, depthWrite: false }));
   referenceOrbit.frustumCulled = false; referenceOrbit.renderOrder = 2; referenceOrbit.visible = false; scene.add(referenceOrbit);
   for (const item of episode.participants) {
     const color = item.slot === "B" ? MARKER.B : MARKER.A;

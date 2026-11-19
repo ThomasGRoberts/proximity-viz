@@ -26,6 +26,12 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
   const placeScene = () => {
     if (!activeFrame) return;
     activeFrame.style.transform = `translate(${viewportOffset.x}px, ${viewportOffset.y}px)`;
+    if (activeFrame.classList.contains("e002-mini")) {
+      activeFrame.dataset.miniOffsetY = String(viewportOffset.y);
+      const detail = document.querySelector('.expanded-row[data-episode-id="E-002"]');
+      if (detail) activeFrame.style.height = `${detail.getBoundingClientRect().height + Math.max(0, -viewportOffset.y)}px`;
+      return;
+    }
     activeFrame.style.width = viewportOffset.x < 0 ? `calc(100% + ${-viewportOffset.x}px)` : "100%";
     activeFrame.style.height = viewportOffset.y < 0 ? `calc(100% + ${-viewportOffset.y}px)` : "100%";
   };

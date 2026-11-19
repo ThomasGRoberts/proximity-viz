@@ -1743,7 +1743,7 @@ localMotionTrail.visible = false;
 localMotionTrail.renderOrder = 6;
 localMotionTrail.frustumCulled = false;
 scene.add(localMotionTrail);
-const localReferenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: .72, depthTest: !miniScene, depthWrite: false }));
+const localReferenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: .72, depthTest: true, depthWrite: false }));
 localReferenceOrbit.visible = false;
 localReferenceOrbit.frustumCulled = false;
 localReferenceOrbit.renderOrder = 2;
@@ -1762,24 +1762,6 @@ function placeEarthRelative(stateA) {
     .multiply(turn)
     .multiply(new THREE.Matrix4().makeRotationY(sgp4.gstime(new Date(currentMs))))
     .multiply(new THREE.Matrix4().makeScale(size, size, size));
-  if (miniScene) {
-    // A sphere far from the camera's optical axis projects as a slight ellipse.
-    // Compensate only the miniature's Earth, including its border geometry.
-    camera.updateMatrixWorld(true);
-    const forward = camera.getWorldDirection(new THREE.Vector3());
-    const eyeToEarth = centre.clone().sub(camera.position);
-    const along = eyeToEarth.dot(forward);
-    const lateral = eyeToEarth.clone().addScaledVector(forward, -along);
-    if (along > 0 && lateral.lengthSq() > 1e-6) {
-      const axis = lateral.normalize();
-      const squeeze = Math.max(.85, along / eyeToEarth.length());
-      const rotation = new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), axis));
-      const correction = rotation.clone().multiply(new THREE.Matrix4().makeScale(squeeze, 1, 1)).multiply(rotation.clone().invert());
-      const aroundCentre = new THREE.Matrix4().makeTranslation(centre.x, centre.y, centre.z)
-        .multiply(correction).multiply(new THREE.Matrix4().makeTranslation(-centre.x, -centre.y, -centre.z));
-      earthGroup.matrix.premultiply(aroundCentre);
-    }
-  }
 }
 
 // In the relative view: A at the centre, B at its relative position, B's fading trail, Earth below.
@@ -1805,22 +1787,28 @@ function drawRelative() {
   const tleCentre = nearestTleIndex(library[pair[centre]], currentMs);
   const tleOther = nearestTleIndex(library[pair[other]], currentMs);
   const trailKey = `${centre}:${tleCentre}:${tleOther}:${Math.floor(currentMs / (5 * MINUTE_MS))}`;
-  if (localChapterReview && trailKey === lastLocalRelativeTrailKey) return;
-  lastLocalRelativeTrailKey = trailKey;
   if (localChapterReview) {
-    const periodMs = 2 * Math.PI / satrecFor(library[pair[centre]], tleCentre).no * MINUTE_MS;
-    const orbitPoints = [];
-    for (let i = 0; i <= 180; i++) {
-      const sample = stateAt(pair[centre], currentMs + periodMs * (i / 180 - .5), tleCentre);
-      if (sample) orbitPoints.push(relativeToScene(ricOf(stateCentre, sample.r)));
-    }
-    if (orbitPoints.length > 1) {
-      orbitPoints.push(orbitPoints[0].clone());
+    const anchorMs = miniScene ? (miniLoopStart + miniLoopEnd) / 2 : currentMs;
+    const orbitKey = `${centre}:${tleCentre}:${miniScene ? `${miniLoopStart}:${miniLoopEnd}` : Math.floor(currentMs / (5 * MINUTE_MS))}`;
+    if (orbitKey !== localReferenceOrbit.userData.orbitKey) {
+      const anchor = stateAt(pair[centre], anchorMs, tleCentre) || stateCentre;
+      const radius = Math.hypot(...anchor.r), speed = Math.hypot(...anchor.v);
+      const semimajor = 1 / (2 / radius - speed * speed / 398600.4418);
+      // A complete circular reference path at the chosen orbit's semi-major
+      // axis avoids joining across missing propagated TLE samples.
+      const orbitPoints = Number.isFinite(semimajor) && semimajor > EARTH_RADIUS_KM
+        ? Array.from({ length: 241 }, (_, index) => {
+          const angle = index / 240 * Math.PI * 2;
+          return relativeToScene([semimajor * Math.cos(angle) - radius, semimajor * Math.sin(angle), 0]);
+        }) : [];
       localReferenceOrbit.geometry.dispose();
       localReferenceOrbit.geometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
-      localReferenceOrbit.visible = true;
+      localReferenceOrbit.visible = orbitPoints.length > 1;
+      localReferenceOrbit.userData.orbitKey = orbitKey;
     }
   }
+  if (localChapterReview && trailKey === lastLocalRelativeTrailKey) return;
+  lastLocalRelativeTrailKey = trailKey;
   const points = [], colors = [];
   if (localChapterReview) {
     // Work backwards until the tail has the E-002 screen length. GEO motion

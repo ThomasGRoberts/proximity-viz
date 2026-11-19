@@ -9,15 +9,20 @@ if (!episodeId) {
     episodeId = feed.episodes.find(row => row["Episode ID"] === publicId)?.ID;
   } catch (error) {
     document.getElementById("episodeTitle").textContent = `Current episode information unavailable: ${error.message}`;
+    const boot = document.getElementById("episodeBootText");
+    if (boot) boot.textContent = `Could not load episode: ${error.message}`;
     throw error;
   }
 }
-if (episodeId === "E-001") import("./compare.js?v=17");
-else if (episodeId === "E-002") import("./episode-e002.js?v=8");
-else if (episodeId === "E-005") import("./episode-e005.js?v=7");
-else if (episodeId === "E-003") import("./episode-e003.js?v=4");
-else if (episodeId === "E-006") import("./episode-e006.js?v=9");
-else if (episodeId === "E-008") import("./episode-e008.js?v=2");
-else if (episodeId === "E-016") import("./episode-e016.js?v=1");
-else if (episodeId === "E-059") import("./episode-e059.js?v=1");
+const episodeModule = {
+  "E-001": "./compare.js?v=17", "E-002": "./episode-e002.js?v=8",
+  "E-005": "./episode-e005.js?v=7", "E-003": "./episode-e003.js?v=4",
+  "E-006": "./episode-e006.js?v=9", "E-008": "./episode-e008.js?v=2",
+  "E-016": "./episode-e016.js?v=1", "E-059": "./episode-e059.js?v=1",
+}[episodeId];
+if (episodeModule) import(episodeModule).catch(error => {
+  console.error(error);
+  const boot = document.getElementById("episodeBootText");
+  if (boot) boot.textContent = `Could not load episode: ${error.message}`;
+});
 else document.getElementById("episodeTitle").textContent = `${episodeId}: visualization unavailable`;

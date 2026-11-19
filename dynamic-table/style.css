@@ -726,3 +726,14 @@ body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden
 @media(min-width:901px){
   .table-wrap .expanded-row .expanded-inner.has-visual{min-height:var(--review-expanded-height,auto);box-sizing:border-box}
 }
+
+/* Shared loader covers a miniature until its real viewport and saved camera settle. */
+.orbital-preview>.espl-loading{position:absolute;z-index:8;inset:0;display:flex;pointer-events:none}
+.orbital-preview:not(.mini-loading)>.espl-loading{display:none}
+.orbital-preview.mini-loading::after{content:none}
+@media(min-width:901px){
+  .table-wrap .expanded-row .expanded-inner.has-visual{grid-template-rows:minmax(0,1fr) auto}
+  .table-wrap .expanded-row .expanded-inner.has-visual .evidence-section{align-self:end;margin-top:auto;padding-bottom:12px!important}
+  .table-wrap .expanded-row[data-episode-id="E-003"] .orbital-preview{mask-image:linear-gradient(90deg,transparent 0%,#0002 22%,#0008 45%,#000 64%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,#0002 22%,#0008 45%,#000 64%)}
+}
+.source-media.document-media:has(img[src*="e059-us-statement"]) img{object-fit:cover;object-position:center 7%}

@@ -30,7 +30,7 @@
         "fieldOfViewDeg": 35,
         "zoom": 1,
         "viewportOffset": {
-          "x": 144,
+          "x": 120,
           "y": -100
         }
       }
@@ -44,13 +44,13 @@
       "rate": 14400,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2017-11-27T15:29:00.000Z",
+        "timestampUtc": "2017-11-23T07:16:55.680Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
-          0.6419804542655461,
-          0.09895758375702324,
-          1.6895992582764303
+          0.727217938653776,
+          0.14904966940857461,
+          1.9669585605793212
         ],
         "target": [
           0.12211351489960592,
@@ -66,7 +66,7 @@
         "zoom": 1,
         "viewportOffset": {
           "x": 0,
-          "y": -72
+          "y": -48
         }
       }
     },
@@ -101,7 +101,7 @@
         "zoom": 1,
         "viewportOffset": {
           "x": 48,
-          "y": -100
+          "y": -64
         }
       }
     },
@@ -184,7 +184,7 @@
       "rate": 3600,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2018-03-02T02:53:07.971Z",
+        "timestampUtc": "2018-03-02T03:12:37.971Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [

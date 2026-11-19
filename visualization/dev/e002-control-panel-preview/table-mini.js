@@ -1,8 +1,9 @@
 import { loadCurrentEpisodes, episodeChapters, cleanCospar } from "../../../shared/episode-feed.js?v=4";
-import { loadOrbitalPreview } from "./orbital-preview.js";
+import { loadOrbitalPreview, preloadOrbitalElements } from "./orbital-preview.js";
 import { createGlobePreview } from "./globe-preview.js?tablemini=8";
 
 const $ = id => document.getElementById(id);
+void preloadOrbitalElements().catch(() => {});
 const minute = 60000;
 let windows = [
   { id: "dec9", label: "December 9, 2019", start: "2019-12-08T17:40:00Z", end: "2019-12-10T05:40:00Z", anchor: "2019-12-09T11:40:00Z", visualAgeHours: 120 },
@@ -102,4 +103,4 @@ async function start() {
   }
   requestAnimationFrame(tick);
 }
-start().catch(error => { $("miniBoot").textContent = `Mini preview unavailable: ${error.message}`; $("sceneStatus").textContent = `Mini preview unavailable: ${error.message}`; console.error(error); });
+start().catch(error => { $("miniBootText").textContent = `Mini preview unavailable: ${error.message}`; $("sceneStatus").textContent = `Mini preview unavailable: ${error.message}`; console.error(error); });

@@ -170,7 +170,7 @@ async function start() {
   let miniProjectionScale = 1;
   const miniReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let miniHover = false;
-  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: .68, depthTest: !miniScene, depthWrite: false }));
+  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: .68, depthTest: true, depthWrite: false }));
   referenceOrbit.renderOrder = 2; referenceOrbit.frustumCulled = false; scene.add(referenceOrbit);
   for (const item of participants) {
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));

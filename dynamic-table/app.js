@@ -428,8 +428,8 @@ const reviewedSourceMetadata = {
     title: "Space Debris",
     publisher: "UK Parliament Hansard",
     publishedDate: "2021-07-14",
-    previewPath: "./assets/source-previews/e008-hansard-record.svg",
-    imageAlt: "Designed preview identifying the Hansard record of the Space Debris debate in Westminster Hall on 14 July 2021",
+    imagePath: "./assets/source-previews/e008-hansard-parliament.jpg",
+    imageAlt: "UK Parliament graphic with portcullis and Palace of Westminster",
   },
   "https://vpk.name/news/376303_v_mid_otvetili_na_obvineniya_ssha_v_presledovanii_amerikanskogo_sputnika.html": {
     publisher: "VPK.name",
@@ -467,6 +467,23 @@ const reviewedSourceMetadata = {
     publishedLabel: "September 2024",
     previewPath: "./assets/source-previews/d041-serrano-first-page.jpg",
     imageAlt: "First page of Serrano and colleagues’ 2024 AMOS paper",
+  },
+  "https://spacenews.com/an-in-orbit-game-of-cat-and-mouse-close-approaches-prompt-calls-for-communications-and-norms/": {
+    title: "An In-Orbit Game of Cat and Mouse: Close approaches prompt calls for communications and norms",
+    publisher: "SpaceNews",
+    publishedDate: "2022-06-16",
+    imagePath: "./assets/source-previews/e005-spacenews-cat-and-mouse.jpg",
+    imageAlt: "Featured illustration from the SpaceNews report",
+  },
+  "https://www.researching.cn/ArticlePdf/m00018/2023/52/4/20220759.pdf": {
+    kind: "document",
+    title: "GSSAP 卫星在轨应用研究与成像仿真分析",
+    titleEnglish: "Research on GSSAP Satellite In-Orbit Applications and Imaging Simulation Analysis",
+    publisher: "Infrared and Laser Engineering",
+    publishedDate: "2023-04",
+    publishedLabel: "April 2023",
+    previewPath: "./assets/source-previews/e003-gssap-irla-first-page.jpg",
+    imageAlt: "First page of the published GSSAP research paper",
   },
   "https://estatements.un.org/estatements/11.0010/20261021100000000/VCYntJPvffMzJVH/ElYgHPjnLTLPRvy_nyc_en.pdf": {
     kind: "document",
@@ -665,6 +682,8 @@ async function toggleRow(row) {
   }
   state.selected = null; render();
   if (sameRow || token !== selectionToken) return;
+  state.selected = row; render();
+  const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
   await new Promise(resolve => requestAnimationFrame(resolve));
   if (token !== selectionToken) return;
   const selected = [...document.querySelectorAll(".episode-row")].find(item => item.dataset.episodeId === field(row, "ID"));
@@ -688,8 +707,6 @@ async function toggleRow(row) {
     scrollFrame = requestAnimationFrame(step);
   });
   if (token !== selectionToken) return;
-  state.selected = row; render();
-  const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
   requestAnimationFrame(() => {
     if (token !== selectionToken) return;
     const heading = document.querySelector(`.episode-row.selected`);
@@ -698,7 +715,7 @@ async function toggleRow(row) {
     const review = document.getElementById("tableReviewBar");
     const reviewHeight = review?.hidden ? 0 : review?.getBoundingClientRect().height || 0;
     const difference = heading.getBoundingClientRect().top - sticky - reviewHeight - 1;
-    if (Math.abs(difference) > 2) scrollBy(0, difference);
+    if (Math.abs(difference) > 2) scrollBy({ top: difference, behavior: reducedMotion.matches ? "instant" : "smooth" });
   });
 }
 function periodNode(row) { const node = el("span", "period-label", periodInfo(row).label); const chapters = episodeChapters(row); node.title = chapters.length ? chapters.map(item => `${item.center} · ${item.widthHours} hours`).join("\n") : [fullDate(field(row, "Start Date", "Date")), fullDate(field(row, "End Date"))].filter(Boolean).join(" to "); return node; }
@@ -739,8 +756,14 @@ async function applyPublishedMiniConfig(frame, episodeId) {
       const offset = config.camera?.viewportOffset || {};
       const x = Number(offset.x) || 0, y = Number(offset.y) || 0;
       frame.style.transform = `translate(${x}px, ${y}px)`;
-      frame.style.width = x < 0 ? `calc(100% + ${-x}px)` : "100%";
-      frame.style.height = y < 0 ? `calc(100% + ${-y}px)` : "100%";
+      if (frame.classList.contains("e002-mini")) {
+        frame.dataset.miniOffsetY = String(y);
+        const detail = document.querySelector('.expanded-row[data-episode-id="E-002"]');
+        if (detail) frame.style.height = `${detail.getBoundingClientRect().height + Math.max(0, -y)}px`;
+      } else {
+        frame.style.width = x < 0 ? `calc(100% + ${-x}px)` : "100%";
+        frame.style.height = y < 0 ? `calc(100% + ${-y}px)` : "100%";
+      }
       mini.setPlaying(true);
       frame.dataset.miniConfigured = "1";
       return;
@@ -759,12 +782,46 @@ function revealMiniAsOneScene(frame) {
   let tries = 0;
   const check = () => {
     if (!frame.isConnected) { if (++tries < 125) setTimeout(check, 80); return; }
-    frame.parentElement?.classList.add("mini-loading");
+    const host = frame.parentElement;
+    host?.classList.add("mini-loading");
+    if (host && !host.querySelector(":scope > .espl-loading")) {
+      const loading = el("div", "espl-loading"); loading.setAttribute("role", "status");
+      loading.innerHTML = '<span class="espl-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Loading episode</span>';
+      host.append(loading);
+    }
     if (frame.contentWindow?.miniWorkshop?.ready && frame.dataset.miniConfigured === "1") {
-      setTimeout(() => { if (frame.isConnected) { frame.style.opacity = "1"; frame.parentElement?.classList.remove("mini-loading"); } }, 150);
+      setTimeout(() => {
+        if (!frame.isConnected || frame.dataset.miniMounting === "1") return;
+        frame.style.opacity = "1"; frame.parentElement?.classList.remove("mini-loading");
+      }, 150);
     } else setTimeout(check, 80);
   };
   check();
+}
+function settleMountedMini(frame, episodeId) {
+  if (!frame?.isConnected) return;
+  frame.dataset.miniMounting = "1";
+  frame.style.opacity = "0";
+  frame.parentElement?.classList.add("mini-loading");
+  const reveal = async () => {
+    // The prewarmed iframe is first laid out at 900 × 450 offscreen. Let its
+    // ResizeObserver and projection settle at the expanded row's real size.
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    if (!frame.isConnected) return;
+    if (localReview) await localReview.attachMini(frame);
+    else await applyPublishedMiniConfig(frame, episodeId);
+    for (let attempt = 0; attempt < 600 && frame.isConnected; attempt++) {
+      if (frame.contentWindow?.miniWorkshop?.ready && frame.dataset.miniConfigured === "1") break;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    if (!frame.contentWindow?.miniWorkshop?.ready || frame.dataset.miniConfigured !== "1") return;
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    if (!frame.isConnected) return;
+    frame.dataset.miniMounting = "0";
+    frame.style.opacity = "1";
+    frame.parentElement?.classList.remove("mini-loading");
+  };
+  void reveal();
 }
 function prewarmE001() {
   if (warmedE001Host) return;
@@ -916,7 +973,8 @@ function updateMiniBackdropBounds(host, tableWrap, header, expanded) {
     // Match the editable canvas dimensions so saving a camera cannot change
     // its apparent zoom when the scene returns behind the expanded row.
     const featherWidth = Math.min(200, Math.max(0, rect.left - heading.left - 24));
-    Object.assign(frame.style, { position: "absolute", left: `${rect.left - heading.left - featherWidth}px`, top: `${detail.top - heading.top}px`, width: `${heading.right - rect.left + featherWidth}px`, height: `${detail.height}px` });
+    const offsetY = Number(frame.dataset.miniOffsetY) || 0;
+    Object.assign(frame.style, { position: "absolute", left: `${rect.left - heading.left - featherWidth}px`, top: `${detail.top - heading.top}px`, width: `${heading.right - rect.left + featherWidth}px`, height: `${detail.height + Math.max(0, -offsetY)}px` });
   }
 }
 function updateE001BackdropBounds(host, tableWrap, expanded) {
@@ -965,6 +1023,7 @@ function startPreview(row) {
     }
     backdrop.dataset.previewIntervalUtc = "2019-12-08T10:05:00Z / 2019-12-08T10:50:00Z";
     miniFrame = frame; miniBackdropHost = backdrop; localReview?.attachMini(frame);
+    if (frame === warmedE002Frame) settleMountedMini(frame, "E-002");
     return;
   }
   if (episodeId === "E-005" && warmedE005Host && warmedE005Frame) {
@@ -972,6 +1031,7 @@ function startPreview(row) {
     warmedE005Host.classList.remove("e005-prewarm"); warmedE005Host.classList.add("e005-live");
     miniFrame = warmedE005Frame; miniBackdropHost = warmedE005Host;
     localReview?.attachMini(warmedE005Frame);
+    settleMountedMini(warmedE005Frame, "E-005");
     return;
   }
   if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
@@ -1009,6 +1069,7 @@ function startPreview(row) {
     miniResizeObserver = new ResizeObserver(() => updateE001BackdropBounds(warmedE001Host, tableWrap, expanded));
     miniResizeObserver.observe(expanded);
     localReview?.attachMini(warmedE001Frame);
+    settleMountedMini(warmedE001Frame, "E-001");
     return;
   }
   const token = ++previewToken;

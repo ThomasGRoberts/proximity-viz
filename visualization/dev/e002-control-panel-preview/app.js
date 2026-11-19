@@ -1,4 +1,4 @@
-import { loadOrbitalPreview, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js";
+import { loadOrbitalPreview, preloadOrbitalElements, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js";
 import { createGlobePreview } from "./globe-preview.js";
 import { reviewHref } from "../review-shell.js?v=2";
 import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../../shared/episode-feed.js?v=4";
@@ -8,6 +8,7 @@ import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
 
 const $ = id => document.getElementById(id);
+void preloadOrbitalElements().catch(() => {});
 const publishedMode = document.body.classList.contains("e002-published");
 const panelMount = $("panelMount");
 const panelColumn = $("panelColumn");
@@ -753,7 +754,7 @@ $("downloadCameraViews").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify({ schema: "espl-e002-camera-views-v1", views: savedCameraViews }, null, 2)], { type: "application/json" });
   const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "e002-saved-camera-views.json"; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 });
-$("exportCameraViews").addEventListener("click", () => $("downloadCameraViews").click());
+$("exportCameraViews")?.addEventListener("click", () => $("downloadCameraViews")?.click());
 window.addEventListener("resize", positionPins);
 panelColumn.addEventListener("scroll", positionPins);
 try {

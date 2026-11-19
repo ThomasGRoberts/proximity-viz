@@ -22,22 +22,32 @@ export const roundedSpeed = value => {
   return Math.round(value / step) * step;
 };
 
+let elementsPromise;
+export function preloadOrbitalElements() {
+  return elementsPromise ||= (async () => {
+    const response = await fetch("../e002/data/provenance.json");
+    if (!response.ok) throw new Error("E-002 element provenance is unavailable");
+    const manifest = await response.json();
+    const entries = await Promise.all(manifest.datasets.map(async record => {
+      const source = await fetch(record.url, { cache: "no-store" });
+      if (!source.ok) throw new Error(`Historical elements unavailable for ${record.object.name}`);
+      const bytes = await source.arrayBuffer();
+      const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), byte => byte.toString(16).padStart(2, "0")).join("");
+      if (digest !== record.sha256) throw new Error(`Historical elements for ${record.object.name} changed; provenance review required`);
+      return [record.object.cospar, JSON.parse(new TextDecoder().decode(bytes)).tles.sort((a, b) => Date.parse(a.epoch) - Date.parse(b.epoch))];
+    }));
+    return new Map(entries);
+  })();
+}
 export async function loadOrbitalPreview(episode) {
   if (!sgp4?.twoline2satrec || !sgp4?.propagate) throw new Error("Satellite propagation library is unavailable");
-  const response = await fetch("../e002/data/provenance.json");
-  if (!response.ok) throw new Error("E-002 element provenance is unavailable");
-  const manifest = await response.json();
+  const datasets = await preloadOrbitalElements();
   const libraries = {};
-  await Promise.all(episode.participants.map(async item => {
-    const record = manifest.datasets.find(entry => entry.object.cospar === item.cospar);
-    if (!record) throw new Error(`Historical element provenance missing for ${item.name}`);
-    const source = await fetch(record.url, { cache: "no-store" });
-    if (!source.ok) throw new Error(`Historical elements unavailable for ${item.name}`);
-    const bytes = await source.arrayBuffer();
-    const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), byte => byte.toString(16).padStart(2, "0")).join("");
-    if (digest !== record.sha256) throw new Error(`Historical elements for ${item.name} changed; provenance review required`);
-    libraries[item.slot] = JSON.parse(new TextDecoder().decode(bytes)).tles.sort((a, b) => Date.parse(a.epoch) - Date.parse(b.epoch));
-  }));
+  for (const item of episode.participants) {
+    const records = datasets.get(item.cospar);
+    if (!records) throw new Error(`Historical element provenance missing for ${item.name}`);
+    libraries[item.slot] = records;
+  }
 
   const maxStatisticAge = episode.maximumStatisticTleAgeHours * 3600000;
   const seriesCache = new Map();
