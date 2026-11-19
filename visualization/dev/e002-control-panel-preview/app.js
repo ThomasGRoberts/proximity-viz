@@ -6,7 +6,7 @@ import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.j
 import { installGlossary } from "./glossary.js";
 import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
-import { installEpisodeNavigation } from "../../../shared/episode-navigation.js";
+import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=2";
 
 const $ = id => document.getElementById(id);
 void preloadOrbitalElements().catch(() => {});

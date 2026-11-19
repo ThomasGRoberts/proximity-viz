@@ -35,8 +35,8 @@ export function installEpisodeNavigation(focus, episodes, assetId, { review = fa
     const path = review ? reviewPath(next.ID) : next.ID === "E-001" ? "visualization/e001/" : next.ID === "E-002" ? "visualization/e002/" : "visualization/Viz/compare.html?episode=";
     link.href = new URL(path + (path.endsWith("episode=") ? encodeURIComponent(next["Episode ID"]) : ""), root).href;
     link.target = "_top";
-    link.textContent = offset < 0 ? `‹ ${next["Episode ID"]}` : `${next["Episode ID"]} ›`;
-    link.setAttribute("aria-label", `${direction} episode: ${next["Episode Name"] || next["Episode ID"]}`);
+    link.textContent = direction;
+    link.setAttribute("aria-label", next["Episode Name"] ? `${direction} episode: ${next["Episode Name"]}` : `${direction} episode`);
     link.title = link.getAttribute("aria-label");
     nav.append(link);
   }
