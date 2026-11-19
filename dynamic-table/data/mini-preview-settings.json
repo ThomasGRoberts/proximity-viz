@@ -10,12 +10,12 @@
       "rate": 600,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2019-12-30T20:45:33.464Z",
+        "timestampUtc": "2019-12-30T18:47:59.924Z",
         "frameMode": "relative",
         "position": [
-          6.997531420240523,
-          1.4585940078072417,
-          4.829354097197841
+          7.833363133278081,
+          2.7238740493420885,
+          2.9895083781154996
         ],
         "target": [
           0.19874119710071553,
@@ -30,7 +30,7 @@
         "fieldOfViewDeg": 35,
         "zoom": 1,
         "viewportOffset": {
-          "x": 120,
+          "x": 0,
           "y": -100
         }
       }
@@ -79,13 +79,13 @@
       "rate": 14400,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2022-01-08T02:53:29.880Z",
+        "timestampUtc": "2022-01-04T19:13:23.640Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
-          0.43199701587123435,
-          0.12318966995878887,
-          1.3747347031683106
+          0.27166986082473044,
+          0.061491717713760746,
+          0.8641701702694435
         ],
         "target": [
           0.0013937593068171403,
@@ -100,8 +100,8 @@
         "fieldOfViewDeg": 35,
         "zoom": 1,
         "viewportOffset": {
-          "x": 48,
-          "y": -64
+          "x": 60,
+          "y": 20
         }
       }
     },
@@ -114,7 +114,7 @@
       "rate": 7200,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2020-08-25T12:07:30.541Z",
+        "timestampUtc": "2020-08-26T08:12:30.781Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
@@ -135,7 +135,7 @@
         "fieldOfViewDeg": 35,
         "zoom": 1,
         "viewportOffset": {
-          "x": -156,
+          "x": -132,
           "y": -100
         }
       }
@@ -146,10 +146,10 @@
       "frameMode": "relative",
       "loopStartUtc": "2015-06-19T02:44:40.821Z",
       "loopEndUtc": "2015-06-23T12:59:39.220Z",
-      "rate": 3600,
+      "rate": 7200,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2015-06-23T12:59:39.220Z",
+        "timestampUtc": "2015-06-19T22:25:06.501Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
@@ -214,23 +214,23 @@
       "episodeId": "E-016",
       "windowId": "chapter-1",
       "frameMode": "relative",
-      "loopStartUtc": "2019-10-28T12:11:00.000Z",
-      "loopEndUtc": "2019-10-28T16:11:00.000Z",
-      "rate": 3600,
+      "loopStartUtc": "2019-10-21T14:11:00.000Z",
+      "loopEndUtc": "2019-11-04T14:11:00.000Z",
+      "rate": 7200,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2019-10-28T16:11:00.000Z",
+        "timestampUtc": "2019-11-04T14:11:00.000Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
-          0.008646906905497674,
-          -0.0012496546128437942,
-          0.03264864201810246
+          0.012119955247130953,
+          -0.002780229809376036,
+          0.04191098698263733
         ],
         "target": [
-          -0.0028364753884206205,
-          -0.0033000351633427905,
-          0.0020233705841082423
+          -0.002789324797063241,
+          -0.00544231115806967,
+          0.0021491174783275406
         ],
         "up": [
           0,

@@ -10,7 +10,7 @@
       "rate": 600,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2019-12-30T17:47:34.964Z",
+        "timestampUtc": "2019-12-30T18:47:59.924Z",
         "frameMode": "relative",
         "position": [
           7.833363133278081,
@@ -30,7 +30,7 @@
         "fieldOfViewDeg": 35,
         "zoom": 1,
         "viewportOffset": {
-          "x": 84,
+          "x": 0,
           "y": -100
         }
       }
@@ -146,10 +146,10 @@
       "frameMode": "relative",
       "loopStartUtc": "2015-06-19T02:44:40.821Z",
       "loopEndUtc": "2015-06-23T12:59:39.220Z",
-      "rate": 3600,
+      "rate": 7200,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2015-06-23T12:59:39.220Z",
+        "timestampUtc": "2015-06-19T22:25:06.501Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
@@ -214,23 +214,23 @@
       "episodeId": "E-016",
       "windowId": "chapter-1",
       "frameMode": "relative",
-      "loopStartUtc": "2019-10-28T12:11:00.000Z",
-      "loopEndUtc": "2019-10-28T16:11:00.000Z",
-      "rate": 3600,
+      "loopStartUtc": "2019-10-21T14:11:00.000Z",
+      "loopEndUtc": "2019-11-04T14:11:00.000Z",
+      "rate": 7200,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2019-10-28T16:11:00.000Z",
+        "timestampUtc": "2019-11-04T14:11:00.000Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
-          0.008646906905497674,
-          -0.0012496546128437942,
-          0.03264864201810246
+          0.012119955247130953,
+          -0.002780229809376036,
+          0.04191098698263733
         ],
         "target": [
-          -0.0028364753884206205,
-          -0.0033000351633427905,
-          0.0020233705841082423
+          -0.002789324797063241,
+          -0.00544231115806967,
+          0.0021491174783275406
         ],
         "up": [
           0,
@@ -281,5 +281,5 @@
       }
     }
   },
-  "savedAt": "2026-11-19T05:04:24+00:00"
+  "savedAt": "2026-11-19T05:18:18+00:00"
 }

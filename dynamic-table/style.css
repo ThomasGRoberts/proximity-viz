@@ -741,6 +741,7 @@ body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden
 
 /* Keep E-008's loader in the miniature's visual area above the record cards. */
 .table-wrap>.orbital-preview:has(iframe.e059-mini)>.espl-loading{inset:0 0 auto var(--mini-loader-left,30%);height:var(--mini-loader-height,340px)}
+.table-wrap>.orbital-preview.e001-live>.espl-loading{inset:var(--mini-loader-top,0) 0 auto var(--mini-loader-left,14.3%);height:var(--mini-loader-height,340px)}
 
 /* Let the mini scene show through; feather only the description reading area. */
 .table-wrap .expanded-row[data-episode-id="E-001"] .expanded-inner.has-visual{background:transparent!important}

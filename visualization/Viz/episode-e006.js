@@ -495,13 +495,13 @@ async function start() {
     earth.position.copy(mode === "eci" ? new THREE.Vector3() : local(new THREE.Vector3(), frame));
     earth.rotation.y = window.satellite.gstime(new Date(current));
     updateReferenceOrbit(states);
-    if (miniScene && referenceSlot !== "A") referenceOrbit.visible = false;
+    if (miniScene && referenceSlot === "C") referenceOrbit.visible = false;
     for (const item of participants) {
       const state = states[item.slot].state, marker = markers[item.slot]; marker.userData.available = !!state;
-      trails[item.slot].visible = !!state && (mode !== "relative" || item.slot !== referenceSlot) && !(miniScene && (item.slot === "B" || item.slot === "C"));
+      trails[item.slot].visible = !!state && (mode !== "relative" || item.slot !== referenceSlot) && !(miniScene && item.slot === "C");
       if (!state) continue;
       marker.position.copy(mode === "eci" ? state.p : local(state.p, frame));
-      marker.visible = !(miniScene && (item.slot === "B" || item.slot === "C"));
+      marker.visible = !(miniScene && item.slot === "C");
       marker.material.opacity = item.slot === "A" || item.slot === selected ? 1 : .28;
       marker.renderOrder = item.slot === selected ? 12 : item.slot === "A" ? 11 : 10;
       trails[item.slot].material.uniforms.uOpacity.value = mode === "eci" ? item.slot === "A" ? 1 : item.slot === selected ? .85 : .4 : item.slot === "A" || item.slot === selected ? .85 : .23;

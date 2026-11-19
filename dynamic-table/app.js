@@ -831,7 +831,7 @@ function prewarmE001() {
   warmedE001Frame = el("iframe", "e001-mini");
   warmedE001Frame.dataset.miniBaseHeight = "450";
   revealMiniAsOneScene(warmedE001Frame);
-  warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=28", location.href).href;
+  warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=29", location.href).href;
   warmedE001Frame.title = "Animated E-001 satellite-centered orbital reconstruction";
   warmedE001Frame.tabIndex = -1; warmedE001Frame.setAttribute("aria-hidden", "true");
   warmedE001Host.append(warmedE001Frame); table.append(warmedE001Host);
@@ -848,7 +848,7 @@ function prewarmE002() {
   warmedE002Host = el("div", "orbital-preview e002-prewarm");
   warmedE002Frame = el("iframe", "e002-mini");
   revealMiniAsOneScene(warmedE002Frame);
-  warmedE002Frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=28", location.href).href;
+  warmedE002Frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=29", location.href).href;
   warmedE002Frame.title = "Animated E-002 miniature orbital reconstruction";
   warmedE002Frame.tabIndex = -1; warmedE002Frame.setAttribute("aria-hidden", "true");
   warmedE002Host.append(warmedE002Frame); table.append(warmedE002Host);
@@ -865,7 +865,7 @@ function prewarmE005() {
   warmedE005Host = el("div", "orbital-preview e005-prewarm");
   warmedE005Frame = el("iframe", "e005-mini");
   revealMiniAsOneScene(warmedE005Frame);
-  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&asset=E-005&table=28", location.href).href;
+  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&asset=E-005&table=29", location.href).href;
   warmedE005Frame.title = `Animated ${state.live?.episodes?.find(row => row.ID === "E-005")?.["Episode ID"] || "E-004"} miniature orbital reconstruction`;
   warmedE005Frame.tabIndex = -1; warmedE005Frame.setAttribute("aria-hidden", "true");
   warmedE005Host.append(warmedE005Frame); table.append(warmedE005Host);
@@ -987,6 +987,11 @@ function updateE001BackdropBounds(host, tableWrap, expanded) {
   const top = header?.top ?? rect.top;
   const table = tableWrap.querySelector("table")?.getBoundingClientRect() || origin;
   Object.assign(host.style, { top: `${top - origin.top}px`, left: `${table.left - origin.left}px`, width: `${table.width}px`, height: `${detail.bottom - top}px` });
+  const firstColumn = expanded.previousElementSibling?.querySelector(".episode-cell")?.getBoundingClientRect();
+  const records = expanded.querySelector(".evidence-section")?.getBoundingClientRect();
+  host.style.setProperty("--mini-loader-left", `${Math.max(0, (firstColumn?.right || table.left + table.width / 7) - table.left)}px`);
+  host.style.setProperty("--mini-loader-top", `${Math.max(0, detail.top - top)}px`);
+  host.style.setProperty("--mini-loader-height", `${Math.max(180, (records?.top || detail.bottom) - detail.top)}px`);
 }
 function startPreview(row) {
   const episodeId = field(row, "ID");
@@ -1016,7 +1021,7 @@ function startPreview(row) {
     }
     if (frame !== warmedE002Frame) {
       revealMiniAsOneScene(frame);
-      frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=28", location.href).href;
+      frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=29", location.href).href;
       frame.title = "Animated E-002 miniature orbital reconstruction";
       frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
       backdrop.append(frame);
@@ -1037,7 +1042,7 @@ function startPreview(row) {
   if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
     revealMiniAsOneScene(frame);
-    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=28`, location.href).href;
+    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=29`, location.href).href;
     frame.title = `Animated ${publicEpisodeId(row)} miniature orbital reconstruction`;
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
     host.replaceChildren(frame);
