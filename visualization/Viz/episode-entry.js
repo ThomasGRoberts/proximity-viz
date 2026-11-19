@@ -16,8 +16,8 @@ if (!episodeId) {
 }
 const episodeModule = {
   "E-001": "./compare.js?v=19", "E-002": "./episode-e002.js?v=8",
-  "E-005": "./episode-e005.js?v=9", "E-003": "./episode-e003.js?v=5",
-  "E-006": "./episode-e006.js?v=11", "E-008": "./episode-e008.js?v=4",
+  "E-005": "./episode-e005.js?v=10", "E-003": "./episode-e003.js?v=5",
+  "E-006": "./episode-e006.js?v=12", "E-008": "./episode-e008.js?v=4",
   "E-016": "./episode-e016.js?v=2", "E-059": "./episode-e059.js?v=3",
 }[episodeId];
 if (episodeModule) import(episodeModule).catch(error => {

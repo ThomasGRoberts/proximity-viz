@@ -1,7 +1,7 @@
 import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-feed.js";
 import { createCameraWorkshop } from "../e002-control-panel-preview/camera-workshop.js";
 import { installGlossary } from "../e002-control-panel-preview/glossary.js";
-import { installChapterButtons } from "./panel-layout.js";
+import { installChapterButtons } from "./panel-layout.js?v=2";
 import { reviewHref } from "../review-shell.js?v=2";
 
 const $ = id => document.getElementById(id);

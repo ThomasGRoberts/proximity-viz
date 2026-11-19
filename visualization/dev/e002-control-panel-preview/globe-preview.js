@@ -1,7 +1,7 @@
 import * as THREE from "../../Viz/vendor/three/three.module.js";
 import { OrbitControls } from "../../Viz/vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "../../Viz/vendor/topojson/topojson-client.js";
-import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "../../Viz/relative-rendering.js?v=4";
+import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "../../Viz/relative-rendering.js?v=5";
 import { MARKER } from "../../../shared/marker-spec.js";
 
 const EARTH_KM = 6378.137;
@@ -80,7 +80,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
     marker.material.depthTest = !options.tableMini; marker.renderOrder = 10;
     scene.add(marker); markers[item.slot] = marker;
-    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A"));
+    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A", 1.55, options.tableMini ? 1 : 0));
     trail.material.depthTest = !options.tableMini;
     trail.renderOrder = 9;
     trail.frustumCulled = false;
@@ -386,7 +386,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
       trail.geometry.dispose();
       trail.geometry = fadingTrailGeometry(points);
       trail.visible = points.length > 1;
-      trail.material.uniforms.uOpacity.value = item.slot === "B" ? .85 : item.slot === focus ? 1 : .4;
+      trail.material.uniforms.uOpacity.value = options.tableMini ? 1 : item.slot === "B" ? .85 : item.slot === focus ? 1 : .4;
       stage.dataset["trailPoints" + item.slot] = String(points.length);
     }
   }
@@ -466,7 +466,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     if (auto) planCamera(force === true || windowChanged || pathModeChanged, force === "reference" || focusChanged || force === "path");
     if (modeOrWindowChanged || performance.now() - lastTrailPaint > 180) {
       refreshTrails(window, ms); lastTrailPaint = performance.now();
-    } else for (const item of episode.participants) trails[item.slot].material.uniforms.uOpacity.value = item.slot === "B" ? .85 : item.slot === focus ? 1 : .4;
+    } else for (const item of episode.participants) trails[item.slot].material.uniforms.uOpacity.value = options.tableMini ? 1 : item.slot === "B" ? .85 : item.slot === focus ? 1 : .4;
     status.textContent = Object.entries(frame).filter(([, value]) => !value).map(([slot]) => names[slot]).join(", ");
     if (status.textContent) status.textContent += " unavailable from the local element library.";
     caveat.textContent = mode === "relative"

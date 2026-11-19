@@ -108,7 +108,7 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     body.e002-shared #ui .satCard .satName{font-size:12px!important;font-weight:700!important;line-height:1.2!important}
     body.e002-shared #ui .satMetaDetails{margin:0 10px 8px!important;padding:0!important}
     body.e002-shared #ui .satMetaDetails .object-meta>div{grid-template-columns:103px minmax(0,1fr)!important;gap:5px!important}
-    body.e002-shared #ui .pair-sticky .pair-sticky-name{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid #d6cfbd;border-radius:5px;background:#fff;color:#454545;font-size:9px;white-space:nowrap}
+    body.e002-shared #ui .pair-sticky .pair-sticky-name{display:inline-flex;align-items:center;gap:5px;padding:0;border:0;background:transparent;color:#454545;font-size:9px;white-space:nowrap}
     body.e002-shared #ui .pair-sticky .pair-sticky-name i{flex:0 0 8px;width:8px;height:8px;background:#eaaa00}
     body.e002-shared #ui #rangeStat,body.e002-shared #ui #speedStat{font-size:26px!important;line-height:1.2!important;font-weight:750!important}
     body.e002-shared #ui .metricBlock .minimumNote span{display:inline!important;margin-top:0!important}

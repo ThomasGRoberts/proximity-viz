@@ -49,9 +49,9 @@ export function fadingTrailGeometry(points) {
   return geometry;
 }
 
-export function fadingTrailMaterial(slot, halfWidthPx = 1.55) {
+export function fadingTrailMaterial(slot, halfWidthPx = 1.55, minimumAlpha = 0) {
   return new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(SATELLITE_STYLES[slot].line) }, uOpacity: { value: .82 }, uResolution: { value: new THREE.Vector2(1, 1) }, uHeadAge: { value: 1 }, uTailAge: { value: 0 }, uHalfWidthPx: { value: halfWidthPx } },
+    uniforms: { uColor: { value: new THREE.Color(SATELLITE_STYLES[slot].line) }, uOpacity: { value: .82 }, uMinimumAlpha: { value: minimumAlpha }, uResolution: { value: new THREE.Vector2(1, 1) }, uHeadAge: { value: 1 }, uTailAge: { value: 0 }, uHalfWidthPx: { value: halfWidthPx } },
     vertexShader: `uniform vec2 uResolution; uniform float uHeadAge; uniform float uTailAge; uniform float uHalfWidthPx; attribute vec3 previous; attribute vec3 next; attribute float side; attribute float age; varying float vAlpha;
       void main() {
         vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -64,9 +64,9 @@ export function fadingTrailMaterial(slot, halfWidthPx = 1.55) {
         gl_Position = clip;
         vAlpha = pow(clamp((age - uTailAge) / max(uHeadAge - uTailAge, 0.0001), 0.0, 1.0), 1.4);
       }`,
-    fragmentShader: `uniform vec3 uColor; uniform float uOpacity; varying float vAlpha;
+    fragmentShader: `uniform vec3 uColor; uniform float uOpacity; uniform float uMinimumAlpha; varying float vAlpha;
       void main() {
-        gl_FragColor = vec4(uColor, vAlpha * uOpacity);
+        gl_FragColor = vec4(uColor, mix(uMinimumAlpha, 1.0, vAlpha) * uOpacity);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,

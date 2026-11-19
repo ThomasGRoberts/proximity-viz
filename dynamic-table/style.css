@@ -663,6 +663,9 @@ body .table-wrap .expanded-row[data-episode-id="E-001"]:has(.expanded-inner.has-
 @media(min-width:901px){
   .table-wrap .expanded-row[data-episode-id="E-003"] .visual-block{overflow:visible}
 }
+/* The E-002 scene sits behind the row. Its row-wide wash dulled the markers
+   and trails on the public page; the text block keeps its own local scrim. */
+.table-wrap .expanded-row[data-episode-id="E-002"] .expanded-inner.has-visual{background:transparent!important}
 /* E-016 uses the same editable scene viewport as the other two-object chapters. */
 .orbital-preview iframe.e016-mini{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#fffcf6}
 .expanded-row[data-episode-id="E-016"] .orbital-preview.mini-editing-viewport iframe.e016-mini{pointer-events:auto}
