@@ -209,9 +209,13 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
   $("miniSaveLoop").addEventListener("click", async () => {
     const m = model(); if (!m) return;
     try {
-      m.setLoop(loopStart, loopEnd);
+      // Capture the exact displayed view before changing the loop, which can
+      // otherwise move an automatic camera to a different playback moment.
+      m.setPlaying(false);
       const camera = m.captureCamera("Dynamic Table mini preview");
       camera.viewportOffset = { ...viewportOffset };
+      m.setLoop(loopStart, loopEnd);
+      m.applyCamera(camera);
       const config = { episodeId: getSelectedEpisode(), windowId: m.window.id, frameMode: m.frameMode, loopStartUtc: new Date(loopStart).toISOString(), loopEndUtc: new Date(loopEnd).toISOString(), rate: m.rate, camera };
       await jsonRequest("/api/table-preview", { config }); savedConfigs[getSelectedEpisode()] = config;
       $("miniSavedAt").textContent = `Last saved ${new Date().toLocaleString()}`;

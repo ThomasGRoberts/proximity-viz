@@ -1835,7 +1835,7 @@ function drawRelative() {
     localMotionTrail.geometry.dispose();
     localMotionTrail.geometry = fadingTrailGeometry(points);
     localMotionTrail.material.uniforms.uColor.value.set(SLOTS[other].line);
-    localMotionTrail.material.uniforms.uOpacity.value = other === "A" ? 1 : .85;
+    localMotionTrail.material.uniforms.uOpacity.value = miniScene ? 1 : other === "A" ? 1 : .85;
     localMotionTrail.visible = points.length > 1;
   } else {
     // During a TLE flash the newest end of the trail turns darker. Each point is a mix of "faded" and
