@@ -22,7 +22,7 @@ const miniScene = new URLSearchParams(location.search).get("mini") === "1";
 const EARTH_KM = 6378.137, HOUR = 3600000;
 const utc = ms => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(ms)) + " UTC";
 const shortUtc = ms => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" }).format(new Date(ms));
-const displayName = (name, concise = false) => (concise ? name.replace(/\s*\(SY-12\s+\d+\)$/i, "") : name).replace(/^SHIYAN\b/i, "Shiyan");
+const displayName = (name, concise = false) => (concise ? name.replace(/\s*\(SY-12\s+\d+\)$/i, "") : name);
 const toScene = p => new THREE.Vector3(p.x / EARTH_KM, p.z / EARTH_KM, -p.y / EARTH_KM);
 const svgLink = '<svg viewBox="0 0 18 18" width="12" height="12" aria-hidden="true"><path class="espl-news-external__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"></path><g class="espl-news-external__arrow"><path d="M9.25 2.75h6v6"></path><path d="m8 10 7.25-7.25"></path></g></svg>';
 

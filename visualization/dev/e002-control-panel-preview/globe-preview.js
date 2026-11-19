@@ -360,6 +360,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     };
     for (const item of episode.participants) {
       const trail = trails[item.slot];
+      if (options.tableMini && item.slot === "C") { trail.visible = false; stage.dataset["trailPoints" + item.slot] = "0"; continue; }
       if (mode === "relative" && item.slot === (referenceMode === "target" ? "B" : focus)) { trail.visible = false; stage.dataset["trailPoints" + item.slot] = "0"; continue; }
       const allPoints = [], points = [];
       for (let index = 0; index < samples.length; index++) {
@@ -455,12 +456,12 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     placeEarth(reference, axes, ms);
     for (const item of episode.participants) {
       const body = frame[item.slot], marker = markers[item.slot], label = labels[item.slot];
-      marker.visible = !!body; label.hidden = !body;
+      marker.visible = !!body && !(options.tableMini && item.slot === "C"); label.hidden = !marker.visible;
       label.classList.toggle("is-muted", item.slot !== "B" && item.slot !== focus);
       if (!body) continue;
       positions[item.slot] = mode === "relative" && reference ? relativePoint(reference, body, axes) : toScene(body.position);
       marker.position.copy(positions[item.slot]);
-      marker.material.opacity = item.slot !== "B" && item.slot !== focus ? .3 : 1;
+      marker.material.opacity = options.tableMini ? 1 : item.slot !== "B" && item.slot !== focus ? .3 : 1;
     }
     if (auto) planCamera(force === true || windowChanged || pathModeChanged, force === "reference" || focusChanged || force === "path");
     if (modeOrWindowChanged || performance.now() - lastTrailPaint > 180) {
@@ -577,9 +578,9 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
       const inside = x >= 8 && x <= width - 8 && y >= 8 && y <= height - 8 && projected.z < 1;
       const occluded = earthOccludes(point, camera.position);
       label.classList.toggle("is-occluded", occluded);
-      label.style.visibility = inside && !occluded ? "visible" : "hidden";
-      markers[item.slot].visible = inside && !occluded;
-      markers[item.slot].material.opacity = item.slot !== "B" && item.slot !== focus ? .3 : 1;
+      label.style.visibility = inside && !occluded && !(options.tableMini && item.slot === "C") ? "visible" : "hidden";
+      markers[item.slot].visible = inside && !occluded && !(options.tableMini && item.slot === "C");
+      markers[item.slot].material.opacity = options.tableMini ? 1 : item.slot !== "B" && item.slot !== focus ? .3 : 1;
       if (inside && !occluded) rendered.push(item.slot);
       if (occluded) occludedSlots.push(item.slot);
     }

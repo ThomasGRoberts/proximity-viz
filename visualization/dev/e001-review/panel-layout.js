@@ -35,7 +35,19 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
   const action = doc().createElement("span"); action.className = "episode-hover-action"; action.setAttribute("aria-hidden", "true");
   if (arrow) action.append(arrow);
   const actionText = doc().createElement("span"); actionText.className = "episode-hover-text"; actionText.textContent = "Choose a different episode";
-  action.append(actionText); focusTop.append(eyebrow, action); focusLink.append(focusTop, title); focus.append(focusLink);
+  action.append(actionText); focusTop.append(eyebrow, action);
+  const season = ms => {
+    const date = new Date(ms), month = date.getUTCMonth() + 1;
+    return { part: month <= 4 ? "early" : month <= 8 ? "mid" : "late", year: date.getUTCFullYear() };
+  };
+  const firstPeriod = season(chapters[0].centerMs), lastPeriod = season(chapters.at(-1).centerMs);
+  const period = doc().createElement("span"); period.className = "episode-focus-period";
+  period.textContent = firstPeriod.year === lastPeriod.year && firstPeriod.part === lastPeriod.part
+    ? `in ${firstPeriod.part} ${firstPeriod.year}`
+    : firstPeriod.year === lastPeriod.year
+      ? `from ${firstPeriod.part} to ${lastPeriod.part} ${firstPeriod.year}`
+      : `from ${firstPeriod.part} ${firstPeriod.year} to ${lastPeriod.part} ${lastPeriod.year}`;
+  focusLink.append(focusTop, title, period); focus.append(focusLink);
   ui.querySelector(".episodeHeader h1").after(focus);
   ui.querySelector("#metricArea")?.closest(".panelSection")?.classList.add("results-section");
   ui.querySelector("#rangeMetric .statLabel").textContent = "Separation distance";
@@ -95,7 +107,7 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     body.e002-shared #ui .satCard .sourceDot{width:12px!important;height:12px!important;flex:0 0 12px!important;border:2px solid #191919!important}
     body.e002-shared #ui .satCard .satName{font-size:12px!important;font-weight:700!important;line-height:1.2!important}
     body.e002-shared #ui .satMetaDetails{margin:0 10px 8px!important;padding:0!important}
-    body.e002-shared #ui .satMetaDetails .object-meta>div{grid-template-columns:124px minmax(0,1fr)!important;gap:6px!important}
+    body.e002-shared #ui .satMetaDetails .object-meta>div{grid-template-columns:103px minmax(0,1fr)!important;gap:5px!important}
     body.e002-shared #ui .pair-sticky .pair-sticky-name{display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid #d6cfbd;border-radius:5px;background:#fff;color:#454545;font-size:9px;white-space:nowrap}
     body.e002-shared #ui .pair-sticky .pair-sticky-name i{flex:0 0 8px;width:8px;height:8px;background:#eaaa00}
     body.e002-shared #ui #rangeStat,body.e002-shared #ui #speedStat{font-size:26px!important;line-height:1.2!important;font-weight:750!important}
@@ -107,7 +119,14 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     body.e002-shared .playbackRow{grid-template-columns:26px 30px 26px minmax(0,1fr) max-content!important;grid-template-rows:24px!important;gap:0 5px!important}
     body.e002-shared .playbackRow .sliderNow{grid-column:5!important;grid-row:1!important;justify-self:end!important;width:auto!important;white-space:nowrap!important;font-size:9px!important}
     body.e002-shared .playbackDock{position:fixed!important;z-index:10!important;left:18px!important;bottom:18px!important;width:342px!important;max-width:calc(100vw - 36px)!important;margin:0!important;border-radius:12px!important;background:#fff!important;box-shadow:0 12px 35px rgba(0,0,0,.10)!important}
-    .e001-chapters{display:grid;grid-template-columns:repeat(var(--chapter-count),minmax(0,1fr));gap:3px;margin:0 2px 5px;padding:2px;border:1px solid #d2d2d2;border-radius:7px;background:#f1f1f1}
+    .e001-chapters{display:grid;grid-template-columns:repeat(var(--chapter-count),minmax(0,1fr));gap:3px;margin:0 8px 5px;padding:2px;border:1px solid #d2d2d2;border-radius:7px;background:#f1f1f1}
+    body.e002-shared #ui .episodeHeader h1{position:static!important;top:auto!important;margin:0 0 7px!important;padding:0!important;border:0!important;box-shadow:none!important;background:none!important}
+    body.e002-shared #ui .episode-focus{border:1px solid #e3d4ab!important;border-left:3px solid #d6a527!important;background:#fff4cf!important}
+    body.e002-shared #ui .episode-focus-link{padding:8px 10px 10px!important}
+    body.e002-shared #ui .episode-focus .titleEpisode{margin:5px 0 0!important;padding:0!important;border:0!important;background:none!important;color:#3d382b!important;-webkit-text-fill-color:#3d382b!important;font-weight:700!important}
+    body.e002-shared #ui .episode-focus-period{display:block;margin:4px 0 0;color:#857454;font-size:10px;line-height:1.25;font-weight:600}
+    body.e002-shared #ui .pair-sticky{border-bottom:1px solid #e2d4ad!important;border-left:3px solid #d6a527!important;background:#fff4cf!important}
+    body.e002-shared #ui .chartGroup .currentValue{width:max-content!important;min-width:0!important;max-width:calc(100% - 70px);padding-inline:2px!important}
     .e001-chapters button{min-height:25px;padding:2px;border:1px solid transparent;border-radius:5px;background:transparent;color:#777;font-size:10px;font-weight:700;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}
     .e001-chapters button:hover{background:#ffffffb3;color:#444}.e001-chapters button.active{border-color:#aaa;background:#fff;box-shadow:0 1px 3px #00000012;color:#333}
     #cameraControls .cameraBtn{font-size:18px!important;transition:background .15s,color .15s,box-shadow .15s!important}

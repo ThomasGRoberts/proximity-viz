@@ -1048,6 +1048,12 @@ function startPreview(row) {
         if (!expanded?.isConnected || !host.isConnected) return;
         const area = expanded.getBoundingClientRect(), link = host.parentElement.getBoundingClientRect();
         Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top}px`, width: `${area.width}px`, height: `${area.height}px` });
+        if (episodeId === "E-059") {
+          const context = expanded.querySelector(".context-block")?.getBoundingClientRect();
+          const records = expanded.querySelector(".evidence-section")?.getBoundingClientRect();
+          host.style.setProperty("--mini-loader-left", `${Math.max(0, (context?.right || area.left + area.width * .3) - area.left)}px`);
+          host.style.setProperty("--mini-loader-height", `${Math.max(180, (records?.top || area.top + 340) - area.top)}px`);
+        }
         Object.assign(frame.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
       };
       fillExpandedRow();

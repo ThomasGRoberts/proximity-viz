@@ -195,6 +195,16 @@ async function start() {
   chapterNav.hidden = chapters.length === 1;
   document.body.classList.toggle("e008-multi-chapter", chapters.length > 1);
   $("playbackDock").prepend(chapterNav);
+  const fitChapterLabels = () => {
+    for (const button of chapterNav.querySelectorAll("button")) {
+      let size = 10; button.style.fontSize = `${size}px`;
+      while (size > 7 && button.scrollWidth > button.clientWidth + 1) {
+        size -= .5; button.style.fontSize = `${size}px`;
+      }
+    }
+  };
+  new ResizeObserver(fitChapterLabels).observe(chapterNav);
+  requestAnimationFrame(fitChapterLabels);
   let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "B", referenceSlot = "B", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 21600, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
   let miniLoopStart = chapter.centerMs - 2 * HOUR, miniLoopEnd = chapter.centerMs + 2 * HOUR;
   const miniPinnedTles = {};
@@ -535,7 +545,7 @@ async function start() {
     }
     if (referenceSlot !== "A") referenceSlot = slot; autoCamera = true; lastTrailKey = ""; lastReferenceOrbitKey = ""; updateMinima(); updateSticky(); render();
   }
-  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; const nextScale = miniScene ? (Number(window.frameElement?.dataset.miniBaseHeight) || height) / height : 1; camera.zoom *= nextScale / miniProjectionScale; miniProjectionScale = nextScale; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
+  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; const nextScale = miniScene ? (Number(window.frameElement?.dataset.miniBaseHeight) || height) / height : 1; camera.zoom *= nextScale / miniProjectionScale; miniProjectionScale = nextScale; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); renderer.domElement.style.width = `${width}px`; renderer.domElement.style.height = `${height}px`; for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
   new ResizeObserver(resize).observe(sceneHost); new ResizeObserver(drawCharts).observe($("distanceChartGroup"));
   chapterNav.addEventListener("click", event => { const button = event.target.closest("button[data-chapter]"); if (button) void switchChapter(button.dataset.chapter); });
   $("timelineSlider").addEventListener("input", event => setTime(Number(event.target.value)));

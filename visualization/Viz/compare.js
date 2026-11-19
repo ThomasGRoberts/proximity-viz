@@ -242,9 +242,9 @@ function satrecFor(lib, index) {
 function stateAt(norad, ms, tleIndex = null) {
   const lib = library[norad];
   const index = tleIndex ?? nearestTleIndex(lib, ms);
-  // A published TLE is not evidence for unlimited extrapolation. Do not display or
-  // integrate unsupported dates, including Athena-Fidus after Dec. 2017.
-  if (episodeConfig && (ms < lib.coverage[0] || ms > lib.coverage[1] ||
+  // The full view respects coverage and age limits. The miniature deliberately
+  // propagates its one pinned TLE through the saved illustrative loop.
+  if (episodeConfig && !miniScene && (ms < lib.coverage[0] || ms > lib.coverage[1] ||
       Math.abs(ms - lib.epochsMs[index]) > episodeConfig.maximumTleAgeDays * DAY_MS)) return null;
   const result = sgp4.propagate(satrecFor(lib, index), new Date(ms));
   if (!result.position) return null;
@@ -1544,7 +1544,7 @@ function slotName(slot) {
 let e001PairSticky;
 function updateE001PairSticky() {
   const ui = $("ui"), modeling = $("nowModeling");
-  if (!ui || !modeling || !pair.A || !pair.B) return;
+  if (!ui || !modeling || !pair.A || !pair.B || localChapterReview) return;
   if (!e001PairSticky) {
     e001PairSticky = document.createElement("div"); e001PairSticky.id = "e001PairSticky";
     e001PairSticky.innerHTML = '<span class="pair-intro">Current Episode:</span><span class="pair-chaser"><i></i><b></b></span><span>+</span><span class="pair-target"><i></i><b></b></span>';
@@ -1743,7 +1743,7 @@ localMotionTrail.visible = false;
 localMotionTrail.renderOrder = 6;
 localMotionTrail.frustumCulled = false;
 scene.add(localMotionTrail);
-const localReferenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: .72, depthTest: true, depthWrite: false }));
+const localReferenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: miniScene ? .9 : .72, depthTest: true, depthWrite: false }));
 localReferenceOrbit.visible = false;
 localReferenceOrbit.frustumCulled = false;
 localReferenceOrbit.renderOrder = 2;
@@ -2433,12 +2433,15 @@ $("captureViewBtn").addEventListener("click", async () => {
 // Keep the 3D view beside the panel and the right size when the window is resized.
 function updateRendererLayout() {
   const desktop = innerWidth > 760;
-  const left = chapterMode.get("mini") === "1" ? 0 : desktop ? Math.ceil($("ui").getBoundingClientRect().right + 18) : 0;
-  const width = Math.max(1, innerWidth - left);
-  renderer.domElement.style.left = `${left}px`;
-  camera.aspect = width / innerHeight;
+  const panelEdge = chapterMode.get("mini") === "1" ? 0 : desktop ? Math.ceil($("ui").getBoundingClientRect().right + 18) : 0;
+  // Render underneath the panel instead of ending the orbit at the canvas edge.
+  // Offset the optical center so the visible scene keeps its previous framing.
+  renderer.domElement.style.left = "0px";
+  camera.aspect = innerWidth / innerHeight;
+  if (panelEdge) camera.setViewOffset(innerWidth, innerHeight, -panelEdge / 2, 0, innerWidth, innerHeight);
+  else camera.clearViewOffset();
   camera.updateProjectionMatrix();
-  renderer.setSize(width, innerHeight);
+  renderer.setSize(innerWidth, innerHeight);
   if (pair.A || pair.B) updateNames();       // redraw the labels at the new screen size
   chartDirty = true; drawEpisodeCharts();
 }

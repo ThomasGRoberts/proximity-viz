@@ -79,13 +79,13 @@
       "rate": 14400,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2022-01-08T02:53:29.880Z",
+        "timestampUtc": "2022-01-04T19:13:23.640Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
-          0.43199701587123435,
-          0.12318966995878887,
-          1.3747347031683106
+          0.27166986082473044,
+          0.061491717713760746,
+          0.8641701702694435
         ],
         "target": [
           0.0013937593068171403,
@@ -100,8 +100,8 @@
         "fieldOfViewDeg": 35,
         "zoom": 1,
         "viewportOffset": {
-          "x": 48,
-          "y": -64
+          "x": 60,
+          "y": 20
         }
       }
     },
@@ -244,7 +244,42 @@
           "y": -100
         }
       }
+    },
+    "E-059": {
+      "episodeId": "E-059",
+      "windowId": "chapter-1",
+      "frameMode": "relative",
+      "loopStartUtc": "2026-10-22T23:10:00.000Z",
+      "loopEndUtc": "2026-10-23T01:10:00.000Z",
+      "rate": 600,
+      "camera": {
+        "name": "E-059 saved relative view",
+        "timestampUtc": "2026-10-23T01:10:00.000Z",
+        "frameMode": "relative",
+        "referenceSatellite": "A",
+        "position": [
+          0.16245014840950558,
+          0.09679299354769931,
+          0.10732171870631456
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "fieldOfViewDeg": 35,
+        "zoom": 1,
+        "viewportOffset": {
+          "x": 0,
+          "y": 0
+        }
+      }
     }
   },
-  "savedAt": "2026-11-19T01:09:52+00:00"
+  "savedAt": "2026-11-19T04:38:50+00:00"
 }

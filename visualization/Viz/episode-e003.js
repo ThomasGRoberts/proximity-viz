@@ -460,7 +460,7 @@ async function start() {
       trails[item.slot].visible = !!state && (mode !== "relative" || item.slot !== referenceSlot) && !(miniScene && item.slot === "C");
       if (!state) continue;
       marker.position.copy(mode === "eci" ? state.p : local(state.p, frame));
-      marker.material.opacity = item.slot === "A" || item.slot === selected ? 1 : .28;
+      marker.material.opacity = miniScene ? 1 : item.slot === "A" || item.slot === selected ? 1 : .28;
       marker.renderOrder = item.slot === selected ? 12 : item.slot === "A" ? 11 : 10;
       trails[item.slot].material.uniforms.uOpacity.value = mode === "eci" ? item.slot === "A" ? 1 : item.slot === selected ? .85 : .4 : item.slot === "A" || item.slot === selected ? .85 : .23;
     }
@@ -534,7 +534,7 @@ async function start() {
     }
     if (referenceSlot !== "A") referenceSlot = slot; autoCamera = true; lastTrailKey = ""; lastReferenceOrbitKey = ""; updateMinima(); updateSticky(); render();
   }
-  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; const nextScale = miniScene ? (Number(window.frameElement?.dataset.miniBaseHeight) || height) / height : 1; camera.zoom *= nextScale / miniProjectionScale; miniProjectionScale = nextScale; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
+  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; const nextScale = miniScene ? (Number(window.frameElement?.dataset.miniBaseHeight) || height) / height : 1; camera.zoom *= nextScale / miniProjectionScale; miniProjectionScale = nextScale; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); renderer.domElement.style.width = `${width}px`; renderer.domElement.style.height = `${height}px`; for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
   new ResizeObserver(resize).observe(sceneHost); new ResizeObserver(drawCharts).observe($("distanceChartGroup"));
   chapterNav.addEventListener("click", event => { const button = event.target.closest("button[data-chapter]"); if (button) void switchChapter(button.dataset.chapter); });
   $("timelineSlider").addEventListener("input", event => setTime(Number(event.target.value)));
