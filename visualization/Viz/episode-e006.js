@@ -30,7 +30,7 @@ const svgLink = '<svg viewBox="0 0 18 18" width="12" height="12" aria-hidden="tr
 try { await start(); } catch (error) {
   console.error("E-006 visualization", error);
   const status = $("sceneStatus") || document.createElement("p");
-  status.id = "sceneStatus"; status.textContent = `E-006 could not load: ${error.message}`; document.body.append(status);
+  status.id = "sceneStatus"; status.textContent = `Episode ${new URLSearchParams(location.search).get("episode") || "requested"} could not load: ${error.message}`; document.body.append(status);
   const bootText = document.getElementById("episodeBootText"); if (bootText) bootText.textContent = `Could not load episode: ${error.message}`;
 }
 
@@ -42,9 +42,9 @@ async function start() {
     fetch("../dev/e006/saved-camera-views.json", { cache: "no-store" }).then(r => r.ok ? r.json() : { views: [] }).catch(() => ({ views: [] })),
   ]);
   const row = episodes.find(item => item.ID === "E-006" && /^(true|yes|1)$/i.test(item.Frontend || ""));
-  if (!row) throw new Error("E-006 is unavailable in the published Episodes sheet");
+  if (!row) throw new Error("The requested episode is unavailable in the published Episodes sheet");
   const chapters = episodeChapters(row);
-  if (!chapters.length) throw new Error("E-006 has no valid chapter center and width");
+  if (!chapters.length) throw new Error(`${row["Episode ID"]} has no valid chapter center and width`);
   let learnedByRoute = new Map();
   function setSavedCameraViews(views) {
     const grouped = new Map();
@@ -86,7 +86,7 @@ async function start() {
       launchMs: Date.parse(`${record.LAUNCH}T00:00:00Z`),
       color: slot === "A" ? "#eaaa00" : "#a9a9a9" };
   });
-  if (participants.length !== 3 || participants.some((item, index) => item.slot !== "ABC"[index])) throw new Error("E-006 needs the three published spacecraft");
+  if (participants.length !== 3 || participants.some((item, index) => item.slot !== "ABC"[index])) throw new Error(`${row["Episode ID"]} needs the three published spacecraft`);
   const manifestBaseUrl = new URL("../dev/e006/", import.meta.url);
   const libraries = {};
   await Promise.all(participants.map(async item => {
