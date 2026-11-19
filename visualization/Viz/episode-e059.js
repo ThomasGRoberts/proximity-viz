@@ -5,7 +5,7 @@ import { renderSharedCommentList } from "../dev/review-shell.js?v=2";
 import * as THREE from "./vendor/three/three.module.js";
 import { OrbitControls } from "./vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "./vendor/topojson/topojson-client.js";
-import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=4";
+import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=5";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
 import { wireTimelineHover } from "./playback-shared.js";
@@ -29,7 +29,7 @@ const svgLink = '<svg viewBox="0 0 18 18" width="12" height="12" aria-hidden="tr
 try { await start(); } catch (error) {
   console.error("E-059 visualization", error);
   const status = $("sceneStatus") || document.createElement("p");
-  status.id = "sceneStatus"; status.textContent = `E-059 could not load: ${error.message}`; document.body.append(status);
+  status.id = "sceneStatus"; status.textContent = `Episode ${new URLSearchParams(location.search).get("episode") || "E-008"} could not load: ${error.message}`; document.body.append(status);
   const bootText = document.getElementById("episodeBootText"); if (bootText) bootText.textContent = `Could not load episode: ${error.message}`;
 }
 
@@ -41,9 +41,9 @@ async function start() {
     fetch("../dev/e059/saved-camera-views.json", { cache: "no-store" }).then(r => r.ok ? r.json() : { views: [] }).catch(() => ({ views: [] })),
   ]);
   const row = episodes.find(item => item.ID === "E-059" && (miniScene || new URLSearchParams(location.search).get("dev") === "1" || /^(true|yes|1)$/i.test(item.Frontend || "")));
-  if (!row) throw new Error("E-059 is unavailable in the published Episodes sheet");
+  if (!row) throw new Error("The requested episode is unavailable in the published Episodes sheet");
   const chapters = episodeChapters(row);
-  if (!chapters.length) throw new Error("E-059 has no valid chapter center and width");
+  if (!chapters.length) throw new Error(`${row["Episode ID"]} has no valid chapter center and width`);
   let learnedByRoute = new Map();
   function setSavedCameraViews(views) {
     const grouped = new Map();
@@ -85,7 +85,7 @@ async function start() {
       launchMs: Date.parse(`${record.LAUNCH}T00:00:00Z`),
       color: slot === "A" ? "#eaaa00" : "#a9a9a9" };
   });
-  if (participants.length !== 2 || participants.some((item, index) => item.slot !== "AB"[index])) throw new Error("E-059 needs the two published spacecraft");
+  if (participants.length !== 2 || participants.some((item, index) => item.slot !== "AB"[index])) throw new Error(`${row["Episode ID"]} needs the two published spacecraft`);
   const manifestBaseUrl = new URL("../dev/e059/", import.meta.url);
   const libraries = {};
   await Promise.all(participants.map(async item => {
@@ -587,7 +587,7 @@ async function start() {
   if (miniScene) current = miniLoopStart;
   playing = true; updatePlay(); render();
   if (miniScene) {
-    const captureCamera = (name = "E-059 mini preview") => ({ name, timestampUtc: new Date(current).toISOString(), frameMode: mode === "eci" ? "inertial" : "relative", referenceSatellite: referenceSlot,
+    const captureCamera = (name = `${row["Episode ID"]} mini preview`) => ({ name, timestampUtc: new Date(current).toISOString(), frameMode: mode === "eci" ? "inertial" : "relative", referenceSatellite: referenceSlot,
       position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), fieldOfViewDeg: camera.fov, zoom: camera.zoom / miniProjectionScale });
     const seekMiniTime = ms => setTime(ms);
     window.miniWorkshop = {

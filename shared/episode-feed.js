@@ -157,9 +157,9 @@ export function episodeUtcInterval(row) {
   const valid = value => /^\d{4}-\d{2}-\d{2}$/.test(value || "") &&
     Number.isFinite(Date.parse(`${value}T00:00:00Z`)) &&
     new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
-  if (!valid(start) || !valid(end)) throw new Error(`Episode ${row?.ID || "record"} has invalid start or end dates in the published sheet`);
+  if (!valid(start) || !valid(end)) throw new Error(`Episode ${row?.["Episode ID"] || "record"} has invalid start or end dates in the published sheet`);
   const startMs = Date.parse(`${start}T00:00:00Z`);
   const endExclusiveMs = Date.parse(`${end}T00:00:00Z`) + 86400000;
-  if (endExclusiveMs <= startMs) throw new Error(`Episode ${row.ID} ends before it starts in the published sheet (${start} to ${end})`);
+  if (endExclusiveMs <= startMs) throw new Error(`Episode ${row["Episode ID"]} ends before it starts in the published sheet (${start} to ${end})`);
   return { start, end, startMs, endExclusiveMs, endMs: endExclusiveMs - 1 };
 }

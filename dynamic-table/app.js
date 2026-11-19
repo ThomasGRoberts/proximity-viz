@@ -1,6 +1,6 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
-import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js?v=4";
+import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js?v=5";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
@@ -71,7 +71,10 @@ function sourceGroups(row, data) {
   const groups = new Map();
   for (const item of linkedDescriptions(row, data)) {
     const ref = field(item.row, "Source URL", "URL", "Link", "Source link");
-    const url = safeUrl(ref);
+    // The published record retains an old NYT slug. Keep the sheet as the
+    // record source while taking readers to the article's canonical URL.
+    const url = safeUrl(ref === "https://www.nytimes.com/2026/10/19/science/russia-satellite-kosmos-2612.html"
+      ? "https://www.nytimes.com/2026/10/19/science/russian-satellite-makes-a-menacing-approach-to-another-craft-in-orbit.html" : ref);
     const key = ref || `record:${item.id}`;
     if (!groups.has(key)) groups.set(key, { url, ref, items: [] });
     groups.get(key).items.push(item);
@@ -296,7 +299,7 @@ function visibleRows() {
   const query = state.query.toLocaleLowerCase();
   const rows = data.episodes.filter(row => {
     if (!query) return true;
-    const terms = [publicEpisodeId(row), field(row, "ID"), title(row), episodeDescription(row), account(row), regime(row), regimeShort(row), ...["A", "B", "C"].flatMap(role => { const info = objectInfo(row, role, data); return info ? [info.name, info.cospar, info.norad, info.owner, ownerDisplay(info)] : []; })];
+    const terms = [publicEpisodeId(row), title(row), episodeDescription(row), account(row), regime(row), regimeShort(row), ...["A", "B", "C"].flatMap(role => { const info = objectInfo(row, role, data); return info ? [info.name, info.cospar, info.norad, info.owner, ownerDisplay(info)] : []; })];
     return terms.join(" ").toLocaleLowerCase().includes(query);
   });
   const { key, direction } = state.sort, sign = direction === "asc" ? 1 : -1;
@@ -420,8 +423,8 @@ const reviewedSourceMetadata = {
     title: "Russian Satellite Makes a Menacing Approach to Another Craft in Orbit",
     publisher: "The New York Times",
     publishedDate: "2026-10-19",
-    previewPath: "./assets/source-previews/e059-nyt-record.svg",
-    imageAlt: "Designed preview identifying the New York Times report; article image unavailable",
+    previewPath: "./assets/source-previews/e008-iceye-satellite.jpg",
+    imageAlt: "ICEYE artist's concept of a radar satellite, from ICEYE's press imagery",
   },
   "https://hansard.parliament.uk/commons/2021-07-14/debates/D9862D76-47F8-4DE4-AC12-9BAA4A3BD7AF/SpaceDebris": {
     kind: "document",
@@ -967,6 +970,7 @@ function updateMiniBackdropBounds(host, tableWrap, header, expanded) {
   host.style.left = `${heading.left - origin.left}px`;
   host.style.width = `${heading.width}px`;
   host.style.height = `${heading.height + detail.height}px`;
+  positionMiniLoader(host, header, expanded);
   const frame = host.querySelector("iframe.e002-mini"), block = expanded.querySelector(".visual-block");
   if (frame && block) {
     const rect = (block.querySelector(".visual-link.model-link") || block).getBoundingClientRect();
@@ -976,6 +980,23 @@ function updateMiniBackdropBounds(host, tableWrap, header, expanded) {
     const offsetY = Number(frame.dataset.miniOffsetY) || 0;
     Object.assign(frame.style, { position: "absolute", left: `${rect.left - heading.left - featherWidth}px`, top: `${detail.top - heading.top}px`, width: `${heading.right - rect.left + featherWidth}px`, height: `${detail.height + Math.max(0, -offsetY)}px` });
   }
+}
+function positionMiniLoader(host, header, expanded) {
+  if (!host?.isConnected || !header?.isConnected || !expanded?.isConnected) return;
+  const pane = host.getBoundingClientRect();
+  const orbit = header.querySelector(".episode-cell")?.getBoundingClientRect();
+  const row = expanded.getBoundingClientRect();
+  const records = expanded.querySelector(".evidence-section")?.getBoundingClientRect();
+  if (!orbit || !records) return;
+  // Narrow layouts turn the first cell into a full-width block. In that case
+  // the preview is already the available horizontal pane.
+  const contentLeft = orbit.right < pane.right - 80 ? orbit.right : pane.left;
+  const left = Math.max(0, contentLeft - pane.left);
+  const top = Math.max(0, row.top - pane.top);
+  host.style.setProperty("--mini-loader-left", `${left}px`);
+  host.style.setProperty("--mini-loader-top", `${top}px`);
+  host.style.setProperty("--mini-loader-width", `${Math.max(1, Math.min(pane.right, row.right) - Math.max(pane.left, contentLeft))}px`);
+  host.style.setProperty("--mini-loader-height", `${Math.max(1, records.top - row.top)}px`);
 }
 function updateE001BackdropBounds(host, tableWrap, expanded) {
   if (miniEditing || !host.isConnected || !expanded.isConnected) return;
@@ -987,11 +1008,7 @@ function updateE001BackdropBounds(host, tableWrap, expanded) {
   const top = header?.top ?? rect.top;
   const table = tableWrap.querySelector("table")?.getBoundingClientRect() || origin;
   Object.assign(host.style, { top: `${top - origin.top}px`, left: `${table.left - origin.left}px`, width: `${table.width}px`, height: `${detail.bottom - top}px` });
-  const firstColumn = expanded.previousElementSibling?.querySelector(".episode-cell")?.getBoundingClientRect();
-  const records = expanded.querySelector(".evidence-section")?.getBoundingClientRect();
-  host.style.setProperty("--mini-loader-left", `${Math.max(0, (firstColumn?.right || table.left + table.width / 7) - table.left)}px`);
-  host.style.setProperty("--mini-loader-top", `${Math.max(0, detail.top - top)}px`);
-  host.style.setProperty("--mini-loader-height", `${Math.max(180, (records?.top || detail.bottom) - detail.top)}px`);
+  positionMiniLoader(host, expanded.previousElementSibling, expanded);
 }
 function startPreview(row) {
   const episodeId = field(row, "ID");
@@ -1034,6 +1051,7 @@ function startPreview(row) {
   if (episodeId === "E-005" && warmedE005Host && warmedE005Frame) {
     host.replaceWith(warmedE005Host);
     warmedE005Host.classList.remove("e005-prewarm"); warmedE005Host.classList.add("e005-live");
+    positionMiniLoader(warmedE005Host, header, expanded);
     miniFrame = warmedE005Frame; miniBackdropHost = warmedE005Host;
     localReview?.attachMini(warmedE005Frame);
     settleMountedMini(warmedE005Frame, "E-005");
@@ -1053,12 +1071,7 @@ function startPreview(row) {
         if (!expanded?.isConnected || !host.isConnected) return;
         const area = expanded.getBoundingClientRect(), link = host.parentElement.getBoundingClientRect();
         Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top}px`, width: `${area.width}px`, height: `${area.height}px` });
-        if (episodeId === "E-059") {
-          const context = expanded.querySelector(".context-block")?.getBoundingClientRect();
-          const records = expanded.querySelector(".evidence-section")?.getBoundingClientRect();
-          host.style.setProperty("--mini-loader-left", `${Math.max(0, (context?.right || area.left + area.width * .3) - area.left)}px`);
-          host.style.setProperty("--mini-loader-height", `${Math.max(180, (records?.top || area.top + 340) - area.top)}px`);
-        }
+        positionMiniLoader(host, header, expanded);
         Object.assign(frame.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
       };
       fillExpandedRow();
@@ -1179,8 +1192,8 @@ async function init() {
     const shell = await fetch("./review-bar.html", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Local review shell returned ${response.status}`); return response.text(); });
     document.body.insertAdjacentHTML("afterbegin", shell);
     const reviewStyles = document.createElement("link"); reviewStyles.rel = "stylesheet"; reviewStyles.href = "../visualization/dev/review-nav.css"; document.head.append(reviewStyles);
-    const { createLocalReview } = await import("./local-review.js?v=6");
-    localReview = createLocalReview({ getMini: () => miniFrame?.contentWindow?.miniWorkshop, getFrame: () => miniFrame, setEditing: setMiniEditing, getSelectedEpisode: () => field(state.selected, "ID") });
+    const { createLocalReview } = await import("./local-review.js?v=7");
+    localReview = createLocalReview({ getMini: () => miniFrame?.contentWindow?.miniWorkshop, getFrame: () => miniFrame, setEditing: setMiniEditing, getSelectedEpisode: () => field(state.selected, "ID"), getPublicEpisode: assetId => state.live?.episodes?.find(row => row.ID === assetId)?.["Episode ID"] || assetId });
   }
   prewarmE002(); prewarmE001(); prewarmE005();
   $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; setStatus(); render(); });
@@ -1205,7 +1218,8 @@ async function init() {
     return { ...snapshot, descriptions: descriptionFeed.descriptions, episodes, spaceTrack, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc, descriptionsCheckedUtc: descriptionFeed.fetchedUtc, descriptionError: descriptionFeed.error || "" };
   }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
   const reviewEpisode = new URLSearchParams(location.search).get("review");
-  if (localReviewMode && hasEpisodeVisual(reviewEpisode)) state.selected = state.live.episodes?.find(row => field(row, "ID") === reviewEpisode) || null;
+  if (reviewEpisode) state.selected = state.live.episodes?.find(row => publicEpisodeId(row) === reviewEpisode) || null;
+  if (state.selected && !hasEpisodeVisual(field(state.selected, "ID"))) state.selected = null;
   const initialSelection = state.selected;
   state.selected = null;
   setStatus(); render();
@@ -1229,7 +1243,7 @@ async function init() {
     });
   }
   if (state.selected) requestAnimationFrame(() => {
-    const row = document.querySelector(`.episode-row[data-episode-id="${reviewEpisode}"]`);
+    const row = document.querySelector(`.episode-row[data-episode-id="${field(state.selected, "ID")}"]`);
     if (row) scrollTo({ top: scrollY + row.getBoundingClientRect().top - (document.getElementById("tableReviewBar")?.getBoundingClientRect().height || 0) - 16 });
   });
   const e001 = state.live.episodes?.find(row => field(row, "ID") === "E-001");

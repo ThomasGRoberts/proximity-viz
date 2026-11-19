@@ -17,12 +17,14 @@ async function jsonRequest(path, payload) {
   return result;
 }
 
-export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEpisode }) {
+export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEpisode, getPublicEpisode }) {
   const bar = $("tableReviewBar"), status = $("tableReviewStatus"), pins = $("tableSpotPins");
   const controls = ["miniEditToggle", "miniChapter", "miniPlay", "miniTime", "miniSpeed", "miniFrame", "miniOrigin", "miniZoomOut", "miniZoomIn", "miniReset", "miniMoveLeft", "miniMoveRight", "miniMoveUp", "miniMoveDown", "miniPlaceLeft", "miniPlaceRight", "miniPlaceUp", "miniPlaceDown", "miniMarkStart", "miniMarkEnd", "miniSaveLoop"].map($);
   let activeFrame = null, editing = false, spotMode = false, comments = [], savedConfigs = {}, draft = null;
   let loopStart = null, loopEnd = null, scrub = false;
   let viewportOffset = { x: 0, y: 0 };
+  const publicId = assetId => getPublicEpisode?.(assetId) || assetId;
+  const publicLabel = label => String(label || "").replace(/^E-\d{3}\b/, assetId => publicId(assetId));
   const placeScene = () => {
     if (!activeFrame) return;
     activeFrame.style.transform = `translate(${viewportOffset.x}px, ${viewportOffset.y}px)`;
@@ -67,9 +69,9 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
       const x = rect.left + rect.width * comment.x, y = rect.top + rect.height * comment.y;
       if (x < 0 || y < bar.getBoundingClientRect().bottom || x > innerWidth || y > innerHeight) return;
       const pin = document.createElement("button"); pin.type = "button"; pin.className = "table-spot-pin"; pin.textContent = String(i + 1);
-      pin.title = `${comment.label}: ${comment.text}`; pin.setAttribute("aria-label", `Show table comment ${i + 1}`);
+      pin.title = `${publicLabel(comment.label)}: ${comment.text}`; pin.setAttribute("aria-label", `Show table comment ${i + 1}`);
       pin.style.left = `${x}px`; pin.style.top = `${y}px`;
-      pin.addEventListener("click", () => { $("tableCommentDrawer").hidden = false; $("tableCommentsToggle").setAttribute("aria-expanded", "true"); sessionStorage.setItem("espl-review-comments-open", "1"); $("tableCommentForm").hidden = true; say(`${comment.label}: ${comment.text}`); });
+      pin.addEventListener("click", () => { $("tableCommentDrawer").hidden = false; $("tableCommentsToggle").setAttribute("aria-expanded", "true"); sessionStorage.setItem("espl-review-comments-open", "1"); $("tableCommentForm").hidden = true; say(`${publicLabel(comment.label)}: ${comment.text}`); });
       pins.append(pin);
     });
   };
@@ -78,9 +80,9 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
     if (!comments.length) list.textContent = "No new comments yet.";
     for (const [i, comment] of comments.entries()) {
       const item = document.createElement("div"); item.className = "table-comment-item";
-      const jump = document.createElement("button"); jump.type = "button"; jump.textContent = `${i + 1}. ${comment.surface} · ${comment.label}${comment.appliesToAllEpisodes ? " · All table episodes" : ""}`; jump.title = "Show comment location";
+      const jump = document.createElement("button"); jump.type = "button"; jump.textContent = `${i + 1}. ${comment.surface === "Library" ? "Library" : publicId(comment.surface)} · ${publicLabel(comment.label)}${comment.appliesToAllEpisodes ? " · All table episodes" : ""}`; jump.title = "Show comment location";
       jump.addEventListener("click", () => {
-        if (comment.surface !== "Library") { location.href = comment.surface === "E-001" ? "../visualization/dev/e001-review/" : comment.surface === "E-002" ? "../visualization/dev/e002-control-panel-preview/" : `../visualization/Viz/compare.html?dev=1&episode=${comment.surface}`; return; }
+        if (comment.surface !== "Library") { location.href = comment.surface === "E-001" ? "../visualization/dev/e001-review/" : comment.surface === "E-002" ? "../visualization/dev/e002-control-panel-preview/" : `../visualization/Viz/compare.html?dev=1&episode=${publicId(comment.surface)}`; return; }
         const anchor = anchorFor(comment.key); if (anchor) {
           const stack = anchor.closest(".source-stack");
           if (stack?.hidden) {
@@ -107,7 +109,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
     const anchor = event.target.closest("[data-table-spot-key]"); if (!anchor) return;
     event.preventDefault(); event.stopImmediatePropagation();
     const rect = anchor.getBoundingClientRect(), key = anchor.dataset.tableSpotKey;
-    beginComment(anchor, (event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height, spotLabel(key));
+    beginComment(anchor, (event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height, publicLabel(spotLabel(key)));
   };
   const sync = () => {
     const m = model(), ready = !!m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(getSelectedEpisode());
@@ -171,7 +173,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
         event.preventDefault(); event.stopImmediatePropagation();
         const anchor = document.querySelector(`.expanded-row[data-episode-id="${getSelectedEpisode()}"] .visual-block`); if (!anchor) return;
         const rect = anchor.getBoundingClientRect(), frameRect = frame.getBoundingClientRect();
-        beginComment(anchor, (frameRect.left + event.clientX - rect.left) / rect.width, (frameRect.top + event.clientY - rect.top) / rect.height, `${getSelectedEpisode()} mini visualization`);
+        beginComment(anchor, (frameRect.left + event.clientX - rect.left) / rect.width, (frameRect.top + event.clientY - rect.top) / rect.height, `${publicId(getSelectedEpisode())} mini visualization`);
       }, true);
       sync(); say("Mini preview ready. Adjust the scene directly in the table.");
     };
@@ -220,18 +222,21 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
       await jsonRequest("/api/table-preview", { config }); savedConfigs[getSelectedEpisode()] = config;
       $("miniSavedAt").textContent = `Last saved ${new Date().toLocaleString()}`;
       m.setPlaying(true); editing = false; setEditing(false); sync();
-      say(`Saved ${getSelectedEpisode()} preview at ${new Date().toLocaleTimeString()}. Export preview settings to share it.`);
+      say(`Saved ${publicId(getSelectedEpisode())} preview at ${new Date().toLocaleTimeString()}. Export preview settings to share it.`);
     } catch (error) { say(`Could not save preview: ${error.message}`); }
   });
   $("miniExportSettings").addEventListener("click", () => {
     const m = model(), episodeId = getSelectedEpisode();
     const draft = m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId) ? {
-      episodeId, windowId: m.window.id, frameMode: m.frameMode,
+      episodeId: publicId(episodeId), windowId: m.window.id, frameMode: m.frameMode,
       loopStartUtc: new Date(loopStart ?? m.loopStart).toISOString(),
       loopEndUtc: new Date(loopEnd ?? m.loopEnd).toISOString(), rate: m.rate,
       camera: { ...m.captureCamera("Current unsaved mini preview"), viewportOffset: { ...viewportOffset } },
     } : null;
-    const payload = { schema: "espl-mini-preview-export-v1", savedConfigs, currentDraft: draft };
+    const publicConfigs = Object.fromEntries(Object.entries(savedConfigs).map(([assetId, config]) => [publicId(assetId), {
+      ...config, episodeId: publicId(assetId), camera: { ...config.camera, name: publicLabel(config.camera?.name) },
+    }]));
+    const payload = { schema: "espl-mini-preview-export-v1", savedConfigs: publicConfigs, currentDraft: draft };
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
     const link = document.createElement("a"); link.href = url; link.download = "dynamic-table-preview-settings.json"; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);

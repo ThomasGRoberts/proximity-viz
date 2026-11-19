@@ -170,7 +170,7 @@ class Handler(SimpleHTTPRequestHandler):
             if self.path == "/api/table-preview":
                 config = request.get("config")
                 episode_id = config.get("episodeId", "E-002") if isinstance(config, dict) else None
-                valid_window = config.get("windowId") in ("dec9", "dec30") if episode_id == "E-002" else str(config.get("windowId", "")).startswith("chapter-") if episode_id in ("E-001", "E-003", "E-005", "E-006", "E-008", "E-016") else False
+                valid_window = config.get("windowId") in ("dec9", "dec30") if episode_id == "E-002" else str(config.get("windowId", "")).startswith("chapter-") if episode_id in ("E-001", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059") else False
                 if not isinstance(config, dict) or not valid_window or config.get("frameMode") not in ("relative", "inertial"):
                     raise ValueError("Invalid miniature preview chapter or camera frame")
                 start = datetime.fromisoformat(str(config.get("loopStartUtc", "")).replace("Z", "+00:00"))

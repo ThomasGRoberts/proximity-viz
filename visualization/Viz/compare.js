@@ -37,7 +37,7 @@ import { relativeCameraFrame, relativeFitDistance } from "./relative-camera.js";
 import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
-import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js?v=4";
+import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js?v=5";
 import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=3";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
@@ -1806,6 +1806,9 @@ function drawRelative() {
       localReferenceOrbit.visible = orbitPoints.length > 1;
       localReferenceOrbit.userData.orbitKey = orbitKey;
     }
+    // setView hides the old path during a frame switch. Restore the cached
+    // geometry even when the chapter and TLE (and thus orbitKey) did not change.
+    localReferenceOrbit.visible = (localReferenceOrbit.geometry.getAttribute("position")?.count || 0) > 1;
   }
   if (localChapterReview && trailKey === lastLocalRelativeTrailKey) return;
   lastLocalRelativeTrailKey = trailKey;

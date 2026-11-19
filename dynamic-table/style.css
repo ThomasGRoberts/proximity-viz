@@ -728,7 +728,7 @@ body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden
 }
 
 /* Shared loader covers a miniature until its real viewport and saved camera settle. */
-.orbital-preview>.espl-loading{position:absolute;z-index:8;inset:0;display:flex;pointer-events:none}
+.orbital-preview>.espl-loading{position:absolute;z-index:8;inset:auto;left:var(--mini-loader-left,0);top:var(--mini-loader-top,0);width:var(--mini-loader-width,100%);height:var(--mini-loader-height,100%);display:flex;pointer-events:none;mask-image:none;-webkit-mask-image:none}
 .orbital-preview:not(.mini-loading)>.espl-loading{display:none}
 .orbital-preview.mini-loading::after{content:none}
 @media(min-width:901px){
@@ -738,10 +738,6 @@ body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden
 }
 .source-media.document-media:has(img[src*="e059-us-statement"]){aspect-ratio:16/8.5;background:#fff}
 .source-media.document-media:has(img[src*="e059-us-statement"]) img{object-fit:cover;object-position:center 12%}
-
-/* Keep E-008's loader in the miniature's visual area above the record cards. */
-.table-wrap>.orbital-preview:has(iframe.e059-mini)>.espl-loading{inset:0 0 auto var(--mini-loader-left,30%);height:var(--mini-loader-height,340px)}
-.table-wrap>.orbital-preview.e001-live>.espl-loading{inset:var(--mini-loader-top,0) 0 auto var(--mini-loader-left,14.3%);height:var(--mini-loader-height,340px)}
 
 /* Let the mini scene show through; feather only the description reading area. */
 .table-wrap .expanded-row[data-episode-id="E-001"] .expanded-inner.has-visual{background:transparent!important}
