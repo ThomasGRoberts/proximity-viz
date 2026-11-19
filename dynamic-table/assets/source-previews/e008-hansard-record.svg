@@ -4,6 +4,10 @@
   <rect width="900" height="440" fill="#f7f5ef"/>
   <rect x="32" y="24" width="836" height="392" rx="6" fill="#fff" stroke="#d7d2c8"/>
   <rect x="32" y="24" width="836" height="13" fill="#2e3e55"/>
+  <g transform="translate(727 55)" fill="none" stroke="#2e3e55" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" aria-label="Stylized crowned portcullis, emblem of UK Parliament">
+    <path d="M8 33H109M19 33V127M42 33V127M65 33V127M88 33V127M109 33V127M8 57H109M8 82H109M8 107H109M19 127l12 15 11-15 12 15 11-15 12 15 11-15 12 15 9-15"/>
+    <path d="M16 20l10-13 18 9L58 2l15 14 18-9 10 13-4 11H20z" fill="#e9dfb8"/>
+  </g>
   <text x="66" y="91" fill="#2e3e55" font-family="Georgia,serif" font-size="25" font-weight="700">UK PARLIAMENT</text>
   <text x="66" y="132" fill="#2c2c2c" font-family="Georgia,serif" font-size="36" font-weight="700">Hansard</text>
   <line x1="66" y1="153" x2="834" y2="153" stroke="#c6b984" stroke-width="2"/>

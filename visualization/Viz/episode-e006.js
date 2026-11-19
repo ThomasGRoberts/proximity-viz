@@ -167,14 +167,14 @@ async function start() {
     earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: .8, depthWrite: false })));
   }).catch(() => {});
   const markers = {}, trails = {}, cards = {}, labels = {};
-  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: .68, depthTest: true, depthWrite: false }));
+  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: .68, depthTest: !miniScene, depthWrite: false }));
   referenceOrbit.renderOrder = 2; referenceOrbit.frustumCulled = false; scene.add(referenceOrbit);
   for (const item of participants) {
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
     const dotSize = miniScene ? miniMarkerScale(camera, sceneHost.clientHeight) : DOT_SCREEN_SIZE;
     marker.scale.set(dotSize, dotSize, 1); marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
     const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "A" ? "A" : "B", miniScene ? 1.8 : 1.55));
-    trail.renderOrder = 5; scene.add(trail); trails[item.slot] = trail;
+    trail.material.depthTest = !miniScene; trail.renderOrder = 9; scene.add(trail); trails[item.slot] = trail;
     const screenLabel = document.createElement("span"); screenLabel.className = `e006-screen-label slot${item.slot}`;
     screenLabel.textContent = displayName(item.name, true); labelHost.append(screenLabel); labels[item.slot] = screenLabel;
     const card = document.createElement("details"); card.className = "satCard"; card.dataset.slot = item.slot; card.dataset.norad = item.norad; card.dataset.cospar = item.cospar;
@@ -752,10 +752,10 @@ async function start() {
 function makeReviewBar() {
   document.body.classList.add("e006-review");
   const bar = document.createElement("header"); bar.className = "e006-review-bar";
-  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003">E-003</a><a href="compare.html?dev=1&amp;episode=E-005">E-004</a><a href="compare.html?dev=1&amp;episode=E-006" aria-current="page">E-005</a><a href="compare.html?dev=1&amp;episode=E-008">E-006</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-006 review tools"><button id="e006CommentMode" type="button">✚ Spot comment</button><button id="e006CommentsToggle" type="button">Comments <span id="e006CommentCount">0</span></button></nav>';
+  bar.innerHTML = '<nav aria-label="Local design review"><a href="../dev/e001-review/">E-001</a><a href="../dev/e002-control-panel-preview/">E-002</a><a href="compare.html?dev=1&amp;episode=E-003">E-003</a><a href="compare.html?dev=1&amp;episode=E-004">E-004</a><a href="compare.html?dev=1&amp;episode=E-005" aria-current="page">E-005</a><a href="compare.html?dev=1&amp;episode=E-006">E-006</a><a href="../../dynamic-table/">Dynamic Library</a></nav><nav aria-label="E-005 review tools"><button id="e006CommentMode" type="button">✚ Spot comment</button><button id="e006CommentsToggle" type="button">Comments <span id="e006CommentCount">0</span></button></nav>';
   document.body.append(bar);
   const drawer = document.createElement("aside"); drawer.className = "e006-review-drawer"; drawer.hidden = true;
-  drawer.innerHTML = '<strong>E-006 spot comments</strong><form id="e006CommentForm" hidden><p id="e006CommentLocation"></p><textarea id="e006CommentText" required maxlength="4000"></textarea><label><input id="e006AllEpisodes" type="checkbox"> Applies to all full episode views</label><button type="submit">Save comment</button></form><div id="e006CommentList"></div><button id="e006ExportComments" type="button">Export comments JSON</button>';
+  drawer.innerHTML = '<strong>E-005 spot comments</strong><form id="e006CommentForm" hidden><p id="e006CommentLocation"></p><textarea id="e006CommentText" required maxlength="4000"></textarea><label><input id="e006AllEpisodes" type="checkbox"> Applies to all full episode views</label><button type="submit">Save comment</button></form><div id="e006CommentList"></div><button id="e006ExportComments" type="button">Export comments JSON</button>';
   document.body.append(drawer);
   const pinLayer = document.createElement("div"); pinLayer.className = "e006-pin-layer"; document.body.append(pinLayer);
   let comments = [], commenting = false, draft = null;

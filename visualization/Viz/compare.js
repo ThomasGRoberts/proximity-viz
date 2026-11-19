@@ -557,13 +557,14 @@ const eciToScene = r => new THREE.Vector3(r[0] / EARTH_RADIUS_KM, r[2] / EARTH_R
 const dots = {};    // dots.A and dots.B
 const trails = {};  // trails.A and trails.B
 for (const slot of ["A", "B"]) {
-  const dot = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(SLOTS[slot].dot), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false })); // globe occludes far-side dots; stable overlay order prevents mutual flicker
+  const dot = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(SLOTS[slot].dot), sizeAttenuation: false, transparent: true, depthTest: !miniScene, depthWrite: false }));
   dot.scale.set(0.055, 0.055, 1);
   dot.renderOrder = slot === "A" ? 9 : 8;
   scene.add(dot);
   dots[slot] = dot;
 
   const material = fadingTrailMaterial(slot);
+  material.depthTest = !miniScene;
   const trail = new THREE.Mesh(new THREE.BufferGeometry(), material);
   scene.add(trail);
   trails[slot] = trail;
@@ -1511,7 +1512,7 @@ function updateReportedBand() {
 // Set the start and end of the time window, and jump to the start.
 function setWindow(newStart, newEnd) {
   if (newEnd <= newStart) newEnd = newStart + DAY_MS;   // Never allow an empty window
-  startMs = newStart; endMs = newEnd; currentMs = localChapterReview ? startMs : episodeConfig ? Date.parse(episodeConfig.initialTime) : startMs;
+  startMs = newStart; endMs = newEnd; currentMs = startMs;
   focusedMinimumMs = null;
   $("startTime").value = toInputValue(startMs);
   $("endTime").value = toInputValue(endMs);
@@ -1742,7 +1743,7 @@ localMotionTrail.visible = false;
 localMotionTrail.renderOrder = 6;
 localMotionTrail.frustumCulled = false;
 scene.add(localMotionTrail);
-const localReferenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: .72, depthTest: true, depthWrite: false }));
+const localReferenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: .72, depthTest: !miniScene, depthWrite: false }));
 localReferenceOrbit.visible = false;
 localReferenceOrbit.frustumCulled = false;
 localReferenceOrbit.renderOrder = 2;
@@ -1813,10 +1814,11 @@ function drawRelative() {
       const sample = stateAt(pair[centre], currentMs + periodMs * (i / 180 - .5), tleCentre);
       if (sample) orbitPoints.push(relativeToScene(ricOf(stateCentre, sample.r)));
     }
-    if (orbitPoints.length > 1 || !miniScene) {
+    if (orbitPoints.length > 1) {
+      orbitPoints.push(orbitPoints[0].clone());
       localReferenceOrbit.geometry.dispose();
       localReferenceOrbit.geometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
-      localReferenceOrbit.visible = orbitPoints.length > 1;
+      localReferenceOrbit.visible = true;
     }
   }
   const points = [], colors = [];
@@ -1872,7 +1874,7 @@ function drawRelative() {
 function sizeSceneSprites() {
   const lens = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   for (const slot of ["A", "B"]) {
-    const dotSize = miniScene ? miniMarkerScale(camera, renderer.domElement.clientHeight) : DOT_SCREEN_SIZE * lens;
+    const dotSize = miniScene ? miniMarkerScale(camera, renderer.domElement.clientHeight) : DOT_SCREEN_SIZE;
     dots[slot].scale.set(dotSize, dotSize, 1);
     labels[slot].scale.set(LABEL_SCREEN_SIZE * lens * 5.33, LABEL_SCREEN_SIZE * lens, 1);
   }
@@ -1970,6 +1972,31 @@ function relativeFraming() {
 // far back. The gap between them (seen side-on) reaches ZOOM_SHARE of the way to the screen edge.
 let autoZoom = true;              // turned off when the user zooms by hand; Home and View closest approach turn it back on
 let cameraEditMode = false;        // development capture mode: suspend automatic camera following
+let publishedCameraViews = [], publishedCameraChapter = "", publishedCameraEnabled = true;
+function followPublishedCamera() {
+  if (!publicChapterView || chapterMode.get("mini") === "1" || view !== "relative" || !publishedCameraEnabled || cameraEditMode) return false;
+  const route = publishedCameraViews.filter(item => item.chapterId === publishedCameraChapter && item.cameraMode === "relative" && item.referenceSatellite === centre && Number.isFinite(Date.parse(item.simulationTimeUtc)))
+    .sort((a, b) => Date.parse(a.simulationTimeUtc) - Date.parse(b.simulationTimeUtc));
+  if (!route.length) return false;
+  const index = route.findIndex(item => Date.parse(item.simulationTimeUtc) >= currentMs);
+  const rightIndex = index < 0 ? route.length - 1 : index;
+  const right = route[rightIndex], left = route[Math.max(0, rightIndex - 1)];
+  const start = Date.parse(left.simulationTimeUtc), end = Date.parse(right.simulationTimeUtc);
+  const t = end === start ? 0 : THREE.MathUtils.clamp((currentMs - start) / (end - start), 0, 1);
+  const smooth = t * t * (3 - 2 * t);
+  const target = new THREE.Vector3(...left.target).lerp(new THREE.Vector3(...right.target), smooth);
+  const eye = new THREE.Vector3(...left.position).sub(new THREE.Vector3(...left.target));
+  const nextEye = new THREE.Vector3(...right.position).sub(new THREE.Vector3(...right.target));
+  const direction = eye.clone().normalize().lerp(nextEye.clone().normalize(), smooth).normalize();
+  const distance = Math.exp(THREE.MathUtils.lerp(Math.log(Math.max(.001, eye.length())), Math.log(Math.max(.001, nextEye.length())), smooth));
+  controls.target.copy(target);
+  camera.position.copy(target).addScaledVector(direction, distance);
+  camera.up.fromArray(left.up).lerp(new THREE.Vector3(...right.up), smooth).normalize();
+  camera.fov = THREE.MathUtils.lerp(left.fieldOfViewDeg, right.fieldOfViewDeg, smooth);
+  camera.zoom = THREE.MathUtils.lerp(left.zoom, right.zoom, smooth);
+  camera.updateProjectionMatrix();
+  return true;
+}
 const ZOOM_SHARE = 0.6;           // seen side-on, the other satellite sits 60% of the way from the middle to the edge
 
 // How far back the camera stands for a given separation (in scene units: 1 = 1,000 km)
@@ -2235,11 +2262,11 @@ for (const [canvasId, inputId, increment] of [["separationChart", "distanceThres
     choose(event.key === "Home" ? 0 : event.key === "End" ? chart.yMax : Number(input.value) + change);
   });
 }
-$("zoomInBtn").addEventListener("click", () => { autoZoom = false; cameraTween =null; camera.position.lerp(controls.target, 0.2); });
-$("zoomOutBtn").addEventListener("click", () => { autoZoom = false; cameraTween = null; camera.position.sub(controls.target).multiplyScalar(1.25).add(controls.target); });
-$("resetBtn").addEventListener("click", () => { autoZoom = true; moveCameraSmoothly(); });
+$("zoomInBtn").addEventListener("click", () => { publishedCameraEnabled = false; autoZoom = false; cameraTween =null; camera.position.lerp(controls.target, 0.2); });
+$("zoomOutBtn").addEventListener("click", () => { publishedCameraEnabled = false; autoZoom = false; cameraTween = null; camera.position.sub(controls.target).multiplyScalar(1.25).add(controls.target); });
+$("resetBtn").addEventListener("click", () => { publishedCameraEnabled = true; autoZoom = true; if (!followPublishedCamera()) moveCameraSmoothly(); });
 // Zooming by hand (mouse wheel, or two fingers on a touch screen) pauses auto-zoom
-renderer.domElement.addEventListener("wheel", () => { autoZoom = false; });
+renderer.domElement.addEventListener("wheel", () => { publishedCameraEnabled = false; autoZoom = false; });
 renderer.domElement.addEventListener("touchstart", event => { if (event.touches.length > 1) autoZoom = false; });
 
 // Temporary view-capture workflow, visible only on the local ?dev=1 preview.
@@ -2261,6 +2288,13 @@ if (!cameraDevTools.hidden) window.__proximityDebug = () => {
 // The local review shell controls E-001 chapters without changing published playback.
 if (localChapterReview) {
   window.__proximityWorkshop = {
+    setPublishedCameraViews(views, chapterId) {
+      publishedCameraViews = Array.isArray(views) ? views : [];
+      publishedCameraChapter = chapterId;
+      publishedCameraEnabled = true;
+      cameraTween = null;
+      followPublishedCamera();
+    },
     setWindow(start, end) {
       const a = Date.parse(start), b = Date.parse(end);
       if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) throw new Error("Invalid chapter window");
@@ -2476,8 +2510,10 @@ function animate(now) {
 
 lastFrameTime = now;
   updateIdentityAges();
-  followGeoReference();
-  keepBothInFrame();
+  if (!followPublishedCamera()) {
+    followGeoReference();
+    keepBothInFrame();
+  }
   controls.update();
   // Projection must use this frame's camera, before WebGLRenderer updates it.
   camera.updateMatrixWorld(true);

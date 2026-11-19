@@ -565,6 +565,10 @@ body.table-spot-mode .component-wrap,body.table-spot-mode .component-wrap *{curs
 .source-carousel-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 .source-carousel-grid .source-stack[hidden]{display:none}
 .source-carousel-controls{position:relative;display:flex;align-items:center;justify-content:center;width:max-content;min-height:34px;margin:8px auto 0;padding:0 29px}
+.expanded-inner.has-visual .evidence-section{padding-bottom:0!important}
+.source-carousel-controls{min-height:26px;margin-top:3px}
+.orbital-preview.mini-loading::after{content:"Loading episode";position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:#fffcf6;color:#786b54;font:600 12px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;animation:mini-loading-pulse 1.2s ease-in-out infinite;pointer-events:none}
+@keyframes mini-loading-pulse{0%,100%{opacity:.55}50%{opacity:1}}
 .source-carousel-dots{display:flex;align-items:center;justify-content:center;gap:8px;min-height:23px}
 .source-carousel-dot{appearance:none;flex:0 0 6px;width:6px;height:6px;margin:0;padding:0;border:0;border-radius:50%;background:rgba(55,65,81,.2);cursor:pointer;transition:width 230ms cubic-bezier(.2,.8,.2,1),flex-basis 230ms cubic-bezier(.2,.8,.2,1),background 180ms ease,border-radius 230ms cubic-bezier(.2,.8,.2,1)}
 .source-carousel-dot.is-active{flex-basis:23px;width:23px;border-radius:999px;background:#f4ba20}

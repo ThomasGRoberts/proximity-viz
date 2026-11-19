@@ -8,7 +8,7 @@ export function reviewHref(surface) {
   if (surface === "Library") return new URL("dynamic-table/", root).href;
   if (surface === "E-001") return new URL("visualization/dev/e001-review/", root).href;
   if (surface === "E-002") return new URL("visualization/dev/e002-control-panel-preview/", root).href;
-  return new URL(`visualization/Viz/compare.html?dev=1&episode=${surface}`, root).href;
+  return new URL(`visualization/Viz/compare.html?dev=1&episode=${publicLabels.get(surface) || surface}`, root).href;
 }
 
 export function currentReviewSurface() {
@@ -16,7 +16,8 @@ export function currentReviewSurface() {
   if (path.includes("/dynamic-table/")) return "Library";
   if (path.includes("/e001-review/")) return "E-001";
   if (path.includes("/e002-control-panel-preview/")) return "E-002";
-  return new URLSearchParams(location.search).get("episode") || "";
+  const publicId = new URLSearchParams(location.search).get("episode") || "";
+  return [...publicLabels].find(([, label]) => label === publicId)?.[0] || publicId;
 }
 
 export function renderSharedCommentList(list, comments, currentSurface) {
@@ -24,12 +25,14 @@ export function renderSharedCommentList(list, comments, currentSurface) {
     const card = document.createElement("div");
     card.className = `${currentSurface.toLowerCase().replace("-", "")}-review-item`;
     const heading = document.createElement("strong");
-    heading.textContent = `${item.surface} · ${item.label}${item.appliesToAllEpisodes ? " · All episodes" : ""}`;
+    const publicId = publicLabels.get(item.surface) || item.surface;
+    const label = item.label.replace(/^E-\d{3}\b/, publicId);
+    heading.textContent = `${publicId} · ${label}${item.appliesToAllEpisodes ? " · All episodes" : ""}`;
     const body = document.createElement("p"); body.textContent = item.text;
     card.append(heading, body);
     if (item.surface !== currentSurface) {
       const jump = document.createElement("a"); jump.href = reviewHref(item.surface);
-      jump.textContent = `Open ${item.surface}`; card.append(jump);
+      jump.textContent = `Open ${publicId}`; card.append(jump);
     }
     return card;
   }));

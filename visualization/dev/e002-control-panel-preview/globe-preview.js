@@ -73,15 +73,15 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   }).catch(() => {});
 
   const markers = {}, labels = {}, trails = {}, labelPlacement = {};
-  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: options.tableMini ? 0x5c513a : 0x222222, transparent: true, opacity: options.tableMini ? .88 : .72, depthTest: true, depthWrite: false }));
+  const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: options.tableMini ? 0x5c513a : 0x222222, transparent: true, opacity: options.tableMini ? .88 : .72, depthTest: !options.tableMini, depthWrite: false }));
   referenceOrbit.frustumCulled = false; referenceOrbit.renderOrder = 2; referenceOrbit.visible = false; scene.add(referenceOrbit);
   for (const item of episode.participants) {
     const color = item.slot === "B" ? MARKER.B : MARKER.A;
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
-    marker.renderOrder = 10;
+    marker.material.depthTest = !options.tableMini; marker.renderOrder = 10;
     scene.add(marker); markers[item.slot] = marker;
     const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A"));
-    trail.material.depthTest = true;
+    trail.material.depthTest = !options.tableMini;
     trail.renderOrder = 9;
     trail.frustumCulled = false;
     scene.add(trail); trails[item.slot] = trail;

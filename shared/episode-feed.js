@@ -1,5 +1,5 @@
-/* The two editorial tabs are fetched on every page load. Legacy IDs remain the
-   stable keys for existing visualizations and historical orbital data. */
+/* The two editorial tabs are fetched on every page load. Orbital asset keys are
+   resolved from spacecraft identities, independently of spreadsheet row IDs. */
 const SHEET_ID = "1IEQ3tmerXXxEty8BcZeaonWhQbHUfA2Z5b44IuCsQ8I";
 export const EPISODES_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=860337817`;
 export const RECORDS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1572351989`;
@@ -49,26 +49,50 @@ export function parseCsv(text, requiredHeaders = ["ID"]) {
 }
 
 let request;
+const ORBITAL_ASSET_BY_OBJECTS = new Map([
+  ["2014-058A|2014-006B", "E-001"],
+  ["2019-079A|2013-043A", "E-002"],
+  ["2016-052B|2019-097A", "E-003"],
+  ["2016-052A|2021-129A", "E-005"],
+  ["2014-058A|1998-052A", "E-006"],
+  ["2016-065A|2007-007B", "E-008"],
+  ["2014-058A|2016-053A", "E-016"],
+  ["2026-083H|2024-043F", "E-059"],
+]);
 export function loadCurrentEpisodes() {
   return request ||= fetchCsv(EPISODES_CSV)
     .then(text => {
       const rows = csvRows(text);
-      if (rows[0]?.[0]?.replace(/^\uFEFF/, "").trim() !== "Episode ID" || rows[0]?.[1]?.trim() !== "Legacy ID" ||
-          rows[0]?.[2]?.trim() !== "Episode Title" || rows[0]?.[17]?.trim() !== "Tagged Records" ||
-          rows[1]?.[5]?.trim() !== "Object A (Chaser)\nCOSPAR ID" || rows[1]?.[6]?.trim() !== "Object B (Target)\nCOSPAR ID")
-        throw new Error("New Episodes tab headers could not be verified");
-      return rows.slice(2).filter(values => values[2]?.trim()).map(values => {
-        const publicId = values[0]?.trim(), legacyId = values[1]?.trim() || publicId;
-        if (!/^E-\d{3,}$/.test(publicId) || !/^E-\d{3,}$/.test(legacyId))
-          throw new Error(`Episode title has an invalid episode ID: ${values[2]}`);
-        const episode = { ID: legacyId, "Episode ID": publicId, "Legacy ID": legacyId,
-          "Episode Name": values[2].trim(), "Episode Description": (values[4] || "").trim(),
-          Orbit: (values[3] || "").trim(), Frontend: "TRUE", Descriptions: (values[17] || "").trim(),
-          "Tagged Records": (values[17] || "").trim(), "Object C's Role": (values[8] || "").trim() };
-        for (const [index, slot] of ["A", "B", "C"].entries()) episode[`Object ${slot}`] = (values[5 + index] || "").trim();
+      const top = rows[0]?.map(value => value.replace(/^\uFEFF/, "").trim()) || [];
+      const sub = rows[1]?.map(value => value.trim()) || [];
+      const column = name => top.findIndex(value => value === name);
+      const subcolumn = prefix => sub.findIndex(value => value.startsWith(prefix));
+      const required = ["Episode ID", "Episode Title", "Orbit", "Episode description", "Tagged Records"];
+      if (required.some(name => column(name) < 0) || subcolumn("Object A") < 0 || subcolumn("Object B") < 0)
+        throw new Error("Episodes tab headers could not be verified");
+      const cell = (values, index) => index < 0 ? "" : (values[index] || "").trim();
+      const chapterColumn = (number, part) => {
+        const explicit = top.findIndex(value => value.toLowerCase().startsWith(`chapter ${number} ${part}`));
+        if (explicit >= 0) return explicit;
+        const first = top.findIndex(value => value === `Chapter ${number}`);
+        if (first < 0) return -1;
+        return sub.findIndex((value, index) => index >= first && index <= first + 1 &&
+          (part === "Center" ? /^Centerpoint/i : /^Width/i).test(value));
+      };
+      return rows.slice(2).filter(values => cell(values, column("Episode Title"))).map(values => {
+        const publicId = cell(values, column("Episode ID"));
+        const objects = ["A", "B", "C"].map(slot => cell(values, subcolumn(`Object ${slot}`)));
+        const assetId = ORBITAL_ASSET_BY_OBJECTS.get(`${objects[0]}|${objects[1]}`);
+        if (!/^E-\d{3,}$/.test(publicId) || !assetId)
+          throw new Error(`Episode has an invalid ID or unmapped spacecraft: ${cell(values, column("Episode Title"))}`);
+        const episode = { ID: assetId, "Episode ID": publicId,
+          "Episode Name": cell(values, column("Episode Title")), "Episode Description": cell(values, column("Episode description")),
+          Orbit: cell(values, column("Orbit")), Frontend: "TRUE", Descriptions: cell(values, column("Tagged Records")),
+          "Tagged Records": cell(values, column("Tagged Records")), "Object C's Role": cell(values, subcolumn("Object C’s Role")) || cell(values, subcolumn("Object C's Role")) };
+        for (const [index, slot] of ["A", "B", "C"].entries()) episode[`Object ${slot}`] = objects[index];
         for (let index = 1; index <= 4; index++) {
-          episode[`Chapter ${index} Center`] = (values[7 + 2 * index] || "").trim();
-          episode[`Chapter ${index} Width (hours)`] = (values[8 + 2 * index] || "").trim();
+          episode[`Chapter ${index} Center`] = cell(values, chapterColumn(index, "Center"));
+          episode[`Chapter ${index} Width (hours)`] = cell(values, chapterColumn(index, "Width"));
         }
         return episode;
       });
@@ -85,14 +109,14 @@ export function loadCurrentRecords() {
   return recordRequest ||= Promise.all([fetchCsv(RECORDS_CSV), loadCurrentEpisodes()])
     .then(([text, feed]) => {
       const records = parseCsv(text, ["Record ID", "Related episodes", "URL", "Category"]);
-      const publicToLegacy = new Map(feed.episodes.map(row => [row["Episode ID"], row.ID]));
+      const publicToAsset = new Map(feed.episodes.map(row => [row["Episode ID"], row.ID]));
       const ids = records.map(row => row["Record ID"]);
       if (new Set(ids).size !== ids.length) throw new Error("Records sheet contains duplicate record IDs");
       const descriptions = records.map(row => {
         const linked = row["Related episodes"].split(/[,;\n]/).map(id => id.trim()).filter(Boolean);
-        const unknown = linked.filter(id => !publicToLegacy.has(id));
+        const unknown = linked.filter(id => !publicToAsset.has(id));
         if (unknown.length) throw new Error(`Record ${row["Record ID"]} refers to unknown episode ${unknown.join(", ")}`);
-        return { ...row, ID: row["Record ID"], Episode: linked.map(id => publicToLegacy.get(id)).join(", "),
+        return { ...row, ID: row["Record ID"], Episode: linked.map(id => publicToAsset.get(id)).join(", "),
           "Source URL": row.URL, "Description type": row.Category };
       });
       return { descriptions, records, fetchedUtc: new Date().toISOString() };

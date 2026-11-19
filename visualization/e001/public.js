@@ -9,6 +9,7 @@ const api = () => frame.contentWindow?.__proximityWorkshop;
 const chapterDateLabel = value => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(value));
 const dateLabel = value => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value)) + " UTC";
 let chapters = [], selected = 0, switching = false, lastTime = 0, wasPlaying = false;
+let savedCameraViews = [];
 
 function syncClock() {
   if (!api() || !chapters.length) return;
@@ -50,7 +51,8 @@ async function selectChapter(index, time = null, resume = false) {
   await new Promise(resolve => setTimeout(resolve, 1100));
   try {
     api().setWindow(chapter.start, chapter.end);
-    api().setTime(time || chapter.center);
+    api().setTime(time ?? chapter.start);
+    api().setPublishedCameraViews(savedCameraViews, chapter.id);
     selected = index;
     lastTime = api().state.time;
     syncClock();
@@ -66,7 +68,8 @@ async function selectChapter(index, time = null, resume = false) {
 }
 
 async function init() {
-  const feed = await loadCurrentEpisodes();
+  const [feed, saved] = await Promise.all([loadCurrentEpisodes(), fetch("../dev/e001-review/saved-camera-views.json", { cache: "no-store" }).then(response => response.ok ? response.json() : { views: [] })]);
+  savedCameraViews = saved.views || [];
   const row = feed.episodes.find(item => item.ID === "E-001");
   chapters = episodeChapters(row).map(item => ({ ...item, label: chapterDateLabel(item.center) }));
   if (!chapters.length) throw new Error("E-001 has no valid chapters in the published sheet");
@@ -76,7 +79,8 @@ async function init() {
   void installGlossary(doc().getElementById("ui"), frame).catch(console.error);
   const first = chapters[0];
   api().setWindow(first.start, first.end);
-  api().setTime(first.center);
+  api().setTime(first.start);
+  api().setPublishedCameraViews(savedCameraViews, first.id);
   selected = 0;
   lastTime = api().state.time;
   syncClock();

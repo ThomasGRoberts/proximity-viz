@@ -23,10 +23,12 @@ export function sanitizeEpisodeDescription(markup) {
 }
 
 const description = document.getElementById("episodeDescription");
-const episodeId = new URLSearchParams(location.search).get("episode") || "E-001";
+const query = new URLSearchParams(location.search);
+const publicId = query.get("episode") || "E-001";
 loadCurrentEpisodes().then(feed => {
-  const episode = feed.episodes.find(row => row.ID === episodeId);
-  if (!episode) throw new Error(`${episodeId} missing from current Episodes sheet`);
+  const episode = feed.episodes.find(row => query.has("asset") ? row.ID === query.get("asset") : row["Episode ID"] === publicId);
+  if (!episode) throw new Error(`${publicId} missing from current Episodes sheet`);
+  const episodeId = episode.ID;
   if (episodeId === "E-001") episodeUtcInterval(episode);
   const text = episode["Episode Description"];
   if (!text && ["E-003", "E-005", "E-006"].includes(episodeId)) { description.hidden = true; return; }

@@ -416,6 +416,13 @@ function sourceFallback(meta, row, url, documentSource) {
   return fallback;
 }
 const reviewedSourceMetadata = {
+  "https://www.nytimes.com/2026/10/19/science/russia-satellite-kosmos-2612.html": {
+    title: "Russian Satellite Makes a Menacing Approach to Another Craft in Orbit",
+    publisher: "The New York Times",
+    publishedDate: "2026-10-19",
+    previewPath: "./assets/source-previews/e059-nyt-record.svg",
+    imageAlt: "Designed preview identifying the New York Times report; article image unavailable",
+  },
   "https://hansard.parliament.uk/commons/2021-07-14/debates/D9862D76-47F8-4DE4-AC12-9BAA4A3BD7AF/SpaceDebris": {
     kind: "document",
     title: "Space Debris",
@@ -523,8 +530,9 @@ function expandedContent(row, data) {
   else context.append(el("p", "description-pending", "Episode description pending editorial entry."));
   overview.append(context);
   if (hasEpisodeVisual(episodeId)) {
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : episodeId === "E-002" ? "../visualization/e002/" : ["E-003", "E-006", "E-008", "E-016", "E-059"].includes(episodeId) ? `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${episodeId}` : "../visualization/Viz/compare.html?episode=E-005", location.href).href;
-    viz.setAttribute("aria-label", `${episodeId} orbital visualization`);
+    const publicId = publicEpisodeId(row);
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : episodeId === "E-002" ? "../visualization/e002/" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}`, location.href).href;
+    viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
     const hoverScene = active => {
@@ -719,7 +727,7 @@ async function applyPublishedMiniConfig(frame, episodeId) {
   const config = (await publishedMiniSettings)[episodeId];
   if (!config) { frame.dataset.miniConfigured = "1"; return; }
   if (!frame.isConnected) return;
-  for (let attempt = 0; attempt < 240 && frame.isConnected; attempt++) {
+  for (let attempt = 0; attempt < 600 && frame.isConnected; attempt++) {
     const mini = frame.contentWindow?.miniWorkshop;
     if (!mini?.ready) { await new Promise(resolve => setTimeout(resolve, 100)); continue; }
     try {
@@ -735,8 +743,14 @@ async function applyPublishedMiniConfig(frame, episodeId) {
       frame.style.height = y < 0 ? `calc(100% + ${-y}px)` : "100%";
       mini.setPlaying(true);
       frame.dataset.miniConfigured = "1";
-    } catch (error) { console.warn(`${episodeId} mini settings could not be applied`, error); }
-    return;
+      return;
+    } catch (error) {
+      console.warn(`${episodeId} mini settings could not be applied; using the current chapter`, error);
+      mini.selectWindow(mini.windows[0]?.id);
+      mini.setPlaying(true);
+      frame.dataset.miniConfigured = "1";
+      return;
+    }
   }
 }
 function revealMiniAsOneScene(frame) {
@@ -745,8 +759,9 @@ function revealMiniAsOneScene(frame) {
   let tries = 0;
   const check = () => {
     if (!frame.isConnected) { if (++tries < 125) setTimeout(check, 80); return; }
-    if ((frame.contentWindow?.miniWorkshop?.ready && frame.dataset.miniConfigured === "1") || ++tries >= 300) {
-      setTimeout(() => { if (frame.isConnected) frame.style.opacity = "1"; }, 150);
+    frame.parentElement?.classList.add("mini-loading");
+    if (frame.contentWindow?.miniWorkshop?.ready && frame.dataset.miniConfigured === "1") {
+      setTimeout(() => { if (frame.isConnected) { frame.style.opacity = "1"; frame.parentElement?.classList.remove("mini-loading"); } }, 150);
     } else setTimeout(check, 80);
   };
   check();
@@ -793,8 +808,8 @@ function prewarmE005() {
   warmedE005Host = el("div", "orbital-preview e005-prewarm");
   warmedE005Frame = el("iframe", "e005-mini");
   revealMiniAsOneScene(warmedE005Frame);
-  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-005&table=28", location.href).href;
-  warmedE005Frame.title = "Animated E-005 miniature orbital reconstruction";
+  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&asset=E-005&table=28", location.href).href;
+  warmedE005Frame.title = `Animated ${state.live?.episodes?.find(row => row.ID === "E-005")?.["Episode ID"] || "E-004"} miniature orbital reconstruction`;
   warmedE005Frame.tabIndex = -1; warmedE005Frame.setAttribute("aria-hidden", "true");
   warmedE005Host.append(warmedE005Frame); table.append(warmedE005Host);
   warmedE005Frame.addEventListener("load", () => {
@@ -823,6 +838,7 @@ function stopPreview() {
   if (warmedE005Host) {
     warmedE005Host.classList.remove("mini-editing-viewport", "e005-live");
     warmedE005Host.classList.add("e005-prewarm");
+    document.querySelector(".table-wrap")?.append(warmedE005Host);
   }
   document.querySelectorAll(".table-wrap > .orbital-preview").forEach(host => { if (host !== warmedE002Host && host !== warmedE001Host && host !== warmedE005Host) host.remove(); });
 }
@@ -952,21 +968,17 @@ function startPreview(row) {
     return;
   }
   if (episodeId === "E-005" && warmedE005Host && warmedE005Frame) {
-    host.style.visibility = "hidden";
+    host.replaceWith(warmedE005Host);
     warmedE005Host.classList.remove("e005-prewarm"); warmedE005Host.classList.add("e005-live");
     miniFrame = warmedE005Frame; miniBackdropHost = warmedE005Host;
-    updateE001BackdropBounds(warmedE005Host, tableWrap, expanded);
-    miniResizeObserver?.disconnect();
-    miniResizeObserver = new ResizeObserver(() => updateE001BackdropBounds(warmedE005Host, tableWrap, expanded));
-    miniResizeObserver.observe(expanded);
     localReview?.attachMini(warmedE005Frame);
     return;
   }
   if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
     revealMiniAsOneScene(frame);
-    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&episode=${episodeId}&table=28`, location.href).href;
-    frame.title = `Animated ${episodeId} miniature orbital reconstruction`;
+    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=28`, location.href).href;
+    frame.title = `Animated ${publicEpisodeId(row)} miniature orbital reconstruction`;
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
     host.replaceChildren(frame);
     miniFrame = frame; miniBackdropHost = host;
