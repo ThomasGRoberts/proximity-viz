@@ -91,7 +91,9 @@ async function start() {
   await Promise.all(participants.map(async item => {
     const source = manifest.datasets.find(entry => entry.object.norad === item.norad);
     if (!source) throw new Error(`No dated elements for ${item.name}`);
-    const response = await fetch(new URL(source.url, manifestBaseUrl), { cache: "no-store" });
+    const sourceUrl = new URL(source.url, manifestBaseUrl);
+    sourceUrl.searchParams.set("sha", source.sha256.slice(0, 16));
+    const response = await fetch(sourceUrl);
     if (!response.ok) throw new Error(`${item.name} elements returned ${response.status}`);
     const bytes = await response.arrayBuffer();
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), byte => byte.toString(16).padStart(2, "0")).join("");
@@ -317,7 +319,9 @@ async function start() {
       if (!min) { target.textContent = "Minimum this episode: unavailable"; continue; }
       const strong = document.createElement("strong");
       const value = min[selected][key];
-      strong.textContent = unit === "km" ? `${value < 10 ? value.toFixed(2) : Math.round(value / 5) * 5} km` : value < 1 ? `${value.toFixed(2)} m/s` : value < 1000 ? `${Math.round(value)} m/s` : `${(value / 1000).toFixed(2)} km/s`;
+      strong.textContent = unit === "km"
+        ? value < 1 ? `${Math.round(value * 1000).toLocaleString()} m` : `${value < 10 ? value.toFixed(2) : Math.round(value / 5) * 5} km`
+        : `${value < 10 ? value.toFixed(2) : Math.round(value).toLocaleString()} m/s`;
       const link = document.createElement("a"); link.href = "#playbackDock"; link.textContent = shortUtc(min.ms);
       link.title = `Jump playback to ${new Date(min.ms).toISOString()}`;
       link.setAttribute("aria-label", link.title);

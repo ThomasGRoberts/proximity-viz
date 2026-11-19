@@ -834,7 +834,7 @@ function prewarmE001() {
   warmedE001Frame = el("iframe", "e001-mini");
   warmedE001Frame.dataset.miniBaseHeight = "450";
   revealMiniAsOneScene(warmedE001Frame);
-  warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=29", location.href).href;
+  warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=31", location.href).href;
   warmedE001Frame.title = "Animated E-001 satellite-centered orbital reconstruction";
   warmedE001Frame.tabIndex = -1; warmedE001Frame.setAttribute("aria-hidden", "true");
   warmedE001Host.append(warmedE001Frame); table.append(warmedE001Host);
@@ -851,7 +851,7 @@ function prewarmE002() {
   warmedE002Host = el("div", "orbital-preview e002-prewarm");
   warmedE002Frame = el("iframe", "e002-mini");
   revealMiniAsOneScene(warmedE002Frame);
-  warmedE002Frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=30", location.href).href;
+  warmedE002Frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=31", location.href).href;
   warmedE002Frame.title = "Animated E-002 miniature orbital reconstruction";
   warmedE002Frame.tabIndex = -1; warmedE002Frame.setAttribute("aria-hidden", "true");
   warmedE002Host.append(warmedE002Frame); table.append(warmedE002Host);
@@ -868,7 +868,7 @@ function prewarmE005() {
   warmedE005Host = el("div", "orbital-preview e005-prewarm");
   warmedE005Frame = el("iframe", "e005-mini");
   revealMiniAsOneScene(warmedE005Frame);
-  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&asset=E-005&table=30", location.href).href;
+  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&asset=E-005&table=31", location.href).href;
   warmedE005Frame.title = `Animated ${state.live?.episodes?.find(row => row.ID === "E-005")?.["Episode ID"] || "E-004"} miniature orbital reconstruction`;
   warmedE005Frame.tabIndex = -1; warmedE005Frame.setAttribute("aria-hidden", "true");
   warmedE005Host.append(warmedE005Frame); table.append(warmedE005Host);
@@ -877,6 +877,65 @@ function prewarmE005() {
     void applyPublishedMiniConfig(warmedE005Frame, "E-005");
     if (miniFrame === warmedE005Frame) localReview?.attachMini(warmedE005Frame);
   });
+}
+function stageEpisodeAssets() {
+  // Let the table paint first. Browser prefetches use low network priority and
+  // do not create eight simultaneous WebGL contexts in hidden iframes.
+  const idle = callback => "requestIdleCallback" in window
+    ? requestIdleCallback(callback, { timeout: 1500 }) : setTimeout(callback, 250);
+  const orbitalAssets = [["e003", 6], ["e005", 11], ["e006", 13], ["e008", 5], ["e016", 3], ["e059", 4]];
+  const assets = [
+    "../visualization/Viz/compare.html",
+    "../visualization/e001/",
+    "../visualization/e002/",
+    "../visualization/e001/public.js?v=3",
+    "../visualization/dev/e002-control-panel-preview/app.js?v=5",
+    "../visualization/Viz/vendor/three/three.module.js",
+    "../visualization/Viz/vendor/countries-50m.json",
+    ...orbitalAssets.map(([name, version]) => `../visualization/Viz/episode-${name}.js?v=${version}`),
+    "../visualization/dev/e002-control-panel-preview/table-mini.html",
+    ...orbitalAssets.map(([name]) => `../visualization/dev/${name}/data/provenance.json`),
+  ];
+  let index = 0, queued = false;
+  const scheduleNext = () => {
+    if (queued) return;
+    queued = true;
+    idle(() => { queued = false; next(); });
+  };
+  const next = () => {
+    if (index >= assets.length) return;
+    if (document.visibilityState === "visible") {
+      const path = assets[index++], url = new URL(path, location.href);
+      if (path.endsWith("/provenance.json")) {
+        fetch(url).then(response => response.ok ? response.json() : null).then(manifest => {
+          for (const source of manifest?.datasets || []) {
+            if (!source.sha256 || /^https?:/.test(source.url)) continue;
+            const dataUrl = new URL(source.url, new URL("../", url));
+            dataUrl.searchParams.set("sha", source.sha256.slice(0, 16));
+            assets.push(dataUrl.href);
+          }
+          scheduleNext();
+        }).catch(error => console.warn(`Background elements unavailable: ${url.pathname}`, error));
+      } else {
+        const link = document.createElement("link");
+        link.rel = "prefetch"; link.as = url.pathname.endsWith(".js") ? "script" : "fetch";
+        link.href = url.href;
+        document.head.append(link);
+      }
+    }
+    scheduleNext();
+  };
+  scheduleNext();
+  // Stagger the three reusable mini scenes after the rows exist.
+  const warmers = [prewarmE002, prewarmE001, prewarmE005];
+  let warmIndex = 0;
+  const warm = () => {
+    if (warmIndex >= warmers.length) return;
+    if (document.visibilityState !== "visible" || state.selected) { idle(warm); return; }
+    warmers[warmIndex++]();
+    setTimeout(() => idle(warm), 550);
+  };
+  idle(warm);
 }
 function stopPreview() {
   cancelAnimationFrame(miniDotFrame); miniDotFrame = 0;
@@ -1038,7 +1097,7 @@ function startPreview(row) {
     }
     if (frame !== warmedE002Frame) {
       revealMiniAsOneScene(frame);
-      frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=30", location.href).href;
+      frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=31", location.href).href;
       frame.title = "Animated E-002 miniature orbital reconstruction";
       frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
       backdrop.append(frame);
@@ -1060,7 +1119,7 @@ function startPreview(row) {
   if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
     revealMiniAsOneScene(frame);
-    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=29`, location.href).href;
+    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=31`, location.href).href;
     frame.title = `Animated ${publicEpisodeId(row)} miniature orbital reconstruction`;
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
     host.replaceChildren(frame);
@@ -1070,7 +1129,7 @@ function startPreview(row) {
       const fillExpandedRow = () => {
         if (!expanded?.isConnected || !host.isConnected) return;
         const area = expanded.getBoundingClientRect(), link = host.parentElement.getBoundingClientRect();
-        Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top}px`, width: `${area.width}px`, height: `${area.height}px` });
+        Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top - 1}px`, width: `${area.width}px`, height: `${area.height + 1}px` });
         positionMiniLoader(host, header, expanded);
         Object.assign(frame.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
       };
@@ -1195,7 +1254,6 @@ async function init() {
     const { createLocalReview } = await import("./local-review.js?v=7");
     localReview = createLocalReview({ getMini: () => miniFrame?.contentWindow?.miniWorkshop, getFrame: () => miniFrame, setEditing: setMiniEditing, getSelectedEpisode: () => field(state.selected, "ID"), getPublicEpisode: assetId => state.live?.episodes?.find(row => row.ID === assetId)?.["Episode ID"] || assetId });
   }
-  prewarmE002(); prewarmE001(); prewarmE005();
   $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; setStatus(); render(); });
   $("#search").addEventListener("input", event => { state.query = event.target.value.trim(); render(); });
   document.querySelectorAll(".sort-head").forEach(button => button.addEventListener("click", () => { const key = button.dataset.sort; state.sort = { key, direction: state.sort.key === key ? (state.sort.direction === "desc" ? "asc" : "desc") : key === "title" || key === "orbit" ? "asc" : "desc" }; render(); }));
@@ -1204,14 +1262,7 @@ async function init() {
     loadCurrentEpisodes(),
     loadCurrentDescriptions().catch(error => ({ descriptions: [], error: error.message })),
     fetch("./data/space-track-satcat.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Space-Track catalog returned ${response.status}`); return response.json(); }),
-    fetch("./data/e002-metrics.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`E-002 metrics returned ${response.status}`); return response.json(); }),
-    localE003Review ? fetch("../visualization/dev/e003/space-track-e003.json", { cache: "no-store" }).then(response => response.json()) : Promise.resolve(null),
-    fetch("../visualization/dev/e016/space-track-e016.json", { cache: "no-store" }).then(response => response.json()),
-    fetch("../visualization/dev/e059/space-track-e059.json", { cache: "no-store" }).then(response => response.json()),
-  ]).then(([snapshot, feed, descriptionFeed, spaceTrack, e002Metrics, e003Catalog, e016Catalog, e059Catalog]) => {
-    state.e002Metrics = e002Metrics;
-    if (e003Catalog?.records) spaceTrack.records = { ...spaceTrack.records, ...e003Catalog.records };
-    spaceTrack.records = { ...spaceTrack.records, ...e016Catalog.records, ...e059Catalog.records };
+  ]).then(([snapshot, feed, descriptionFeed, spaceTrack]) => {
     const episodes = feed.episodes;
     const e001 = episodes.find(row => field(row, "ID") === "E-001");
     if (e001) episodeUtcInterval(e001);
@@ -1223,6 +1274,24 @@ async function init() {
   const initialSelection = state.selected;
   state.selected = null;
   setStatus(); render();
+  stageEpisodeAssets();
+  // Supplementary values fill in after the indexed rows have already painted.
+  void Promise.allSettled([
+    fetch("./data/e002-metrics.json").then(response => { if (!response.ok) throw new Error(`E-002 metrics returned ${response.status}`); return response.json(); }),
+    localE003Review ? fetch("../visualization/dev/e003/space-track-e003.json").then(response => response.json()) : Promise.resolve(null),
+    fetch("../visualization/dev/e016/space-track-e016.json").then(response => response.json()),
+    fetch("../visualization/dev/e059/space-track-e059.json").then(response => response.json()),
+  ]).then(results => {
+    const [metrics, e003, e016, e059] = results.map(result => result.status === "fulfilled" ? result.value : null);
+    if (metrics) state.e002Metrics = metrics;
+    for (const catalog of [e003, e016, e059]) if (catalog?.records && state.live?.spaceTrack?.records) Object.assign(state.live.spaceTrack.records, catalog.records);
+    for (const key of ["distance", "speed"]) {
+      const cell = document.querySelector(`.episode-row[data-episode-id="E-002"] .${key === "distance" ? "separation-column" : "speed-column"}`);
+      const row = state.live.episodes?.find(item => item.ID === "E-002");
+      if (cell && row) cell.replaceChildren(proximityNode(row, key));
+    }
+    if (state.sort.key === "distance" || state.sort.key === "speed") render();
+  });
   await measureExpandedRowHeight().catch(error => console.warn("Expanded-row measurement unavailable", error));
   state.selected = initialSelection; render();
   for (const id of ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"]) {

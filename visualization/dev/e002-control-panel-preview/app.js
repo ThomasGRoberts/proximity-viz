@@ -1,11 +1,12 @@
 import { loadOrbitalPreview, preloadOrbitalElements, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js";
-import { createGlobePreview } from "./globe-preview.js";
+import { createGlobePreview } from "./globe-preview.js?v=6";
 import { reviewHref } from "../review-shell.js?v=2";
 import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../../shared/episode-feed.js?v=4";
 import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.js";
 import { installGlossary } from "./glossary.js";
 import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
+import { installEpisodeNavigation } from "../../../shared/episode-navigation.js";
 
 const $ = id => document.getElementById(id);
 void preloadOrbitalElements().catch(() => {});
@@ -609,6 +610,7 @@ async function buildPanel() {
   const actionText = document.createElement("span"); actionText.className = "episode-hover-text"; actionText.textContent = "Choose a different episode"; action.append(actionText);
   focusTop.append(eyebrow, action); focusLink.append(focusTop, episodeTitle); focus.append(focusLink);
   ui.querySelector(".episodeHeader h1").after(focus);
+  installEpisodeNavigation(focus, sheet.episodes, "E-002", { review: !publishedMode, period: false });
   ui.querySelector("#metricArea").closest(".panelSection").classList.add("results-section");
   const description = ui.querySelector("#episodeDescription");
   const paragraph = document.createElement("p");

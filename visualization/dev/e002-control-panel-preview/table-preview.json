@@ -181,10 +181,10 @@
       "frameMode": "relative",
       "loopStartUtc": "2018-02-28T22:37:08.571Z",
       "loopEndUtc": "2018-03-07T15:32:51.429Z",
-      "rate": 3600,
+      "rate": 7200,
       "camera": {
         "name": "Dynamic Table mini preview",
-        "timestampUtc": "2018-03-02T03:12:37.971Z",
+        "timestampUtc": "2018-03-02T13:52:38.091Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
@@ -249,23 +249,23 @@
       "episodeId": "E-059",
       "windowId": "chapter-1",
       "frameMode": "relative",
-      "loopStartUtc": "2026-10-22T23:10:00.000Z",
+      "loopStartUtc": "2026-10-13T01:10:00.000Z",
       "loopEndUtc": "2026-10-23T01:10:00.000Z",
-      "rate": 600,
+      "rate": 3600,
       "camera": {
         "name": "Dynamic Table mini preview",
         "timestampUtc": "2026-10-23T01:10:00.000Z",
         "frameMode": "relative",
         "referenceSatellite": "B",
         "position": [
-          0.20653451863352026,
-          0.01670260116794039,
-          0.06697955895504264
+          0.7435602104393614,
+          0.12252529928993636,
+          0.21954114043750045
         ],
         "target": [
-          0.002965404888713711,
-          -0.02171606969716362,
-          0.0009454217047863528
+          0.01682389033036156,
+          -0.09314401555030277,
+          0.004904534107999561
         ],
         "up": [
           0,
@@ -281,5 +281,5 @@
       }
     }
   },
-  "savedAt": "2026-11-19T05:52:41+00:00"
+  "savedAt": "2026-11-19T12:05:50+00:00"
 }

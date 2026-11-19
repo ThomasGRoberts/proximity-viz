@@ -564,6 +564,7 @@ for (const slot of ["A", "B"]) {
   dots[slot] = dot;
 
   const material = fadingTrailMaterial(slot);
+  material.uniforms.uOpacity.value = slot === "B" ? .85 : 1;
   material.depthTest = !miniScene;
   const trail = new THREE.Mesh(new THREE.BufferGeometry(), material);
   scene.add(trail);

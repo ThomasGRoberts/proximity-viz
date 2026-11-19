@@ -1,5 +1,5 @@
 import { loadCurrentEpisodes, episodeChapters } from "../../shared/episode-feed.js?v=4";
-import { installChapterButtons } from "../dev/e001-review/panel-layout.js?v=2";
+import { installChapterButtons } from "../dev/e001-review/panel-layout.js?v=3";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 
 const $ = id => document.getElementById(id);
@@ -75,7 +75,7 @@ async function init() {
   if (!chapters.length) throw new Error("E-001 has no valid chapters in the published sheet");
   for (let tries = 0; tries < 120 && !(api()?.state.start > 0); tries++) await new Promise(resolve => setTimeout(resolve, 250));
   if (!(api()?.state.start > 0)) throw new Error("E-001 visualization did not finish loading");
-  installChapterButtons({ doc, api, syncClock, selectChapter, chapters, dateLabel, placePins: () => {}, frame });
+  installChapterButtons({ doc, api, syncClock, selectChapter, chapters, dateLabel, placePins: () => {}, frame, episodes: feed.episodes });
   void installGlossary(doc().getElementById("ui"), frame).catch(console.error);
   const first = chapters[0];
   api().setWindow(first.start, first.end);

@@ -91,7 +91,9 @@ async function start() {
   await Promise.all(participants.map(async item => {
     const source = manifest.datasets.find(entry => entry.object.norad === item.norad);
     if (!source) throw new Error(`No dated elements for ${item.name}`);
-    const response = await fetch(new URL(source.url, manifestBaseUrl), { cache: "no-store" });
+    const sourceUrl = new URL(source.url, manifestBaseUrl);
+    sourceUrl.searchParams.set("sha", source.sha256.slice(0, 16));
+    const response = await fetch(sourceUrl);
     if (!response.ok) throw new Error(`${item.name} elements returned ${response.status}`);
     const bytes = await response.arrayBuffer();
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), byte => byte.toString(16).padStart(2, "0")).join("");

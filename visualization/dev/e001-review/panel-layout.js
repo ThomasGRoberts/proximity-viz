@@ -1,5 +1,7 @@
+import { installEpisodeNavigation } from "../../../shared/episode-navigation.js";
+
 // Shared E-001 episode panel treatment for the local workshop and public view.
-export function installChapterButtons({ doc, api, syncClock, selectChapter, chapters, dateLabel, placePins, frame }) {
+export function installChapterButtons({ doc, api, syncClock, selectChapter, chapters, dateLabel, placePins, frame, episodes, review = false }) {
   const dock = doc().getElementById("playbackDock"), nav = doc().createElement("div");
   doc().body.classList.add("e002-shared");
   doc().body.dataset.books = "off";
@@ -49,6 +51,7 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
       : `from ${firstPeriod.part} ${firstPeriod.year} to ${lastPeriod.part} ${lastPeriod.year}`;
   focusLink.append(focusTop, title, period); focus.append(focusLink);
   ui.querySelector(".episodeHeader h1").after(focus);
+  installEpisodeNavigation(focus, episodes, "E-001", { review });
   ui.querySelector("#metricArea")?.closest(".panelSection")?.classList.add("results-section");
   ui.querySelector("#rangeMetric .statLabel").textContent = "Separation distance";
   ui.querySelector("#speedMetric .statLabel").textContent = "Relative velocity";

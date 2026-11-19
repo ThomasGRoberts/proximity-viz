@@ -80,7 +80,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
     marker.material.depthTest = !options.tableMini; marker.renderOrder = 10;
     scene.add(marker); markers[item.slot] = marker;
-    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A", 1.55, options.tableMini ? 1 : 0));
+    const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A"));
     trail.material.depthTest = !options.tableMini;
     trail.renderOrder = 9;
     trail.frustumCulled = false;
@@ -159,7 +159,9 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   }
   let orbitSourceKey = "", orbitSourcePoints = [], referenceSwingUntil = 0;
   let miniTleAnchorMs = NaN;
-  const frameAt = (window, ms, selectionMs = ms) => model.frame(window, ms, options.tableMini && Number.isFinite(miniTleAnchorMs) ? miniTleAnchorMs : selectionMs);
+  const frameAt = (window, ms, selectionMs = ms) => model.frame(window, ms,
+    options.tableMini && Number.isFinite(miniTleAnchorMs) ? miniTleAnchorMs
+      : mode === "eci" ? Date.parse(window.anchor) : selectionMs);
   let positions = {}, earthRadius = EARTH_KM / 1000, earthCenter = new THREE.Vector3();
   const earthTargetQuaternion = new THREE.Quaternion();
   let markerScale = .1, desiredDistance = .55, lastTrailPaint = 0;
@@ -366,7 +368,9 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
       for (let index = 0; index < samples.length; index++) {
         const sample = samples[index].frame, body = sample[item.slot];
         const reference = activeReference(sample);
-        if (!body || (mode === "relative" && !reference)) continue;
+        // A missing propagation sample ends the older segment. Never draw a
+        // straight bridge across a gap in historical elements.
+        if (!body || (mode === "relative" && !reference)) { allPoints.length = 0; continue; }
         const point = mode === "relative" ? relativePoint(reference, body, referenceAxes(reference)) : toScene(body.position);
         allPoints.push(point);
       }

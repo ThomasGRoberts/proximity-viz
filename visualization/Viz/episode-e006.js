@@ -92,7 +92,9 @@ async function start() {
   await Promise.all(participants.map(async item => {
     const source = manifest.datasets.find(entry => entry.object.norad === item.norad);
     if (!source) throw new Error(`No dated elements for ${item.name}`);
-    const response = await fetch(new URL(source.url, manifestBaseUrl), { cache: "no-store" });
+    const sourceUrl = new URL(source.url, manifestBaseUrl);
+    sourceUrl.searchParams.set("sha", source.sha256.slice(0, 16));
+    const response = await fetch(sourceUrl);
     if (!response.ok) throw new Error(`${item.name} elements returned ${response.status}`);
     const bytes = await response.arrayBuffer();
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), byte => byte.toString(16).padStart(2, "0")).join("");
@@ -587,7 +589,7 @@ async function start() {
     }
     if (referenceSlot !== "A") referenceSlot = slot; autoCamera = true; lastTrailKey = ""; lastReferenceOrbitKey = ""; updateMinima(); updateSticky(); render();
   }
-  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
+  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); renderer.domElement.style.width = `${width}px`; renderer.domElement.style.height = `${height}px`; for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
   new ResizeObserver(resize).observe(sceneHost); new ResizeObserver(drawCharts).observe($("distanceChartGroup"));
   selector.addEventListener("click", event => { const button = event.target.closest("button[data-slot]"); if (button) { if (button.dataset.slot === selected) sharedChevron.click(); else chooseChaser(button.dataset.slot); } });
   chapterNav.addEventListener("click", event => { const button = event.target.closest("button[data-chapter]"); if (button) void switchChapter(button.dataset.chapter); });

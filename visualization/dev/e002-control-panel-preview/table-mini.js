@@ -1,6 +1,6 @@
 import { loadCurrentEpisodes, episodeChapters, cleanCospar } from "../../../shared/episode-feed.js?v=4";
 import { loadOrbitalPreview, preloadOrbitalElements } from "./orbital-preview.js";
-import { createGlobePreview } from "./globe-preview.js?tablemini=9";
+import { createGlobePreview } from "./globe-preview.js?tablemini=10";
 
 const $ = id => document.getElementById(id);
 void preloadOrbitalElements().catch(() => {});

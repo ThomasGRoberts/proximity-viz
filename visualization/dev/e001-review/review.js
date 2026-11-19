@@ -1,7 +1,7 @@
 import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-feed.js";
 import { createCameraWorkshop } from "../e002-control-panel-preview/camera-workshop.js";
 import { installGlossary } from "../e002-control-panel-preview/glossary.js";
-import { installChapterButtons } from "./panel-layout.js?v=2";
+import { installChapterButtons } from "./panel-layout.js?v=3";
 import { reviewHref } from "../review-shell.js?v=2";
 
 const $ = id => document.getElementById(id);
@@ -215,11 +215,11 @@ async function init() {
     await new Promise(resolve => setTimeout(resolve, 250));
   }
   if (!api()?.state.start) throw new Error("E-001 visualization did not finish loading");
-  installChapterButtons({ doc, api, syncClock, selectChapter, chapters, dateLabel, placePins, frame });
+  installChapterButtons({ doc, api, syncClock, selectChapter, chapters, dateLabel, placePins, frame, episodes: feed.episodes, review: true });
   void installGlossary(doc().getElementById("ui"), frame).catch(console.error);
   const first = chapters[0];
   api().setWindow(first.start, first.end);
-  api().setTime(first.center);
+  api().setTime(first.start);
   const openingView = views.filter(view => view.chapterId === first.id && view.cameraMode === "relative" && view.referenceSatellite === "B" && Date.parse(view.simulationTimeUtc) <= first.centerMs)
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
   if (openingView) {
@@ -285,5 +285,8 @@ async function init() {
   else if (!comments.length) sessionStorage.removeItem("espl-review-comments-open");
   new ResizeObserver(placePins).observe(frame);
   finishEpisodeLoading();
+  workshopPlaying = true;
+  api().play();
+  syncClock();
 }
 frame.addEventListener("load", () => init().catch(error => { $("episodeLoadingText").textContent = `Could not load episode: ${error.message}`; $("episodeLoading").classList.add("is-error"); message(error.message); console.error(error); }), { once: true });

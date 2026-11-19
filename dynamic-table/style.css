@@ -746,3 +746,12 @@ body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden
 .table-wrap .expanded-row[data-episode-id="E-001"] .expanded-inner.has-visual{background:transparent!important}
 .table-wrap .expanded-row[data-episode-id="E-001"] .context-block::before,
 .table-wrap .expanded-row[data-episode-id="E-003"] .context-block::before{background:linear-gradient(90deg,#fffcf6 0%,#fffcf6f5 48%,#fffcf6b8 76%,transparent 100%)!important}
+
+/* The scene covers the expanded viewport; only the reading column fades it. */
+.table-wrap .expanded-row:is([data-episode-id="E-003"],[data-episode-id="E-005"],[data-episode-id="E-006"],[data-episode-id="E-016"]) .expanded-inner.has-visual{background:transparent!important}
+.table-wrap .expanded-row:is([data-episode-id="E-003"],[data-episode-id="E-005"],[data-episode-id="E-006"],[data-episode-id="E-016"]) .context-block::before{background:radial-gradient(ellipse 125% 105% at 26% 42%,#fffcf6 0%,#fffcf6ef 48%,#fffcf680 74%,transparent 100%)!important;right:-70px}
+/* The miniature plots the selected pair, while the collapsed row still lists all objects. */
+.episode-row.selected[data-episode-id="E-005"][data-mini-selected="B"] .object-line:has(.dot.c),
+.episode-row.selected[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b),
+.episode-row.selected[data-episode-id="E-006"][data-mini-selected="B"] .object-line:has(.dot.c),
+.episode-row.selected[data-episode-id="E-006"][data-mini-selected="C"] .object-line:has(.dot.b){display:none}
