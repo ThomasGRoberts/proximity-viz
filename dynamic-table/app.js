@@ -551,7 +551,7 @@ function expandedContent(row, data) {
   overview.append(context);
   if (hasEpisodeVisual(episodeId)) {
     const publicId = publicEpisodeId(row);
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/" : episodeId === "E-002" ? "../visualization/e002/" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}`, location.href).href;
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/?v=5" : episodeId === "E-002" ? "../visualization/e002/" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -886,9 +886,9 @@ function stageEpisodeAssets() {
   const orbitalAssets = [["e003", 6], ["e005", 11], ["e006", 13], ["e008", 5], ["e016", 3], ["e059", 4]];
   const assets = [
     "../visualization/Viz/compare.html",
-    "../visualization/e001/",
+    "../visualization/e001/?v=5",
     "../visualization/e002/",
-    "../visualization/e001/public.js?v=4",
+    "../visualization/e001/public.js?v=5",
     "../visualization/dev/e002-control-panel-preview/app.js?v=6",
     "../visualization/Viz/vendor/three/three.module.js",
     "../visualization/Viz/vendor/countries-50m.json",

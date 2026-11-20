@@ -101,8 +101,17 @@ async function init() {
   }, 250);
 }
 
-frame.addEventListener("load", () => init().catch(error => {
-  $("episodeLoadingText").textContent = `Could not load episode: ${error.message}`;
-  $("episodeLoading").classList.add("is-error");
-  console.error(error);
-}), { once: true });
+let started = false;
+function start() {
+  if (started) return;
+  started = true;
+  init().catch(error => {
+    $("episodeLoadingText").textContent = `Could not load episode: ${error.message}`;
+    $("episodeLoading").classList.add("is-error");
+    console.error(error);
+  });
+}
+
+frame.addEventListener("load", start, { once: true });
+// Cached iframe content can finish loading while this module's imports resolve.
+if (frame.contentDocument?.readyState === "complete" && frame.contentDocument.URL === frame.src) start();
