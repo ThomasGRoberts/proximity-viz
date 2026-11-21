@@ -1,14 +1,11 @@
-import { loadCurrentEpisodes, episodeChapters, cleanCospar } from "../../../shared/episode-feed.js?v=4";
-import { loadOrbitalPreview, preloadOrbitalElements } from "./orbital-preview.js";
+import { loadCurrentEpisodes, episodeChapters, cleanCospar } from "../../../shared/episode-feed.js?v=6";
+import { loadOrbitalPreview, preloadOrbitalElements } from "./orbital-preview.js?v=2";
 import { createGlobePreview } from "./globe-preview.js?tablemini=10";
 
 const $ = id => document.getElementById(id);
 void preloadOrbitalElements().catch(() => {});
 const minute = 60000;
-let windows = [
-  { id: "dec9", label: "December 9, 2019", start: "2019-12-08T17:40:00Z", end: "2019-12-10T05:40:00Z", anchor: "2019-12-09T11:40:00Z", visualAgeHours: 120 },
-  { id: "dec30", label: "December 30, 2019", start: "2019-12-29T23:29:00Z", end: "2019-12-31T11:29:00Z", anchor: "2019-12-30T17:29:00Z", visualAgeHours: 120 },
-];
+let windows = [];
 
 async function start() {
   const [episodeBase, catalog, saved, sheet] = await Promise.all([
@@ -20,7 +17,8 @@ async function start() {
   const published = sheet.episodes.find(row => row.ID === "E-002");
   if (!published) throw new Error("E-002 is absent from the published sheet");
   const sheetChapters = episodeChapters(published);
-  if (sheetChapters.length) windows = sheetChapters.map((chapter, index) => ({
+  if (!sheetChapters.length) throw new Error("E-002 has no valid chapters in the published sheet");
+  windows = sheetChapters.map((chapter, index) => ({
     id: ["dec9", "dec30"][index] || chapter.id,
     label: new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(chapter.centerMs)),
     start: chapter.start, end: chapter.end, anchor: chapter.center, visualAgeHours: 120,

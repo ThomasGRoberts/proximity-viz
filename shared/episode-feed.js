@@ -131,10 +131,10 @@ export function episodeChapters(row) {
     const centerText = String(row?.[`Chapter ${index} Center`] || "").trim();
     const widthText = String(row?.[`Chapter ${index} Width (hours)`] || row?.[`Chapter ${index} Width`] || "").trim();
     if (!centerText && !widthText) continue;
-    const match = centerText.match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?(?:Z)?$/);
+    const match = centerText.match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?(?:Z)?$/);
     const widthHours = Number(widthText);
     if (!match || !Number.isFinite(widthHours) || widthHours <= 0 || widthHours > 24 * 366) continue;
-    const iso = `${match[1]}T${(match[2] || "0").padStart(2, "0")}:${match[3] || "00"}:${match[4] || "00"}Z`;
+    const iso = `${match[1]}T${(match[2] || "0").padStart(2, "0")}:${(match[3] || "0").padStart(2, "0")}:${(match[4] || "0").padStart(2, "0")}Z`;
     const centerMs = Date.parse(iso);
     if (!Number.isFinite(centerMs) || new Date(centerMs).toISOString().slice(0, 19) !== iso.slice(0, 19)) continue;
     const half = widthHours * 1800000;

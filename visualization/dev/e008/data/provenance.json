@@ -1,7 +1,7 @@
 {
   "schema": "espl-e008-dated-elements-v1",
   "source": "Space-Track GP_HISTORY",
-  "retrievedUtc": "2026-11-18T06:14:06.424664+00:00",
+  "retrievedUtc": "2026-11-21T17:28:38.257154+00:00",
   "queryEpochRanges": [
     [
       "2018-02-20",
@@ -14,17 +14,60 @@
     [
       "2023-02-05",
       "2023-03-25"
+    ],
+    [
+      "2018-01-25",
+      "2018-04-10"
+    ],
+    [
+      "2018-05-19",
+      "2018-08-02"
+    ],
+    [
+      "2019-10-28",
+      "2020-01-11"
+    ],
+    [
+      "2022-07-29",
+      "2022-10-12"
     ]
   ],
+  "chapterSource": {
+    "sheet": "https://docs.google.com/spreadsheets/d/1IEQ3tmerXXxEty8BcZeaonWhQbHUfA2Z5b44IuCsQ8I/export?format=csv&gid=860337817",
+    "episodeId": "E-006",
+    "padDays": 30,
+    "chapters": [
+      {
+        "number": 1,
+        "center": "2018-03-03T23:35:00Z",
+        "widthHours": 336.0
+      },
+      {
+        "number": 2,
+        "center": "2018-06-25T16:05:00Z",
+        "widthHours": 336.0
+      },
+      {
+        "number": 3,
+        "center": "2019-12-04T04:37:00Z",
+        "widthHours": 336.0
+      },
+      {
+        "number": 4,
+        "center": "2022-09-04T01:01:00Z",
+        "widthHours": 336.0
+      }
+    ]
+  },
   "datasets": [
     {
       "object": {
         "norad": "41838"
       },
       "url": "data/41838.json",
-      "sha256": "089921e85283cebb1e3b4b6fc31c9ea63d0ccecd5b0e60d724b1fa03ac631a6f",
-      "count": 250,
-      "firstEpoch": "2018-02-20T22:07:52.673088Z",
+      "sha256": "c353f2de55489745ec159a19447bd90a86951515c43811fe58872f121a0756de",
+      "count": 782,
+      "firstEpoch": "2018-01-25T11:02:46.578912Z",
       "lastEpoch": "2023-03-24T22:11:42.562752Z"
     },
     {
@@ -32,9 +75,9 @@
         "norad": "30794"
       },
       "url": "data/30794.json",
-      "sha256": "d29e7504f6ac154412c20d90d7d18919f52a8e6ebb92b8b9f38803dcbecfc559",
-      "count": 235,
-      "firstEpoch": "2018-02-20T22:12:00.061344Z",
+      "sha256": "489f061bf1cdb7b433ed76dd4bcc00d986477a51c57ac1f746732012fd0d2b63",
+      "count": 732,
+      "firstEpoch": "2018-01-25T07:15:04.292064Z",
       "lastEpoch": "2023-03-24T21:29:06.856800Z"
     }
   ]

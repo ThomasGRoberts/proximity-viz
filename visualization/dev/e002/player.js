@@ -4,7 +4,7 @@ import { feature } from "../../Viz/vendor/topojson/topojson-client.js";
 import { DOT_SCREEN_SIZE, dotTexture } from "../../Viz/relative-rendering.js?v=3";
 import { MARKER } from "../../../shared/marker-spec.js?v=3";
 import { spaceTrackHistoryUrl } from "../../../shared/tle-provenance.js?v=2";
-import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../../shared/episode-feed.js?v=4";
+import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../../shared/episode-feed.js?v=6";
 
 const $ = id => document.getElementById(id);
 const mini = document.body.classList.contains("mini");
@@ -24,16 +24,13 @@ const craft = selectedObjects.map(({ slot, cospar }) => {
   if (!item) throw new Error(`No reviewed orbital data match published object ${slot}: ${cospar}`);
   return { ...item, color: MARKER[item.slot] };
 });
-const defaultWindows = workshop ? [
-  { id: "dec9", label: "December 9, 2019", start: "2019-12-08T17:40:00Z", end: "2019-12-10T05:40:00Z", anchor: "2019-12-09T11:40:00Z" },
-  { id: "dec30", label: "December 30, 2019", start: "2019-12-29T23:29:00Z", end: "2019-12-31T11:29:00Z", anchor: "2019-12-30T17:29:00Z" },
-] : episode.windows.filter(item => item.id !== "jan24");
 const sheetChapters = episodeChapters(row);
-const windows = sheetChapters.length ? sheetChapters.map((chapter, index) => ({
+if (!sheetChapters.length) throw new Error("E-002 has no valid chapters in the published Episodes sheet");
+const windows = sheetChapters.map((chapter, index) => ({
   id: ["dec9", "dec30"][index] || chapter.id,
   label: new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(chapter.centerMs)),
   start: chapter.start, end: chapter.end, anchor: chapter.center,
-})) : defaultWindows;
+}));
 const formatUtc = ms => new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const formatShort = ms => new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
 const toScene = point => new THREE.Vector3(point.x / EARTH_KM, point.z / EARTH_KM, -point.y / EARTH_KM);
@@ -488,7 +485,7 @@ async function load() {
     // not identify an original post for each element. Store the most specific
     // verified URL on each TLE; a matched post can replace it individually.
     for (const tle of data.libraries[item.slot].tles) {
-      if (tle.source === 'seesat' && !tle.sourceUrl) tle.sourceUrl = record.url;
+      if (tle.source === 'seesat' && !tle.sourceUrl) tle.sourceUrl = record.sourceUrl || record.url;
     }
   }));
   resize(); selectWindow(workshop ? 'dec9' : mini ? 'dec8' : 'dec7', true);

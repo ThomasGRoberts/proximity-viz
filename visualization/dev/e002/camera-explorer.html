@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css">
   <script type="importmap">{"imports":{"three":"../../Viz/vendor/three/three.module.js","three/addons/":"../../Viz/vendor/three/addons/"}}</script>
   <script src="../../Viz/vendor/satellite/satellite.min.js"></script>
-  <script type="module" src="app.js?v=6"></script>
+  <script type="module" src="app.js?v=8"></script>
 </head>
 <body>
   <header class="page-header">
@@ -22,7 +22,7 @@
       <section><h2>Spacecraft and coverage</h2><div id="coverage" class="coverage"></div><p class="coverage-note">TLEs are fitted orbital elements, not continuous observations. Each displayed position uses its nearest dated element set within 36 hours. This display cutoff is not an accuracy bound.</p></section>
       <section><h2>Inspect a pair</h2><label for="pair">Pair for approximate values</label><select id="pair"><option value="AB">A · Kosmos 2542 / B · USA 245</option><option value="CB">C · Kosmos 2543 / B · USA 245</option><option value="AC">A · Kosmos 2542 / C · Kosmos 2543</option></select><div id="pairResult" class="pair-result"></div><p class="coverage-note">Instantaneous TLE-derived estimates require both elements within 12 hours. This cutoff is a screening rule, not a confidence interval. No dwell time or close-approach claim is inferred from one frame.</p></section>
       <section><h2>Camera examples and saved views</h2><label for="viewName">View name</label><input id="viewName" value="Candidate view"><div class="button-row"><button id="capture" type="button">Capture view</button><button id="download" type="button">Download JSON</button></div><div id="savedViews" class="saved-views"></div></section>
-      <section><h2>Data provenance</h2><p class="coverage-note">The dated orbital elements are fetched from <a href="https://willamadsen.github.io/How-Close-Is-Too-Close/" target="_blank" rel="noopener">Willa Madsen's published project</a> and verified against recorded checksums. Russian spacecraft elements are labeled Space-Track; USA 245 elements are labeled SeeSat-L amateur. <a href="data/provenance.json">Element provenance manifest</a> · <a href="https://www.space-track.org/documentation" target="_blank" rel="noopener">Space-Track attribution and terms</a>.</p></section>
+      <section><h2>Data provenance</h2><p class="coverage-note">The dated orbital elements are loaded from local, checksum-verified copies of <a href="https://willamadsen.github.io/How-Close-Is-Too-Close/" target="_blank" rel="noopener">Willa Madsen's published project</a>. Russian spacecraft elements are labeled Space-Track; USA 245 elements are labeled SeeSat-L amateur. <a href="data/provenance.json">Element provenance manifest</a> · <a href="https://www.space-track.org/documentation" target="_blank" rel="noopener">Space-Track attribution and terms</a>.</p></section>
     </aside>
     <section class="stage" aria-label="Interactive three spacecraft orbital reconstruction">
       <div id="scene"></div><div id="labels"></div>

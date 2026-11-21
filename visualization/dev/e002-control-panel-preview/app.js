@@ -1,7 +1,7 @@
-import { loadOrbitalPreview, preloadOrbitalElements, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js";
+import { loadOrbitalPreview, preloadOrbitalElements, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js?v=2";
 import { createGlobePreview } from "./globe-preview.js?v=6";
 import { reviewHref } from "../review-shell.js?v=2";
-import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../../shared/episode-feed.js?v=4";
+import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-feed.js?v=6";
 import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.js";
 import { installGlossary } from "./glossary.js";
 import { createCameraWorkshop } from "./camera-workshop.js";
@@ -560,29 +560,15 @@ async function buildPanel() {
   ]);
   const row = sheet.episodes.find(item => item.ID === "E-002");
   if (!row) throw new Error("E-002 is missing from the published Episodes sheet");
-  let interval = null;
-  try { interval = episodeUtcInterval(row); } catch { /* E-002 sheet chapters are still being authored. */ }
-  if (interval && !(interval.startMs <= Date.parse("2019-12-09T11:40:00Z") && interval.endExclusiveMs > Date.parse("2019-12-09T11:40:00Z"))) {
-    console.warn("The current Episodes sheet interval no longer contains the local Dec 9 chapter anchor.");
-  }
-  const firstWindow = {
-    id: "dec9", chapterShort: "Dec 9", chapterLabel: "December 9, 2019", chapterTitle: "December 9 · both Cosmos objects near USA 245", start: "2019-12-08T17:40:00Z",
-    end: "2019-12-10T05:40:00Z",
-    anchor: "2019-12-09T11:40:00Z", visualAgeHours: 120,
-  };
-  const secondWindow = {
-    id: "dec30", chapterShort: "Dec 30", chapterLabel: "December 30, 2019", chapterTitle: "December 30 · Cosmos 2542 near USA 245",
-    start: "2019-12-29T23:29:00Z", end: "2019-12-31T11:29:00Z",
-    anchor: "2019-12-30T17:29:00Z", visualAgeHours: 120,
-  };
   const sheetChapters = episodeChapters(row);
+  if (!sheetChapters.length) throw new Error("E-002 has no valid chapters in the published Episodes sheet");
   const configuredWindows = sheetChapters.map((chapter, index) => {
-    const base = [firstWindow, secondWindow][index] || {};
+    const id = ["dec9", "dec30"][index] || chapter.id;
     const label = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(chapter.centerMs));
-    return { ...base, id: base.id || chapter.id, chapterShort: label.replace(/,? \d{4}$/, ""), chapterLabel: label,
-      chapterTitle: label, start: chapter.start, end: chapter.end, anchor: chapter.center };
+    return { id, chapterShort: label.replace(/,? \d{4}$/, ""), chapterLabel: label,
+      chapterTitle: label, start: chapter.start, end: chapter.end, anchor: chapter.center, visualAgeHours: 120 };
   });
-  episodeConfig = { ...episode, windows: configuredWindows.length ? configuredWindows : [firstWindow, secondWindow], maximumDisplayTleAgeHours: 120, maximumStatisticTleAgeHours: 120 };
+  episodeConfig = { ...episode, windows: configuredWindows, maximumDisplayTleAgeHours: 120, maximumStatisticTleAgeHours: 120 };
   for (const participant of episode.participants) {
     const record = satcat.records?.[participant.cospar];
     if (!record || record.NORAD_CAT_ID !== participant.norad) throw new Error(`Space-Track catalog record does not match ${participant.cospar}`);

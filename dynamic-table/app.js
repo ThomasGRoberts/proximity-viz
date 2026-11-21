@@ -1,6 +1,6 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
-import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js?v=5";
+import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js?v=6";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
@@ -851,7 +851,7 @@ function prewarmE002() {
   warmedE002Host = el("div", "orbital-preview e002-prewarm");
   warmedE002Frame = el("iframe", "e002-mini");
   revealMiniAsOneScene(warmedE002Frame);
-  warmedE002Frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=31", location.href).href;
+  warmedE002Frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=32", location.href).href;
   warmedE002Frame.title = "Animated E-002 miniature orbital reconstruction";
   warmedE002Frame.tabIndex = -1; warmedE002Frame.setAttribute("aria-hidden", "true");
   warmedE002Host.append(warmedE002Frame); table.append(warmedE002Host);
@@ -888,8 +888,8 @@ function stageEpisodeAssets() {
     "../visualization/Viz/compare.html",
     "../visualization/e001/?v=5",
     "../visualization/e002/",
-    "../visualization/e001/public.js?v=5",
-    "../visualization/dev/e002-control-panel-preview/app.js?v=6",
+    "../visualization/e001/public.js?v=6",
+    "../visualization/dev/e002-control-panel-preview/app.js?v=8",
     "../visualization/Viz/vendor/three/three.module.js",
     "../visualization/Viz/vendor/countries-50m.json",
     ...orbitalAssets.map(([name, version]) => `../visualization/Viz/episode-${name}.js?v=${version}`),
@@ -1097,7 +1097,7 @@ function startPreview(row) {
     }
     if (frame !== warmedE002Frame) {
       revealMiniAsOneScene(frame);
-      frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=31", location.href).href;
+      frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=32", location.href).href;
       frame.title = "Animated E-002 miniature orbital reconstruction";
       frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
       backdrop.append(frame);

@@ -1,4 +1,4 @@
-import { loadCurrentEpisodes, episodeChapters } from "../../shared/episode-feed.js?v=4";
+import { loadCurrentEpisodes, episodeChapters } from "../../shared/episode-feed.js?v=6";
 import { installChapterButtons } from "../dev/e001-review/panel-layout.js?v=4";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 

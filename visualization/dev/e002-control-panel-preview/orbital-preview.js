@@ -25,11 +25,12 @@ export const roundedSpeed = value => {
 let elementsPromise;
 export function preloadOrbitalElements() {
   return elementsPromise ||= (async () => {
-    const response = await fetch("../e002/data/provenance.json");
+    const dataBase = new URL("../e002/", import.meta.url);
+    const response = await fetch(new URL("data/provenance.json", dataBase), { cache: "no-store" });
     if (!response.ok) throw new Error("E-002 element provenance is unavailable");
     const manifest = await response.json();
     const entries = await Promise.all(manifest.datasets.map(async record => {
-      const source = await fetch(record.url, { cache: "no-store" });
+      const source = await fetch(new URL(record.url, dataBase), { cache: "no-store" });
       if (!source.ok) throw new Error(`Historical elements unavailable for ${record.object.name}`);
       const bytes = await source.arrayBuffer();
       const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), byte => byte.toString(16).padStart(2, "0")).join("");

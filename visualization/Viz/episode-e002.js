@@ -1,7 +1,7 @@
 /* E-002 uses the established episode shell. Each chapter fixes one dated
    element per spacecraft; charts use the stricter statistical age gate. */
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=2";
-import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js?v=4";
+import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js?v=6";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
@@ -62,11 +62,6 @@ $("dwellLabel").textContent = "Dwell Time";
 const chapterNav = document.createElement("div"); chapterNav.className = "e002-chapters";
 const chapterGroup = document.createElement("div"); chapterGroup.className = "e002-segmented"; chapterGroup.setAttribute("role", "group"); chapterGroup.setAttribute("aria-label", "Historical chapters");
 const chapterButtons = new Map();
-for (const window of [...episode.windows].filter(item => item.id !== "jan24").sort((a, b) => Date.parse(a.start) - Date.parse(b.start))) {
-  const button = document.createElement("button"); button.type = "button"; button.textContent = formatTime(Date.parse(window.start)).split(",")[0]; button.title = `${window.chapterTitle} · ${formatTime(Date.parse(window.start))}–${formatTime(Date.parse(window.end))}`;
-  button.setAttribute("aria-label", `Chapter: ${window.chapterTitle}`); button.dataset.window = window.id;
-  chapterGroup.append(button); chapterButtons.set(window.id, button);
-}
 chapterNav.append(chapterGroup); $("playbackDock").prepend(chapterNav);
 
 for (const slot of participants.map(item => item.slot)) {
@@ -94,7 +89,15 @@ for (const groupId of ["distanceChartGroup", "speedChartGroup"]) {
 $("separationChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 separation; gaps indicate unsupported samples");
 $("speedChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 relative speed; gaps indicate unsupported samples");
 
-const { episodeModel: model } = await import("../dev/e002/player.js?v=16");
+const { episodeModel: model } = await import("../dev/e002/player.js?v=18");
+for (const window of model.windows) {
+  const title = window.chapterTitle || window.label;
+  const button = document.createElement("button"); button.type = "button";
+  button.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(window.anchor || window.start));
+  button.title = `${title} · ${formatTime(Date.parse(window.start))}–${formatTime(Date.parse(window.end))}`;
+  button.setAttribute("aria-label", `Chapter: ${title}`); button.dataset.window = window.id;
+  chapterGroup.append(button); chapterButtons.set(window.id, button);
+}
 function validSample(comparison, ms) {
   if (comparison.slots.some(slot => !model.selected[slot] || Math.abs(ms - Date.parse(model.selected[slot].epoch)) > episode.maximumStatisticTleAgeHours * 3600000)) return null;
   return model.samplePair(...comparison.slots, ms);
@@ -220,8 +223,8 @@ function tick() {
   if (model.window.id !== lastWindow) {
     lastWindow = model.window.id; buildSeries();
     for (const [id, button] of chapterButtons) { const active = id === lastWindow; button.classList.toggle("active", active); button.setAttribute("aria-pressed", String(active)); }
-    context.textContent = model.window.chapterTitle;
-    coverageBody.textContent = `${model.window.note} Playback: ${formatTime(Date.parse(model.window.start))} to ${formatTime(Date.parse(model.window.end))}. Statistical comparisons require each selected element to be within 12 hours of its epoch.`;
+    context.textContent = model.window.chapterTitle || model.window.label;
+    coverageBody.textContent = `${model.window.note ? `${model.window.note} ` : ""}Playback: ${formatTime(Date.parse(model.window.start))} to ${formatTime(Date.parse(model.window.end))}. Statistical comparisons require each selected element to be within 12 hours of its epoch.`;
   }
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end), current = model.current;
   const slider = $("timelineSlider"); slider.min = String(start); slider.max = String(end); slider.value = String(current); slider.step = "1000";

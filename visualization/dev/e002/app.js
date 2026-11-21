@@ -345,7 +345,7 @@ Promise.all([fetch("data/provenance.json").then(response => response.json()), fe
   await Promise.all(spacecraft.map(async craft => {
     const dataset = manifest.datasets.find(item => item.object.norad === craft.norad);
     if (!dataset) throw new Error(`Missing provenance for ${craft.name}`);
-    const response = await fetch(dataset.url, { cache: "no-store" });
+    const response = await fetch(new URL(dataset.url, import.meta.url), { cache: "no-store" });
     if (!response.ok) throw new Error(`Could not retrieve dated elements for ${craft.name}`);
     const bytes = await response.arrayBuffer();
     const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), byte => byte.toString(16).padStart(2, "0")).join("");
