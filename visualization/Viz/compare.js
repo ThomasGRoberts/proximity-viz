@@ -38,7 +38,7 @@ import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fad
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
 import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js?v=6";
-import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=3";
+import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=4";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
 import { CHART_PADDING } from "./chart-style.js";

@@ -889,7 +889,7 @@ function stageEpisodeAssets() {
     "../visualization/e001/?v=5",
     "../visualization/e002/",
     "../visualization/e001/public.js?v=6",
-    "../visualization/dev/e002-control-panel-preview/app.js?v=8",
+    "../visualization/dev/e002-control-panel-preview/app.js?v=9",
     "../visualization/Viz/vendor/three/three.module.js",
     "../visualization/Viz/vendor/countries-50m.json",
     ...orbitalAssets.map(([name, version]) => `../visualization/Viz/episode-${name}.js?v=${version}`),

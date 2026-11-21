@@ -73,7 +73,7 @@
     let maximumDisplayAge = 36 * 3600000;
     const dateText = value => new Intl.DateTimeFormat("en-US", { year:"numeric", month:"long", day:"numeric", timeZone:"UTC" }).format(new Date(value.includes("T") ? value : `${value}T00:00:00Z`));
     const epochTime = value => new Intl.DateTimeFormat("en-US", { hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false, timeZone:"UTC" }).format(new Date(value));
-    const fetchedJson = async file => { const response = await fetch(file); if (!response.ok) throw new Error(`${file} returned HTTP ${response.status}`); return response.json(); };
+    const fetchedJson = async file => { const response = await fetch(file, { cache: "no-store" }); if (!response.ok) throw new Error(`${file} returned HTTP ${response.status}`); return response.json(); };
     const ownerName = (code, fallback) => code === "CIS" ? "Russia (CIS) 🇷🇺" : code === "US" ? "United States 🇺🇸" : code === "PRC" ? "China (PRC) 🇨🇳" : fallback || code;
     const ageText = epoch => {
       const difference = anchor - Date.parse(epoch), hours = Math.floor(Math.abs(difference) / 3600000);
@@ -118,8 +118,8 @@
       fragment.append(satellite.node);
 
       const orbital = section("Orbital Details");
-      const sourceLink = tle?.source === "seesat" ? dataset?.url : tle && dataset ? spaceTrackHistoryUrl(item.norad, tle.epoch) : dataset?.url;
-      const sourceLabel = tle?.source === "seesat" ? "SeeSat-L" : "Space-Track";
+      const sourceLink = tle?.source === "seesat" ? tle.sourceUrl || "" : tle && dataset ? spaceTrackHistoryUrl(item.norad, tle.epoch) : "";
+      const sourceLabel = tle?.source === "seesat" ? "SeeSat-L" : tle ? "Space-Track" : "Element unavailable";
       const line = tle?.line2 || "";
       const inclination = line ? Number(line.slice(8, 16)) : NaN;
       const eccentricity = line ? Number(`0.${line.slice(26, 33).trim()}`) : NaN;
@@ -254,7 +254,7 @@
         selectionStart = start; selectionEnd = end; anchor = current; refreshElements();
       });
       await Promise.all(manifest.datasets.filter(entry => Object.values(objects).some(item => item.cospar === entry.object.cospar)).map(async entry => {
-        try { context.libraries[entry.object.cospar] = await fetchedJson(entry.url); }
+        try { context.libraries[entry.object.cospar] = await fetchedJson(new URL(entry.url, new URL("../e002/", location.href))); }
         catch (error) { console.warn(`Historical elements unavailable for ${entry.object.cospar}`, error); }
       }));
       refreshElements();

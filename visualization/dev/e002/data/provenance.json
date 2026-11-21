@@ -23,7 +23,7 @@
       "retrievedUtc": null,
       "restrictionStatus": "Space-Track documentation states blanket approval for redistribution of basic SSA data conditional on citation; this site serves a checksum-verified local copy and cites Space-Track.",
       "termsUrl": "https://www.space-track.org/documentation",
-      "sourceUrl": "https://willamadsen.github.io/How-Close-Is-Too-Close/Viz/data/tles_public/44797.json"
+      "collectionUrl": "https://willamadsen.github.io/How-Close-Is-Too-Close/Viz/data/tles_public/44797.json"
     },
     {
       "object": {
@@ -32,7 +32,7 @@
         "cospar": "2013-043A"
       },
       "url": "data/39232.json",
-      "sha256": "5831e6121715f5a9bcf2c4fb29417e82801d5a3b1e76e79b3f41fc71140aafe7",
+      "sha256": "87aec459c4bdba872ab2a0287ea32cbed722b015fe4901e73cef77692ba9f02d",
       "kind": "historical",
       "elements": 6,
       "epochRangeUtc": [
@@ -44,11 +44,24 @@
         "2019-12-08T10:03:52.617600Z",
         "2019-12-31T09:35:10.924800Z"
       ],
-      "originatingProvider": "Independent amateur observers; per-element author not identified in the preserved file",
+      "originatingProvider": "Independent amateur observers; Nico Janssen identified for the two matched episode elements",
       "immediateRetrievalSource": "SeeSat-L collection in Willa Madsen's project",
       "retrievedUtc": null,
       "restrictionStatus": "Original observer reuse terms have not been verified; this checksum-pinned local project copy is attributed to SeeSat-L.",
-      "sourceUrl": "https://willamadsen.github.io/How-Close-Is-Too-Close/Viz/data/tles_public/39232.json"
+      "collectionUrl": "https://willamadsen.github.io/How-Close-Is-Too-Close/Viz/data/tles_public/39232.json",
+      "matchedObserverPosts": [
+        {
+          "elementEpochUtc": "2019-12-08T10:03:52.617600Z",
+          "observer": "Nico Janssen",
+          "messageUrl": "https://www.satobs.org/seesat/Dec-2019/0108.html"
+        },
+        {
+          "elementEpochUtc": "2019-12-31T09:35:10.924800Z",
+          "observer": "Nico Janssen",
+          "messageUrl": "https://www.satobs.org/seesat/Jan-2020/0008.html"
+        }
+      ],
+      "unmatchedElementsNote": "The other four preserved SeeSat-L elements have no verified matching forum message; no forum link is claimed for them."
     },
     {
       "object": {
@@ -69,7 +82,7 @@
       "retrievedUtc": null,
       "restrictionStatus": "Space-Track documentation states blanket approval for redistribution of basic SSA data conditional on citation; this site serves a checksum-verified local copy and cites Space-Track.",
       "termsUrl": "https://www.space-track.org/documentation",
-      "sourceUrl": "https://willamadsen.github.io/How-Close-Is-Too-Close/Viz/data/tles_public/44835.json"
+      "collectionUrl": "https://willamadsen.github.io/How-Close-Is-Too-Close/Viz/data/tles_public/44835.json"
     }
   ]
 }

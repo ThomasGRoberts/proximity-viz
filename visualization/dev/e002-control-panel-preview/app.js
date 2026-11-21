@@ -603,7 +603,7 @@ async function buildPanel() {
   paragraph.append(safeEpisodeName(row["Episode Description"] || ""));
   description.replaceChildren(paragraph);
   const identity = ui.querySelector("#identity"); identity.replaceChildren();
-  const frame = document.createElement("iframe"); frame.className = "selector-frame"; frame.title = "E-002 satellite selector"; frame.src = "../satellite-legend-prototype/index.html?embed=1"; identity.append(frame); wireSelectorFrame(frame);
+  const frame = document.createElement("iframe"); frame.className = "selector-frame"; frame.title = "E-002 satellite selector"; frame.src = "../satellite-legend-prototype/index.html?embed=1&v=2"; identity.append(frame); wireSelectorFrame(frame);
   ui.querySelector("#nowSummary").textContent = `${catalogNames.A} or ${catalogNames.C} · ${catalogNames.B}`;
   const sticky = document.createElement("div"); sticky.id = "pairSticky"; sticky.className = "pair-sticky"; sticky.hidden = true;
   const stickyChoices = document.createElement("span"); stickyChoices.className = "pair-sticky-choices";

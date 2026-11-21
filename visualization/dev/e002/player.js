@@ -481,12 +481,6 @@ async function load() {
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), byte => byte.toString(16).padStart(2, '0')).join('');
     if (digest !== record.sha256) throw new Error(`Dated elements for ${item.name} changed; provenance review required`);
     data.libraries[item.slot] = JSON.parse(new TextDecoder().decode(bytes));
-    // The preserved USA 245 file identifies the SeeSat-L collection but does
-    // not identify an original post for each element. Store the most specific
-    // verified URL on each TLE; a matched post can replace it individually.
-    for (const tle of data.libraries[item.slot].tles) {
-      if (tle.source === 'seesat' && !tle.sourceUrl) tle.sourceUrl = record.sourceUrl || record.url;
-    }
   }));
   resize(); selectWindow(workshop ? 'dec9' : mini ? 'dec8' : 'dec7', true);
   if ($('timeline')) { $('timeline').min = String(Date.parse(data.window.start)); $('timeline').max = String(Date.parse(data.window.end)); }

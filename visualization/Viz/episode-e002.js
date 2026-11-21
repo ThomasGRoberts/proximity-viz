@@ -1,6 +1,6 @@
 /* E-002 uses the established episode shell. Each chapter fixes one dated
    element per spacecraft; charts use the stricter statistical age gate. */
-import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=2";
+import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=4";
 import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js?v=6";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
@@ -89,7 +89,7 @@ for (const groupId of ["distanceChartGroup", "speedChartGroup"]) {
 $("separationChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 separation; gaps indicate unsupported samples");
 $("speedChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 relative speed; gaps indicate unsupported samples");
 
-const { episodeModel: model } = await import("../dev/e002/player.js?v=18");
+const { episodeModel: model } = await import("../dev/e002/player.js?v=19");
 for (const window of model.windows) {
   const title = window.chapterTitle || window.label;
   const button = document.createElement("button"); button.type = "button";
@@ -112,7 +112,7 @@ function updateCards() {
     card.dataset.sourceData = sourceLabel(tle);
     card.dataset.sourceQueryHref = tle?.source === "space-track" ? spaceTrackHistoryUrl(norad[slot], tle.epoch) : "";
     card.dataset.sourceHref = tle?.sourceUrl || "";
-    card.dataset.sourceLinkTitle = tle?.source === "seesat" ? "Published project copy of this SeeSat-L element; the original observer message has not been matched." : "";
+    card.dataset.sourceLinkTitle = tle?.source === "seesat" && tle.sourceUrl ? "SeeSat-L message containing this selected TLE." : "";
     const summary = card.querySelector(".sourceSummary");
     if (summary.firstChild?.textContent !== card.dataset.sourceData) summary.firstChild.textContent = card.dataset.sourceData;
     if (previousEpoch !== card.dataset.epoch || previousSource !== card.dataset.sourceData) card.dispatchEvent(new Event("tlechange", { bubbles: true }));

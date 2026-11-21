@@ -20,8 +20,8 @@ export function tleProvenance(tle) {
     retrieval: "Historical project copy; original download log unavailable", href: "https://www.space-track.org/documentation#/odr"
   };
   if (source === "seesat") return {
-    label: "Amateur reconstruction", dataSource: "Amateur observers", origin: "Independent satellite observers; individual fit attribution unavailable",
-    retrieval: "SeeSat-L collection in the project library", href: "https://www.satobs.org/seesat/"
+    label: "Amateur reconstruction", dataSource: "SeeSat-L", origin: "Independent satellite observers",
+    retrieval: "SeeSat-L element in the project library", href: tle.sourceUrl || ""
   };
   if (source === "CelesTrak (latest)") return {
     label: "Live via CelesTrak", dataSource: "CelesTrak (current)", origin: "Upstream GP origin not verified for this element",
