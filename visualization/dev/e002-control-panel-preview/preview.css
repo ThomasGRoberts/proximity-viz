@@ -257,6 +257,7 @@ body.e002-shared #ui .pair-sticky[hidden]{display:none}
 .pair-sticky-target b{font-size:9px;font-weight:700;line-height:1.1}
 /* The quiet heading reveals a card boundary and its library action on hover. */
 body.e002-shared #ui .episode-focus{position:relative;min-height:62px;margin-left:0;margin-right:0;padding:0;border:1px solid #ddd9d0;border-radius:9px;background:#fff;overflow:hidden;transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
+body.e002-shared #ui .episode-focus .episodeDescription.story-expanded{margin-right:11px!important}
 body.e002-shared #ui .episode-focus::before{content:none}
 body.e002-shared #ui .episode-focus::after{content:"";position:absolute;z-index:2;inset:-45% -80%;background:linear-gradient(115deg,transparent 39%,#ffffff00 44%,#ffffffc9 50%,#ffffff00 56%,transparent 61%);transform:translateX(-120%);pointer-events:none}
 body.e002-shared #ui .episode-focus:is(:hover,:focus-within)::after{animation:episodeCardShimmer .95s ease-out both}

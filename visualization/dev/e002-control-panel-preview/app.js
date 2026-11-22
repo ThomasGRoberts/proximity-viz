@@ -9,6 +9,7 @@ import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
 import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=2";
 import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=6";
+import { supportedUsa245Chapters } from "../e002/chapter-support.js";
 
 const $ = id => document.getElementById(id);
 void preloadOrbitalElements().catch(() => {});
@@ -581,12 +582,14 @@ async function buildPanel() {
   ]);
   const row = sheet.episodes.find(item => item.ID === "E-002");
   if (!row) throw new Error("E-002 is missing from the published Episodes sheet");
-  const sheetChapters = episodeChapters(row);
+  const usaElements = (await preloadOrbitalElements()).get("2013-043A") || [];
+  const sheetChapters = supportedUsa245Chapters(episodeChapters(row), usaElements, 120);
   if (!sheetChapters.length) throw new Error("E-002 has no valid chapters in the published Episodes sheet");
+  document.body.dataset.omittedUnsupportedChapters = String(episodeChapters(row).length - sheetChapters.length);
   const configuredWindows = sheetChapters.map((chapter, index) => {
     const id = ["dec9", "dec30"][index] || chapter.id;
     const label = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(chapter.centerMs));
-    const chapterShort = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(chapter.centerMs)).replace(/^([A-Za-z]{3})(?=\s)/, "$1.");
+    const chapterShort = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" }).format(new Date(chapter.centerMs)).replace(/^([A-Za-z]{3})(?=\s)/, "$1.");
     return { id, chapterShort, chapterLabel: label,
       chapterTitle: label, start: chapter.start, end: chapter.end, anchor: chapter.center, visualAgeHours: 120 };
   });

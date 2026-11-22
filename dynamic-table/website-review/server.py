@@ -12,7 +12,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 COMMENTS = HERE / "comments.json"
 PORT = 8771
-SPOTS = {"page", "intro", "repository", "title", "language", "contributors", "portraits", "table", "full-link"}
+SPOTS = {"page", "intro", "repository", "title", "language", "contributors", "portraits", "table", "full-link", "about-link", "repo-meta"}
 
 
 def read_comments():

@@ -815,9 +815,9 @@ th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacit
   .table-wrap .expanded-row .expanded-inner.has-visual .evidence-section{align-self:start;margin-top:0;padding-bottom:10px!important}
   .table-wrap .expanded-row[data-episode-id="E-005"]:has(.expanded-inner.has-visual)>td{background:transparent!important}
 }
-.table-wrap th:nth-child(1){width:29%}
-.table-wrap th:nth-child(2){width:7%}
-.table-wrap th:nth-child(3){width:18%}
+.table-wrap th:nth-child(1){width:31%}
+.table-wrap th:nth-child(2){width:6%}
+.table-wrap th:nth-child(3){width:17%}
 .table-wrap th:nth-child(4),.table-wrap th:nth-child(5),.table-wrap th:nth-child(6){width:13%}
 .table-wrap th:nth-child(7){width:7%}
 .table-wrap th:nth-child(n+4){text-align:center}
@@ -896,7 +896,8 @@ html.embedded-table .toolbar{border-radius:12px 12px 0 0}
 @media(min-width:901px){
   .table-wrap tr.episode-row td,
   .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{
-    padding-top:26px;padding-bottom:26px;vertical-align:middle;
-    transition:background-color .24s ease;
+    padding-top:30px;padding-bottom:30px;vertical-align:top;
+    transition:padding-bottom .24s ease,background-color .24s ease;
   }
+  .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:68px}
 }

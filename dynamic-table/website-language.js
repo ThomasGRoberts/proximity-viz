@@ -34,8 +34,8 @@ void fetch("https://api.github.com/repos/ThomasGRoberts/proximity-viz/commits/ma
     const date = new Date(commit.commit?.committer?.date);
     if (!Number.isFinite(date.valueOf())) throw new Error("Commit date unavailable");
     const label = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" }).format(date);
-    document.querySelectorAll("[data-espl-last-updated]").forEach(node => { node.textContent = `Repository last updated ${label}`; });
-  }).catch(() => document.querySelectorAll("[data-espl-last-updated]").forEach(node => { node.textContent = "Repository update date unavailable"; }));
+    document.querySelectorAll("[data-espl-last-updated]").forEach(node => { node.textContent = `Last updated on ${label}`; });
+  }).catch(() => document.querySelectorAll("[data-espl-last-updated]").forEach(node => { node.textContent = "Last update date unavailable"; }));
 
 function csvRows(text) {
   const rows = []; let row = [], cell = "", quoted = false;

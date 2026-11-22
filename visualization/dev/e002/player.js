@@ -7,6 +7,7 @@ import { spaceTrackHistoryUrl } from "../../../shared/tle-provenance.js?v=2";
 import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../../shared/episode-feed.js?v=7";
 import { installReferenceOrbitHover } from "../../Viz/reference-orbit-hover.js";
 import { eciRateForState } from "../../Viz/orbital-playback.js";
+import { supportedUsa245Chapters } from "./chapter-support.js";
 
 const $ = id => document.getElementById(id);
 const mini = document.body.classList.contains("mini");
@@ -26,8 +27,13 @@ const craft = selectedObjects.map(({ slot, cospar }) => {
   if (!item) throw new Error(`No reviewed orbital data match published object ${slot}: ${cospar}`);
   return { ...item, color: MARKER[item.slot] };
 });
-const sheetChapters = episodeChapters(row);
+const usaElementsForChapters = await fetch(new URL("data/39232.json", import.meta.url), { cache: "no-store" }).then(response => {
+  if (!response.ok) throw new Error("USA 245 dated elements are unavailable");
+  return response.json();
+});
+const sheetChapters = supportedUsa245Chapters(episodeChapters(row), usaElementsForChapters.tles, workshop ? 120 : episode.maximumDisplayTleAgeHours);
 if (!sheetChapters.length) throw new Error("E-002 has no valid chapters in the published Episodes sheet");
+document.body.dataset.omittedUnsupportedChapters = String(episodeChapters(row).length - sheetChapters.length);
 const windows = sheetChapters.map((chapter, index) => ({
   id: ["dec9", "dec30"][index] || chapter.id,
   label: new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(chapter.centerMs)),

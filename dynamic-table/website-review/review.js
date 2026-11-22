@@ -179,6 +179,29 @@ $("exportComments").addEventListener("click", () => {
   link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 });
 $("refreshPreview").addEventListener("click", loadPreview);
+$("copyHtml").addEventListener("click", async () => {
+  const button = $("copyHtml");
+  try {
+    const response = await fetch("../website-embed-snippet.html", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTML draft returned ${response.status}`);
+    const markup = await response.text();
+    let copied = false;
+    if (navigator.clipboard?.writeText) {
+      try { await navigator.clipboard.writeText(markup); copied = true; }
+      catch { /* Integrated browsers may deny this API; try the selection route. */ }
+    }
+    if (!copied) {
+      const fallback = document.createElement("textarea"); fallback.value = markup;
+      fallback.style.cssText = "position:fixed;left:-9999px;top:0"; document.body.append(fallback);
+      fallback.select();
+      copied = document.execCommand("copy"); fallback.remove();
+      if (!copied) throw new Error("Clipboard access is unavailable");
+    }
+    button.textContent = "Copied HTML";
+    status("The current WordPress Custom HTML block is on your clipboard.");
+    setTimeout(() => { button.textContent = "Copy HTML for WordPress"; }, 1800);
+  } catch (error) { status(`Could not copy HTML: ${error.message}`); }
+});
 new ResizeObserver(() => {
   document.documentElement.style.setProperty("--bar-height", `${$("reviewBar").getBoundingClientRect().height}px`);
   drawPins();

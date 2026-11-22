@@ -93,7 +93,7 @@ const { episodeModel: model } = await import("../dev/e002/player.js?v=20");
 for (const window of model.windows) {
   const title = window.chapterTitle || window.label;
   const button = document.createElement("button"); button.type = "button";
-  button.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(window.anchor || window.start)).replace(/^([A-Za-z]{3})(?=\s)/, "$1.");
+  button.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" }).format(new Date(window.anchor || window.start)).replace(/^([A-Za-z]{3})(?=\s)/, "$1.");
   button.title = `${title} · ${formatTime(Date.parse(window.start))}–${formatTime(Date.parse(window.end))}`;
   button.setAttribute("aria-label", `Chapter: ${title}`); button.dataset.window = window.id;
   chapterGroup.append(button); chapterButtons.set(window.id, button);

@@ -2,37 +2,42 @@
 <style>
   .espl-episodes-page{--ink:#303030;--muted:#69645b;max-width:1220px;margin:0 auto;color:var(--ink);font-family:inherit}
   .espl-episodes-page *{box-sizing:border-box}
-  .espl-episodes-page .intro{padding:clamp(22px,4vw,48px);border:1px solid #e8dfc9;border-radius:14px 14px 0 0;background:linear-gradient(130deg,#fff9e8,#fffcf6 65%)}
+  .espl-episodes-page .intro{padding:clamp(22px,4vw,48px);border:1px solid #e8dfc9;border-radius:14px;background:linear-gradient(130deg,#fff9e8,#fffcf6 65%)}
   .espl-episodes-page .about-link{display:inline-flex;align-items:center;gap:.45em;color:#5f6265;font:700 12px/1.2 Roboto,Arial,sans-serif;letter-spacing:.07em;text-decoration:none;text-transform:uppercase;transition:opacity .18s ease}
   .espl-episodes-page .about-link:hover,.espl-episodes-page .about-link:focus-visible{color:#5f6265;opacity:.65}
   .espl-episodes-page .about-link svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform 220ms cubic-bezier(.22,1,.36,1)}
   .espl-episodes-page .about-link:hover svg,.espl-episodes-page .about-link:focus-visible svg{transform:translateX(-4px)}
+  .espl-episodes-page .about-link{margin:0 0 15px}
   .espl-episodes-page .repo-kicker{display:flex;align-items:center;gap:9px;margin:0 0 12px;color:#79601f;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
   .espl-episodes-page .repo-icon{width:42px;height:42px;flex:none}
   .espl-episodes-page .repo-scan{transition:transform .38s ease,opacity .38s ease}
   .espl-episodes-page .repo-kicker:hover .repo-scan{transform:translateY(11px);opacity:.6}
-  .espl-episodes-page h1{margin:17px 0 12px;font-size:clamp(27px,3vw,42px);line-height:1.12}
+  .espl-episodes-page h1{margin:0 0 12px;font-size:clamp(27px,3vw,42px);line-height:1.12}
   .espl-episodes-page .description{max-width:72ch;margin:0;color:#514d45;font-size:15px;line-height:1.55}
   .espl-episodes-page .description p{margin:0 0 10px}
   .espl-episodes-page .description p:last-child{margin-bottom:0}
-  .espl-episodes-page .contributors{display:block;margin-top:22px}
+  .espl-episodes-page .contributors{display:block;padding:22px 0 25px;background:#fff}
   .espl-episodes-page .contributors-label{display:block;margin-bottom:10px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
   .espl-episodes-page .people{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
   .espl-episodes-page .people li{margin:0;padding:0}
   .espl-episodes-page .people a{display:block;width:76px;height:76px;border-radius:50%;background:#fff;transition:transform 260ms cubic-bezier(.34,1.56,.64,1)}
   .espl-episodes-page .people a:hover,.espl-episodes-page .people a:focus-visible{transform:translateY(-2px) scale(1.055)}
   .espl-episodes-page .people img,.espl-episodes-page .espl-contributor-initials{display:grid;place-items:center;width:76px;height:76px;object-fit:cover;border:0;border-radius:50%;background:#fff;color:#735b21;font-size:20px;font-weight:700;box-shadow:none}
-  .espl-episodes-page .repo-meta{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:14px;color:#70695c;font-size:11px}
-  .espl-episodes-page .repo-meta a{color:#715718;text-underline-offset:3px}
+  .espl-episodes-page .repo-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin-top:17px;color:#70695c;font-size:11px}
+  .espl-episodes-page .repo-link{display:inline-flex;align-items:center;gap:4px;color:#686868;text-decoration:none;font-size:11px}
+  .espl-episodes-page .repo-link:hover,.espl-episodes-page .repo-link:focus-visible{color:#454545}
+  .espl-episodes-page .repo-link svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}
+  .espl-episodes-page .repo-link .external-box,.espl-episodes-page .repo-link .external-arrow{transition:opacity .22s ease,transform .22s cubic-bezier(.22,1,.36,1)}
+  .espl-episodes-page .repo-link:is(:hover,:focus-visible) .external-box{opacity:.58;transform:scale(.96)}
+  .espl-episodes-page .repo-link:is(:hover,:focus-visible) .external-arrow{transform:translate(2.4px,-2.4px)}
   .espl-episodes-page iframe{display:block;width:100%;height:920px;margin:0;padding:0;border:0;background:#fff}
   @media(max-width:700px){.espl-episodes-page .intro{padding:22px}.espl-episodes-page .people a,.espl-episodes-page .people img,.espl-episodes-page .espl-contributor-initials{width:54px;height:54px}.espl-episodes-page iframe{height:900px}}
   @media(prefers-reduced-motion:reduce){.espl-episodes-page .repo-scan,.espl-episodes-page .people a,.espl-episodes-page .about-link svg{transition:none}}
 </style>
 
 <section class="espl-episodes-page" data-espl-episodes-page aria-labelledby="episodes-library-title">
+  <a class="about-link" href="https://espl.ae.gatech.edu/research/projects/proximity/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>About this project</span></a>
   <header class="intro">
-    <a class="about-link" href="https://espl.ae.gatech.edu/research/projects/proximity/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>About this project</span></a>
-    <h1 id="episodes-library-title">Episodes of Concerning Satellite Proximity</h1>
     <div class="repo-kicker">
       <svg class="repo-icon" viewBox="0 0 48 48" aria-hidden="true">
         <rect x="8" y="9" width="32" height="8" rx="2" fill="#edcc73"/>
@@ -41,8 +46,11 @@
       </svg>
       <span>Interactive Data Repository</span>
     </div>
+    <h1 id="episodes-library-title">Episodes of Concerning Satellite Proximity</h1>
     <div class="description" data-espl-introduction><p>Explore documented satellite proximity episodes through illustrative orbital reconstructions, modeled separation and relative speed, and linked source records.</p></div>
-    <div class="contributors" aria-label="ESPL contributors">
+    <div class="repo-meta"><span data-espl-last-updated>Checking repository update…</span><a class="repo-link" href="https://github.com/ThomasGRoberts/proximity-viz" target="_blank" rel="noopener noreferrer">GitHub <svg viewBox="0 0 18 18" aria-hidden="true"><path class="external-box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><g class="external-arrow"><path d="M9.25 2.75h6v6"/><path d="m8 10 7.25-7.25"/></g></svg></a></div>
+  </header>
+  <div class="contributors" aria-label="ESPL contributors">
       <span class="contributors-label">Contributors</span>
       <ul class="people" data-espl-contributors>
         <li><a href="https://espl.ae.gatech.edu/people/#dayana-alagirova" aria-label="Dayana Alagirova’s biography"><img src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/assets/contributors/dayana-alagirova.jpg" alt="Dayana Alagirova"></a></li>
@@ -51,9 +59,7 @@
         <li><a href="https://espl.ae.gatech.edu/people/#pradosh-sivaramkumar" aria-label="Pradosh Sivaramkumar’s biography"><img src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/assets/contributors/pradosh-sivaramkumar.jpg" alt="Pradosh Sivaramkumar"></a></li>
         <li><a href="https://espl.ae.gatech.edu/people/#biography" aria-label="Thomas González Roberts’s biography"><img src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/assets/contributors/thomas-gonzalez-roberts.jpg" alt="Thomas González Roberts"></a></li>
       </ul>
-      <div class="repo-meta"><span data-espl-last-updated>Checking repository update…</span><a href="https://github.com/ThomasGRoberts/proximity-viz" target="_blank" rel="noopener noreferrer">GitHub repository ↗</a></div>
-    </div>
-  </header>
+  </div>
   <iframe src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/?embed=1" title="Interactive Episodes of Concern table" loading="eager"></iframe>
 </section>
-<script type="module" src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-language.js?v=2"></script>
+<script type="module" src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-language.js?v=3"></script>

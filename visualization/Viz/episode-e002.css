@@ -44,6 +44,7 @@ body.e002-shared .e002-minimum-line{display:block}
 body.e002-shared .chartGroup .thresholdEdge{pointer-events:auto;touch-action:none}
 body.e002-shared .e002-scene-status:empty{display:none}
 body.e002-shared #ui{max-height:calc(100vh - var(--e002-dock-height,100px) - 54px);overflow-y:auto}
+body.e002-shared #ui .episode-focus .episodeDescription.story-expanded{margin-right:11px!important}
 body.e002-shared .playbackDock{gap:5px}
 body.e002-shared #scene.chapter-transition{animation:e002-chapter-arrival .32s ease-out}
 @keyframes e002-chapter-arrival{from{opacity:.38}to{opacity:1}}

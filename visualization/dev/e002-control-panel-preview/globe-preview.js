@@ -379,29 +379,44 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     for (const item of episode.participants) {
       const trail = trails[item.slot];
       if (mode === "relative" && item.slot === (referenceMode === "target" ? "B" : focus)) { trail.visible = false; stage.dataset["trailPoints" + item.slot] = "0"; continue; }
-      const allPoints = [], points = [];
+      const allPoints = [], allTimes = [];
       for (let index = 0; index < samples.length; index++) {
         const sample = samples[index].frame, body = sample[item.slot];
         const reference = activeReference(sample);
         // A missing propagation sample ends the older segment. Never draw a
         // straight bridge across a gap in historical elements.
-        if (!body || (mode === "relative" && !reference)) { allPoints.length = 0; continue; }
+        if (!body || (mode === "relative" && !reference)) { allPoints.length = 0; allTimes.length = 0; continue; }
         const point = mode === "relative" ? relativePoint(reference, body, referenceAxes(reference)) : toScene(body.position);
-        allPoints.push(point);
+        allPoints.push(point); allTimes.push(samples[index].time);
       }
       // Keep roughly the published E-001 trail length on screen at this zoom.
       // The points still follow the actual modeled path rather than a straight cue.
+      let points = allPoints;
       if (camera.position.length() > .1) {
         let pixelLength = 0;
+        let firstVisible = 0;
         for (let index = allPoints.length - 1; index > 0; index--) {
           const newer = screenPoint(allPoints[index]), older = screenPoint(allPoints[index - 1]);
           pixelLength += Math.hypot(newer.x - older.x, newer.y - older.y);
-          if (pixelLength > 260) { points.push(allPoints[index - 1]); break; }
-          points.push(allPoints[index - 1]);
+          if (pixelLength > 260) { firstVisible = index - 1; break; }
         }
-        points.reverse();
-        if (allPoints.length) points.push(allPoints.at(-1));
-      } else points.push(...allPoints);
+        points = allPoints.slice(firstVisible);
+        // A tight camera may trim a four-hour trail to only a few one-minute
+        // samples. Repropagate that visible interval so its actual curved path
+        // remains smooth without drawing an invented spline through the orbit.
+        if (points.length > 1 && points.length < 72) {
+          const firstTime = allTimes[firstVisible];
+          const count = Math.min(160, Math.max(72, Math.ceil((ms - firstTime) / 15000)));
+          const dense = [];
+          for (let index = 0; index <= count; index++) {
+            const time = firstTime + (ms - firstTime) * index / count;
+            const frame = frameAt(window, time, ms), body = frame[item.slot], reference = activeReference(frame);
+            if (!body || (mode === "relative" && !reference)) continue;
+            dense.push(mode === "relative" ? relativePoint(reference, body, referenceAxes(reference)) : toScene(body.position));
+          }
+          if (dense.length > points.length) points = dense;
+        }
+      }
       trail.geometry.dispose();
       trail.geometry = fadingTrailGeometry(points);
       trail.visible = points.length > 1;

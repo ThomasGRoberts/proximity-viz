@@ -10,6 +10,7 @@ button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid #9
 .review-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-left:auto}
 .review-actions button{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:6px 10px;border:1px solid transparent;border-radius:6px;background:transparent;color:#6a6151;font-size:11px;font-weight:700;white-space:nowrap}
 .review-actions button:hover{border-color:#e7d8ae;background:#fff8e6;color:#4c3e1a}
+.review-actions button#copyHtml{border-color:#d9c995;background:#fffaf0;color:#785812}
 .review-actions button#spotMode{border-color:#d9c995;background:#fffaf0;color:#785812}
 .review-actions button#spotMode[aria-pressed="true"]{border-color:#a77905;background:#fff0c2;color:#513c09}
 #commentCount{margin-left:5px;color:#8a6b24;font-variant-numeric:tabular-nums}

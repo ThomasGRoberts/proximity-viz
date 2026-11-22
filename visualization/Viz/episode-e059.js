@@ -217,7 +217,7 @@ async function start() {
   chapterNav.hidden = chapters.length === 1;
   document.body.classList.toggle("e059-multi-chapter", chapters.length > 1);
   $("playbackDock").prepend(chapterNav);
-  let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "B", referenceSlot = "B", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 10800, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
+  let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "B", referenceSlot = "B", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 5400, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
   let relativeRate = rate;
   let miniLoopStart = chapter.centerMs - 2 * HOUR, miniLoopEnd = chapter.centerMs + 2 * HOUR;
   const miniPinnedTles = {};
@@ -599,7 +599,7 @@ async function start() {
   $("resetBtn").hidden = true; $("resetBtn").addEventListener("click", () => { autoCamera = true; camera.zoom = 1; camera.updateProjectionMatrix(); render(); });
   $("zoomInBtn").addEventListener("click", () => { camera.zoom = Math.min(5, camera.zoom * 1.15); camera.updateProjectionMatrix(); render(); });
   $("zoomOutBtn").addEventListener("click", () => { camera.zoom = Math.max(.4, camera.zoom / 1.15); camera.updateProjectionMatrix(); render(); });
-  const speeds = [3600, 10800, 21600, 86400, 259200]; let speedIndex = 1;
+  const speeds = [3600, 5400, 10800, 21600, 86400, 259200]; let speedIndex = 1;
   for (const [id, step] of [["speedDownBtn", -1], ["speedUpBtn", 1]]) $(id).addEventListener("click", () => { speedIndex = Math.max(0, Math.min(speeds.length - 1, speedIndex + step)); rate = speeds[speedIndex]; $(id).title = `${rate / 3600} simulated hours per second`; });
   for (const [id, output, unit] of [["distanceThresholdSlider", "distanceThresholdOutput", "km"], ["speedThresholdSlider", "speedThresholdOutput", "m/s"]]) $(id).addEventListener("input", () => { if ($(output)) $(output).textContent = `${$(id).value} ${unit}`; drawCharts(); });
   for (const [id, groupId] of [["separationChart", "distanceChartGroup"], ["speedChart", "speedChartGroup"]]) {

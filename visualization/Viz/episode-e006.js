@@ -521,7 +521,6 @@ async function start() {
     earth.position.copy(mode === "eci" ? new THREE.Vector3() : local(new THREE.Vector3(), frame));
     orientEarth(earth, mode, frame, current);
     updateReferenceOrbit(states);
-    if (miniScene && referenceSlot === "B") referenceOrbit.visible = false;
     for (const item of participants) {
       const state = states[item.slot].state, marker = markers[item.slot]; marker.userData.available = !!state;
       marker.visible = !!state;
