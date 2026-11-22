@@ -23,8 +23,9 @@ const point = (position, target, frame) => {
 export function mountOpeningArt(host, initialOptions = {}) {
   const options = { markerSizePx:42, trailHours:1.2, trailThickness:3.2, referenceThickness:1.3,
     borderThickness:1.1, borderOpacity:.68, borderColor:"#685f53", earthColor:"#e5e5e5",
-    animationRate:240, extraChasers:0, ...initialOptions };
+    animationRate:240, extraChasers:0, earthScale:1, artScale:1, ...initialOptions };
   const scene = new THREE.Scene();
+  const artGroup = new THREE.Group(); scene.add(artGroup);
   scene.background = new THREE.Color(0xffffff);
   const camera = new THREE.PerspectiveCamera(36, 1, .01, 100);
   camera.position.set(1.15, .45, .55);
@@ -36,9 +37,10 @@ export function mountOpeningArt(host, initialOptions = {}) {
   renderer.domElement.dataset.noAdvance = "true";
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = true;
-  controls.minDistance = .2; controls.maxDistance = 18;
+  controls.minDistance = .2; controls.maxDistance = options.sectionMode ? 40 : 18;
+  if(options.sectionMode){camera.position.set(10,4,19);controls.target.set(0,0,-3);controls.update();}
   const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_RADIUS_KM / 1000, 72, 48), new THREE.MeshBasicMaterial({ color: options.earthColor }));
-  scene.add(earth);
+  artGroup.add(earth);
   const grid = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.SphereGeometry(EARTH_RADIUS_KM / 1000 * 1.001, 24, 12)), new THREE.LineBasicMaterial({ color: options.borderColor, transparent: true, opacity: options.borderOpacity * .24, depthWrite: false }));
   earth.add(grid);
   const borderGeometry = new THREE.CylinderGeometry(1,1,1,3);
@@ -76,13 +78,13 @@ export function mountOpeningArt(host, initialOptions = {}) {
   }).catch(() => {});
   const line = (color, opacity) => {
     const object = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
-    scene.add(object); return object;
+    artGroup.add(object); return object;
   };
   const reference = line(0x716b5d, .62), trail = line(0xd6a50d, .94);
   const target = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture("#a9a9a9"), transparent: true, depthTest: true, depthWrite: false }));
   const chaser = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture("#eaaa00"), transparent: true, depthTest: true, depthWrite: false }));
   const extraMarkers = extraOrbits.map(() => new THREE.Sprite(new THREE.SpriteMaterial({map:dotTexture("#eaaa00"),transparent:true,opacity:.55,depthTest:true,depthWrite:false})));
-  for (const marker of [target, chaser, ...extraMarkers]) { marker.renderOrder = 3; scene.add(marker); }
+  for (const marker of [target, chaser, ...extraMarkers]) { marker.renderOrder = 3; artGroup.add(marker); }
   const resize = () => {
     const width = Math.max(1, host.clientWidth), height = Math.max(1, host.clientHeight);
     camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false);
@@ -95,11 +97,14 @@ export function mountOpeningArt(host, initialOptions = {}) {
   }
   function setOptions(next) {
     Object.assign(options,next);
+    earth.scale.setScalar(Number(options.earthScale));
+    artGroup.scale.setScalar(Number(options.artScale));
     earth.material.color.set(options.earthColor);
     borderMaterial.color.set(options.borderColor); borderMaterial.opacity=Number(options.borderOpacity);
     grid.material.color.set(options.borderColor);grid.material.opacity=Number(options.borderOpacity)*.24;
     if ("borderThickness" in next) redrawBorders();
   }
+  setOptions(options);
   let lastTick = -Infinity, lastCameraDistance = 0;
   function render(now) {
     controls.update();

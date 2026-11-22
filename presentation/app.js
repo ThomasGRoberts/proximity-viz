@@ -21,6 +21,10 @@ const initialVisibility = {
 const controlGroups = {
   openingControls: [
     ["openingStyle.markerSizePx", "Satellite dot size", 8, 64, 1, "px"],
+    ["openingStyle.earthScale", "Earth size", .25, 1.5, .01, "×"],
+    ["openingStyle.artScale", "Artwork scale", .4, 1.6, .01, "×"],
+    ["openingStyle.sectionEarthScale", "Section Earth size", .2, 1.4, .01, "×"],
+    ["openingStyle.sectionArtScale", "Section scene scale", .3, 1.4, .01, "×"],
     ["openingStyle.extraChasers", "Additional chasers", 0, 3, 1, ""],
     ["openingStyle.animationRate", "Animation speed", 10, 1000, 10, "×"],
     ["openingStyle.trailHours", "Chaser trail length", .1, 3.2, .1, "h"],
@@ -64,28 +68,41 @@ const fieldLabels = { objectB:"Object B card", tle:"TLE and epoch", uncertainty:
 const toScene = (point, scale) => new THREE.Vector3(point.x / scale, point.z / scale, -point.y / scale);
 const fmtDate = hour => new Intl.DateTimeFormat("en-US", { timeZone:"UTC", month:"short", day:"numeric", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:false }).format(new Date(EPOCH_MS + hour * 3600000)) + " UTC";
 const fmtNum = value => Number.isFinite(value) ? new Intl.NumberFormat("en-US", {maximumFractionDigits: value < 10 ? 2 : 0}).format(value) : "—";
-const beatCounts = { lab:4, "statements-shadow":3, "statements-focus":3, tle:3, uncertainty:3, neighbors:3 };
+function fillElementList(host, values, epoch) {
+  host.replaceChildren();
+  for(const [name,value] of [["Semi-major axis",`${(EARTH_KM+values.altitudeKm).toFixed(1)} km`],["Eccentricity",Number(values.eccentricity).toFixed(5)],["Inclination",`${Number(values.inclinationDeg).toFixed(2)}°`],["RAAN",`${Number(values.raanDeg).toFixed(2)}°`],["Argument of perigee",`${Number(values.argPerigeeDeg).toFixed(2)}°`],["Mean anomaly",`${Number(values.meanAnomalyDeg).toFixed(2)}°`],["Epoch",epoch.replace("T"," ").replace(".000Z"," UTC")]]){
+    const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=name;dd.textContent=value;row.append(dt,dd);host.append(row);
+  }
+}
+function elementsFromTle(tle) {
+  const line=tle.line2, meanMotion=Number(line.slice(52,63));
+  return {altitudeKm:Math.cbrt(398600.4418/(meanMotion*2*Math.PI/86400)**2)-EARTH_KM,
+    inclinationDeg:Number(line.slice(8,16)),raanDeg:Number(line.slice(17,25)),eccentricity:Number(`0.${line.slice(26,33)}`),
+    argPerigeeDeg:Number(line.slice(34,42)),meanAnomalyDeg:Number(line.slice(43,51))};
+}
+const beatCounts = { "statements-shadow":6, "statements-focus":2, tle:3, uncertainty:3, neighbors:3 };
 const beatLabels = {
-  lab:["Lab introduction","Coordination","Sustainability","Security"],
-  "statements-shadow":["United Kingdom","China","United States"],
-  "statements-focus":["Australia","European Union","Netherlands"],
-  tle:["Estimated orbit","Synthetic TLE","Updated elements"],
+  "statements-shadow":["United Kingdom","China","Australia","European Union","Netherlands","United States"],
+  "statements-focus":["An unusual approach","The broader concern"],
+  tle:["Orbit elements","Orbit in motion","Updated elements"],
   uncertainty:["Estimated orbit","Relative view","Uncertainty region"],
   neighbors:["Object A","Introduce Object B","Relative view"]
 };
 const statementCards = {
   "statements-shadow": [
     { flag:"🇬🇧", country:"United Kingdom", date:"9 July 2026", quote:"Unsolicited rendezvous and proximity operations can introduce safety risks through <strong>excessively close approaches</strong> that may result in physical interference or accidents potentially involving strategic space assets.", source:"UK delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=5935" },
-    { flag:"🇨🇳", country:"China", date:"8 July 2026", quote:"Starting from 2016, that country's satellite has for several times approached the satellites of China, Russia, Pakistan, and Nigeria. Sometimes the distance is only merely <strong>10 kilometers</strong>. Last April, that country's satellite even approached China's <strong>TGS15, 16, and TGS17</strong>. Sometimes it was only <strong>12 kilometers away from our satellites</strong>.", source:"Chinese delegation · OEWG on PAROS, third substantive session · English transcription; designations unverified", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/44A60FEA-18CA-4F46-AF6F-4B6236CAF19B/15h07/en?position=8499" },
-    { flag:"🇺🇸", country:"United States", date:"February 2020", quote:"This is <strong>unusual and disturbing behavior</strong> and has the potential to create a dangerous situation in space.", source:"General John W. Raymond · CBS News, 12 February 2020", url:"https://www.cbsnews.com/news/russian-satellites-fly-near-us-government-satellite-activity-unusual-disturbing-space-command/" }
-  ],
-  "statements-focus": [
+    { flag:"🇨🇳", country:"China", date:"8 July 2026", quote:"Sometimes the distance [between non-cooperative satellites] is merely <strong>10 kilometers</strong> ... Sometimes it was only <strong>12 kilometers</strong>.", source:"Chinese delegation · OEWG on PAROS, third substantive session · English transcription; referring to TJS 15, 16, and 17", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/44A60FEA-18CA-4F46-AF6F-4B6236CAF19B/15h07/en?position=8499" },
     { flag:"🇦🇺", country:"Australia", date:"9 July 2026", quote:"Nonconsensual proximity operations including close approach or <strong>so-called shadowing</strong> may be perceived as interference with the state's control over its space object or as coercive signaling.", source:"Australian delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=5363" },
     { flag:"🇪🇺", country:"European Union", date:"9 July 2026", quote:"Unfortunately, we continue to witness examples of unfriendly and even aggressive operations, including <strong>satellites being shadowed by other ones</strong> ...", source:"European Union delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=88" },
-    { flag:"🇳🇱", country:"Netherlands", date:"9 July 2026", quote:"The risks increase when such operations interfere with another space object or <strong>force it to perform an evasive maneuver</strong>.", source:"Dutch delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=8206" }
+    { flag:"🇳🇱", country:"Netherlands", date:"9 July 2026", quote:"The risks increase when such operations interfere with another space object or <strong>force it to perform an evasive maneuver</strong>.", source:"Dutch delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=8206" },
+    { flag:"🇺🇸", country:"United States", date:"February 2020", quote:"This is <strong>unusual and disturbing behavior</strong> and has the potential to create a dangerous situation in space.", source:"General John W. Raymond · CBS News, 12 February 2020 · About USA 245", url:"https://www.cbsnews.com/news/russian-satellites-fly-near-us-government-satellite-activity-unusual-disturbing-space-command/" }
+  ],
+  "statements-focus": [
+    { flag:"🇺🇸", country:"United States", date:"February 2020", quote:"This is <strong>unusual and disturbing behavior</strong>", source:"General John W. Raymond · CBS News, 12 February 2020 · About USA 245", url:"https://www.cbsnews.com/news/russian-satellites-fly-near-us-government-satellite-activity-unusual-disturbing-space-command/" },
+    { flag:"🇺🇸", country:"United States", date:"February 2020", quote:"and has the potential to create a <strong>dangerous situation in space</strong>.", source:"General John W. Raymond · CBS News, 12 February 2020 · About USA 245", url:"https://www.cbsnews.com/news/russian-satellites-fly-near-us-government-satellite-activity-unusual-disturbing-space-command/" }
   ],
 };
-let doc, stepIndex = 0, beatIndex = 0, config, engine, series, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], showArchived = false, activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt, sectionArt, saveStyleTimer, saveWordingTimer;
+let doc, stepIndex = 0, beatIndex = 0, config, engine, series, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], showArchived = false, activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt, sectionArt, saveStyleTimer, saveWordingTimer, saveTeachingTimer;
 
 async function request(path, payload) {
   const res = await fetch(path, payload ? { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) } : { cache:"no-store" });
@@ -106,13 +123,18 @@ queueMicrotask(async () => {
 
 function setup() {
   doc.openingStyle ||= {markerSizePx:42,trailHours:1.2,trailThickness:3.2,referenceThickness:1.3,borderThickness:1.1,borderOpacity:.68,borderColor:"#685f53",earthColor:"#e5e5e5",animationRate:240,extraChasers:0};
+  doc.openingStyle.earthScale ??= 1;
+  doc.openingStyle.artScale ??= 1;
+  doc.openingStyle.sectionEarthScale ??= .55;
+  doc.openingStyle.sectionArtScale ??= .8;
   doc.chapterLayout ||= {};
   doc.chapterLabels ||= {};
   stepIndex = Math.max(0, doc.steps.findIndex(step => step.id === location.hash.slice(1)));
   buildStepNav(); buildControls(); buildWordingControls(); buildVisibility(); buildPresets(); setupScene();
   openingArt = mountOpeningArt($("openingArt"),doc.openingStyle);
-  sectionArt = mountOpeningArt($("sectionArt"),{...doc.openingStyle,markerSizePx:Math.max(10,doc.openingStyle.markerSizePx*.6),animationRate:85});
+  sectionArt = mountOpeningArt($("sectionArt"),{...doc.openingStyle,sectionMode:true,markerSizePx:Math.max(10,doc.openingStyle.markerSizePx*.6),animationRate:85,earthScale:doc.openingStyle.sectionEarthScale??.55,artScale:doc.openingStyle.sectionArtScale??.8});
   bind(); bindLayoutDrag(); showStep(); animate(0); renderComments();
+  if(doc.inspectorPosition){Object.assign($("inspector").style,{left:`${doc.inspectorPosition.x}%`,top:`${doc.inspectorPosition.y}%`,right:"auto",bottom:"auto"});}
 }
 function step() { return doc.steps[stepIndex]; }
 function chapter() { return step().kind === "chapter"; }
@@ -158,6 +180,7 @@ function syncWordingControls() {
 function applyWording() {
   const item=step(),labels=doc.chapterLabels[item.id]||{A:"Object A",B:"Object B"};
   $("chapterNumber").textContent=item.subtitle;$("chapterTitle").textContent=item.title;$("chapterBody").textContent=item.body;
+  $("teachingEyebrow").textContent=item.subtitle;$("teachingTitle").textContent=item.title;$("teachingBody").textContent=item.body;
   for(const key of ["A","B"]){
     const summary=$(`legend${key}`).querySelector("summary");summary.lastChild.textContent=labels[key];
     $(`object${key}`).querySelector("strong").textContent=labels[key];
@@ -208,35 +231,35 @@ function showStep() {
   document.body.dataset.step = item.id;
   document.body.classList.toggle("chapterActive", chapter());
   $("slide").hidden = chapter(); $("episode").hidden = !chapter();
-  $("inspector").hidden = presentMode || (!chapter() && item.id!=="opening");
-  $("openingControlsSection").hidden = item.id!=="opening";
+  $("inspector").hidden = presentMode || (!chapter() && !["opening","statements-close"].includes(item.id));
+  $("openingControlsSection").hidden = !["opening","statements-close"].includes(item.id);
   $("chapterControlsSection").hidden = !chapter();
-  $("inspectorTitle").textContent=item.id==="opening"?"Opening artwork":"Scenario design";
+  $("inspectorTitle").textContent=item.id==="opening"?"Opening artwork":item.id==="statements-close"?"Section artwork":"Scenario design";
   if (!chapter()) {
     if(item.id==="opening"){
       document.body.classList.add("inspectorCollapsed");$("inspectorToggle").textContent="Show controls";$("inspectorToggle").setAttribute("aria-expanded","false");syncControls();
     }
-    $("slideTitle").textContent = item.title; $("slideEyebrow").textContent = item.id==="opening"?item.body||"":item.subtitle||"";
-    $("slideBody").textContent = item.id==="opening"?item.subtitle||"":item.body||"";
+    $("slideTitle").textContent = item.title; $("slideEyebrow").textContent = item.subtitle||"";
+    $("slideBody").textContent = item.body||"";
     $("slideBody").hidden=Boolean(statementCards[item.id]);
     if(item.id==="opening")$("slideTitle").innerHTML="How Close Is<br>Too Close?";
     if(item.id==="statements-close")$("slideTitle").innerHTML="<em>Close approaches</em> and <em>shadowing</em>";
     $("openingArt").hidden = item.id !== "opening"; $("labIntro").hidden = item.id !== "lab"; $("slideCopy").hidden = item.id === "lab";
     $("sectionArt").hidden = !["statements-close","library","limitations","future"].includes(item.id);
-    $("slidePrompt").hidden = !["statements-shadow","statements-focus"].includes(item.id);
+    $("slidePrompt").hidden = item.id!=="statements-focus";
     $("slidePrompt").textContent = item.body || "";
     renderQuoteCards(item.id); applyBeat(); enterStep(); updateProgress(); placePins(); return;
   }
   activePreset = doc.chapterPresets[item.id] || "neighbors";
   config = clone(doc.chapterOverrides[item.id] || doc.presets[activePreset]);
   config.display={trailThickness:1.8,referenceThickness:1.2,borderThickness:1.1,borderOpacity:.7,borderColor:"#707070",...config.display};
-  const teaching = ["tle","uncertainty","neighbors"].includes(item.id);
+  const teaching = ["uncertainty","neighbors"].includes(item.id);
   document.body.classList.toggle("inspectorCollapsed", teaching && !presentMode);
   $("inspectorToggle").textContent = teaching && !presentMode ? "Show controls" : "Hide controls";
   $("inspectorToggle").setAttribute("aria-expanded",String(!teaching || presentMode));
   setTimeout(resizeScene, 30);
   if (item.id === "conjunction") config.display.mode = "relative";
-  if (item.id === "tle") { config.display.mode = "eci"; config.display.rateHoursPerSecond = 2.4; config.display.trailHours = Math.max(8,config.display.trailHours); config.display.showTrail = true; }
+  if (item.id === "tle") config.display.mode = "eci";
   if (item.id === "tle" && beatIndex >= 2) config.teachingPlaneChange = { hour:8, dvMs:60 };
   if (item.id === "tle" && beatIndex < 2) delete config.teachingPlaneChange;
   if (item.id === "neighbors") config.display.mode = "relative";
@@ -253,16 +276,8 @@ function showStep() {
 function applyBeat(rebuild = true) {
   const id = step().id;
   document.body.dataset.beat = String(beatIndex);
-  if (id === "lab") {
-    [...$("researchAreas").children].forEach((node, index) => {
-      const visible=index<beatIndex;node.classList.toggle("revealed",visible);
-      const video=node.querySelector("video");
-      if(visible&&!matchMedia("(prefers-reduced-motion: reduce)").matches)video.play().catch(()=>{});
-      else {video.pause();video.currentTime=0;}
-    });
-  }
   if (!chapter()) {
-    if(statementCards[id]) [...$("quoteCards").children].forEach((node,index)=>{node.hidden=index>beatIndex;node.classList.toggle("revealed",index===beatIndex);});
+    if(statementCards[id]) [...$("quoteCards").children].forEach((node,index)=>{node.classList.toggle("pending",index>beatIndex);node.classList.toggle("revealed",index===beatIndex);});
     updateProgress();placePins();return;
   }
   if (id === "tle") {
@@ -279,9 +294,10 @@ function applyBeat(rebuild = true) {
     $("legendA").open = false;
   }
   if (id === "neighbors") { $("legendB").open = beatIndex >= 1; }
-  $("sceneLegend").hidden = id === "tle" ? beatIndex === 0 : id === "uncertainty";
+  $("sceneLegend").hidden = id === "uncertainty";
   $("panel").hidden = ["tle", "neighbors"].includes(id) || (id === "uncertainty" && beatIndex < 2);
-  $("playback").hidden = ["tle", "uncertainty", "neighbors"].includes(id);
+  $("teachingIntro").hidden=id!=="tle";
+  $("playback").hidden = ["uncertainty", "neighbors"].includes(id);
   $("sceneMetrics").hidden = ["tle", "uncertainty", "neighbors"].includes(id);
   $("frameTools").hidden = id === "neighbors" ? beatIndex < 2 : id === "uncertainty" || config.display.mode !== "relative";
   $("frameToggle").textContent = config.display.mode === "eci" ? "ECI frame" : "Local frame";
@@ -340,7 +356,8 @@ function syncControls() {
 }
 function change(path, value) {
   if (path.startsWith("openingStyle.")) {
-    setPath(doc,path,value);openingArt?.setOptions(doc.openingStyle);syncControls();
+    setPath(doc,path,value);openingArt?.setOptions(doc.openingStyle);
+    sectionArt?.setOptions({...doc.openingStyle,earthScale:doc.openingStyle.sectionEarthScale??.55,artScale:doc.openingStyle.sectionArtScale??.8,markerSizePx:Math.max(10,doc.openingStyle.markerSizePx*.6)});syncControls();
     $("saveStatus").textContent="Saving opening artwork…";
     clearTimeout(saveStyleTimer);saveStyleTimer=setTimeout(()=>saveDoc("Opening artwork saved locally").catch(error=>{$("saveStatus").textContent=error.message}),350);
     return;
@@ -352,6 +369,10 @@ function change(path, value) {
   syncControls();
   if (path === "display.mode") { customCamera = false; restoreCamera(); }
   try { recalc(); $("saveStatus").textContent = "Unsaved chapter changes"; } catch (error) { $("saveStatus").textContent = error.message; }
+  if(step().id==="tle"){
+    doc.chapterOverrides.tle=clone(config);clearTimeout(saveTeachingTimer);
+    saveTeachingTimer=setTimeout(()=>saveDoc("Orbit settings saved locally").catch(error=>{$("saveStatus").textContent=error.message}),450);
+  }
 }
 function buildVisibility() {
   const host = $("visibilityControls"); host.replaceChildren();
@@ -379,8 +400,8 @@ function recalc() {
   series = engine.sample(config.display.startHour, config.display.endHour, 260);
   const displayedA = step().id === "tle" && beatIndex >= 2 && engine.tleAfterA ? engine.tleAfterA : engine.tleA;
   $("tleText").textContent = `${displayedA.line1}\n${displayedA.line2}`;
-  $("legendTleA").textContent = `${displayedA.line1}\n${displayedA.line2}`;
-  $("legendTleB").textContent = `${engine.tleB.line1}\n${engine.tleB.line2}`;
+  fillElementList($("legendTleA"),elementsFromTle(displayedA),displayedA.epochUtc);
+  fillElementList($("legendTleB"),elementsFromTle(engine.tleB),engine.tleB.epochUtc);
   $("epochText").textContent = displayedA.epochUtc.replace(".000Z", " UTC").replace("T", " ");
   $("aElements").textContent = `${engine.tleAfterA && step().id === "tle" && beatIndex >= 2 ? "Updated synthetic TLE" : "Synthetic TLE"} · ${(EARTH_KM + config.objectA.altitudeKm).toFixed(0)} km semi-major axis`;
   $("bElements").textContent = `Synthetic TLE · ${config.objectB.relativeLongitudeDeg}° relative longitude at epoch`;
@@ -424,13 +445,17 @@ function setupScene() {
   };
   const orbit = line(0x555555,.72,true), trailA = line(0xeaaa00,.76,true), trailB = line(0x777777,.78,true), vector = line(0x8d6d11,.78), velocityVector = line(0x7890a5,.86);
   for (const item of [orbit,trailA,trailB,vector,velocityVector]) scene.add(item);
+  const ringPoints=Array.from({length:241},(_,i)=>{const a=i*2*Math.PI/240;return new THREE.Vector3(1.34*Math.cos(a),0,1.34*Math.sin(a));});
+  const equator=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ringPoints),new THREE.LineBasicMaterial({color:0xd3b968,transparent:true,opacity:.56,depthWrite:false}));
+  const ecliptic=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ringPoints),new THREE.LineBasicMaterial({color:0x8f9da6,transparent:true,opacity:.6,depthWrite:false}));
+  ecliptic.rotation.x=THREE.MathUtils.degToRad(23.44);scene.add(equator,ecliptic);
   const ellipsoid = new THREE.Mesh(new THREE.SphereGeometry(1,24,16),new THREE.MeshBasicMaterial({color:0xe9c977,transparent:true,opacity:.22,depthWrite:false})); scene.add(ellipsoid);
   const ellipsoidGrid = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.SphereGeometry(1.002,16,10)),new THREE.LineBasicMaterial({color:0xa77e17,transparent:true,opacity:.48,depthWrite:false})); scene.add(ellipsoidGrid);
   const axes = new THREE.Group();
   for (const [direction,color] of [[new THREE.Vector3(1,0,0),0xb58820],[new THREE.Vector3(0,-1,0),0x727b82],[new THREE.Vector3(0,0,-1),0x9d8672]]) axes.add(new THREE.ArrowHelper(direction,new THREE.Vector3(),1.7,color,.25,.12));
   axes.visible=false;
   scene.add(axes);
-  scene3d = {host,scene,camera,renderer,controls,earth,markerA,markerB,orbit,trailA,trailB,vector,velocityVector,ellipsoid,ellipsoidGrid,axes};
+  scene3d = {host,scene,camera,renderer,controls,earth,markerA,markerB,orbit,trailA,trailB,vector,velocityVector,ellipsoid,ellipsoidGrid,axes,equator,ecliptic};
   new ResizeObserver(resizeScene).observe(host);
 }
 function resizeScene() {
@@ -465,11 +490,11 @@ function applyLayout() {
 function bindLayoutDrag() {
   document.addEventListener("pointerdown",event=>{
     const handle=event.target.closest(".dragHandle[data-drag]");
-    if(!handle||presentMode||!chapter()||event.button!==0)return;
-    const node=$(handle.dataset.drag),parent=node.offsetParent;
+    if(!handle||presentMode||event.button!==0||(!chapter()&&handle.dataset.drag!=="inspector"))return;
+    const node=$(handle.dataset.drag),parent=node?.offsetParent||document.documentElement;
     if(!node||!parent)return;
     event.preventDefault();event.stopPropagation();
-    const rect=node.getBoundingClientRect(),bounds=parent.getBoundingClientRect();
+    const rect=node.getBoundingClientRect(),bounds=node.id==="inspector"?{left:0,top:0,width:innerWidth,height:innerHeight}:parent.getBoundingClientRect();
     const offsetX=event.clientX-rect.left,offsetY=event.clientY-rect.top;
     handle.setPointerCapture(event.pointerId);parent.classList.add("layoutDragging");
     let position=null;
@@ -483,7 +508,7 @@ function bindLayoutDrag() {
     const end=()=>{
       handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",end);
       handle.removeEventListener("pointercancel",end);parent.classList.remove("layoutDragging");
-      if(position){doc.chapterLayout[step().id]||={};doc.chapterLayout[step().id][node.id]=position;
+      if(position){if(node.id==="inspector")doc.inspectorPosition=position;else{doc.chapterLayout[step().id]||={};doc.chapterLayout[step().id][node.id]=position;}
         saveDoc("Layout position saved; snapped to 2.5% grid").catch(error=>{$("saveStatus").textContent=error.message});}
     };
     handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",end);handle.addEventListener("pointercancel",end);
@@ -511,7 +536,7 @@ function restoreCamera() {
   }
   if (config.display.mode === "eci") {
     const frame=orbitalFrame(engine.stateA(currentHour));
-    const distance=Math.max(4,3.4*(EARTH_KM+config.objectA.altitudeKm)/EARTH_KM);
+    const distance=Math.max(step().id==="tle"?5.8:4,3.4*(EARTH_KM+config.objectA.altitudeKm)/EARTH_KM);
     camera.position.copy(toScene(frame.normal,1).multiplyScalar(distance));
     camera.up.copy(toScene(frame.along,1));controls.target.set(0,0,0);
   } else if (["tle","uncertainty","neighbors"].includes(step().id)) {
@@ -523,6 +548,8 @@ function restoreCamera() {
 function updateScene() {
   if (!engine || !scene3d || !chapter()) return;
   const {earth,markerA,markerB,trailA,trailB,orbit,vector,velocityVector,ellipsoid,ellipsoidGrid,axes,camera,controls} = scene3d;
+  scene3d.equator.visible=step().id==="tle"&&config.display.mode==="eci";
+  scene3d.ecliptic.visible=scene3d.equator.visible;
   const state=engine.at(currentHour), originState=sceneOrigin === "B" ? state.B : state.A, frame=orbitalFrame(originState), relative=config.display.mode === "relative";
   const scale=relative ? 1000 : EARTH_KM;
   const transform = p => relative ? toScene(relativeCoordinates(p,originState.r,frame),scale) : toScene(p,scale);
@@ -566,7 +593,7 @@ function updateScene() {
   }
   if (!relative&&!customCamera) {
     controls.target.set(0,0,0);
-    const distance=Math.max(4,3.4*(EARTH_KM+config.objectA.altitudeKm)/EARTH_KM);
+    const distance=Math.max(step().id==="tle"?5.8:4,3.4*(EARTH_KM+config.objectA.altitudeKm)/EARTH_KM);
     camera.position.copy(toScene(frame.normal,1).multiplyScalar(distance));camera.up.copy(toScene(frame.along,1));
   }
   controls.update();
@@ -613,6 +640,7 @@ function bind() {
     if (["ArrowLeft","PageUp"].includes(event.key)) { event.preventDefault(); advance(-1); }
   });
   $("slide").addEventListener("click",event=>{ if (!spotMode && !event.target.closest("a,button,[data-no-advance]") && !event.defaultPrevented) advance(1); });
+  $("researchAreas").addEventListener("click",event=>{const node=event.target.closest(".researchArea");if(!node)return;const active=node.classList.toggle("active");node.setAttribute("aria-pressed",String(active));const video=node.querySelector("video");if(active&&!matchMedia("(prefers-reduced-motion: reduce)").matches)video.play().catch(()=>{});else{video.pause();video.currentTime=0;}});
   $("previousStep").onclick=()=>advance(-1);$("nextStep").onclick=()=>advance(1);
   $("beatSelect").onchange=()=>{beatIndex=Number($("beatSelect").value);applyBeat();};
   $("frameToggle").onclick=()=>{ change("display.mode",config.display.mode === "eci" ? "relative" : "eci"); applyBeat(false); };

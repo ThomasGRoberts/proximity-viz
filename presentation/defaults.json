@@ -5,8 +5,8 @@
       "id": "opening",
       "kind": "slide",
       "title": "How Close Is Too Close?",
-      "subtitle": "Building Shared Understanding of Satellite Behavior",
-      "body": "UN side event · Fourth Session of the OEWG on PAROS · November 23, 2026"
+      "subtitle": "Side event",
+      "body": "OEWG on PAROS · Fourth Session · November 23, 2026"
     },
     {
       "id": "lab",
@@ -20,28 +20,28 @@
       "kind": "slide",
       "title": "Close approaches and shadowing",
       "subtitle": "Official statements",
-      "body": "What does it mean to operate in proximity of another satellite?"
+      "body": "States describe close approaches and shadowing as concerning, but those terms remain undefined. Separation distance alone cannot explain the dynamic behavior—or the concern it creates."
     },
     {
       "id": "statements-shadow",
       "kind": "slide",
-      "title": "What makes a close approach too close?",
+      "title": "Six voices on proximity",
       "subtitle": "Official statements",
-      "body": "How close? How fast? For how long?"
+      "body": ""
     },
     {
       "id": "statements-focus",
       "kind": "slide",
-      "title": "What does it mean to shadow another satellite?",
-      "subtitle": "OEWG on PAROS, third substantive session",
-      "body": "What makes repeated or sustained proximity different?"
+      "title": "Beyond the physical parameters",
+      "subtitle": "A closer look · United States",
+      "body": "Distance, speed, and duration help describe an encounter. They are a starting point for understanding concern, not the whole explanation."
     },
     {
       "id": "tle",
       "kind": "chapter",
-      "title": "What is a TLE?",
-      "subtitle": "01 · Orbital estimates",
-      "body": "A two-line element set is a dated estimate. SGP4 turns it into positions and velocities that can be drawn in an Earth-centered inertial frame."
+      "title": "How to describe an orbit",
+      "subtitle": "01 · Orbital elements",
+      "body": "A satellite’s orbit can be described by six elements. Adjust them to see how its path changes around Earth."
     },
     {
       "id": "uncertainty",
@@ -333,11 +333,57 @@
     "thresholds": "close",
     "shadowing": "shadowing"
   },
-  "chapterOverrides": {},
+  "chapterOverrides": {
+    "tle": {
+      "label": "Ordinary neighboring GEO",
+      "objectA": {
+        "altitudeKm": 700,
+        "eccentricity": 0.001,
+        "inclinationDeg": 51.6,
+        "raanDeg": 35,
+        "argPerigeeDeg": 0,
+        "meanAnomalyDeg": 0
+      },
+      "objectB": {
+        "deltaAltitudeKm": 0,
+        "deltaInclinationDeg": 0.05,
+        "deltaEccentricity": -3e-05,
+        "deltaRaanDeg": 0,
+        "relativeLongitudeDeg": 0.45
+      },
+      "maneuver": {
+        "enabled": false,
+        "sequence": "hold",
+        "startHour": 24,
+        "durationHours": 36,
+        "deltaVms": 0
+      },
+      "display": {
+        "trailThickness": 1.8,
+        "referenceThickness": 1.2,
+        "borderThickness": 1.1,
+        "borderOpacity": 0.7,
+        "borderColor": "#707070",
+        "mode": "eci",
+        "startHour": 0,
+        "endHour": 18,
+        "rateHoursPerSecond": 0.35,
+        "trailHours": 0.5,
+        "markerSizePx": 12,
+        "showOrbit": true,
+        "showTrail": true,
+        "showVectors": false,
+        "showUncertainty": false,
+        "uncertaintyKm": 50,
+        "distanceThresholdKm": 200,
+        "speedThresholdMs": 5
+      }
+    }
+  },
   "chapterVisibility": {},
   "cameraViews": {},
   "openingStyle": {
-    "markerSizePx": 42,
+    "markerSizePx": 31,
     "trailHours": 2.4,
     "trailThickness": 3.2,
     "referenceThickness": 1.3,
@@ -346,7 +392,17 @@
     "borderColor": "#685f53",
     "earthColor": "#e5e5e5",
     "animationRate": 240,
-    "extraChasers": 0
+    "extraChasers": 0,
+    "earthScale": 1,
+    "artScale": 1,
+    "sectionEarthScale": 0.55,
+    "sectionArtScale": 0.8
   },
-  "chapterLayout": {}
+  "chapterLayout": {},
+  "chapterLabels": {
+    "tle": {
+      "A": "Satellite",
+      "B": "Object B"
+    }
+  }
 }
