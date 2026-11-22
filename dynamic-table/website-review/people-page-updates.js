@@ -5,10 +5,11 @@
   const style = document.createElement('style');
   style.id = 'espl-people-author-row-style';
   style.textContent = `
+    @media(min-width:900px){#studentOverlay .publication-card{grid-template-columns:minmax(0,1fr) minmax(360px,38%)}}
     #studentOverlay .publication-card .knowledge-output-media{min-width:0;overflow:hidden}
     #studentOverlay .publication-card .knowledge-slide__people{display:flex;flex-flow:row nowrap;justify-content:flex-start;align-items:center;gap:6px;width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
     #studentOverlay .publication-card .knowledge-person-row{display:flex;flex:0 0 auto;width:auto;gap:6px}
-    #studentOverlay .publication-card .knowledge-person__photo{width:clamp(32px,3.6vw,54px);height:clamp(32px,3.6vw,54px)}
+    #studentOverlay .publication-card .knowledge-person__photo{width:clamp(32px,3.2vw,46px);height:clamp(32px,3.2vw,46px)}
   `;
   root.prepend(style);
   const stage = document.getElementById('publicationStage');
