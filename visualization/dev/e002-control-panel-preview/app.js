@@ -1,5 +1,5 @@
-import { loadOrbitalPreview, preloadOrbitalElements, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js?v=2";
-import { createGlobePreview } from "./globe-preview.js?v=6";
+import { loadOrbitalPreview, preloadOrbitalElements, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js?v=3";
+import { createGlobePreview } from "./globe-preview.js?v=7";
 import { reviewHref } from "../review-shell.js?v=2";
 import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-feed.js?v=6";
 import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.js";
@@ -7,6 +7,7 @@ import { installGlossary } from "./glossary.js";
 import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
 import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=2";
+import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=1";
 
 const $ = id => document.getElementById(id);
 void preloadOrbitalElements().catch(() => {});
@@ -40,7 +41,28 @@ let lastSelectorContext = "";
 let playbackFrame = null;
 let speedIndex = 1;
 const speeds = [5, 10, 20, 40, 80];
-const currentPlaybackSpeed = () => speeds[Math.min(speeds.length - 1, speedIndex + (globe?.getMode() === "eci" ? 0 : 1))];
+const eciMultipliers = [.5, 1, 1.5, 2, 3];
+const eciPeriodMinutes = new Map();
+function targetOrbitMinutes() {
+  if (!orbitalModel || !currentWindow) return 1436;
+  if (eciPeriodMinutes.has(currentWindow.id)) return eciPeriodMinutes.get(currentWindow.id);
+  const center = (Date.parse(currentWindow.start) + Date.parse(currentWindow.end)) / 2;
+  const state = orbitalModel.frame(currentWindow, center).B;
+  const position = state?.position, velocity = state?.velocity;
+  if (!position || !velocity) return 1436;
+  const radius = Math.hypot(position.x, position.y, position.z);
+  const speedSquared = velocity.x ** 2 + velocity.y ** 2 + velocity.z ** 2;
+  const mu = 398600.4418;
+  const inverseAxis = 2 / radius - speedSquared / mu;
+  const minutes = inverseAxis > 0 ? 2 * Math.PI * Math.sqrt((1 / inverseAxis) ** 3 / mu) / 60 : 1436;
+  const period = Number.isFinite(minutes) && minutes > 0 ? minutes : 1436;
+  eciPeriodMinutes.set(currentWindow.id, period);
+  return period;
+}
+const currentPlaybackSpeed = () => globe?.getMode() === "eci"
+  ? targetOrbitMinutes() / 25 * eciMultipliers[speedIndex]
+  : speeds[Math.min(speeds.length - 1, speedIndex + 1)];
+const playbackSpeedLabel = () => `${Number(currentPlaybackSpeed().toFixed(1))} simulated minutes per second`;
 const chartScales = new Map();
 const lastThresholds = { distance: 200, speed: 500 };
 let lastTimeBands = "";
@@ -211,10 +233,10 @@ async function saveAction(request) {
 function spotLabel(element, root) {
   const map = {
     identity: "Satellite selector", upperDetails: "Chaser details", lowerDetails: "USA 245 details",
-    rangeMetric: "Separation metric", speedMetric: "Relative velocity metric", distanceChartGroup: "Separation chart",
-    speedChartGroup: "Velocity chart", thresholdControls: "How Close Is Too Close?", playbackDock: "Playback dock",
+    rangeMetric: "Separation metric", speedMetric: "Relative speed metric", distanceChartGroup: "Separation chart",
+    speedChartGroup: "Relative speed chart", thresholdControls: "Thresholds", playbackDock: "Playback dock",
     timelineSlider: "Playback time bar", playBtn: "Play / pause", distanceThresholdSlider: "Separation threshold",
-    speedThresholdSlider: "Velocity threshold", dataStatusSection: "Episode context", episodeDescription: "Episode description",
+    speedThresholdSlider: "Relative speed threshold", dataStatusSection: "Episode context", episodeDescription: "Episode description",
     globeStage: "3D globe", autoCamera: "Reset view", zoomInBtn: "Zoom in", zoomOutBtn: "Zoom out", modeBtn: "ECI / relative motion", projectLink: "Project link", modelCaveat: "Reconstruction note", sceneStatus: "Scene status",
   };
   if (root === "selector") {
@@ -296,7 +318,7 @@ function drawPlaceholderChart(canvas, kind, note = "Loading verified orbital dat
   for (const y of [20, 48, 76, 104]) { context.beginPath(); context.moveTo(46, y); context.lineTo(296, y); context.stroke(); }
   context.fillStyle = "#aaa"; context.font = "10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   context.save(); context.translate(17, 73); context.rotate(-Math.PI / 2); context.textAlign = "center";
-  context.fillText(kind === "distance" ? "Separation distance (km)" : "Relative velocity (km/s)", 0, 0); context.restore();
+  context.fillText(kind === "distance" ? "Separation distance (km)" : "Relative speed (m/s)", 0, 0); context.restore();
   context.fillStyle = "#c5c0b7"; context.textAlign = "center"; context.fillText(note, 169, 72);
   context.fillStyle = "#999"; context.font = "9px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   context.fillText("Dec 8, 10:05", 79, 136); context.fillText("11:35 UTC", 260, 136);
@@ -309,9 +331,8 @@ function selectedChaser() {
 const roundedFive = value => Math.round(value / 5) * 5;
 function thresholdValue(id, key) {
   const raw = $(id)?.value?.trim();
-  const scale = key === "speed" ? 1000 : 1;
-  const step = (Number($(id)?.step) || 1) * scale;
-  const parsed = Number(raw) * scale;
+  const step = Number($(id)?.step) || 1;
+  const parsed = Number(raw);
   if (raw && Number.isFinite(parsed) && parsed >= 0) lastThresholds[key] = Math.round(parsed / step) * step;
   return lastThresholds[key];
 }
@@ -333,31 +354,25 @@ function renderTimeBands(window, slot, distance, speed, qualifications) {
   }
 }
 
-function renderDwellDescription(node, chaser, distance, speed) {
-  const first = document.createElement("em"), target = document.createElement("em");
-  const distanceValue = document.createElement("strong"), speedValue = document.createElement("strong");
+function renderDwellDescription(node) {
+  if (node.dataset.explained) return;
   const gray = document.createElement("strong"), gold = document.createElement("strong");
-  gray.className = "single"; gray.textContent = "Gray"; gold.className = "both"; gold.textContent = "gold";
-  first.textContent = chaser.toUpperCase(); target.textContent = (catalogNames.B || "USA 245").toUpperCase();
-  distanceValue.textContent = `${distance.toLocaleString()} km`;
-  speedValue.textContent = `${(speed / 1000).toFixed(2).replace(/0+$/, "").replace(/\.$/, "")} km/s`;
-  const hours = currentWindow ? (Date.parse(currentWindow.end) - Date.parse(currentWindow.start)) / 3600000 : 36;
-  node.replaceChildren("The cumulative time within this ", String(hours), "-hour chapter during which ", first,
-    " is within ", distanceValue, " of ", target, " with a relative velocity at or below ", speedValue,
-    ". ", gray, " marks one threshold; ", gold, " marks both.");
+  gray.className = "single"; gray.textContent = "gray"; gold.className = "both"; gold.textContent = "Gold";
+  node.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds. Adjust threshold values by clicking and dragging the labels on the charts above. ",
+    gold, " markings on the dynamic charts above indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
+  node.dataset.explained = "1";
 }
 
-function compactSpeed(metersPerSecond) {
-  return metersPerSecond < 1000
-    ? `${Math.round(metersPerSecond).toLocaleString("en-US")} m/s`
-    : `${Math.round(metersPerSecond / 1000).toLocaleString("en-US")} km/s`;
-}
+const compactSpeed = metersPerSecond => `${Math.round(metersPerSecond).toLocaleString("en-US")} m/s`;
 
 function showMinimum(node, minimum, unit) {
+  const key = minimum ? `${minimum.window.id}:${minimum.ms}:${minimum.value}:${unit}` : "unavailable";
+  if (node.dataset.minimumKey === key) return;
+  node.dataset.minimumKey = key;
   node.replaceChildren();
-  if (!minimum) { node.textContent = "Minimum this episode: unavailable"; return; }
+  if (!minimum) { node.textContent = "Minimum this chapter: unavailable"; return; }
   const strong = document.createElement("strong");
-  strong.textContent = unit === "km" ? `${roundedFive(minimum.value).toLocaleString("en-US")} km` : compactSpeed(minimum.value);
+  strong.textContent = `${Math.round(minimum.value).toLocaleString("en-US")} ${unit}`;
   const link = document.createElement("a"); link.href = "#"; link.textContent = datePart(minimum.ms);
   link.insertAdjacentHTML("beforeend", '<svg class="minimumCalendar" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3.5h10v10H3zM3 6h10"/><path class="calendarPage" d="M6.1 8.4h3.8l-2.4 3.6"/></svg>');
   link.title = `Jump to ${prettyDate(minimum.ms)}`;
@@ -366,7 +381,7 @@ function showMinimum(node, minimum, unit) {
     minimumMarker = { windowId: minimum.window.id, ms: minimum.ms };
     playbackControl?.goTo(minimum.window, minimum.ms, { afterMinutes: minimum.window.id === "dec30" ? 15 : 30 });
   });
-  node.append("Minimum this episode: ", strong, " on ", link);
+  node.append("Minimum this chapter: ", strong, " on ", link);
 }
 
 function renderOrbitalPanel() {
@@ -388,19 +403,21 @@ function renderOrbitalPanel() {
   renderTimeBands(currentWindow, slot, distance, speed, qualifications);
   $("rangeStat").textContent = Number.isFinite(current?.distanceKm) ? `${roundedFive(current.distanceKm).toLocaleString()} km` : "—";
   $("speedStat").textContent = Number.isFinite(current?.speedMs) ? compactSpeed(current.speedMs) : "—";
-  showMinimum($("distanceMinimum"), orbitalModel.minimum(slot, "distanceKm"), "km");
-  showMinimum($("speedMinimum"), orbitalModel.minimum(slot, "speedMs"), "km/s");
+  const minimumWithinChapter = key => {
+    const sample = samples.reduce((best, item) => Number.isFinite(item[key]) && (!best || item[key] < best[key]) ? item : best, null);
+    return sample ? { value: sample[key], ms: sample.ms, window: currentWindow } : null;
+  };
+  showMinimum($("distanceMinimum"), minimumWithinChapter("distanceKm"), "km");
+  showMinimum($("speedMinimum"), minimumWithinChapter("speedMs"), "m/s");
   const markedMs = minimumMarker?.windowId === currentWindow.id ? minimumMarker.ms : null;
-  const speedWindowMs = Date.parse(currentWindow.end) - Date.parse(currentWindow.start);
-  const visibleSpeedMax = samples.reduce((max, sample) => sample.ms <= currentMs && sample.ms >= currentMs - speedWindowMs && Number.isFinite(sample.speedMs) ? Math.max(max, sample.speedMs) : max, 0);
-  const speedUnit = Math.max(speed, visibleSpeedMax) < 1000 ? "m/s" : "km/s";
+  const speedUnit = "m/s";
   chartScales.set("distanceChartGroup", drawOrbitalChart($("separationChart"), samples, "distanceKm", { window: currentWindow, currentMs, threshold: distance, title: "Separation distance (km)", maximum: Number($("distanceThresholdSlider").max), qualifications, markedMs }));
-  chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), samples, "speedMs", { window: currentWindow, currentMs, threshold: speed, title: `Relative velocity (${speedUnit})`, maximum: Number($("speedThresholdSlider").max) * 1000, qualifications, markedMs, speedUnit }));
+  chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), samples, "speedMs", { window: currentWindow, currentMs, threshold: speed, title: `Relative speed (${speedUnit})`, maximum: Number($("speedThresholdSlider").max), qualifications, markedMs, speedUnit }));
   $("separationChart").setAttribute("aria-label", `${chaser} to ${catalogNames.B || "USA 245"} separation over time`);
-  $("speedChart").setAttribute("aria-label", `${chaser} to ${catalogNames.B || "USA 245"} relative velocity over time`);
+  $("speedChart").setAttribute("aria-label", `${chaser} to ${catalogNames.B || "USA 245"} relative speed over time`);
   $("dwellStat").textContent = qualifications.both.validSamples ? formatDwellDuration(qualifications.both.totalMs) : "—";
   $("dwellUnit").textContent = "";
-  renderDwellDescription($("dwellMetric").querySelector(".dwellKey"), chaser, distance, speed);
+  renderDwellDescription($("dwellMetric").querySelector(".dwellKey"));
   if (playbackFrame === null) globe?.update(currentWindow, currentMs, slot);
   for (const id of ["rangeMetric", "speedMetric", "distanceChartGroup", "speedChartGroup"]) $(id).classList.remove("preview-placeholder");
   positionPins();
@@ -409,7 +426,7 @@ function renderOrbitalPanel() {
 function updateThresholds(ui) {
   const distance = thresholdValue("distanceThresholdSlider", "distance");
   const speed = thresholdValue("speedThresholdSlider", "speed");
-  ui.querySelector("#thresholdSummary").textContent = `${distance} km · ${(speed / 1000).toFixed(2)} km/s`;
+  ui.querySelector("#thresholdSummary").textContent = `${distance} km · ${speed} m/s`;
   resetOrbitalChartScale($("separationChart")); resetOrbitalChartScale($("speedChart"));
   renderOrbitalPanel();
 }
@@ -419,9 +436,9 @@ function wireChartThreshold(groupId, chartId, sliderId) {
   const change = clientY => {
     const scale = chartScales.get(groupId); if (!scale) return;
     const y = clientY - chart.getBoundingClientRect().top;
-    const value = (scale.bottom - y) / (scale.bottom - scale.top) * scale.max / (groupId === "speedChartGroup" && scale.unit === "m/s" ? 1000 : 1);
+    const value = (scale.bottom - y) / (scale.bottom - scale.top) * scale.max;
     const step = Number(slider.step) || 1;
-    slider.value = (Math.round(Math.max(Number(slider.min), Math.min(Number(slider.max), value)) / step) * step).toFixed(2);
+    slider.value = String(Math.round(Math.max(Number(slider.min), Math.min(Number(slider.max), value)) / step) * step);
     updateThresholds($("ui"));
   };
   edge.addEventListener("pointerdown", event => { edge.setPointerCapture(event.pointerId); change(event.clientY); });
@@ -522,8 +539,8 @@ function wirePlayback(dock, windows) {
     lastTick = 0; lastPaint = 0; playbackFrame = requestAnimationFrame(tick);
   }
   play.addEventListener("click", () => { if (playbackFrame !== null) pause(); else startPlayback(); });
-  dock.querySelector("#speedDownBtn").addEventListener("click", () => { speedIndex = Math.max(0, speedIndex - 1); message(`Playback: ${currentPlaybackSpeed()} simulated minutes per second in this view.`); });
-  dock.querySelector("#speedUpBtn").addEventListener("click", () => { speedIndex = Math.min(speeds.length - 1, speedIndex + 1); message(`Playback: ${currentPlaybackSpeed()} simulated minutes per second in this view.`); });
+  dock.querySelector("#speedDownBtn").addEventListener("click", () => { speedIndex = Math.max(0, speedIndex - 1); message(`Playback: ${playbackSpeedLabel()} in this view.`); });
+  dock.querySelector("#speedUpBtn").addEventListener("click", () => { speedIndex = Math.min(speeds.length - 1, speedIndex + 1); message(`Playback: ${playbackSpeedLabel()} in this view.`); });
   setWindow(0, Date.parse(windows[0].start));
   return {
     start: startPlayback,
@@ -602,6 +619,8 @@ async function buildPanel() {
   const paragraph = document.createElement("p");
   paragraph.append(safeEpisodeName(row["Episode Description"] || ""));
   description.replaceChildren(paragraph);
+  const storyToggle = installEpisodeDescriptionToggle(description);
+  storyToggle.hidden = !row["Episode Description"];
   const identity = ui.querySelector("#identity"); identity.replaceChildren();
   const frame = document.createElement("iframe"); frame.className = "selector-frame"; frame.title = "E-002 satellite selector"; frame.src = "../satellite-legend-prototype/index.html?embed=1&v=2"; identity.append(frame); wireSelectorFrame(frame);
   ui.querySelector("#nowSummary").textContent = `${catalogNames.A} or ${catalogNames.C} · ${catalogNames.B}`;
@@ -663,14 +682,14 @@ async function buildPanel() {
   for (const id of ["rangeMetric", "speedMetric", "distanceChartGroup", "speedChartGroup"]) ui.querySelector(`#${id}`).classList.add("preview-placeholder");
   ui.querySelector("#rangeStat").textContent = "—"; ui.querySelector("#speedStat").textContent = "—";
   ui.querySelector("#rangeMetric .statLabel").textContent = "Separation distance";
-  ui.querySelector("#speedMetric .statLabel").textContent = "Relative velocity";
-  ui.querySelector("#distanceMinimum").textContent = "Minimum this episode: [N] km on [Date]";
-  ui.querySelector("#speedMinimum").textContent = "Minimum this episode: [N] km/s on [Date]";
+  ui.querySelector("#speedMetric .statLabel").textContent = "Relative speed";
+  ui.querySelector("#distanceMinimum").textContent = "Minimum this chapter: [N] km on [Date]";
+  ui.querySelector("#speedMinimum").textContent = "Minimum this chapter: [N] m/s on [Date]";
   ui.querySelector("#thresholdRangeNote").remove();
-  for (const [id, step, unit, maximum] of [["distanceThresholdSlider", 5, "km", 50000], ["speedThresholdSlider", .05, "km/s", 20]]) {
+  for (const [id, step, unit, maximum] of [["distanceThresholdSlider", 1, "km", 50000], ["speedThresholdSlider", 1, "m/s", 20000]]) {
     const input = ui.querySelector(`#${id}`);
     input.type = "number"; input.step = String(step); input.max = String(maximum); input.inputMode = "numeric";
-    input.value = id === "speedThresholdSlider" ? "0.50" : "200.00";
+    input.value = id === "speedThresholdSlider" ? "500" : "200";
     const output = ui.querySelector(`#${id.replace("Slider", "Output")}`);
     output?.remove();
     const wrap = document.createElement("span"); wrap.className = "threshold-input-wrap";
@@ -679,7 +698,7 @@ async function buildPanel() {
     input.addEventListener("input", () => updateThresholds(ui));
     input.addEventListener("change", () => {
       const key = id.startsWith("distance") ? "distance" : "speed";
-      input.value = (thresholdValue(id, key) / (key === "speed" ? 1000 : 1)).toFixed(2); updateThresholds(ui);
+      input.value = String(thresholdValue(id, key)); updateThresholds(ui);
     });
   }
   const thresholdHint = document.createElement("p"); thresholdHint.className = "threshold-chart-hint";
@@ -688,10 +707,11 @@ async function buildPanel() {
   ui.querySelector("#thresholdControls .thresholdBody").prepend(thresholdHint);
   ui.querySelector("#dwellStat").textContent = "—"; ui.querySelector("#dwellUnit").textContent = "";
   ui.querySelector("#dwellLabel").textContent = "Dwell time";
-  renderDwellDescription(ui.querySelector("#dwellMetric .dwellKey"), catalogNames.A, 200, 500);
+  renderDwellDescription(ui.querySelector("#dwellMetric .dwellKey"));
   for (const [id, kind] of [["separationChart", "distance"], ["speedChart", "speed"]]) drawPlaceholderChart(ui.querySelector(`#${id}`), kind);
   wireChartThreshold("distanceChartGroup", "separationChart", "distanceThresholdSlider");
   wireChartThreshold("speedChartGroup", "speedChart", "speedThresholdSlider");
+  installPanelEnhancements();
   updateThresholds(ui); playbackControl = wirePlayback(dock, episodeConfig.windows);
   installGlossary(ui, frame);
   markAnchors(panelMount);
@@ -766,6 +786,7 @@ try {
     try {
       globe = createGlobePreview(model, episodeConfig, catalogNames, savedCameraViews);
       $("cameraControls").hidden = false;
+      $("modeBtn").addEventListener("click", () => { if (globe?.getMode() === "eci") speedIndex = 1; });
     }
     catch (error) { console.error(error); $("sceneStatus").textContent = `3D globe unavailable in this browser: ${error.message}`; showEpisodeLoadError(error); }
     renderOrbitalPanel();

@@ -1,6 +1,6 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
-import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar } from "../shared/episode-feed.js?v=6";
+import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar, parseCsv } from "../shared/episode-feed.js?v=6";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
@@ -195,7 +195,7 @@ function buildObjectPopover(info) {
   const objectTypes = { PAY:"Payload", PAYLOAD:"Payload", "R/B":"Rocket body", "ROCKET BODY":"Rocket body", DEB:"Debris", DEBRIS:"Debris", TBA:"To be assigned" };
   addMetadata(dl, "COSPAR ID", s.OBJECT_ID);
   addMetadata(dl, "NORAD ID", s.NORAD_CAT_ID);
-  const ownerRow = el("div"), ownerValue = el("dd"); ownerRow.append(el("dt", "", "Country"));
+  const ownerRow = el("div"), ownerValue = el("dd"); ownerRow.append(el("dt", "", "Country / Org."));
   ownerValue.append(document.createTextNode(ownerDisplay(info)));
   if (!organizationKind(info) && info.owner !== "FRIT") for (const flag of emojiForOwner(info.owner)) ownerValue.append(document.createTextNode(` ${flag}`));
   ownerRow.append(ownerValue); dl.append(ownerRow);
@@ -324,8 +324,37 @@ function updateSortHeaders() {
   for (const button of document.querySelectorAll(".sort-head")) {
     const active = button.dataset.sort === state.sort.key, th = button.closest("th");
     th.setAttribute("aria-sort", active ? (state.sort.direction === "desc" ? "descending" : "ascending") : "none");
-    button.querySelector(".sort-indicator").textContent = active ? (state.sort.direction === "desc" ? "↓" : "↑") : "";
+    button.querySelector(".sort-indicator").textContent = active ? (state.sort.direction === "desc" ? "↓" : "↑") : "↕";
+    if (!button.dataset.glossaryTerm) button.title = `Sort by ${button.textContent.replace(/[↑↓↕]/g, "").trim()}`;
   }
+}
+const headerGlossaryFallback = {
+  "Minimum Separation Distance": "The lowest separation distance calculated between any two space objects with different operators within an episode. An episode's reported minimum separation distance may occur at a different point in time than its reported minimum relative speed.",
+  "Minimum Relative Speed": "The lowest relative speed calculated between any two space objects with different operators within an episode. An episode's reported minimum relative speed may occur at a different point in time than its reported minimum separation distance.",
+};
+const headerGlossary = { ...headerGlossaryFallback };
+function installHeaderGlossary() {
+  const tip = el("div", "table-glossary-popover"); tip.id = "table-glossary-popover"; tip.setAttribute("role", "tooltip"); tip.hidden = true; document.body.append(tip);
+  for (const button of document.querySelectorAll("[data-glossary-term]")) {
+    const term = button.dataset.glossaryTerm;
+    button.setAttribute("aria-describedby", tip.id);
+    const show = () => {
+      tip.replaceChildren(el("strong", "", term), el("p", "", headerGlossary[term] || "Definition unavailable.")); tip.hidden = false;
+      const rect = button.getBoundingClientRect();
+      tip.style.left = `${Math.max(10, Math.min(rect.left, innerWidth - tip.offsetWidth - 10))}px`;
+      tip.style.top = `${rect.bottom + tip.offsetHeight + 8 > innerHeight ? Math.max(8, rect.top - tip.offsetHeight - 7) : rect.bottom + 7}px`;
+    };
+    button.addEventListener("mouseenter", show); button.addEventListener("focus", show);
+    button.addEventListener("mouseleave", () => { tip.hidden = true; });
+    button.addEventListener("blur", () => { tip.hidden = true; });
+  }
+  void fetch(new URL("../visualization/dev/e002-control-panel-preview/glossary-data.json", import.meta.url), { cache: "no-store" })
+    .then(response => { if (!response.ok) throw new Error(`Glossary configuration returned ${response.status}`); return response.json(); })
+    .then(config => fetch(config.sourceUrl, { cache: "no-store" }))
+    .then(response => { if (!response.ok) throw new Error(`Published glossary returned ${response.status}`); return response.text(); })
+    .then(csv => parseCsv(csv, ["Term", "Definition", "Project"]))
+    .then(rows => { for (const row of rows) if (row.Project === "How Close is Too Close" && row.Term in headerGlossary && row.Definition) headerGlossary[row.Term] = row.Definition; })
+    .catch(error => console.warn("Using verified glossary definitions for table headings.", error));
 }
 function ensureDetail(row) {
   const id = field(row, "ID");
@@ -591,7 +620,7 @@ function expandedContent(row, data) {
     evidence.append(grid);
     if (carousel) {
       const cards = [...grid.children], nav = el("nav", "source-carousel-controls"), dots = el("div", "source-carousel-dots");
-      nav.setAttribute("aria-label", "Source cards"); dots.setAttribute("role", "group"); dots.setAttribute("aria-label", "Choose source card");
+      nav.setAttribute("aria-label", "Record card groups"); dots.setAttribute("role", "group"); dots.setAttribute("aria-label", "Choose record group");
       const arrow = (direction, label, path) => {
         const button = el("button", `source-carousel-arrow ${direction}`); button.type = "button"; button.setAttribute("aria-label", label);
         button.innerHTML = `<svg viewBox="0 0 20 20" aria-hidden="true"><path d="${path}"/></svg>`;
@@ -599,50 +628,44 @@ function expandedContent(row, data) {
       };
       const previous = arrow("previous", "Previous source cards", "M13 4 7 10 13 16");
       const next = arrow("next", "Next source cards", "M7 4 13 10 7 16");
-      let first = 0;
-      const show = (index, swipe = false) => {
-        const oldFirst = first;
-        const oldVisible = cards.filter(card => !card.hidden);
-        const oldRects = new Map(oldVisible.map(card => [card, card.getBoundingClientRect()]));
-        first = (index + cards.length) % cards.length;
-        const visibleCount = matchMedia("(max-width:650px)").matches ? 1 : matchMedia("(max-width:900px)").matches ? 2 : 3;
-        const visible = Array.from({ length: visibleCount }, (_, offset) => (first + offset) % cards.length);
-        const motion = swipe && oldFirst !== first && !reducedMotion.matches;
-        const direction = (first - oldFirst + cards.length) % cards.length <= cards.length / 2 ? 1 : -1;
-        const outgoing = motion ? oldVisible.find(card => !visible.includes(cards.indexOf(card))) : null;
-        const outgoingRect = outgoing && oldRects.get(outgoing);
-        cards.forEach((card, position) => { card.hidden = !visible.includes(position); card.style.order = String(visible.indexOf(position)); });
-        if (motion) {
-          const gridRect = grid.getBoundingClientRect();
-          const travel = (cards.find(card => !card.hidden)?.getBoundingClientRect().width || 250) + 14;
-          for (const card of cards.filter(item => !item.hidden)) {
-            const old = oldRects.get(card), next = card.getBoundingClientRect();
-            const fromX = old ? old.left - next.left : direction * travel;
-            if (Math.abs(fromX) > 1) card.animate([{ translate: `${fromX}px 0`, opacity: old ? 1 : .35 }, { translate: "0 0", opacity: 1 }], { duration: 380, easing: "cubic-bezier(.22,1,.36,1)" });
-          }
-          grid.querySelector(".source-carousel-ghost")?.remove();
-          if (outgoingRect) {
-            const ghost = outgoing.cloneNode(true);
-            ghost.classList.add("source-carousel-ghost"); ghost.removeAttribute("hidden"); ghost.removeAttribute("tabindex"); ghost.removeAttribute("role");
-            Object.assign(ghost.style, { position: "absolute", zIndex: "4", left: `${outgoingRect.left - gridRect.left}px`, top: `${outgoingRect.top - gridRect.top}px`, width: `${outgoingRect.width}px`, height: `${outgoingRect.height}px`, margin: "0", pointerEvents: "none" });
-            grid.append(ghost);
-            ghost.animate([{ translate: "0 0", opacity: 1 }, { translate: `${-direction * travel}px 0`, opacity: 0 }], { duration: 380, easing: "cubic-bezier(.22,1,.36,1)" }).finished.finally(() => ghost.remove());
+      const blanks = Array.from({ length: 2 }, () => {
+        const slot = el("span", "source-carousel-empty"); slot.hidden = true; slot.setAttribute("aria-hidden", "true"); grid.append(slot); return slot;
+      });
+      let page = 0, advance = 0, currentStart = 0;
+      const pageSize = () => matchMedia("(max-width:650px)").matches ? 1 : matchMedia("(max-width:900px)").matches ? 2 : 3;
+      const pageCount = () => Math.ceil(cards.length / pageSize());
+      const restart = () => {
+        clearInterval(advance);
+        advance = window.setInterval(() => { if (grid.isConnected && !document.hidden) show((page + 1) % pageCount(), true); }, 10000);
+      };
+      const show = (requestedPage, animate = false) => {
+        const oldPage = page, size = pageSize(), total = pageCount();
+        page = Math.max(0, Math.min(requestedPage, total - 1));
+        const start = page * size, visible = cards.slice(start, start + size); currentStart = start;
+        cards.forEach((card, position) => { card.hidden = position < start || position >= start + size; card.style.order = String(position - start); });
+        blanks.forEach((slot, position) => { slot.hidden = position >= size - visible.length; slot.style.order = String(visible.length + position); });
+        if (animate && oldPage !== page && !reducedMotion.matches) {
+          const direction = page > oldPage ? 1 : -1;
+          for (const card of visible) {
+            card.getAnimations().forEach(animation => animation.cancel());
+            card.animate([{ translate: `${direction * 36}px 0`, opacity: .35 }, { translate: "0 0", opacity: 1 }], { duration: 300, easing: "cubic-bezier(.22,1,.36,1)" });
           }
         }
-        [...dots.children].forEach((dot, position) => { dot.classList.toggle("is-active", position === first); dot.setAttribute("aria-pressed", String(position === first)); });
+        if (dots.children.length !== total) {
+          dots.replaceChildren();
+          for (let position = 0; position < total; position++) {
+            const dot = el("button", "source-carousel-dot"); dot.type = "button";
+            dot.setAttribute("aria-label", `Show record group ${position + 1} of ${total}`);
+            dot.addEventListener("click", () => { show(position, true); restart(); }); dots.append(dot);
+          }
+        }
+        [...dots.children].forEach((dot, position) => { dot.classList.toggle("is-active", position === page); dot.setAttribute("aria-pressed", String(position === page)); });
+        previous.disabled = page === 0; next.disabled = page === total - 1;
       };
-      cards.forEach((card, position) => {
-        const dot = el("button", "source-carousel-dot"); dot.type = "button";
-        dot.setAttribute("aria-label", `Show source card ${position + 1} of ${cards.length}`);
-        dot.addEventListener("click", () => show(position, true)); dots.append(dot);
-      });
-      previous.addEventListener("click", () => show(first - 1, true)); next.addEventListener("click", () => show(first + 1, true));
-      nav.append(previous, dots, next); evidence.append(nav); show(0);
-      const onResize = () => show(first);
-      let advance = 0;
-      const restart = () => { clearInterval(advance); advance = window.setInterval(() => { if (grid.isConnected && !document.hidden) show(first + 1, true); }, 10000); };
-      for (const control of [previous, next, ...dots.children]) control.addEventListener("click", restart);
-      restart();
+      previous.addEventListener("click", () => { show(page - 1, true); restart(); });
+      next.addEventListener("click", () => { show(page + 1, true); restart(); });
+      nav.append(previous, dots, next); evidence.append(nav); show(0); restart();
+      const onResize = () => show(Math.floor(currentStart / pageSize()));
       window.addEventListener("resize", onResize); sourceCarouselCleanup = () => { window.removeEventListener("resize", onResize); clearInterval(advance); };
     }
   }
@@ -730,7 +753,7 @@ function proximityNode(row, key) {
   cell.append(el("strong", "minimum-value", value), el("span", "minimum-unit", key === "distance" ? "km" : "m/s"));
   const pair = metric.pair?.split(":");
   const pairLabel = pair?.length === 2 ? `${objectInfo(row, pair[0], currentData())?.name || pair[0]} to ${objectInfo(row, pair[1], currentData())?.name || pair[1]}; ` : "";
-  cell.title = `${id === "E-002" ? "COSMOS 2542 to USA 245; December 9 and December 30 chapters. " : pairLabel}Estimated minimum in this reconstruction: ${value} ${key === "distance" ? "km separation" : "m/s relative velocity"} on ${fullDate(new Date(metric.ms).toISOString().slice(0, 10))}. Display rounding does not quantify uncertainty.`;
+  cell.title = `${id === "E-002" ? "COSMOS 2542 to USA 245; December 9 and December 30 chapters. " : pairLabel}Estimated minimum in this reconstruction: ${value} ${key === "distance" ? "km separation" : "m/s relative speed"} on ${fullDate(new Date(metric.ms).toISOString().slice(0, 10))}. Display rounding does not quantify uncertainty.`;
   return cell;
 }
 let previewScene = null, previewToken = 0;
@@ -961,6 +984,13 @@ function stopPreview() {
   }
   document.querySelectorAll(".table-wrap > .orbital-preview").forEach(host => { if (host !== warmedE002Host && host !== warmedE001Host && host !== warmedE005Host) host.remove(); });
 }
+function opaqueMiniColor(color, fraction = 1) {
+  const match = /^#([0-9a-f]{6})$/i.exec(String(color || ""));
+  if (!match || fraction >= 1) return color;
+  const source = [0, 2, 4].map(index => parseInt(match[1].slice(index, index + 2), 16));
+  const backdrop = [255, 252, 246];
+  return `#${source.map((value, index) => Math.round(value * fraction + backdrop[index] * (1 - fraction)).toString(16).padStart(2, "0")).join("")}`;
+}
 function showMiniDotsOverDescription() {
   const expanded = document.querySelector(".expanded-row .expanded-inner.has-visual");
   const context = expanded?.querySelector(".context-block");
@@ -981,7 +1011,13 @@ function showMiniDotsOverDescription() {
       if (!dot) { dot = el("span", "mini-dot-clone"); overlay.append(dot); dots.set(marker.slot, dot); }
       const x = frame.left + frame.width * marker.x, y = frame.top + frame.height * marker.y;
       dot.hidden = !marker.visible || x < text.left || x > text.right || y < text.top || y > text.bottom;
-      if (!dot.hidden) { dot.style.left = `${x - area.left + expanded.scrollLeft}px`; dot.style.top = `${y - area.top + expanded.scrollTop}px`; dot.style.background = marker.color; dot.style.opacity = String(marker.opacity ?? 1); }
+      if (!dot.hidden) {
+        const fraction = Math.max(0, Math.min(1, Number(marker.fade ?? marker.opacity ?? 1)));
+        dot.style.left = `${x - area.left + expanded.scrollLeft}px`; dot.style.top = `${y - area.top + expanded.scrollTop}px`;
+        dot.style.background = opaqueMiniColor(marker.color, fraction);
+        dot.style.borderColor = marker.outlineColor || opaqueMiniColor("#191919", fraction);
+        dot.style.opacity = "1";
+      }
     }
   };
   miniDotFrame = requestAnimationFrame(paint);
@@ -1176,33 +1212,43 @@ function newsIndicator(row, count) {
   const wrap = el(count ? "button" : "span", "news-indicator");
   if (count) { wrap.type = "button"; wrap.setAttribute("aria-label", `Show ${count} linked ${count === 1 ? "record" : "records"} for ${title(row)}`); wrap.addEventListener("click", event => { event.stopPropagation(); toggleRow(row); }); }
   else wrap.setAttribute("aria-label", "0 linked records");
-  const stack = el("span", "news-mini-stack"); stack.setAttribute("aria-hidden", "true");
-  stack.style.setProperty("--record-stack-width", `${count ? 16 + 6 * (count - 1) : 0}px`);
-  for (let index = 0; index < count; index++) {
-    const card = el("span", "news-mini"); card.style.setProperty("--stack-offset", `${index * 6}px`);
-    card.style.setProperty("--stack-angle", `${index % 2 ? 3 : -3}deg`); stack.append(card);
-  }
-  wrap.title = `${count} linked ${count === 1 ? "record" : "records"}`; wrap.append(stack);
+  const icon = el("span", "news-record-icon"); icon.setAttribute("aria-hidden", "true");
+  icon.append(el("span", "news-record-count", count ? `×${count}` : "0"));
+  wrap.title = `${count} linked ${count === 1 ? "record" : "records"}`; wrap.append(icon);
   return wrap;
+}
+function rowDiscovery() {
+  const hints = el("div", "row-discovery"); hints.setAttribute("aria-hidden", "true");
+  const book = el("span", "row-discovery-item", "Episode");
+  book.insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 4.2c-1.9-1.1-4.1-1.3-6.3-.7v10.3c2.2-.6 4.4-.4 6.3.7 1.9-1.1 4.1-1.3 6.3-.7V3.5c-2.2-.6-4.4-.4-6.3.7Zm0 0v10.3"/></svg>');
+  book.title = "Learn more about this episode";
+  const model = el("span", "row-discovery-item", "Model");
+  const poly = el("img"); poly.src = "./assets/polyhedron-icon.png"; poly.alt = ""; model.prepend(poly);
+  model.title = "Explore the interactive model";
+  const records = el("span", "row-discovery-item", "Records");
+  records.insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M4 3.5h8v10H4zM6 5.5h8v10H6zM8 8h4M8 10h4M8 12h3"/></svg>');
+  records.title = "Read records about expressions of concern";
+  hints.append(book, model, records); return hints;
 }
 function render() {
   sourceCarouselCleanup(); sourceCarouselCleanup = () => {};
   stopPreview(); closeObject(); updateSortHeaders();
   const data = currentData(), rows = visibleRows();
   if (state.selected && !rows.includes(state.selected)) state.selected = null;
-  $("#count").textContent = state.query ? `${rows.length} matching episodes` : `${rows.length} episodes`;
+  const recordCount = data?.descriptions?.length || 0;
+  $("#count").textContent = `${rows.length} ${state.query ? "matching " : ""}${rows.length === 1 ? "episode" : "episodes"} · ${data?.descriptionError ? "records unavailable" : `${recordCount} ${recordCount === 1 ? "record" : "records"} total`}`;
   $("#count").title = data?.source === "live" && !state.usePreview ? "Episodes with titles in the current Episodes tab." : "";
   const body = $("#rows"); body.replaceChildren();
   for (const [index, row] of rows.entries()) {
     const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);
-    tr.tabIndex = 0; tr.dataset.episodeId = field(row, "ID"); tr.setAttribute("aria-label", `${title(row)}, ${open ? "collapse" : "expand"} details`);
+    tr.tabIndex = 0; tr.dataset.episodeId = field(row, "ID"); tr.setAttribute("aria-label", `${title(row)}, ${open ? "collapse" : "expand"} details about the episode, orbital model, and records`);
     if (["E-005", "E-006"].includes(field(row, "ID"))) tr.dataset.miniSelected = "B";
     tr.setAttribute("aria-expanded", String(open));
     if (open) tr.setAttribute("aria-controls", `episode-detail-${field(row, "ID")}`);
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");
     const badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row);
     const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
-    heading.append(name);
+    heading.append(name, rowDiscovery());
     episode.append(heading); tr.append(episode);
     const orbitCell = el("td", "orbit-cell"); orbitCell.append(badge); tr.append(orbitCell);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
@@ -1246,6 +1292,7 @@ function setStatus() {
   else { status.hidden = false; status.dataset.kind = "error"; status.textContent = `Current published sheet unavailable: ${live?.error || "unknown error"}. No stale episode dates are shown.`; }
 }
 async function init() {
+  installHeaderGlossary();
   const localReviewMode = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
   if (localReviewMode) {
     const shell = await fetch("./review-bar.html", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Local review shell returned ${response.status}`); return response.text(); });

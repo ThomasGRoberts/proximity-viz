@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Episodes of Concern · ESPL</title>
   <link rel="icon" type="image/png" href="./assets/polyhedron-icon.png">
-  <link rel="stylesheet" href="./style.css?v=30">
-  <script type="module" src="./app.js?v=44"></script>
+  <link rel="stylesheet" href="./style.css?v=32">
+  <script type="module" src="./app.js?v=46"></script>
   <script type="module" src="../visualization/dev/review-shell.js?v=2"></script>
 <link rel="stylesheet" href="../shared/episode-loading.css">
 </head>
@@ -22,10 +22,10 @@
       <div class="table-wrap"><table><thead><tr>
         <th scope="col"><button class="sort-head" data-sort="title" type="button">Episode <span class="sort-indicator" aria-hidden="true"></span></button></th>
         <th scope="col">Orbit</th>
-        <th scope="col">Space objects</th>
+        <th scope="col">Space objects <span class="column-meta-label">COSPAR ID</span></th>
         <th scope="col"><button class="sort-head" data-sort="date" type="button">Period <span class="sort-indicator" aria-hidden="true"></span></button></th>
-        <th scope="col"><button class="sort-head metric-heading" data-sort="distance" type="button"><span>Minimum Separation Distance</span><span class="sort-indicator" aria-hidden="true"></span></button></th>
-        <th scope="col"><button class="sort-head metric-heading" data-sort="speed" type="button"><span>Minimum Relative Velocity</span><span class="sort-indicator" aria-hidden="true"></span></button></th>
+        <th scope="col"><button class="sort-head metric-heading" data-sort="distance" data-glossary-term="Minimum Separation Distance" type="button"><span class="table-glossary-label">Minimum Separation Distance</span><span class="sort-indicator" aria-hidden="true"></span></button></th>
+        <th scope="col"><button class="sort-head metric-heading" data-sort="speed" data-glossary-term="Minimum Relative Speed" type="button"><span class="table-glossary-label">Minimum Relative Speed</span><span class="sort-indicator" aria-hidden="true"></span></button></th>
         <th scope="col" class="records-head"><button class="sort-head" data-sort="sources" type="button">Records <span class="sort-indicator" aria-hidden="true"></span></button></th>
       </tr></thead><tbody id="rows"></tbody></table></div>
       <div id="empty" class="empty" hidden></div>

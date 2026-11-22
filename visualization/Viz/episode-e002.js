@@ -89,7 +89,7 @@ for (const groupId of ["distanceChartGroup", "speedChartGroup"]) {
 $("separationChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 separation; gaps indicate unsupported samples");
 $("speedChart").setAttribute("aria-label", "Kosmos 2542 to USA 245 relative speed; gaps indicate unsupported samples");
 
-const { episodeModel: model } = await import("../dev/e002/player.js?v=19");
+const { episodeModel: model } = await import("../dev/e002/player.js?v=20");
 for (const window of model.windows) {
   const title = window.chapterTitle || window.label;
   const button = document.createElement("button"); button.type = "button";
@@ -151,9 +151,15 @@ function drawChart(id, key, threshold, current) {
   const unit = key === "distanceKm" ? "km" : "m/s";
   context.save(); context.translate(22, (top + bottom) / 2); context.rotate(-Math.PI / 2);
   context.fillStyle = "#555"; context.textAlign = "center";
-  context.fillText(key === "distanceKm" ? "Estimated separation (km)" : "Estimated relative velocity (m/s)", 0, 0); context.restore();
+  context.fillText(key === "distanceKm" ? "Estimated separation (km)" : "Estimated relative speed (m/s)", 0, 0); context.restore();
   if (!values.length) { context.fillStyle = CHART_COLOR.text; context.fillText("No supported samples", left + 5, (top + bottom) / 2); return; }
   const max = Math.max(Math.max(...values) * 1.08, threshold * 1.2, 1);
+  canvas.dataset.chartTop = String(top);
+  canvas.dataset.chartBottom = String(bottom);
+  canvas.dataset.chartMax = String(max);
+  canvas.dataset.chartFactor = "1";
+  canvas.dataset.bandY = String(bottom + 3);
+  canvas.dataset.bandEndY = String(bottom + 3 + comparisons.length * 6);
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end);
   const x = ms => left + (ms - start) / (end - start) * (right - left);
   const y = value => bottom - Math.min(1, Math.max(0, value / max)) * (bottom - top);
@@ -186,6 +192,22 @@ function drawChart(id, key, threshold, current) {
   }
   context.strokeStyle = "#8b806a"; context.lineWidth = 1; context.setLineDash([2, 3]);
   context.beginPath(); context.moveTo(x(current), top); context.lineTo(x(current), bottom); context.stroke(); context.setLineDash([]);
+  comparisons.forEach((comparison, index) => {
+    const slot = comparison.slots[0];
+    for (let sampleIndex = 1; sampleIndex < series.length; sampleIndex++) {
+      const before = series[sampleIndex - 1], after = series[sampleIndex];
+      if (before.ms > current) break;
+      const first = before[slot], second = after[slot];
+      if (!first || !second) continue;
+      const both = [first, second].every(item => item.distanceKm <= Number($("distanceThresholdSlider").value) && item.speedMs <= Number($("speedThresholdSlider").value));
+      const one = [first, second].every(item => key === "distanceKm"
+        ? item.distanceKm <= Number($("distanceThresholdSlider").value) && item.speedMs > Number($("speedThresholdSlider").value)
+        : item.speedMs <= Number($("speedThresholdSlider").value) && item.distanceKm > Number($("distanceThresholdSlider").value));
+      if (!both && !one) continue;
+      context.fillStyle = both ? "#eaaa00" : "#a9a9a9";
+      context.fillRect(x(before.ms), bottom + 3 + index * 6, Math.max(1, x(Math.min(after.ms, current)) - x(before.ms)), 4);
+    }
+  });
   context.fillStyle = CHART_COLOR.text; context.textAlign = "left"; context.fillText(formatTime(start).replace(/^.*?, /, "").replace(" UTC", ""), left, height - 7);
   context.textAlign = "right"; context.fillText(formatTime(end).replace(/^.*?, /, "").replace(" UTC", ""), right, height - 7);
 }
@@ -211,17 +233,29 @@ function updateCharts() {
   $("dwellStat").textContent = count === null || count === undefined ? "—" : formatDwellDuration(count * 60000);
   $("dwellUnit").textContent = "";
   const explanation = $("dwellMetric").querySelector(".dwellKey");
-  explanation.textContent = "Approximate chapter duration between consecutive supported one-minute samples that meet both thresholds.";
+  if (!explanation.dataset.explained) {
+    const gold = document.createElement("strong"), gray = document.createElement("strong");
+    gold.className = "both"; gold.textContent = "Gold";
+    gray.className = "single"; gray.textContent = "gray";
+    explanation.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds. Adjust threshold values by clicking and dragging the labels on the charts above. ", gold, " markings on the dynamic charts above indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
+    explanation.dataset.explained = "1";
+  }
   if (comparisons.length > 1) {
     let rows = $("dwellMetric").querySelector(".e002-dwell-pairs");
     if (!rows) { rows = document.createElement("div"); rows.className = "e002-dwell-pairs"; explanation.after(rows); }
-    rows.replaceChildren(...dwell.map(item => { const row = document.createElement("div"), dot = document.createElement("i"), value = document.createElement("strong"); dot.style.background = item.color; value.textContent = item.count === null ? "unavailable" : formatDwellDuration(item.count * 60000); row.append(dot, document.createTextNode(item.label), value); return row; }));
+    dwell.forEach((item, index) => {
+      let row = rows.children[index];
+      if (!row) { row = document.createElement("div"); const dot = document.createElement("i"), value = document.createElement("strong"); dot.style.background = item.color; row.append(dot, document.createTextNode(item.label), value); rows.append(row); }
+      const value = row.querySelector("strong"), next = item.count === null ? "unavailable" : formatDwellDuration(item.count * 60000);
+      if (value.textContent !== next) value.textContent = next;
+    });
   }
 }
 function tick() {
   if (!model.ready) { setTimeout(tick, 250); return; }
   if (model.window.id !== lastWindow) {
     lastWindow = model.window.id; buildSeries();
+    syncEciSpeed();
     for (const [id, button] of chapterButtons) { const active = id === lastWindow; button.classList.toggle("active", active); button.setAttribute("aria-pressed", String(active)); }
     context.textContent = model.window.chapterTitle || model.window.label;
     coverageBody.textContent = `${model.window.note ? `${model.window.note} ` : ""}Playback: ${formatTime(Date.parse(model.window.start))} to ${formatTime(Date.parse(model.window.end))}. Statistical comparisons require each selected element to be within 12 hours of its epoch.`;
@@ -230,11 +264,22 @@ function tick() {
   const slider = $("timelineSlider"); slider.min = String(start); slider.max = String(end); slider.value = String(current); slider.step = "1000";
   updatePlaybackCounter($("sliderNow"), current - start, current); $("timeDisplay").textContent = formatTime(current);
   const currentValues = comparisons.map(comparison => validSample(comparison, current));
-  const display = (key, unit) => {
-    const digits = key === "distanceKm" ? 0 : 1;
-    return comparisons.length === 1 ? (currentValues[0] ? `${currentValues[0][key].toFixed(digits)} ${unit}` : "—") : comparisons.map((comparison, index) => `${comparison.short}: ${currentValues[index] ? currentValues[index][key].toFixed(digits) + " " + unit : "unavailable"}`).join(" · ");
+  const renderMetric = (id, key, unit) => {
+    const host = $(id), digits = key === "distanceKm" ? 0 : 1;
+    if (comparisons.length === 1) {
+      const next = currentValues[0] ? `${currentValues[0][key].toFixed(digits)} ${unit}` : "—";
+      if (host.textContent !== next) host.textContent = next;
+      return;
+    }
+    if (host.children.length !== comparisons.length) host.replaceChildren(...comparisons.map(() => {
+      const row = document.createElement("span"); row.className = "e002-stat-pair-row"; return row;
+    }));
+    comparisons.forEach((comparison, index) => {
+      const next = `${comparison.short}: ${currentValues[index] ? currentValues[index][key].toFixed(digits) + " " + unit : "unavailable"}`;
+      if (host.children[index].textContent !== next) host.children[index].textContent = next;
+    });
   };
-  $("rangeStat").textContent = display("distanceKm", "km"); $("speedStat").textContent = display("speedMs", "m/s");
+  renderMetric("rangeStat", "distanceKm", "km"); renderMetric("speedStat", "speedMs", "m/s");
   $("playBtn").setAttribute("aria-label", model.playing ? "Pause" : "Play");
   updateCards(); updateCharts(); setTimeout(tick, 500);
 }
@@ -260,12 +305,36 @@ for (const [groupId, chartId, sliderId] of [["distanceChartGroup", "separationCh
 $("timelineSlider").addEventListener("input", event => model.setTime(Number(event.target.value)));
 wireTimelineHover($("timelineSlider"), $("timelineHover"), $("timelineHoverTick"), () => [Date.parse(model.window.start), Date.parse(model.window.end)]);
 $("playBtn").addEventListener("click", () => model.setPlaying(!model.playing));
-$("modeBtn").addEventListener("click", () => model.toggleFrame());
+$("modeBtn").addEventListener("click", () => { model.toggleFrame(); syncEciSpeed(); });
 $("resetBtn").hidden = false; $("resetBtn").addEventListener("click", () => model.resetCamera());
 $("zoomInBtn").addEventListener("click", () => model.zoom(1.12));
 $("zoomOutBtn").addEventListener("click", () => model.zoom(1 / 1.12));
 $("speed").value = "60";
 wireSpeedButtons($("speed"), $("speedDownBtn"), $("speedUpBtn"), rate => model.setRate(rate));
+let relativeSpeedSelection = null;
+const eciSpeedOption = new Option("1 target orbit / 25 s", "3600");
+function syncEciSpeed() {
+  const menu = $("speed");
+  if (model.frameMode !== "inertial") {
+    if (relativeSpeedSelection !== null) menu.value = relativeSpeedSelection;
+    relativeSpeedSelection = null;
+    eciSpeedOption.remove();
+  } else {
+    if (relativeSpeedSelection === null) relativeSpeedSelection = menu.value;
+    const rate = model.targetOrbitRate();
+    eciSpeedOption.value = String(rate);
+    eciSpeedOption.remove();
+    const next = [...menu.options].find(option => Number(option.value) > rate);
+    menu.insertBefore(eciSpeedOption, next || null);
+    menu.value = eciSpeedOption.value;
+  }
+  model.setRate(Number(menu.value));
+  const label = menu.selectedOptions[0]?.textContent || "current";
+  for (const [button, direction] of [[$("speedDownBtn"), "Slow down"], [$("speedUpBtn"), "Speed up"]]) {
+    button.title = `${direction}; current speed ${label}`;
+    button.setAttribute("aria-label", button.title);
+  }
+}
 new ResizeObserver(() => document.body.style.setProperty("--e002-dock-height", `${Math.ceil($("playbackDock").getBoundingClientRect().height)}px`)).observe($("playbackDock"));
 $("cameraControls").append(makeCameraEditor(model));
 tick();

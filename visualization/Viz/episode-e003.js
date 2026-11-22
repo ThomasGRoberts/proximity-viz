@@ -1,4 +1,8 @@
 import { placeEpisodeScreenLabels } from "./screen-label-layout.js";
+import { installReferenceOrbitHover } from "./reference-orbit-hover.js";
+import { orientEarth } from "./earth-frame.js";
+import { eciRateForState } from "./orbital-playback.js";
+import { miniLandTexture } from "./mini-scene-style.js";
 import { renderSharedCommentList } from "../dev/review-shell.js?v=2";
 /* Local first pass for E-003. Two spacecraft remain visible; nearest dated
    Space-Track elements drive playback. Statistical chart gaps mark old TLEs. */
@@ -13,7 +17,6 @@ import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 import { formatDwellDuration } from "../../shared/format-duration.js";
-import { dwellSatelliteName } from "../../shared/dwell-name.js";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 
 const $ = id => document.getElementById(id);
@@ -123,7 +126,7 @@ async function start() {
   $("rangeNote").textContent = "Space-Track historical elements. The selected TLE and its age are shown under each spacecraft.";
   $("metricArea").closest(".panelSection").classList.add("results-section");
   $("rangeMetric").querySelector(".statLabel").textContent = "Separation distance";
-  $("speedMetric").querySelector(".statLabel").textContent = "Relative velocity";
+  $("speedMetric").querySelector(".statLabel").textContent = "Relative speed";
   $("thresholdControls").querySelector("summary>span").textContent = "How close is too close?";
   const thresholdHint = document.createElement("p"); thresholdHint.className = "threshold-chart-hint";
   thresholdHint.textContent = "Select threshold values by dragging the labels on the charts or typing in the boxes below.";
@@ -156,16 +159,22 @@ async function start() {
   const earthSurface = new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: miniScene ? 0xd8cbb9 : 0xf7f7f7 }));
   const earth = new THREE.Group(); earth.add(earthSurface); scene.add(earth);
   fetch("./vendor/countries-50m.json").then(r => r.json()).then(topology => {
+    if (miniScene) {
+      earthSurface.material.map = miniLandTexture(THREE, feature(topology, topology.objects.countries).features);
+      earthSurface.material.needsUpdate = true;
+      return;
+    }
     const positions = [];
     for (const country of feature(topology, topology.objects.countries).features) {
       const rings = country.geometry.type === "Polygon" ? country.geometry.coordinates : country.geometry.type === "MultiPolygon" ? country.geometry.coordinates.flat() : [];
       for (const ring of rings) for (let i = 1; i < ring.length; i++) {
         const a = ring[i - 1], b = ring[i]; if (Math.abs(a[0] - b[0]) > 25 || Math.abs(a[1] - b[1]) > 25) continue;
-        for (const [lon, lat] of [a, b]) { const p = THREE.MathUtils.degToRad(lat), q = THREE.MathUtils.degToRad(lon); positions.push(1.003 * Math.cos(p) * Math.cos(q), 1.003 * Math.sin(p), -1.003 * Math.cos(p) * Math.sin(q)); }
+        for (const [lon, lat] of [a, b]) { const p = THREE.MathUtils.degToRad(lat), q = THREE.MathUtils.degToRad(lon); positions.push(1.005 * Math.cos(p) * Math.cos(q), 1.005 * Math.sin(p), -1.005 * Math.cos(p) * Math.sin(q)); }
       }
     }
     const geometry = new THREE.BufferGeometry(); geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x444444, transparent: true, opacity: .8, depthWrite: false })));
+    // Solid, slightly lifted lines avoid translucent overlaps and depth shimmer.
+    earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x696969, depthTest: true, depthWrite: false })));
   }).catch(() => {});
   const markers = {}, trails = {}, cards = {}, labels = {};
   const miniDotSize = () => miniScene ? miniMarkerScale(camera, sceneHost.clientHeight) : DOT_SCREEN_SIZE;
@@ -174,6 +183,14 @@ async function start() {
   let miniHover = false;
   const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x555555, transparent: true, opacity: .68, depthTest: true, depthWrite: false }));
   referenceOrbit.renderOrder = 2; referenceOrbit.frustumCulled = false; scene.add(referenceOrbit);
+  if (!miniScene && !panelPreview) installReferenceOrbitHover({
+    canvas: renderer.domElement, camera, orbit: referenceOrbit, earth,
+    description: () => {
+      const reference = participants.find(item => item.slot === referenceSlot);
+      const moving = participants.find(item => item.slot === (referenceSlot === "A" ? selected : "A"));
+      return `This reference orbit describes ${reference.name}'s trajectory around the Earth. The motion of ${moving.name} is shown relative to ${reference.name} in ${moving.slot === "A" ? "gold" : "gray"}.`;
+    },
+  });
   for (const item of participants) {
     const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(item.color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
     marker.material.depthTest = !miniScene; marker.scale.setScalar(miniDotSize()); marker.renderOrder = 10; scene.add(marker); markers[item.slot] = marker;
@@ -198,6 +215,7 @@ async function start() {
   document.body.classList.toggle("e003-multi-chapter", chapters.length > 1);
   $("playbackDock").prepend(chapterNav);
   let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "B", referenceSlot = "B", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 21600, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
+  let relativeRate = rate;
   let miniLoopStart = chapter.centerMs - 2 * HOUR, miniLoopEnd = chapter.centerMs + 2 * HOUR;
   const miniPinnedTles = {};
   const chartScales = new Map(), qualificationCache = new Map();
@@ -316,14 +334,14 @@ async function start() {
       const entries = series.filter(row => row[selected]?.[key] != null);
       const min = entries.reduce((best, row) => !best || row[selected][key] < best[selected][key] ? row : best, null);
       const target = $(nodeId); target.replaceChildren();
-      if (!min) { target.textContent = "Minimum this episode: unavailable"; continue; }
+      if (!min) { target.textContent = "Minimum this chapter: unavailable"; continue; }
       const strong = document.createElement("strong");
-      strong.textContent = unit === "km" ? `${Math.round(min[selected][key] / 5) * 5} km` : min[selected][key] < 1000 ? `${Math.round(min[selected][key])} m/s` : `${(min[selected][key] / 1000).toFixed(2)} km/s`;
+      strong.textContent = `${Math.round(min[selected][key]).toLocaleString("en-US")} ${unit}`;
       const link = document.createElement("a"); link.href = "#playbackDock"; link.textContent = shortUtc(min.ms);
       link.title = `Jump playback to ${new Date(min.ms).toISOString()}`;
       link.setAttribute("aria-label", link.title);
       link.addEventListener("click", event => { event.preventDefault(); focusedMinimumMs = min.ms; setTime(min.ms, true); });
-      target.append("Minimum this episode: ", strong, " on ", link);
+      target.append("Minimum this chapter: ", strong, " on ", link);
     }
   }
   function drawCharts(force = true) {
@@ -344,8 +362,8 @@ async function start() {
     const both = analyzeEpisode(samples, distance, speed, step);
     const distanceOnly = analyzeEpisode(samples, distance, Infinity, step).intervals;
     const speedOnly = analyzeEpisode(samples, Infinity, speed, step).intervals;
-    const single = exclusiveQualificationIntervals(distanceOnly, speedOnly).single;
-    const result = { both, single }; qualificationCache.set(key, result); return result;
+    const exclusives = exclusiveQualificationIntervals(distanceOnly, speedOnly);
+    const result = { both, single: exclusives.single, distanceOnly: exclusives.distanceOnly, speedOnly: exclusives.speedOnly }; qualificationCache.set(key, result); return result;
   }
   function drawPanelCharts() {
     const distance = Math.max(0, Number($("distanceThresholdSlider").value) || 0);
@@ -360,23 +378,21 @@ async function start() {
     const speedMin = samples.reduce((best, row) => Number.isFinite(row.speedMs) && (!best || row.speedMs < best.speedMs) ? row : best, null);
     const minimumTickHours = Math.ceil((chapter.endMs - chapter.startMs) / HOUR / 2);
     const maxConnectionGapMs = (series[1]?.ms - series[0]?.ms || 60000) * 1.01;
-    const visibleSpeedMax = drawnSamples.reduce((max, sample) => sample.ms <= current && sample.ms >= current - (chapter.endMs - chapter.startMs) && Number.isFinite(sample.speedMs) ? Math.max(max, sample.speedMs) : max, 0);
-    const speedUnit = Math.max(speed, visibleSpeedMax) < 1000 ? "m/s" : "km/s";
+    const speedUnit = "m/s";
     chartScales.set("distanceChartGroup", drawOrbitalChart($("separationChart"), drawnSamples, "distanceKm", { window, currentMs: current, threshold: distance, title: "Separation distance (km)", maximum: Number($("distanceThresholdSlider").max) || 50000, qualifications, markedMs: focusedMinimumMs === distanceMin?.ms ? focusedMinimumMs : null, minimumTickHours, connectSwitches: true, maxConnectionGapMs }));
-    chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), drawnSamples, "speedMs", { window, currentMs: current, threshold: speed, title: `Relative velocity (${speedUnit})`, maximum: Number($("speedThresholdSlider").max) || 20000, qualifications, markedMs: focusedMinimumMs === speedMin?.ms ? focusedMinimumMs : null, minimumTickHours, connectSwitches: true, maxConnectionGapMs, speedUnit }));
+    chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), drawnSamples, "speedMs", { window, currentMs: current, threshold: speed, title: `Relative speed (${speedUnit})`, maximum: Number($("speedThresholdSlider").max) || 20000, qualifications, markedMs: focusedMinimumMs === speedMin?.ms ? focusedMinimumMs : null, minimumTickHours, connectSwitches: true, maxConnectionGapMs, speedUnit }));
     $("thresholdSummary").textContent = `${distance.toLocaleString()} km · ${speed.toLocaleString()} m/s`;
     $("dwellStat").textContent = qualifications.both.validSamples ? formatDwellDuration(qualifications.both.totalMs) : "—";
     $("dwellUnit").textContent = "";
     $("dwellLabel").textContent = "Dwell time";
-    const dwellKey = $("dwellMetric").querySelector(".dwellKey"), dwellStamp = `${selected}:${distance}:${speed}`;
-    if (dwellKey.dataset.stamp !== dwellStamp) {
-      dwellKey.dataset.stamp = dwellStamp;
-      const italic = value => { const node = document.createElement("i"); node.textContent = value; return node; };
-      const bold = (value, className = "") => { const node = document.createElement("strong"); node.textContent = value; node.className = className; return node; };
-      dwellKey.replaceChildren("Cumulative time in this chapter when ", italic(displayName(participants[0].name).toUpperCase()), " and ",
-        italic(displayName(participants.find(item => item.slot === selected).name, true).toUpperCase()),
-        " are within ", bold(`${distance.toLocaleString()} km`), " and at or below ", bold(`${speed.toLocaleString()} m/s`),
-        ". ", bold("Gray", "e003-gray-word"), " marks one threshold; ", bold("gold", "e003-gold-word"), " marks both.");
+    const dwellKey = $("dwellMetric").querySelector(".dwellKey");
+    if (!dwellKey.dataset.explained) {
+      const gold = document.createElement("strong"), gray = document.createElement("strong");
+      gold.className = "both"; gold.textContent = "Gold";
+      gray.className = "single"; gray.textContent = "gray";
+      dwellKey.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds. Adjust threshold values by clicking and dragging the labels on the charts above. ",
+        gold, " markings on the dynamic charts above indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
+      dwellKey.dataset.explained = "1";
     }
     const bands = $("dwellSegments"); bands.replaceChildren();
     const span = chapter.endMs - chapter.startMs;
@@ -455,7 +471,7 @@ async function start() {
     if (!reference) return;
     const frame = frameAt(reference);
     earth.position.copy(mode === "eci" ? new THREE.Vector3() : local(new THREE.Vector3(), frame));
-    earth.rotation.y = window.satellite.gstime(new Date(current));
+    orientEarth(earth, mode, frame, current);
     updateReferenceOrbit(states);
     for (const item of participants) {
       const state = states[item.slot].state, marker = markers[item.slot]; marker.userData.available = !!state;
@@ -467,7 +483,14 @@ async function start() {
       trails[item.slot].material.uniforms.uOpacity.value = mode === "eci" ? item.slot === "A" ? 1 : item.slot === selected ? .85 : .4 : item.slot === "A" || item.slot === selected ? .85 : .23;
     }
     if (autoCamera) {
-      if (mode === "eci") { const normal = states.A.state.p.clone().cross(states.A.state.v).normalize(); camera.position.copy(normal.multiplyScalar(miniScene ? 17 : 25)); camera.up.copy(states.A.state.p.clone().normalize()); controls.target.set(0, 0, 0); }
+      if (mode === "eci") {
+        const orbitalState = miniScene ? states.A.state : statesAt(chapter.centerMs)[selected].state || states[selected].state;
+        const normal = orbitalState.p.clone().cross(orbitalState.v).normalize();
+        const distance = miniScene ? 17 : Math.max(5.8, orbitalState.p.length() * 3.6) * Math.max(1, 1 / camera.aspect);
+        camera.position.copy(normal.multiplyScalar(distance));
+        camera.up.copy(orbitalState.p.clone().normalize());
+        controls.target.set(0, 0, 0);
+      }
       else {
         const learned = learnedCameraAt(chapter.id, current, selected, referenceSlot);
         if (learned) {
@@ -501,6 +524,7 @@ async function start() {
   function updatePlay() { $("playBtn").innerHTML = playing ? '<span class="pauseIcon"></span>' : '<span class="playIcon"></span>'; $("playBtn").setAttribute("aria-label", playing ? "Pause" : "Play"); }
   function chooseChapter(id, startAtBeginning = false) {
     chapter = chapters.find(item => item.id === id) || chapters[0]; current = startAtBeginning ? chapter.startMs : chapter.centerMs;
+    if (mode === "eci" && !miniScene) rate = eciRateForState(statesAt(current)[selected].state);
     playing = false; focusedMinimumMs = null; lastTrailKey = ""; lastReferenceOrbitKey = "";
     chapterNav.querySelectorAll("button").forEach(button => { const active = button.dataset.chapter === chapter.id; button.classList.toggle("active", active); button.setAttribute("aria-pressed", String(active)); });
     $("timelineSlider").min = String(chapter.startMs); $("timelineSlider").max = String(chapter.endMs);
@@ -527,6 +551,7 @@ async function start() {
   }
   function chooseChaser(slot) {
     selected = slot;
+    if (mode === "eci" && !miniScene) rate = eciRateForState(statesAt(current)[selected].state);
     selector.querySelectorAll("button[data-slot]").forEach(button => button.classList.toggle("active", button.dataset.slot === slot));
     for (const chaser of ["B"]) {
       const color = "#a9a9a9";
@@ -549,7 +574,19 @@ async function start() {
     }
     playing = !playing; updatePlay();
   });
-  $("modeBtn").addEventListener("click", () => { mode = mode === "eci" ? "relative" : "eci"; autoCamera = true; lastTrailKey = ""; lastReferenceOrbitKey = ""; $("modeBtn").title = mode === "eci" ? "Switch to relative motion" : "Switch to ECI view"; $("modeBtn").setAttribute("aria-label", $("modeBtn").title); render(); });
+  $("modeBtn").addEventListener("click", () => {
+    if (mode === "relative") {
+      relativeRate = rate;
+      mode = "eci";
+      if (!miniScene) rate = eciRateForState(statesAt(current)[selected].state);
+    } else {
+      mode = "relative";
+      if (!miniScene) rate = relativeRate;
+    }
+    autoCamera = true; lastTrailKey = ""; lastReferenceOrbitKey = "";
+    $("modeBtn").title = mode === "eci" ? "Switch to relative motion" : "Switch to ECI view";
+    $("modeBtn").setAttribute("aria-label", $("modeBtn").title); render();
+  });
   $("modeBtn").title = mode === "eci" ? "Switch to relative motion" : "Switch to ECI view"; $("modeBtn").setAttribute("aria-label", $("modeBtn").title);
   referenceButton.addEventListener("click", () => { referenceSlot = referenceSlot === "A" ? selected : "A"; autoCamera = true; lastTrailKey = ""; lastReferenceOrbitKey = ""; render(); });
   $("resetBtn").hidden = true; $("resetBtn").addEventListener("click", () => { autoCamera = true; camera.zoom = 1; camera.updateProjectionMatrix(); render(); });

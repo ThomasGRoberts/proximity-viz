@@ -40,7 +40,7 @@ function prepareE005(doc) {
   ui.querySelector("#nowSummary").textContent = `${usa.querySelector(".satName").textContent} · ${names.join(" or ")}`;
   ui.querySelector("#metricArea").closest(".panelSection").classList.add("results-section");
   ui.querySelector("#rangeMetric .statLabel").textContent = "Separation distance";
-  ui.querySelector("#speedMetric .statLabel").textContent = "Relative velocity";
+  ui.querySelector("#speedMetric .statLabel").textContent = "Relative speed";
   ui.querySelector("#dwellMetric").hidden = false;
   const coverage = ui.querySelector(".e002-coverage"); if (coverage) coverage.hidden = true;
   if (doc.querySelectorAll(".e005-chapters button").length === 1) doc.querySelector(".e005-chapters").hidden = true;

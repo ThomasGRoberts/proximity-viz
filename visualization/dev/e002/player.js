@@ -5,6 +5,8 @@ import { DOT_SCREEN_SIZE, dotTexture } from "../../Viz/relative-rendering.js?v=3
 import { MARKER } from "../../../shared/marker-spec.js?v=3";
 import { spaceTrackHistoryUrl } from "../../../shared/tle-provenance.js?v=2";
 import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../../shared/episode-feed.js?v=6";
+import { installReferenceOrbitHover } from "../../Viz/reference-orbit-hover.js";
+import { eciRateForState } from "../../Viz/orbital-playback.js";
 
 const $ = id => document.getElementById(id);
 const mini = document.body.classList.contains("mini");
@@ -42,7 +44,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mini ? 1.5 : 2)); renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.domElement.setAttribute("aria-hidden", "true"); $("scene").append(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = workshop || !mini && new URLSearchParams(location.search).get('dev') === '1'; controls.minDistance = 2; controls.maxDistance = 12;
+controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = workshop || !mini && new URLSearchParams(location.search).get('dev') === '1'; controls.minDistance = 2; controls.maxDistance = mini ? 12 : 70;
 controls.addEventListener("start", () => { data.auto = false; $("scene").dataset.cameraMode = "manual"; });
 controls.addEventListener("end", () => {
   if (workshop && data.frameMode === "relative") {
@@ -53,9 +55,20 @@ controls.addEventListener("end", () => {
 scene.add(new THREE.HemisphereLight(0xffffff, 0xdcd8cf, 1.6));
 const earth = new THREE.Group(); scene.add(earth);
 earth.add(new THREE.Mesh(new THREE.SphereGeometry(1, 96, 72), new THREE.MeshBasicMaterial({ color: 0xe9e6e0 })));
+const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(),
+  new THREE.LineBasicMaterial({ color: 0x555555, depthTest: true, depthWrite: false }));
+referenceOrbit.visible = false; scene.add(referenceOrbit);
+if (!mini) installReferenceOrbitHover({
+  canvas: renderer.domElement, camera, orbit: referenceOrbit, earth: earth,
+  description: () => {
+    const reference = craft.find(item => item.slot === "B")?.name || "USA 245";
+    const moving = craft.find(item => item.slot === data.nearer) || craft.find(item => item.slot === "A");
+    return `This reference orbit describes ${reference}'s trajectory around the Earth. The motion of ${moving.name} is shown relative to ${reference} in ${moving.slot === "A" ? "gold" : "gray"}.`;
+  },
+});
 const borders = new THREE.Group(); earth.add(borders);
 fetch(new URL("../../Viz/vendor/countries-110m.json", import.meta.url)).then(response => response.json()).then(topology => {
-  const coords = [], radius = 1.0015;
+  const coords = [], radius = 1.005;
   for (const country of feature(topology, topology.objects.countries).features) {
     const geometry = country.geometry;
     const rings = geometry.type === "Polygon" ? geometry.coordinates : geometry.type === "MultiPolygon" ? geometry.coordinates.flat() : [];
@@ -69,7 +82,7 @@ fetch(new URL("../../Viz/vendor/countries-110m.json", import.meta.url)).then(res
     }
   }
   const geometry = new THREE.BufferGeometry(); geometry.setAttribute("position", new THREE.Float32BufferAttribute(coords, 3));
-  borders.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0xa8a39a, transparent: true, opacity: .55 })));
+  borders.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0xc7c2b9, depthTest: true, depthWrite: false })));
 }).catch(() => {});
 
 const markers = {}, labels = {};
@@ -95,6 +108,25 @@ function stateAt(tle, ms) {
   const satrec = tle.satrec ||= sgp4.twoline2satrec(tle.line1, tle.line2);
   const result = sgp4.propagate(satrec, new Date(ms));
   return result.position && result.velocity ? { position: toScene(result.position), velocity: toScene(result.velocity) } : null;
+}
+function updateReferenceOrbit() {
+  if (mini || !data.selected.B) { referenceOrbit.visible = false; return; }
+  const tle = data.selected.B;
+  const key = `${data.window.id}:${tle.epoch}`;
+  if (referenceOrbit.userData.key !== key) {
+    const satrec = tle.satrec ||= sgp4.twoline2satrec(tle.line1, tle.line2);
+    const periodMs = 2 * Math.PI / satrec.no * 60000;
+    const center = Date.parse(data.window.anchor || data.window.start);
+    const points = [];
+    for (let index = 0; index <= 240; index++) {
+      const result = sgp4.propagate(satrec, new Date(center + (index / 240 - .5) * periodMs));
+      if (result.position) points.push(toScene(result.position));
+    }
+    referenceOrbit.geometry.dispose();
+    referenceOrbit.geometry = new THREE.BufferGeometry().setFromPoints(points);
+    referenceOrbit.userData.key = key;
+  }
+  referenceOrbit.visible = (referenceOrbit.geometry.getAttribute("position")?.count || 0) > 1;
 }
 // RTN frame around the midpoint of B and the selected Russian spacecraft.
 // Its radial/along-track/normal axes follow actual SGP4 positions and velocities.
@@ -240,6 +272,7 @@ function selectWindow(windowId, initial = false) {
   const firstA = stateAt(data.selected.A, data.current)?.position;
   const firstC = stateAt(data.selected.C, data.current)?.position;
   data.relativePrimary = !firstB ? "C" : firstC && (!firstA || firstC.distanceTo(firstB) < firstA.distanceTo(firstB)) ? "C" : "A";
+  updateReferenceOrbit();
   if (mini && data.preferredView && !workshop) {
     camera.position.fromArray(data.preferredView.position);
     controls.target.fromArray(data.preferredView.target);
@@ -272,6 +305,21 @@ function earthOccludes(point, cameraPosition) {
   return cameraPosition.clone().addScaledVector(ray, closest).lengthSq() < 1.002 * 1.002;
 }
 function frameCamera(immediate = false, seconds = .016) {
+  if (!mini && data.frameMode === "inertial") {
+    const anchor = Date.parse(data.window.anchor || data.window.start);
+    const state = stateAt(data.selected.B, anchor) || stateAt(data.selected.A, anchor);
+    if (state) {
+      const normal = state.position.clone().cross(state.velocity).normalize();
+      const radius = state.position.length();
+      const distance = Math.max(24, radius * 3.6) * Math.max(1, 1 / camera.aspect);
+      camera.position.copy(normal.multiplyScalar(distance));
+      controls.target.set(0, 0, 0);
+      camera.up.copy(state.position.clone().normalize());
+      camera.lookAt(controls.target);
+      $("scene").dataset.cameraMode = "auto";
+      return;
+    }
+  }
   const b = data.positions.B, a = data.positions.A, c = data.positions.C;
   let target, primary;
   if (b && (a || c)) {
@@ -500,6 +548,11 @@ export const episodeModel = {
   get current() { return data.current; },
   get playing() { return data.playing; },
   get rate() { return rate / 1000; },
+  targetOrbitRate() {
+    const anchor = Date.parse(data.window.anchor || data.window.start);
+    const state = stateAt(data.selected.B, anchor) || stateAt(data.selected.A, anchor);
+    return eciRateForState(state && { p: state.position, v: state.velocity });
+  },
   get loopStart() { return data.loopStart; },
   get loopEnd() { return data.loopEnd; },
   setRate(value) { rate = THREE.MathUtils.clamp(value, 60, 259200) * 1000; },

@@ -34,6 +34,7 @@ import * as topojson from "topojson-client";
 import { sampleEpisode, analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { safeEpisodeName, episodeNameText } from "../../shared/episode-name.js";
 import { relativeCameraFrame, relativeFitDistance } from "./relative-camera.js";
+import { installReferenceOrbitHover } from "./reference-orbit-hover.js";
 import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
@@ -43,6 +44,7 @@ import { renderEstimatedMinimum } from "./estimate-ui.js";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
 import { CHART_PADDING } from "./chart-style.js";
 import { formatDwellDuration } from "../../shared/format-duration.js";
+import { miniLandTexture } from "./mini-scene-style.js";
 import { dwellSatelliteName } from "../../shared/dwell-name.js";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
@@ -327,19 +329,22 @@ const miniEarthRest = 0xd8cbb9, miniEarthHover = 0xcfbea9;
 const miniReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 let miniSceneHover = false;
 const miniEarthColor = new THREE.Color(miniEarthRest);
+const miniWhiteTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+miniWhiteTexture.needsUpdate = true;
 const earthSurfaceMaterial = miniScene ? new THREE.ShaderMaterial({
-  uniforms: { uColor: { value: miniEarthColor } },
+  uniforms: { uColor: { value: miniEarthColor }, uLand: { value: miniWhiteTexture } },
   polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
-  vertexShader: `varying vec3 vViewNormal;
+  vertexShader: `varying vec3 vViewNormal; varying vec2 vUv;
     void main() {
       vViewNormal = normalize(normalMatrix * normal);
+      vUv = uv;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }`,
-  fragmentShader: `uniform vec3 uColor; varying vec3 vViewNormal;
+  fragmentShader: `uniform vec3 uColor; uniform sampler2D uLand; varying vec3 vViewNormal; varying vec2 vUv;
     void main() {
       float facing = max(0.0, normalize(vViewNormal).z);
       float shade = mix(0.81, 1.0, smoothstep(0.0, 0.95, facing));
-      gl_FragColor = vec4(uColor * shade, 1.0);
+      gl_FragColor = vec4(uColor * shade * texture2D(uLand, vUv).rgb, 1.0);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
     }`,
@@ -364,60 +369,14 @@ function latLonToPoint(lat, lon, radius = 1.001) {
 // Draw country borders. "async" means this function can wait for a file to download
 // without freezing the page.
 const borderLayers = { standard: null, detailed: null };
-let miniBorderMap = null;
-function buildMiniBorderMap(topology) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 2048;
-  canvas.height = 1024;
-  const context = canvas.getContext("2d");
-  if (!context) return null;
-  context.strokeStyle = "rgba(85, 85, 85, .82)";
-  context.lineWidth = 2;
-  context.lineJoin = "round";
-  context.lineCap = "round";
-  const width = canvas.width, height = canvas.height;
-  for (const feature of topojson.feature(topology, topology.objects.countries).features) {
-    const geometry = feature.geometry;
-    const rings = geometry.type === "Polygon" ? geometry.coordinates
-                : geometry.type === "MultiPolygon" ? geometry.coordinates.flat() : [];
-    for (const ring of rings) {
-      if (ring.length < 2) continue;
-      for (const wrap of [-1, 0, 1]) {
-        context.beginPath();
-        let previousX = null;
-        for (const [lon, lat] of ring) {
-          // SphereGeometry maps +X (Greenwich in latLonToPoint) to U=.5 and
-          // positive longitude toward -Z to increasing U.
-          const x = (.5 + lon / 360 + wrap) * width;
-          const y = (.5 - lat / 180) * height;
-          if (previousX === null || Math.abs(x - previousX) > width / 2) context.moveTo(x, y);
-          else context.lineTo(x, y);
-          previousX = x;
-        }
-        context.stroke();
-      }
-    }
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  return new THREE.Mesh(new THREE.SphereGeometry(1.003, 160, 160),
-    new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }));
-}
 async function buildBorders(url) {
     const response = await fetch(url);
     if (!response.ok) throw new Error("SBI country boundaries unavailable");
     const topology = await response.json();
-    if (miniScene && !miniBorderMap) {
-      miniBorderMap = buildMiniBorderMap(topology);
-      if (miniBorderMap) borderGroup.add(miniBorderMap);
-    }
     // Adjacent country polygons repeat their shared edges. Drawing every ring
     // separately produced overlapping translucent pixels and many draw calls,
     // which made borders flicker while the camera moved.
-    const seen = new Set(), positions = [], radius = miniScene ? 1.003 : 1.0017;
+    const seen = new Set(), positions = [], radius = 1.005;
     const key = coordinate => `${coordinate[0].toFixed(5)},${coordinate[1].toFixed(5)}`;
     for (const feature of topojson.feature(topology, topology.objects.countries).features) {
       const geometry = feature.geometry;
@@ -453,6 +412,14 @@ async function buildBorders(url) {
 }
 async function loadBorders() {
   try {
+    if (miniScene) {
+      const response = await fetch("vendor/countries-50m.json");
+      if (!response.ok) throw new Error(`Land geometry returned ${response.status}`);
+      const topology = await response.json();
+      earthSurfaceMaterial.uniforms.uLand.value = miniLandTexture(THREE, topojson.feature(topology, topology.objects.countries).features);
+      miniWhiteTexture.dispose();
+      return;
+    }
     borderLayers.standard = await buildBorders("vendor/countries-110m.json");
     borderGroup.add(borderLayers.standard);
     borderLayers.detailed = await buildBorders("vendor/countries-50m.json");
@@ -465,12 +432,6 @@ async function loadBorders() {
 loadBorders();
 function updateBorderDetail() {
   if (!borderLayers.standard || !borderLayers.detailed) return;
-  if (miniScene) {
-    borderLayers.standard.visible = !miniBorderMap;
-    borderLayers.detailed.visible = false;
-    borderLayers.standard.material.opacity = .62;
-    return;
-  }
   const distance = Math.max(.01, camera.position.length());
   const diameter = renderer.domElement.getBoundingClientRect().height /
     (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * distance);
@@ -930,7 +891,7 @@ function prepareAnalysis() {
 function displaySatelliteName(value) {
   return value === value.toUpperCase() ? value.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase()) : value;
 }
-let singleThresholdIntervals = [];
+let singleThresholdIntervals = [], distanceOnlyIntervals = [], speedOnlyIntervals = [];
 function updateThresholds() {
   if (!analysisSamples.length) return;
   const distance = Number($("distanceThreshold").value), speed = Number($("speedThreshold").value);
@@ -949,21 +910,15 @@ function updateThresholds() {
   analysisResult = analyzeEpisode(analysisSamples, distance, speed, analysisStepMs);
   const distanceIntervals = analyzeEpisode(analysisSamples, distance, Infinity, analysisStepMs).intervals;
   const speedIntervals = analyzeEpisode(analysisSamples, Infinity, speed, analysisStepMs).intervals;
-  singleThresholdIntervals = exclusiveQualificationIntervals(distanceIntervals, speedIntervals).single;
+  ({ single: singleThresholdIntervals, distanceOnly: distanceOnlyIntervals, speedOnly: speedOnlyIntervals } = exclusiveQualificationIntervals(distanceIntervals, speedIntervals));
   $("dwellStat").textContent = formatDwellDuration(analysisResult.totalMs);
   $("dwellUnit").textContent = "";
   const dwellKey = $("dwellMetric")?.querySelector(".dwellKey");
   if (dwellKey) {
-    const chaser = document.createElement("em"), target = document.createElement("em");
-    const distanceValue = document.createElement("strong"), speedValue = document.createElement("strong");
     const gray = document.createElement("strong"), gold = document.createElement("strong");
-    gray.className = "single"; gray.textContent = "Gray"; gold.className = "both"; gold.textContent = "gold";
-    chaser.textContent = slotName("A").toUpperCase(); target.textContent = slotName("B").toUpperCase();
-    distanceValue.textContent = `${distance.toLocaleString()} km`;
-    speedValue.textContent = speed < 1000 ? `${speed.toLocaleString()} m/s` : `${Number((speed / 1000).toFixed(2))} km/s`;
-    dwellKey.replaceChildren("The cumulative time within this ", String(Math.round((endMs - startMs) / 3600000)), "-hour chapter during which ", chaser,
-      " is within ", distanceValue, " of ", target, " with a relative velocity at or below ", speedValue,
-      ". ", gray, " marks one threshold; ", gold, " marks both.");
+    gray.className = "single"; gray.textContent = "gray"; gold.className = "both"; gold.textContent = "Gold";
+    dwellKey.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds. Adjust threshold values by clicking and dragging the labels on the charts above. ",
+      gold, " markings on the dynamic charts above indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
   }
   renderDwellSegments();
   const minimum = (id, item, unit, metric) => {
@@ -981,7 +936,7 @@ function updateThresholds() {
   if (localChapterReview) {
     for (const id of ["distanceMinimum", "speedMinimum"]) {
       const caption = $(id).querySelector(".estimateCaption");
-      if (caption) caption.textContent = "Minimum this episode:";
+      if (caption) caption.textContent = "Minimum this chapter:";
       $(id).querySelector(".estimateInfo")?.remove();
     }
   }
@@ -1000,11 +955,11 @@ function drawEpisodeCharts() {
     const samples = chartSamples.filter(sample => sample.ms <= currentMs).map(sample => ({ ...sample, speedMs: sample.speedMps }));
     if (!samples.some(sample => sample.ms === currentMs)) samples.push(now);
     const window = { id: `e001-${startMs}`, start: new Date(startMs).toISOString(), end: new Date(endMs).toISOString() };
-    const qualifications = { single: singleThresholdIntervals, both: { intervals: analysisResult.intervals } };
     for (const [canvasId, metric, thresholdId, title, maximum] of [
       ["separationChart", "distanceKm", "distanceThreshold", "Separation distance (km)", chartScales.distanceKm],
-      ["speedChart", "speedMs", "speedThreshold", "Relative velocity (m/s)", chartScales.speedMps]
+      ["speedChart", "speedMs", "speedThreshold", "Relative speed (m/s)", chartScales.speedMps]
     ]) {
+      const qualifications = { single: metric === "distanceKm" ? distanceOnlyIntervals : speedOnlyIntervals, both: { intervals: analysisResult.intervals } };
       const canvas = $(canvasId), scale = localChartModule.drawOrbitalChart(canvas, samples, metric, {
         window, currentMs, threshold: Number($(thresholdId).value), title, maximum, qualifications,
         markedMs: focusedMinimumMs, speedUnit: "m/s", connectSwitches: true
@@ -1093,6 +1048,12 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   const y = value => bottom - Math.min(1, Math.max(0, value / yMax)) * (bottom - pad.top);
   const cue = thresholdCueOffset(canvas), thresholdY = y(threshold) + cue;
   canvas.dataset.thresholdCueOffset = cue.toFixed(2);
+  canvas.dataset.chartTop = String(pad.top);
+  canvas.dataset.chartBottom = String(bottom);
+  canvas.dataset.chartMax = String(yMax);
+  canvas.dataset.chartFactor = "1";
+  canvas.dataset.bandY = String(bottom + 3);
+  canvas.dataset.bandEndY = String(bottom + 6);
   chartGeometry.set(canvas, { top: pad.top, bottom, left: pad.left, right, yMax, thresholdY });
   const edge = canvas.parentElement.querySelector(".thresholdEdge");
   if (edge) {
@@ -1105,7 +1066,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.clearRect(0, 0, w, h); ctx.font = "10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
   ctx.save(); ctx.translate(22, (pad.top + bottom) / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillStyle = "#555"; ctx.textAlign = "center";
-  ctx.fillText(key === "distanceKm" ? "Estimated separation (km)" : "Estimated relative velocity (m/s)", 0, 0); ctx.restore();
+  ctx.fillText(key === "distanceKm" ? "Estimated separation (km)" : "Estimated relative speed (m/s)", 0, 0); ctx.restore();
   ctx.fillStyle = "#eeeeec"; ctx.fillRect(pad.left, y(threshold), right - pad.left, bottom - y(threshold));
   // UTC-anchored ticks share the data's time transform, so they slide with it.
   const tickMs = localChapterReview ? 3 * 60 * MINUTE_MS : 4 * DAY_MS;
@@ -1165,7 +1126,8 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
   ctx.restore();
   canvas.dataset.switchJoins = String(switchJoins.length);
   canvas.dataset.missingBreaks = String(missingBreaks);
-  for (const [result, color] of [[{ intervals: singleThresholdIntervals }, "#a9a9a9"], [analysisResult, "#eaaa00"]]) {
+  const oneThreshold = key === "distanceKm" ? distanceOnlyIntervals : speedOnlyIntervals;
+  for (const [result, color] of [[{ intervals: oneThreshold }, "#a9a9a9"], [analysisResult, "#eaaa00"]]) {
     for (const interval of result?.intervals || []) {
       if (interval.start > windowEnd) break;
       const left = Math.max(windowStart, interval.start), end = Math.min(windowEnd, interval.end);
@@ -1749,6 +1711,13 @@ localReferenceOrbit.visible = false;
 localReferenceOrbit.frustumCulled = false;
 localReferenceOrbit.renderOrder = 2;
 scene.add(localReferenceOrbit);
+if (localChapterReview && !miniScene) installReferenceOrbitHover({
+  canvas: renderer.domElement, camera, orbit: localReferenceOrbit, earth: earthGroup,
+  description: () => {
+    const moving = centre === "A" ? "B" : "A";
+    return `This reference orbit describes ${slotName(centre)}'s trajectory around the Earth. The motion of ${slotName(moving)} is shown relative to ${slotName(centre)} in ${moving === "A" ? "gold" : "gray"}.`;
+  },
+});
 let lastLocalRelativeTrailKey = "";
 
 // Put Earth in the right place, size and orientation for the relative view:
@@ -1873,6 +1842,31 @@ function sizeSceneSprites() {
 }
 let lastGeoReference = null;
 let preferredCameraReference = null;
+let savedRelativeSpeed = null;
+const eciSpeedOption = new Option("1 target orbit / 25 s", "3600");
+function syncEciPlaybackSpeed(relative) {
+  if (!localChapterReview || miniScene) return;
+  const menu = $("speed");
+  if (relative) {
+    if (savedRelativeSpeed !== null) menu.value = savedRelativeSpeed;
+    savedRelativeSpeed = null;
+    eciSpeedOption.remove();
+    return;
+  }
+  if (savedRelativeSpeed === null) savedRelativeSpeed = menu.value;
+  const target = pair.B && stateAt(pair.B, currentMs);
+  if (!target) return;
+  const radius = Math.hypot(...target.r), velocity = Math.hypot(...target.v);
+  const semimajor = 1 / (2 / radius - velocity * velocity / 398600.4418);
+  if (!(semimajor > EARTH_RADIUS_KM)) return;
+  const secondsPerSecond = 2 * Math.PI * Math.sqrt(semimajor ** 3 / 398600.4418) / 25;
+  eciSpeedOption.value = String(secondsPerSecond);
+  eciSpeedOption.textContent = "1 target orbit / 25 s";
+  eciSpeedOption.remove();
+  const next = [...menu.options].find(option => Number(option.value) > secondsPerSecond);
+  menu.insertBefore(eciSpeedOption, next || null);
+  menu.value = eciSpeedOption.value;
+}
 function setView(next, nextCentre = centre, immediate = false) {
   if (!pair.A || !pair.B) next = "earth";
   if (cameraEditMode) {
@@ -1883,6 +1877,7 @@ function setView(next, nextCentre = centre, immediate = false) {
   }
   view = next; centre = nextCentre;
   const relative = next === "relative";
+  syncEciPlaybackSpeed(relative);
   earthGroup.matrixAutoUpdate = true;
   earthGroup.visible = true;
   geoBelt.visible = !localChapterReview;
@@ -2292,6 +2287,7 @@ if (localChapterReview) {
       if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) throw new Error("Invalid chapter window");
       playing = false; $("playBtn").innerHTML = '<span class="playIcon"></span>';
       setWindow(a, b);
+      if (view === "earth") syncEciPlaybackSpeed(false);
     },
     setTime(value) {
       const ms = Date.parse(value);

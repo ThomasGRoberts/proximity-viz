@@ -27,6 +27,8 @@ body.e002-shared #dataStatusSection{padding-top:3px;padding-bottom:7px}
 body.e002-shared .playbackDock{gap:5px}
 body.e002-shared #rangeStat,body.e002-shared #speedStat{font-size:26px;line-height:1.2;font-weight:750;white-space:normal}
 body.e002-multi-pair #rangeStat,body.e002-multi-pair #speedStat{font-size:12px;line-height:1.4}
+body.e002-multi-pair #rangeStat,body.e002-multi-pair #speedStat{display:grid;gap:2px;min-height:36px}
+.e002-stat-pair-row{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .e002-minimum-line{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap}
 .e002-minimum-line i,.e002-dwell-pairs i{display:inline-block;flex:0 0 7px;width:7px;height:7px;border-radius:50%}
 .e002-chart-legend{display:flex;flex-wrap:wrap;gap:3px 11px;margin:4px 0 2px;color:#666;font-size:9px}

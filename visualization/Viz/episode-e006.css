@@ -6,7 +6,7 @@ body.e006-shared #scene{position:fixed;inset:0 0 0 300px;background:#fff}
 body.e006-shared #scene canvas{width:100%;height:100%;display:block}
 body.e006-shared #e006ScreenLabels{position:fixed;inset:0 0 0 300px;z-index:4;pointer-events:none}
 .e006-screen-label{position:absolute;color:#292929;font-size:12px;font-weight:700;line-height:1;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 6px #fff;transform:translateY(-50%)}
-.e006-screen-label.is-muted{opacity:.3}
+.e006-screen-label.is-muted{opacity:.55}
 .e006-screen-label[hidden]{display:none}
 body.e006-shared #ui{max-height:calc(100vh - 105px);overflow-y:auto}
 body.e006-shared #cameraControls{top:58px}
@@ -25,7 +25,7 @@ body.e006-shared #identity{display:grid;gap:7px}
 .e006-chaser-options button:hover{background:#ffffffb3}
 .e006-chaser-options button.active{border-color:#a8a8a8;background:#fff;color:#444;box-shadow:0 1px 3px #00000012}
 .e006-chaser-options button span{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.e006-chaser-options button i{display:inline-block;flex:0 0 12px;width:12px;height:12px;border:2px solid #191919;border-radius:50%;background:#eaaa00;opacity:.3}
+.e006-chaser-options button i{display:inline-block;flex:0 0 12px;width:12px;height:12px;border:2px solid #191919;border-radius:50%;background:#eaaa00;opacity:.55}
 .e006-chaser-options button.active i{opacity:1}
 .e006-chaser .e006-chaser-chevron{position:absolute;top:0;right:12px;display:grid;place-items:center;width:18px;height:42px;padding:0;border:0;background:transparent;color:#999;cursor:pointer;font:400 17px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;transform:rotate(-90deg);transition:transform .3s cubic-bezier(.2,.72,.2,1)}
 .e006-chaser .e006-chaser-chevron[aria-expanded="true"]{transform:rotate(90deg)}

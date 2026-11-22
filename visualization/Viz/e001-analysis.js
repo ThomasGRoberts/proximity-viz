@@ -45,16 +45,20 @@ export function analyzeEpisode(samples, distanceKm, speedMps, stepMs) {
 // part of an interval where both are true.
 export function exclusiveQualificationIntervals(distanceIntervals, speedIntervals) {
   const boundaries = [...new Set([...distanceIntervals, ...speedIntervals].flatMap(item => [item.start, item.end]))].sort((a, b) => a - b);
-  const single = [], both = [];
+  const single = [], both = [], distanceOnly = [], speedOnly = [];
   const contains = (intervals, ms) => intervals.some(item => item.start < ms && ms < item.end);
   for (let index = 1; index < boundaries.length; index++) {
     const start = boundaries[index - 1], end = boundaries[index], midpoint = (start + end) / 2;
-    const count = Number(contains(distanceIntervals, midpoint)) + Number(contains(speedIntervals, midpoint));
+    const distance = contains(distanceIntervals, midpoint), speed = contains(speedIntervals, midpoint);
+    const count = Number(distance) + Number(speed);
     const target = count === 1 ? single : count === 2 ? both : null;
     if (!target || end <= start) continue;
-    const last = target.at(-1);
-    if (last && Math.abs(last.end - start) < 1) last.end = end;
-    else target.push({ start, end });
+    for (const list of [target, distance && !speed ? distanceOnly : null, speed && !distance ? speedOnly : null]) {
+      if (!list) continue;
+      const last = list.at(-1);
+      if (last && Math.abs(last.end - start) < 1) last.end = end;
+      else list.push({ start, end });
+    }
   }
-  return { single, both };
+  return { single, both, distanceOnly, speedOnly };
 }

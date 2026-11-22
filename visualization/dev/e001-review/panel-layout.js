@@ -54,7 +54,7 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
   installEpisodeNavigation(focus, episodes, "E-001", { review });
   ui.querySelector("#metricArea")?.closest(".panelSection")?.classList.add("results-section");
   ui.querySelector("#rangeMetric .statLabel").textContent = "Separation distance";
-  ui.querySelector("#speedMetric .statLabel").textContent = "Relative velocity";
+  ui.querySelector("#speedMetric .statLabel").textContent = "Relative speed";
   ui.querySelector("#thresholdControls>summary>span").textContent = "How close is too close?";
   const thresholdHint = doc().createElement("p"); thresholdHint.className = "threshold-chart-hint";
   thresholdHint.textContent = "Select threshold values by clicking and dragging the labels on the charts above or typing in the boxes below.";

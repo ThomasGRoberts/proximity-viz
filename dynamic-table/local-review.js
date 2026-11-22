@@ -3,9 +3,9 @@ const $ = id => document.getElementById(id);
 const fmt = ms => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(ms)) + " UTC";
 const spotLabel = key => {
   const column = key.match(/^(E-\d+)-cell-(\d)$/);
-  if (column) return `${column[1]} · ${["Episode", "Orbit", "Space objects", "Period", "Minimum separation distance", "Minimum relative velocity", "Records"][Number(column[2])]}`;
+  if (column) return `${column[1]} · ${["Episode", "Orbit", "Space objects", "Period", "Minimum separation distance", "Minimum relative speed", "Records"][Number(column[2])]}`;
   const heading = key.match(/^heading-(\d)$/);
-  if (heading) return `Column heading · ${["Episode", "Orbit", "Space objects", "Period", "Minimum separation distance", "Minimum relative velocity", "Records"][Number(heading[1])]}`;
+  if (heading) return `Column heading · ${["Episode", "Orbit", "Space objects", "Period", "Minimum separation distance", "Minimum relative speed", "Records"][Number(heading[1])]}`;
   const episode = key.match(/^(E-\d+)-(.+)$/);
   return episode ? `${episode[1]} · ${episode[2].replaceAll("-", " ")}` : key.replaceAll("-", " ");
 };

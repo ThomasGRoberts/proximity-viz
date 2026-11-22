@@ -124,12 +124,13 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
   .table-wrap tr.episode-row td:nth-child(4){grid-column:1;grid-row:4;border-top:1px solid #f0eee8}
   .table-wrap tr.episode-row td:nth-child(5){grid-column:2;grid-row:4;border-top:1px solid #f0eee8}
   .table-wrap tr.episode-row td:nth-child(6){grid-column:2;grid-row:3}
-  .table-wrap tr.episode-row td:nth-child(7){grid-column:1/-1;grid-row:5;display:flex;justify-content:center;border-top:1px solid #f0eee8}
-  .table-wrap tr.episode-row td:nth-child(n+3):not(:last-child)::before{display:block;margin-bottom:3px;color:#8a8170;font-size:9px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
-  .table-wrap tr.episode-row td:nth-child(3)::before{content:"Period"}
-  .table-wrap tr.episode-row td:nth-child(4)::before{content:"Minimum Separation Distance"}
-  .table-wrap tr.episode-row td:nth-child(5)::before{content:"Minimum Relative Velocity"}
-  .table-wrap tr.episode-row td:nth-child(6)::before{content:"Records"}
+  .table-wrap tr.episode-row td:nth-child(7){grid-column:1/-1;grid-row:5;display:flex;flex-direction:column;align-items:center;justify-content:center;border-top:1px solid #f0eee8}
+  .table-wrap tr.episode-row td:nth-child(n+3)::before{display:block;margin-bottom:3px;color:#8a8170;font-size:9px;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
+  .table-wrap tr.episode-row td:nth-child(3)::before{content:"Space objects · COSPAR ID"}
+  .table-wrap tr.episode-row td:nth-child(4)::before{content:"Period"}
+  .table-wrap tr.episode-row td:nth-child(5)::before{content:"Minimum Separation Distance"}
+  .table-wrap tr.episode-row td:nth-child(6)::before{content:"Minimum Relative Speed"}
+  .table-wrap tr.episode-row td:nth-child(7)::before{content:"Records"}
   .table-wrap tr.expanded-row,.table-wrap tr.expanded-row>td{display:block;width:100%}
   .expanded-inner{width:100%!important;max-width:100%!important}
 }
@@ -249,7 +250,7 @@ th,td{padding-left:9px;padding-right:9px}th:first-child,td:first-child{padding-l
 .episode-row:hover .dot,.episode-row:focus-visible .dot{animation:row-satellite-cue .52s cubic-bezier(.18,.75,.28,1) both}
 .episode-row .object-line:nth-child(2) .dot{animation-delay:.055s}
 .episode-row .object-line:nth-child(3) .dot{animation-delay:.11s}
-@keyframes row-satellite-cue{0%,100%{transform:translate(0,0)}32%{transform:translate(2px,-2px)}64%{transform:translate(-1.5px,1.5px)}84%{transform:translate(.4px,-.4px)}}
+@keyframes row-satellite-cue{0%,100%{transform:translate(0,0)}32%{transform:translate(1px,-1px)}64%{transform:translate(-.7px,.7px)}84%{transform:translate(.2px,-.2px)}}
 .table-wrap th:nth-child(3),.table-wrap th:nth-child(4),.table-wrap th:nth-child(5),.table-wrap td.period-cell,.table-wrap td.separation-column,.table-wrap td.speed-column{text-align:center}
 .table-wrap th:nth-child(3) .sort-head,.table-wrap th:nth-child(4) .sort-head,.table-wrap th:nth-child(5) .sort-head{justify-content:center}
 .table-wrap td.period-cell .period-label,.table-wrap td.separation-column .proximity-cell,.table-wrap td.speed-column .proximity-cell{display:block;text-align:center}
@@ -755,3 +756,50 @@ body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden
 .episode-row.selected[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b),
 .episode-row.selected[data-episode-id="E-006"][data-mini-selected="B"] .object-line:has(.dot.c),
 .episode-row.selected[data-episode-id="E-006"][data-mini-selected="C"] .object-line:has(.dot.b){display:none}
+
+/* Small row cues reveal the three kinds of material available on expansion. */
+.column-meta-label{display:block;margin-top:3px;color:#9b9b9b;font-size:8px;font-weight:600;letter-spacing:.045em;line-height:1.1}
+.episode-row .row-discovery{display:flex;align-items:center;gap:12px;max-height:0;margin-top:0;overflow:hidden;opacity:0;transform:translateY(-3px);transition:max-height 230ms cubic-bezier(.2,.8,.2,1),margin-top 230ms ease,opacity 180ms ease,transform 230ms ease}
+.episode-row:not(.selected):is(:hover,:focus-visible) .row-discovery{max-height:20px;margin-top:6px;opacity:1;transform:translateY(0)}
+.row-discovery-item{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;color:#856e34;font-size:9px;font-weight:650;line-height:17px;letter-spacing:0;text-transform:none}
+.row-discovery-item svg,.row-discovery-item img{display:block;width:13px;height:13px;flex:none;fill:none;stroke:currentColor;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;object-fit:contain}
+.row-discovery-item img{filter:sepia(.4)}
+@media(max-width:650px){.row-discovery-item{font-size:8px}.episode-row .row-discovery{gap:8px}}
+@media(prefers-reduced-motion:reduce){.episode-row .row-discovery{transition:none}}
+
+/* Keep the sort affordance visible before a column has been sorted. */
+.sort-head{cursor:pointer;transition:color 160ms ease}
+.sort-head:hover,.sort-head:focus-visible{color:#6d5310;text-decoration:underline;text-decoration-color:#b69b59;text-decoration-style:dotted;text-underline-offset:4px}
+th[aria-sort="none"] .sort-indicator{opacity:.4;transition:opacity 160ms ease,transform 160ms ease}
+th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacity:1;transform:translateY(-1px)}
+.table-glossary-label{text-decoration:underline dotted #b5a274;text-underline-offset:3px}
+.table-glossary-popover{position:fixed;z-index:1100;box-sizing:border-box;width:min(310px,calc(100vw - 20px));padding:11px 13px 10px;border:1px solid #e2d9b8;border-top:2px solid #b9943d;border-radius:9px;background:#fff;color:#333;box-shadow:0 10px 28px #0002;font-size:12px;line-height:1.42;letter-spacing:normal;text-align:left;text-transform:none;pointer-events:none}
+.table-glossary-popover[hidden]{display:none}
+.table-glossary-popover strong{display:block;font-size:12px;font-weight:700}
+.table-glossary-popover p{margin:6px 0 0}
+
+/* One record card and its count replace the expanding paper stack. */
+.news-record-icon{position:relative;display:grid;place-items:center;width:30px;height:26px;border:1px solid #bcb7ad;border-radius:2px;background:linear-gradient(#e5e1d7 0 6px,#fff 6px);box-shadow:0 2px 3px #0002;transform:rotate(-4deg);transition:transform 170ms ease,box-shadow 170ms ease}
+.news-record-icon::before{content:"";position:absolute;top:3px;left:6px;width:14px;height:1px;background:#b6afa1}
+.news-record-count{position:relative;margin-top:6px;color:#655c4a;font-size:10px;font-weight:750;font-variant-numeric:tabular-nums;line-height:1}
+.news-indicator:is(button):is(:hover,:focus-visible) .news-record-icon{transform:rotate(0) translateY(-2px);box-shadow:0 4px 7px #0002}
+@media(prefers-reduced-motion:reduce){.news-record-icon{transition:none}}
+
+.source-carousel-grid .source-carousel-empty[hidden]{display:none}
+.source-carousel-empty{visibility:hidden;min-width:0}
+.source-carousel-arrow:disabled{opacity:.25;cursor:default}
+
+/* Muted third objects use opaque colors so trails cannot show through dots. */
+.object-line.e002-inactive-chaser .dot.c{background:#d3b46b;border-color:#9e8958;opacity:1}
+.episode-row[data-episode-id="E-005"][data-mini-selected="B"] .object-line:has(.dot.c),
+.episode-row[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b),
+.episode-row[data-episode-id="E-006"][data-mini-selected="B"] .object-line:has(.dot.c),
+.episode-row[data-episode-id="E-006"][data-mini-selected="C"] .object-line:has(.dot.b){opacity:1}
+.episode-row[data-episode-id="E-005"][data-mini-selected="B"] .object-line:has(.dot.c) .dot,
+.episode-row[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b) .dot,
+.episode-row[data-episode-id="E-006"][data-mini-selected="B"] .object-line:has(.dot.c) .dot,
+.episode-row[data-episode-id="E-006"][data-mini-selected="C"] .object-line:has(.dot.b) .dot{background:#c3c3c3;border-color:#858585}
+.episode-row[data-episode-id="E-005"][data-mini-selected="B"] .object-line:has(.dot.c) .object-trigger,
+.episode-row[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b) .object-trigger,
+.episode-row[data-episode-id="E-006"][data-mini-selected="B"] .object-line:has(.dot.c) .object-trigger,
+.episode-row[data-episode-id="E-006"][data-mini-selected="C"] .object-line:has(.dot.b) .object-trigger{color:#767676}

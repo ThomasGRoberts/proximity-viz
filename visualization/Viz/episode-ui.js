@@ -1,5 +1,6 @@
 // Only the editorial markup used in the published Episodes sheet is displayed.
 import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js?v=6";
+import { installEpisodeDescriptionToggle } from "./panel-enhancements.js";
 // Parse in an inert document, then create fresh, explicitly allowed DOM nodes.
 const allowed = new Set(["P", "BR", "I", "EM", "B", "STRONG"]);
 const discarded = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "SVG", "MATH", "IMG", "VIDEO", "AUDIO", "FORM", "INPUT", "BUTTON"]);
@@ -23,6 +24,7 @@ export function sanitizeEpisodeDescription(markup) {
 }
 
 const description = document.getElementById("episodeDescription");
+const storyToggle = installEpisodeDescriptionToggle(description);
 const query = new URLSearchParams(location.search);
 const publicId = query.get("episode") || "E-001";
 loadCurrentEpisodes().then(feed => {
@@ -34,6 +36,8 @@ loadCurrentEpisodes().then(feed => {
   if (!text && ["E-003", "E-005", "E-006"].includes(episodeId)) { description.hidden = true; return; }
   if (!text) throw new Error("Episode description unavailable");
   description.replaceChildren(sanitizeEpisodeDescription(text));
+  storyToggle.hidden = false;
 }).catch(error => {
   description.textContent = `Current episode information unavailable: ${error.message}.`;
+  storyToggle.hidden = false;
 });

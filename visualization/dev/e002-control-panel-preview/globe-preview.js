@@ -3,6 +3,7 @@ import { OrbitControls } from "../../Viz/vendor/three/addons/controls/OrbitContr
 import { feature } from "../../Viz/vendor/topojson/topojson-client.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "../../Viz/relative-rendering.js?v=5";
 import { MARKER } from "../../../shared/marker-spec.js";
+import { miniLandTexture, miniMutedDotTexture, miniMutedColors, opaqueMutedDotTexture } from "../../Viz/mini-scene-style.js";
 
 const EARTH_KM = 6378.137;
 const toScene = point => new THREE.Vector3(point.x / EARTH_KM, point.z / EARTH_KM, -point.y / EARTH_KM);
@@ -43,7 +44,15 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   relativeEarth.visible = false;
   scene.add(relativeEarth);
   fetch("../../Viz/vendor/countries-50m.json").then(response => response.json()).then(topology => {
-    const coords = [], radius = 1.0017, seen = new Set();
+    if (options.tableMini) {
+      const texture = miniLandTexture(THREE, feature(topology, topology.objects.countries).features);
+      earthSurface.material.map = texture;
+      relativeEarthSurface.material.map = texture;
+      earthSurface.material.needsUpdate = true;
+      relativeEarthSurface.material.needsUpdate = true;
+      return;
+    }
+    const coords = [], radius = 1.005, seen = new Set();
     for (const country of feature(topology, topology.objects.countries).features) {
       const geometry = country.geometry;
       const rings = geometry.type === "Polygon" ? geometry.coordinates : geometry.type === "MultiPolygon" ? geometry.coordinates.flat() : [];
@@ -68,16 +77,20 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(coords, 3));
-    earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: options.tableMini ? 0x6b655b : 0x444444, transparent: true, opacity: options.tableMini ? .55 : 1, depthTest: true, depthWrite: false })));
-    relativeEarth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: options.tableMini ? 0x6b655b : 0x3a3a3a, transparent: true, opacity: options.tableMini ? .55 : 1, depthTest: true, depthWrite: false })));
+    earth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x727272, depthTest: true, depthWrite: false })));
+    relativeEarth.add(new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x676767, depthTest: true, depthWrite: false })));
   }).catch(() => {});
 
-  const markers = {}, labels = {}, trails = {}, labelPlacement = {};
+  const markers = {}, markerTextures = {}, labels = {}, trails = {}, labelPlacement = {};
   const referenceOrbit = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: options.tableMini ? 0x5c513a : 0x222222, transparent: true, opacity: options.tableMini ? .88 : .72, depthTest: true, depthWrite: false }));
   referenceOrbit.frustumCulled = false; referenceOrbit.renderOrder = 2; referenceOrbit.visible = false; scene.add(referenceOrbit);
   for (const item of episode.participants) {
     const color = item.slot === "B" ? MARKER.B : MARKER.A;
-    const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTexture(color), sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
+    const normal = dotTexture(color);
+    const muted = options.tableMini ? miniMutedDotTexture(THREE, color)
+      : opaqueMutedDotTexture(THREE, color, "#ffffff", .58);
+    markerTextures[item.slot] = { normal, muted };
+    const marker = new THREE.Sprite(new THREE.SpriteMaterial({ map: normal, sizeAttenuation: false, transparent: true, depthTest: true, depthWrite: false }));
     marker.material.depthTest = !options.tableMini; marker.renderOrder = 10;
     scene.add(marker); markers[item.slot] = marker;
     const trail = new THREE.Mesh(fadingTrailGeometry([]), fadingTrailMaterial(item.slot === "B" ? "B" : "A"));
@@ -295,7 +308,8 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     orbitTooltip.hidden = !near;
     if (near) {
       const name = names[referenceMode === "target" ? "B" : focus];
-      orbitTooltip.textContent = `Modeled reference orbit of ${name}: one SGP4-propagated revolution from its nearest TLE, shown in the current relative frame.`;
+      const movingSlot = referenceMode === "target" ? focus : "B";
+      orbitTooltip.textContent = `This reference orbit describes ${name}'s trajectory around the Earth. The motion of ${names[movingSlot]} is shown relative to ${name} in ${movingSlot === "B" ? "gray" : "gold"}.`;
       const stageRect = stage.getBoundingClientRect();
       orbitTooltip.style.left = `${Math.max(8, Math.min(stage.clientWidth - 245, event.clientX - stageRect.left + 14))}px`;
       orbitTooltip.style.top = `${Math.max(8, Math.min(stage.clientHeight - 68, event.clientY - stageRect.top + 14))}px`;
@@ -362,7 +376,6 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     };
     for (const item of episode.participants) {
       const trail = trails[item.slot];
-      if (options.tableMini && item.slot === "C") { trail.visible = false; stage.dataset["trailPoints" + item.slot] = "0"; continue; }
       if (mode === "relative" && item.slot === (referenceMode === "target" ? "B" : focus)) { trail.visible = false; stage.dataset["trailPoints" + item.slot] = "0"; continue; }
       const allPoints = [], points = [];
       for (let index = 0; index < samples.length; index++) {
@@ -390,7 +403,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
       trail.geometry.dispose();
       trail.geometry = fadingTrailGeometry(points);
       trail.visible = points.length > 1;
-      trail.material.uniforms.uOpacity.value = options.tableMini ? 1 : item.slot === "B" ? .85 : item.slot === focus ? 1 : .4;
+      trail.material.uniforms.uOpacity.value = item.slot !== "B" && item.slot !== focus ? .55 : item.slot === "B" ? .85 : 1;
       stage.dataset["trailPoints" + item.slot] = String(points.length);
     }
   }
@@ -460,17 +473,19 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     placeEarth(reference, axes, ms);
     for (const item of episode.participants) {
       const body = frame[item.slot], marker = markers[item.slot], label = labels[item.slot];
-      marker.visible = !!body && !(options.tableMini && item.slot === "C"); label.hidden = !marker.visible;
+      marker.visible = !!body; label.hidden = !marker.visible;
       label.classList.toggle("is-muted", item.slot !== "B" && item.slot !== focus);
+      if (options.tableMini) label.style.opacity = item.slot !== "B" && item.slot !== focus ? ".6" : "";
       if (!body) continue;
       positions[item.slot] = mode === "relative" && reference ? relativePoint(reference, body, axes) : toScene(body.position);
       marker.position.copy(positions[item.slot]);
-      marker.material.opacity = options.tableMini ? 1 : item.slot !== "B" && item.slot !== focus ? .3 : 1;
+      marker.material.map = item.slot !== "B" && item.slot !== focus ? markerTextures[item.slot].muted : markerTextures[item.slot].normal;
+      marker.material.opacity = 1;
     }
     if (auto) planCamera(force === true || windowChanged || pathModeChanged, force === "reference" || focusChanged || force === "path");
     if (modeOrWindowChanged || performance.now() - lastTrailPaint > 180) {
       refreshTrails(window, ms); lastTrailPaint = performance.now();
-    } else for (const item of episode.participants) trails[item.slot].material.uniforms.uOpacity.value = options.tableMini ? 1 : item.slot === "B" ? .85 : item.slot === focus ? 1 : .4;
+    } else for (const item of episode.participants) trails[item.slot].material.uniforms.uOpacity.value = item.slot !== "B" && item.slot !== focus ? .55 : item.slot === "B" ? .85 : 1;
     status.textContent = Object.entries(frame).filter(([, value]) => !value).map(([slot]) => names[slot]).join(", ");
     if (status.textContent) status.textContent += " unavailable from the local element library.";
     caveat.textContent = mode === "relative"
@@ -568,7 +583,9 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     }
     if (mode === "relative" && relativeEarth.visible) stage.dataset.earthCameraDistance = relativeEarth.position.distanceTo(camera.position).toFixed(4);
     if (mode === "relative" && relativeEarth.visible) {
-      relativeEarth.quaternion.slerp(earthTargetQuaternion, .15);
+      // The reference frame already follows the orbit. Apply the Earth-fixed
+      // orientation directly so GEO land markings do not lag or appear to spin.
+      relativeEarth.quaternion.copy(earthTargetQuaternion);
       stage.dataset.earthOrientation = [relativeEarth.quaternion.x, relativeEarth.quaternion.y, relativeEarth.quaternion.z, relativeEarth.quaternion.w].map(value => value.toFixed(3)).join(",");
     }
     const width = mount.clientWidth, height = mount.clientHeight;
@@ -582,9 +599,10 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
       const inside = x >= 8 && x <= width - 8 && y >= 8 && y <= height - 8 && projected.z < 1;
       const occluded = earthOccludes(point, camera.position);
       label.classList.toggle("is-occluded", occluded);
-      label.style.visibility = inside && !occluded && !(options.tableMini && item.slot === "C") ? "visible" : "hidden";
-      markers[item.slot].visible = inside && !occluded && !(options.tableMini && item.slot === "C");
-      markers[item.slot].material.opacity = options.tableMini ? 1 : item.slot !== "B" && item.slot !== focus ? .3 : 1;
+      label.style.visibility = inside && !occluded ? "visible" : "hidden";
+      markers[item.slot].visible = inside && !occluded;
+      markers[item.slot].material.map = item.slot !== "B" && item.slot !== focus ? markerTextures[item.slot].muted : markerTextures[item.slot].normal;
+      markers[item.slot].material.opacity = 1;
       if (inside && !occluded) rendered.push(item.slot);
       if (occluded) occludedSlots.push(item.slot);
     }
@@ -623,7 +641,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     for (const slot of ["A", "C"]) {
       const inactive = slot !== focus;
       markers[slot].scale.setScalar(markerScale);
-      markers[slot].renderOrder = pairOverlap && inactive ? 9 : 10;
+      markers[slot].renderOrder = options.tableMini ? inactive ? 10 : 11 : pairOverlap && inactive ? 9 : 10;
     }
     if (options.tableMini) {
       const pulse = miniHover && !miniReducedMotion.matches ? 1 + .32 * (.5 + .5 * Math.sin(performance.now() / 180)) : 1;
@@ -649,9 +667,12 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     update,
     getMarkerPositions() { return Object.entries(markers).map(([slot, marker]) => {
       const point = marker.position.clone().project(camera);
+      const baseColor = slot === "B" ? MARKER.B : MARKER.A;
+      const muted = options.tableMini && slot !== "B" && slot !== focus;
+      const colors = muted ? miniMutedColors(baseColor) : { fill: baseColor, outline: MARKER.outline };
       return { slot, x: (point.x + 1) / 2, y: (1 - point.y) / 2,
         visible: marker.visible && point.z >= -1 && point.z <= 1,
-        color: slot === "B" ? "#a9a9a9" : "#eaaa00", opacity: marker.material.opacity };
+        color: colors.fill, outlineColor: colors.outline, opacity: marker.material.opacity };
     }); },
     setMiniTleAnchor(ms) {
       if (!options.tableMini) return;

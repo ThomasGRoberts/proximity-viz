@@ -110,8 +110,8 @@ export async function loadOrbitalPreview(episode) {
     const both = analyzeEpisode(samples, distance, speed, minute);
     const distanceOnly = analyzeEpisode(samples, distance, Infinity, minute).intervals;
     const speedOnly = analyzeEpisode(samples, Infinity, speed, minute).intervals;
-    const single = exclusiveQualificationIntervals(distanceOnly, speedOnly).single;
-    const result = { both, single };
+    const exclusives = exclusiveQualificationIntervals(distanceOnly, speedOnly);
+    const result = { both, single: exclusives.single, distanceOnly: exclusives.distanceOnly, speedOnly: exclusives.speedOnly };
     qualificationCache.set(key, result);
     return result;
   }
@@ -142,6 +142,10 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   context.clearRect(0, 0, width, height);
   let left = 52;
   const right = width - 122, top = 11, bottom = height - 38;
+  canvas.dataset.chartTop = String(top);
+  canvas.dataset.chartBottom = String(bottom);
+  canvas.dataset.bandY = String(bottom + 5);
+  canvas.dataset.bandEndY = String(bottom + 9);
   const start = Date.parse(window.start), end = Date.parse(window.end);
   const viewSpan = end - start;
   const viewStart = fixedWindow ? start : currentMs - viewSpan, viewEnd = fixedWindow ? end : currentMs;
@@ -157,6 +161,8 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
   const now = performance.now(), previousScale = chartScaleState.get(canvas);
   const continuous = previousScale?.windowId === window.id && currentMs >= previousScale.currentMs && currentMs - previousScale.currentMs <= 30 * 60000;
   const max = continuous ? previousScale.max + (targetMax - previousScale.max) * (1 - Math.exp(-(now - previousScale.now) / 420)) : targetMax;
+  canvas.dataset.chartMax = String(max);
+  canvas.dataset.chartFactor = String(speedScale);
   chartScaleState.set(canvas, { windowId: window.id, currentMs, now, max });
   const tickStep = roundTickStep(max, minimumStep);
   const speedDecimals = tickStep >= 1 ? 0 : Number.isInteger(tickStep * 10) ? 1 : 2;
@@ -217,14 +223,15 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
     context.fillText(axisTime(ms), px, height - 20);
     context.fillText(shortDate(ms).replace(/,\s*\d{4}$/, ""), px, height - 9);
   }
-  for (const [intervals, color] of [[qualifications?.single || [], "#a9a9a9"], [qualifications?.both.intervals || [], "#eaaa00"]]) {
+  const oneThreshold = metric === "distanceKm" ? qualifications?.distanceOnly : qualifications?.speedOnly;
+  for (const [intervals, color] of [[oneThreshold || qualifications?.single || [], "#a9a9a9"], [qualifications?.both.intervals || [], "#eaaa00"]]) {
     context.fillStyle = color;
     for (const interval of intervals) {
       const from = Math.max(viewStart, interval.start), to = Math.min(viewEnd, currentMs, interval.end);
       if (to > from) context.fillRect(x(from), bottom + 5, Math.max(3, x(to) - x(from)), 4);
     }
   }
-  canvas.dataset.singleThresholdSegments = String(qualifications?.single.length || 0);
+  canvas.dataset.singleThresholdSegments = String((oneThreshold || qualifications?.single || []).length);
   canvas.dataset.bothThresholdSegments = String(qualifications?.both.intervals.length || 0);
   const group = canvas.parentElement, edge = group.querySelector(".thresholdEdge"), current = group.querySelector(".currentValue");
   const unit = metric === "distanceKm" ? "km" : speedUnit;
