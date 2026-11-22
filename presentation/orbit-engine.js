@@ -1,4 +1,4 @@
-// Synthetic GEO teaching model: SGP4 from internally generated TLEs, followed
+// Synthetic orbital teaching model: SGP4 from internally generated TLEs, followed
 // by continuous two-body propagation after optional tangential impulse burns.
 export const EPOCH_MS = Date.parse("2026-11-23T00:00:00Z");
 export const EARTH_KM = 6378.137;
@@ -109,8 +109,9 @@ export function createEngine(config) {
     meanAnomalyDeg: wrap(a.meanAnomalyDeg + delta.relativeLongitudeDeg - delta.deltaRaanDeg),
   };
   for (const object of [a, b]) {
-    if (!(object.altitudeKm > 34000 && object.altitudeKm < 38000 && object.eccentricity >= 0 && object.eccentricity < .05))
-      throw new Error("Choose GEO altitude and eccentricity within the listed ranges");
+    const axis = EARTH_KM + object.altitudeKm;
+    if (!(object.altitudeKm >= 200 && object.altitudeKm <= 60000 && object.eccentricity >= 0 && object.eccentricity < .7 && object.inclinationDeg >= 0 && object.inclinationDeg <= 180 && axis * (1 - object.eccentricity) >= EARTH_KM + 160))
+      throw new Error("Keep synthetic inclinations within 0°–180° and perigees at least 160 km above Earth");
   }
   const tleA = syntheticTle(a, "99901", "A"), tleB = syntheticTle(b, "99902", "B");
   const satA = window.satellite.twoline2satrec(tleA.line1, tleA.line2);

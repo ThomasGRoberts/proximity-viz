@@ -19,9 +19,21 @@ const initialVisibility = {
   shadowing: { objectB:true, tle:false, uncertainty:false, metrics:true, charts:true, thresholds:true, maneuvers:true }
 };
 const controlGroups = {
+  openingControls: [
+    ["openingStyle.markerSizePx", "Satellite dot size", 8, 64, 1, "px"],
+    ["openingStyle.extraChasers", "Additional chasers", 0, 3, 1, ""],
+    ["openingStyle.animationRate", "Animation speed", 10, 1000, 10, "×"],
+    ["openingStyle.trailHours", "Chaser trail length", .1, 3.2, .1, "h"],
+    ["openingStyle.trailThickness", "Chaser trail thickness", .5, 12, .1, "px"],
+    ["openingStyle.referenceThickness", "Reference orbit thickness", .5, 10, .1, "px"],
+    ["openingStyle.borderThickness", "Country border thickness", .4, 4, .1, "px"],
+    ["openingStyle.borderOpacity", "Country border opacity", 0, 1, .01, ""],
+    ["openingStyle.borderColor", "Country border color", "color"],
+    ["openingStyle.earthColor", "Earth color", "color"]
+  ],
   absoluteControls: [
-    ["objectA.altitudeKm", "Altitude", 35000, 36500, 1, "km"], ["objectA.inclinationDeg", "Inclination", 0, 6, .01, "°"],
-    ["objectA.eccentricity", "Eccentricity", 0, .02, .00001, ""], ["objectA.raanDeg", "RAAN", 0, 360, .1, "°"],
+    ["objectA.altitudeKm", "Altitude", 200, 60000, 1, "km"], ["objectA.inclinationDeg", "Inclination", 0, 179.9, .1, "°"],
+    ["objectA.eccentricity", "Eccentricity", 0, .69, .0001, ""], ["objectA.raanDeg", "RAAN", 0, 360, .1, "°"],
     ["objectA.argPerigeeDeg", "Argument of perigee", 0, 360, .1, "°"], ["objectA.meanAnomalyDeg", "Mean anomaly", 0, 360, .1, "°"]
   ], relativeControls: [
     ["objectB.relativeLongitudeDeg", "Relative longitude", -3, 3, .001, "°"], ["objectB.deltaAltitudeKm", "Altitude difference", -500, 500, .1, "km"],
@@ -38,6 +50,11 @@ const controlGroups = {
     ["display.showOrbit", "Reference orbit", "check"], ["display.showTrail", "Trails", "check"],
     ["display.showVectors", "Relative vector", "check"], ["display.showUncertainty", "Hypothetical ellipsoid", "check"],
     ["display.uncertaintyKm", "Ellipsoid scale", 1, 1000, 1, "km"],
+    ["display.trailThickness", "Trail thickness", .5, 8, .1, "px"],
+    ["display.referenceThickness", "Orbit thickness", .5, 8, .1, "px"],
+    ["display.borderThickness", "Country border thickness", .4, 4, .1, "px"],
+    ["display.borderOpacity", "Country border opacity", 0, 1, .01, ""],
+    ["display.borderColor", "Country border color", "color"],
     ["display.distanceThresholdKm", "Distance threshold", 0, 50000, 10, "km"],
     ["display.speedThresholdMs", "Speed threshold", 0, 1000, .1, "m/s"]
   ]
@@ -47,19 +64,28 @@ const fieldLabels = { objectB:"Object B card", tle:"TLE and epoch", uncertainty:
 const toScene = (point, scale) => new THREE.Vector3(point.x / scale, point.z / scale, -point.y / scale);
 const fmtDate = hour => new Intl.DateTimeFormat("en-US", { timeZone:"UTC", month:"short", day:"numeric", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:false }).format(new Date(EPOCH_MS + hour * 3600000)) + " UTC";
 const fmtNum = value => Number.isFinite(value) ? new Intl.NumberFormat("en-US", {maximumFractionDigits: value < 10 ? 2 : 0}).format(value) : "—";
-const beatCounts = { lab:4, tle:3, uncertainty:3, neighbors:3 };
+const beatCounts = { lab:4, "statements-shadow":3, "statements-focus":3, tle:3, uncertainty:3, neighbors:3 };
+const beatLabels = {
+  lab:["Lab introduction","Coordination","Sustainability","Security"],
+  "statements-shadow":["United Kingdom","China","United States"],
+  "statements-focus":["Australia","European Union","Netherlands"],
+  tle:["Estimated orbit","Synthetic TLE","Updated elements"],
+  uncertainty:["Estimated orbit","Relative view","Uncertainty region"],
+  neighbors:["Object A","Introduce Object B","Relative view"]
+};
 const statementCards = {
   "statements-shadow": [
-    { flag:"🇦🇺", country:"Australia", quote:"Nonconsensual proximity operations including close approach or <strong>so-called shadowing</strong> may be perceived as interference with the state's control over its space object or as coercive signaling.", source:"Australian delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=5363" },
-    { flag:"🇪🇺", country:"European Union", quote:"Unfortunately, we continue to witness examples of unfriendly and even aggressive operations, including <strong>satellites being shadowed by other ones</strong> ...", source:"European Union delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=88" },
-    { flag:"🇳🇱", country:"Netherlands", quote:"The risks increase when such operations interfere with another space object or <strong>force it to perform an evasive maneuver</strong>.", source:"Dutch delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=8206" },
+    { flag:"🇬🇧", country:"United Kingdom", date:"9 July 2026", quote:"Unsolicited rendezvous and proximity operations can introduce safety risks through <strong>excessively close approaches</strong> that may result in physical interference or accidents potentially involving strategic space assets.", source:"UK delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=5935" },
+    { flag:"🇨🇳", country:"China", date:"8 July 2026", quote:"Starting from 2016, that country's satellite has for several times approached the satellites of China, Russia, Pakistan, and Nigeria. Sometimes the distance is only merely <strong>10 kilometers</strong>. Last April, that country's satellite even approached China's <strong>TGS15, 16, and TGS17</strong>. Sometimes it was only <strong>12 kilometers away from our satellites</strong>.", source:"Chinese delegation · OEWG on PAROS, third substantive session · English transcription; designations unverified", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/44A60FEA-18CA-4F46-AF6F-4B6236CAF19B/15h07/en?position=8499" },
+    { flag:"🇺🇸", country:"United States", date:"February 2020", quote:"This is <strong>unusual and disturbing behavior</strong> and has the potential to create a dangerous situation in space.", source:"General John W. Raymond · CBS News, 12 February 2020", url:"https://www.cbsnews.com/news/russian-satellites-fly-near-us-government-satellite-activity-unusual-disturbing-space-command/" }
   ],
   "statements-focus": [
-    { flag:"🇦🇺", country:"Australia", quote:"Nonconsensual proximity operations including close approach or <strong>so-called shadowing</strong> may be perceived as interference with the state's control over its space object or as coercive signaling.", source:"Australian delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=5363" },
-    { flag:"🇪🇺", country:"European Union", quote:"Unfortunately, we continue to witness examples of unfriendly and even aggressive operations, including <strong>satellites being shadowed by other ones</strong> ...", source:"European Union delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=88" },
+    { flag:"🇦🇺", country:"Australia", date:"9 July 2026", quote:"Nonconsensual proximity operations including close approach or <strong>so-called shadowing</strong> may be perceived as interference with the state's control over its space object or as coercive signaling.", source:"Australian delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=5363" },
+    { flag:"🇪🇺", country:"European Union", date:"9 July 2026", quote:"Unfortunately, we continue to witness examples of unfriendly and even aggressive operations, including <strong>satellites being shadowed by other ones</strong> ...", source:"European Union delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=88" },
+    { flag:"🇳🇱", country:"Netherlands", date:"9 July 2026", quote:"The risks increase when such operations interfere with another space object or <strong>force it to perform an evasive maneuver</strong>.", source:"Dutch delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=8206" }
   ],
 };
-let doc, stepIndex = 0, beatIndex = 0, config, engine, series, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt;
+let doc, stepIndex = 0, beatIndex = 0, config, engine, series, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], showArchived = false, activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt, sectionArt, saveStyleTimer, saveWordingTimer;
 
 async function request(path, payload) {
   const res = await fetch(path, payload ? { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) } : { cache:"no-store" });
@@ -79,8 +105,14 @@ queueMicrotask(async () => {
 });
 
 function setup() {
+  doc.openingStyle ||= {markerSizePx:42,trailHours:1.2,trailThickness:3.2,referenceThickness:1.3,borderThickness:1.1,borderOpacity:.68,borderColor:"#685f53",earthColor:"#e5e5e5",animationRate:240,extraChasers:0};
+  doc.chapterLayout ||= {};
+  doc.chapterLabels ||= {};
   stepIndex = Math.max(0, doc.steps.findIndex(step => step.id === location.hash.slice(1)));
-  buildStepNav(); buildControls(); buildVisibility(); buildPresets(); setupScene(); openingArt = mountOpeningArt($("openingArt")); bind(); showStep(); animate(0); renderComments();
+  buildStepNav(); buildControls(); buildWordingControls(); buildVisibility(); buildPresets(); setupScene();
+  openingArt = mountOpeningArt($("openingArt"),doc.openingStyle);
+  sectionArt = mountOpeningArt($("sectionArt"),{...doc.openingStyle,markerSizePx:Math.max(10,doc.openingStyle.markerSizePx*.6),animationRate:85});
+  bind(); bindLayoutDrag(); showStep(); animate(0); renderComments();
 }
 function step() { return doc.steps[stepIndex]; }
 function chapter() { return step().kind === "chapter"; }
@@ -98,6 +130,50 @@ function buildStepNav() {
     button.textContent = item.kind === "chapter" ? `${chapterIds.indexOf(item.id) + 1}. ${item.title}` : item.title;
     button.title = item.title; button.addEventListener("click", () => go(index)); $("steps").append(button);
   });
+}
+function buildWordingControls() {
+  const details=document.createElement("details"),summary=document.createElement("summary");
+  summary.textContent="On-screen wording";details.append(summary);
+  for(const [key,label,multiline] of [["title","Chapter title",false],["subtitle","Eyebrow",false],["body","Chapter description",true],["A","Object A label",false],["B","Object B label",false]]){
+    const wrapper=document.createElement("label"),caption=document.createElement("span");caption.textContent=label;
+    const input=document.createElement(multiline?"textarea":"input");
+    if(!multiline)input.type="text";else input.rows=3;
+    input.dataset.wording=key;wrapper.dataset.spot=label;wrapper.append(caption,input);details.append(wrapper);
+    input.addEventListener("input",()=>{
+      if(key==="A"||key==="B"){
+        doc.chapterLabels[step().id]||={A:"Object A",B:"Object B"};doc.chapterLabels[step().id][key]=input.value;
+      }else step()[key]=input.value;
+      applyWording();clearTimeout(saveWordingTimer);
+      $("saveStatus").textContent="Saving wording…";
+      saveWordingTimer=setTimeout(()=>saveDoc("On-screen wording saved locally").catch(error=>{$("saveStatus").textContent=error.message}),400);
+    });
+  }
+  $("chapterControlsSection").prepend(details);
+}
+function syncWordingControls() {
+  const labels=doc.chapterLabels[step().id]||{A:"Object A",B:"Object B"};
+  document.querySelectorAll("[data-wording]").forEach(input=>{input.value=input.dataset.wording==="A"||input.dataset.wording==="B"?labels[input.dataset.wording]:step()[input.dataset.wording]||"";});
+  applyWording();
+}
+function applyWording() {
+  const item=step(),labels=doc.chapterLabels[item.id]||{A:"Object A",B:"Object B"};
+  $("chapterNumber").textContent=item.subtitle;$("chapterTitle").textContent=item.title;$("chapterBody").textContent=item.body;
+  for(const key of ["A","B"]){
+    const summary=$(`legend${key}`).querySelector("summary");summary.lastChild.textContent=labels[key];
+    $(`object${key}`).querySelector("strong").textContent=labels[key];
+  }
+  const nav=$("steps").children[stepIndex];
+  if(nav){nav.textContent=`${chapterIds.indexOf(item.id)+1}. ${item.title}`;nav.title=item.title;}
+}
+function updateProgress() {
+  const count=beatCounts[step().id]||1;
+  $("beatSelect").replaceChildren();
+  for(let index=0;index<count;index++)$("beatSelect").append(new Option(`${beatLabels[step().id]?.[index]||"Slide"} · ${index+1}/${count}`,String(index)));
+  $("beatSelect").value=String(beatIndex);
+  $("beatSelect").disabled=count===1;
+  $("progressText").textContent=`${stepIndex+1}/${doc.steps.length} · ${beatIndex+1}/${count}`;
+  $("previousStep").disabled=stepIndex===0&&beatIndex===0;
+  $("nextStep").disabled=stepIndex===doc.steps.length-1&&beatIndex===count-1;
 }
 function go(index, lastBeat = false) { if (index < 0 || index >= doc.steps.length) return; stepIndex = index; beatIndex = lastBeat ? (beatCounts[step().id] || 1) - 1 : 0; history.replaceState(null, "", `#${step().id}`); showStep(); }
 function advance(direction) {
@@ -117,35 +193,50 @@ function renderQuoteCards(id) {
     const card = document.createElement("article"); card.className = "quoteCard";
     const head = document.createElement("div"); head.className = "quoteHead";
     const name = document.createElement("strong"); name.textContent = `${item.flag} ${item.country}`;
-    const date = document.createElement("time"); date.textContent = "9 July 2026";
+    const date = document.createElement("time"); date.textContent = item.date;
     head.append(name, date);
     const quote = document.createElement("blockquote"); quote.innerHTML = `“${item.quote}”`;
     const source = document.createElement("p"); source.textContent = item.source;
-    const link = document.createElement("a"); link.href = item.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = "Recording ↗";
-    card.append(head, quote, source, link); host.append(card);
+    source.title=item.url;
+    card.append(head, quote, source); host.append(card);
   }
 }
 function showStep() {
   const item = step();
   [...$("steps").children].forEach((node, index) => index === stepIndex ? node.setAttribute("aria-current", "step") : node.removeAttribute("aria-current"));
+  $("steps").children[stepIndex]?.scrollIntoView({block:"nearest",inline:"nearest"});
   document.body.dataset.step = item.id;
   document.body.classList.toggle("chapterActive", chapter());
-  $("slide").hidden = chapter(); $("episode").hidden = !chapter(); $("inspector").hidden = !chapter() || presentMode;
+  $("slide").hidden = chapter(); $("episode").hidden = !chapter();
+  $("inspector").hidden = presentMode || (!chapter() && item.id!=="opening");
+  $("openingControlsSection").hidden = item.id!=="opening";
+  $("chapterControlsSection").hidden = !chapter();
+  $("inspectorTitle").textContent=item.id==="opening"?"Opening artwork":"Scenario design";
   if (!chapter()) {
-    $("slideTitle").textContent = item.title; $("slideEyebrow").textContent = item.subtitle || ""; $("slideBody").textContent = item.body || "";
+    if(item.id==="opening"){
+      document.body.classList.add("inspectorCollapsed");$("inspectorToggle").textContent="Show controls";$("inspectorToggle").setAttribute("aria-expanded","false");syncControls();
+    }
+    $("slideTitle").textContent = item.title; $("slideEyebrow").textContent = item.id==="opening"?item.body||"":item.subtitle||"";
+    $("slideBody").textContent = item.id==="opening"?item.subtitle||"":item.body||"";
+    $("slideBody").hidden=Boolean(statementCards[item.id]);
+    if(item.id==="opening")$("slideTitle").innerHTML="How Close Is<br>Too Close?";
+    if(item.id==="statements-close")$("slideTitle").innerHTML="<em>Close approaches</em> and <em>shadowing</em>";
     $("openingArt").hidden = item.id !== "opening"; $("labIntro").hidden = item.id !== "lab"; $("slideCopy").hidden = item.id === "lab";
-    $("slidePrompt").hidden = !["statements-shadow", "statements-focus"].includes(item.id);
-    $("slidePrompt").textContent = item.id === "statements-shadow" ? "What makes repeated or sustained proximity different?" : "Statements describe perceived risks; the visual evidence cannot establish intent.";
-    renderQuoteCards(item.id); applyBeat(); enterStep(); placePins(); return;
+    $("sectionArt").hidden = !["statements-close","library","limitations","future"].includes(item.id);
+    $("slidePrompt").hidden = !["statements-shadow","statements-focus"].includes(item.id);
+    $("slidePrompt").textContent = item.body || "";
+    renderQuoteCards(item.id); applyBeat(); enterStep(); updateProgress(); placePins(); return;
   }
   activePreset = doc.chapterPresets[item.id] || "neighbors";
   config = clone(doc.chapterOverrides[item.id] || doc.presets[activePreset]);
+  config.display={trailThickness:1.8,referenceThickness:1.2,borderThickness:1.1,borderOpacity:.7,borderColor:"#707070",...config.display};
   const teaching = ["tle","uncertainty","neighbors"].includes(item.id);
   document.body.classList.toggle("inspectorCollapsed", teaching && !presentMode);
   $("inspectorToggle").textContent = teaching && !presentMode ? "Show controls" : "Hide controls";
+  $("inspectorToggle").setAttribute("aria-expanded",String(!teaching || presentMode));
   setTimeout(resizeScene, 30);
   if (item.id === "conjunction") config.display.mode = "relative";
-  if (item.id === "tle") { config.display.mode = "eci"; config.display.rateHoursPerSecond = 2.4; config.display.trailHours = 8; config.display.showTrail = true; }
+  if (item.id === "tle") { config.display.mode = "eci"; config.display.rateHoursPerSecond = 2.4; config.display.trailHours = Math.max(8,config.display.trailHours); config.display.showTrail = true; }
   if (item.id === "tle" && beatIndex >= 2) config.teachingPlaneChange = { hour:8, dvMs:60 };
   if (item.id === "tle" && beatIndex < 2) delete config.teachingPlaneChange;
   if (item.id === "neighbors") config.display.mode = "relative";
@@ -155,17 +246,25 @@ function showStep() {
   currentHour = config.display.startHour; customCamera = false;
   if (["tle","uncertainty","neighbors"].includes(item.id)) { playing = true; $("playButton").textContent = "Pause"; }
   sceneOrigin = "A";
-  $("chapterNumber").textContent = item.subtitle; $("chapterTitle").textContent = item.title; $("chapterBody").textContent = item.body;
+  syncWordingControls();
   $("presetSelect").value = activePreset;
-  syncControls(); updateVisibility(); recalc(); restoreCamera(); applyBeat(false); enterStep(); placePins();
+  syncControls(); updateVisibility(); recalc(); redrawSceneBorders(); restoreCamera(); applyBeat(false); applyLayout(); enterStep(); updateProgress(); placePins();
 }
 function applyBeat(rebuild = true) {
   const id = step().id;
   document.body.dataset.beat = String(beatIndex);
   if (id === "lab") {
-    [...$("researchAreas").children].forEach((node, index) => node.classList.toggle("revealed", index < beatIndex));
+    [...$("researchAreas").children].forEach((node, index) => {
+      const visible=index<beatIndex;node.classList.toggle("revealed",visible);
+      const video=node.querySelector("video");
+      if(visible&&!matchMedia("(prefers-reduced-motion: reduce)").matches)video.play().catch(()=>{});
+      else {video.pause();video.currentTime=0;}
+    });
   }
-  if (!chapter()) return;
+  if (!chapter()) {
+    if(statementCards[id]) [...$("quoteCards").children].forEach((node,index)=>{node.hidden=index>beatIndex;node.classList.toggle("revealed",index===beatIndex);});
+    updateProgress();placePins();return;
+  }
   if (id === "tle") {
     const changed = (beatIndex >= 2) !== Boolean(config.teachingPlaneChange);
     if (beatIndex >= 2) { config.teachingPlaneChange = { hour:8, dvMs:60 }; if (changed) currentHour = 8; }
@@ -191,7 +290,7 @@ function applyBeat(rebuild = true) {
   if (rebuild && doc.cameraViews[cameraKey()]?.mode === config.display.mode) restoreCamera();
   updateVisibility(); updateScene();
   if (rebuild) { const node = $("episode"); node.classList.remove("beat-change"); void node.offsetWidth; node.classList.add("beat-change"); }
-  placePins();
+  updateProgress();placePins();
 }
 function buildPresets() {
   $("presetSelect").replaceChildren(); for (const [key, preset] of Object.entries(doc.presets)) {
@@ -208,6 +307,9 @@ function buildControls() {
       const title = document.createElement("span"); title.textContent = label; wrapper.append(title);
       if (min === "check") {
         wrapper.className = "checkRow"; const input = document.createElement("input"); input.type = "checkbox"; input.dataset.path = path; input.addEventListener("change", () => change(path, input.checked)); wrapper.prepend(input);
+      } else if (min === "color") {
+        const input=document.createElement("input");input.type="color";input.dataset.path=path;
+        input.addEventListener("input",()=>change(path,input.value));wrapper.append(input);
       } else if (min === "select") {
         const select = document.createElement("select"); select.dataset.path = path;
         for (const value of max) select.append(new Option(value === "eci" ? "ECI" : value === "relative" ? "Relative to A" : value, value));
@@ -226,14 +328,25 @@ function buildControls() {
 function syncControls() {
   document.querySelectorAll("#inspector [data-path]").forEach(input => {
     if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement)) return;
-    const value = atPath(config, input.dataset.path);
+    const source=input.dataset.path.startsWith("openingStyle.")?doc:config;
+    if (!source) return;
+    const value = atPath(source, input.dataset.path);
     if (input.type === "checkbox") input.checked = Boolean(value); else input.value = value;
   });
-  $("distanceThreshold").value = config.display.distanceThresholdKm;
-  $("speedThreshold").value = config.display.speedThresholdMs;
+  if(config){
+    $("distanceThreshold").value = config.display.distanceThresholdKm;
+    $("speedThreshold").value = config.display.speedThresholdMs;
+  }
 }
 function change(path, value) {
+  if (path.startsWith("openingStyle.")) {
+    setPath(doc,path,value);openingArt?.setOptions(doc.openingStyle);syncControls();
+    $("saveStatus").textContent="Saving opening artwork…";
+    clearTimeout(saveStyleTimer);saveStyleTimer=setTimeout(()=>saveDoc("Opening artwork saved locally").catch(error=>{$("saveStatus").textContent=error.message}),350);
+    return;
+  }
   setPath(config, path, value);
+  if(path==="display.borderThickness")redrawSceneBorders();
   if (config.display.endHour <= config.display.startHour) config.display.endHour = config.display.startHour + 1;
   currentHour = THREE.MathUtils.clamp(currentHour, config.display.startHour, config.display.endHour);
   syncControls();
@@ -297,19 +410,25 @@ function setupScene() {
         for (const [lon,lat] of [a,b]) { const p = THREE.MathUtils.degToRad(lat), q = THREE.MathUtils.degToRad(lon); positions.push(1.006*Math.cos(p)*Math.cos(q),1.006*Math.sin(p),-1.006*Math.cos(p)*Math.sin(q)); }
       }
     }
-    const geometry = new THREE.BufferGeometry(); geometry.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));
-    earth.add(new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color:0x707070,depthWrite:false})));
+    const borders=new THREE.InstancedMesh(new THREE.CylinderGeometry(1,1,1,3),new THREE.MeshBasicMaterial({color:0x707070,transparent:true,opacity:.7,depthWrite:false}),positions.length/6);
+    borders.frustumCulled=false;earth.add(borders);
+    scene3d.borders=borders;scene3d.borderSegments=positions;redrawSceneBorders();
   }).catch(console.warn);
   const markerA = new THREE.Sprite(new THREE.SpriteMaterial({map:dotTexture("#eaaa00"),sizeAttenuation:false,transparent:true,depthTest:true,depthWrite:false}));
   const markerB = new THREE.Sprite(new THREE.SpriteMaterial({map:dotTexture("#a9a9a9"),sizeAttenuation:false,transparent:true,depthTest:true,depthWrite:false}));
   for (const marker of [markerA,markerB]) { marker.renderOrder = 10; scene.add(marker); }
-  const line = (color, opacity=1) => new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({color,transparent:opacity<1,opacity,depthWrite:false}));
-  const orbit = line(0x555555,.72), trailA = line(0xeaaa00,.76), trailB = line(0x777777,.78), vector = line(0x8d6d11,.78), velocityVector = line(0x7890a5,.86);
+  const line = (color, opacity=1, thick=false) => {
+    const object=thick?new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial({color,transparent:opacity<1,opacity,depthWrite:false}))
+      :new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color,transparent:opacity<1,opacity,depthWrite:false}));
+    object.userData.thick=thick;return object;
+  };
+  const orbit = line(0x555555,.72,true), trailA = line(0xeaaa00,.76,true), trailB = line(0x777777,.78,true), vector = line(0x8d6d11,.78), velocityVector = line(0x7890a5,.86);
   for (const item of [orbit,trailA,trailB,vector,velocityVector]) scene.add(item);
   const ellipsoid = new THREE.Mesh(new THREE.SphereGeometry(1,24,16),new THREE.MeshBasicMaterial({color:0xe9c977,transparent:true,opacity:.22,depthWrite:false})); scene.add(ellipsoid);
   const ellipsoidGrid = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.SphereGeometry(1.002,16,10)),new THREE.LineBasicMaterial({color:0xa77e17,transparent:true,opacity:.48,depthWrite:false})); scene.add(ellipsoidGrid);
   const axes = new THREE.Group();
   for (const [direction,color] of [[new THREE.Vector3(1,0,0),0xb58820],[new THREE.Vector3(0,-1,0),0x727b82],[new THREE.Vector3(0,0,-1),0x9d8672]]) axes.add(new THREE.ArrowHelper(direction,new THREE.Vector3(),1.7,color,.25,.12));
+  axes.visible=false;
   scene.add(axes);
   scene3d = {host,scene,camera,renderer,controls,earth,markerA,markerB,orbit,trailA,trailB,vector,velocityVector,ellipsoid,ellipsoidGrid,axes};
   new ResizeObserver(resizeScene).observe(host);
@@ -318,7 +437,70 @@ function resizeScene() {
   if (!scene3d) return; const {host,camera,renderer} = scene3d; const width = Math.max(1,host.clientWidth), height=Math.max(1,host.clientHeight);
   camera.aspect=width/height; camera.updateProjectionMatrix(); renderer.setSize(width,height,false);
 }
-function linePoints(line, points) { line.geometry.dispose(); line.geometry = new THREE.BufferGeometry().setFromPoints(points); line.visible = points.length > 1; }
+function redrawSceneBorders() {
+  if(!scene3d?.borders||!scene3d.borderSegments)return;
+  const {borders,borderSegments}=scene3d,up=new THREE.Vector3(0,1,0),object=new THREE.Object3D();
+  const thickness=.0034*Number(config?.display?.borderThickness||1.1);
+  for(let i=0,j=0;i<borderSegments.length;i+=6,j++){
+    const a=new THREE.Vector3(borderSegments[i],borderSegments[i+1],borderSegments[i+2]);
+    const b=new THREE.Vector3(borderSegments[i+3],borderSegments[i+4],borderSegments[i+5]);
+    const direction=b.clone().sub(a),length=direction.length();
+    if(length<1e-9){object.scale.set(0,0,0);object.updateMatrix();borders.setMatrixAt(j,object.matrix);continue;}
+    object.position.copy(a).add(b).multiplyScalar(.5);
+    object.quaternion.setFromUnitVectors(up,direction.normalize());
+    object.scale.set(thickness,length,thickness);object.updateMatrix();borders.setMatrixAt(j,object.matrix);
+  }
+  borders.instanceMatrix.needsUpdate=true;
+}
+function applyLayout() {
+  if(!chapter())return;
+  for(const id of ["sceneLegend","sceneMetrics","panel"]){
+    const node=$(id),position=doc.chapterLayout?.[step().id]?.[id];
+    node.style.left=position?`${position.x}%`:"";
+    node.style.top=position?`${position.y}%`:"";
+    node.style.right=position?"auto":"";
+    node.style.bottom=position?"auto":"";
+  }
+}
+function bindLayoutDrag() {
+  document.addEventListener("pointerdown",event=>{
+    const handle=event.target.closest(".dragHandle[data-drag]");
+    if(!handle||presentMode||!chapter()||event.button!==0)return;
+    const node=$(handle.dataset.drag),parent=node.offsetParent;
+    if(!node||!parent)return;
+    event.preventDefault();event.stopPropagation();
+    const rect=node.getBoundingClientRect(),bounds=parent.getBoundingClientRect();
+    const offsetX=event.clientX-rect.left,offsetY=event.clientY-rect.top;
+    handle.setPointerCapture(event.pointerId);parent.classList.add("layoutDragging");
+    let position=null;
+    const move=e=>{
+      const x=Math.max(0,Math.min(bounds.width-node.offsetWidth,e.clientX-bounds.left-offsetX));
+      const y=Math.max(0,Math.min(bounds.height-node.offsetHeight,e.clientY-bounds.top-offsetY));
+      position={x:Math.round(x/bounds.width*40)*2.5,y:Math.round(y/bounds.height*40)*2.5};
+      Object.assign(node.style,{left:`${position.x}%`,top:`${position.y}%`,right:"auto",bottom:"auto"});
+      placePins();
+    };
+    const end=()=>{
+      handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",end);
+      handle.removeEventListener("pointercancel",end);parent.classList.remove("layoutDragging");
+      if(position){doc.chapterLayout[step().id]||={};doc.chapterLayout[step().id][node.id]=position;
+        saveDoc("Layout position saved; snapped to 2.5% grid").catch(error=>{$("saveStatus").textContent=error.message});}
+    };
+    handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",end);handle.addEventListener("pointercancel",end);
+  },true);
+}
+function linePoints(line, points, thickness=1) {
+  if(points.length<2){line.visible=false;return;}
+  if(line.userData.thick){
+    const now=performance.now();
+    if(now-(line.userData.lastBuild||0)<65&&line.geometry.attributes.position)return;
+    line.userData.lastBuild=now;
+    const {camera,controls,host}=scene3d;
+    const worldPerPixel=2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.position.distanceTo(controls.target)/Math.max(1,host.clientHeight)/camera.zoom;
+    line.geometry.dispose();line.geometry=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points,false,"centripetal"),points.length-1,Math.max(.0001,thickness*worldPerPixel*.5),4,false);
+  } else {line.geometry.dispose();line.geometry=new THREE.BufferGeometry().setFromPoints(points);}
+  line.visible=true;
+}
 function cameraKey() { return beatCounts[step().id] ? `${step().id}-${beatIndex}` : step().id; }
 function restoreCamera() {
   if (!scene3d || !chapter()) return;
@@ -327,10 +509,14 @@ function restoreCamera() {
     camera.position.set(...saved.position); camera.up.set(...saved.up); controls.target.set(...saved.target);
     camera.zoom = saved.zoom || 1; camera.updateProjectionMatrix(); controls.update(); customCamera = true; return;
   }
-  if (["tle","uncertainty","neighbors"].includes(step().id)) {
-    camera.position.set(...(config.display.mode === "eci" ? [12,8,18] : [18,4,7]));
-    controls.target.set(...(config.display.mode === "eci" ? [0,0,0] : [-14,0,0]));
-  } else if (config.display.mode === "eci") { const frame=orbitalFrame(engine.stateA(currentHour)); camera.position.copy(toScene(frame.normal,1).multiplyScalar(26)); camera.up.copy(toScene(frame.along,1)); controls.target.set(0,0,0); }
+  if (config.display.mode === "eci") {
+    const frame=orbitalFrame(engine.stateA(currentHour));
+    const distance=Math.max(4,3.4*(EARTH_KM+config.objectA.altitudeKm)/EARTH_KM);
+    camera.position.copy(toScene(frame.normal,1).multiplyScalar(distance));
+    camera.up.copy(toScene(frame.along,1));controls.target.set(0,0,0);
+  } else if (["tle","uncertainty","neighbors"].includes(step().id)) {
+    camera.position.set(18,4,7);controls.target.set(-14,0,0);
+  }
   else { camera.position.set(0,1.2,3.8); controls.target.set(0,0,0); }
   if (config.display.mode !== "eci") camera.up.set(0,1,0); camera.zoom=1; camera.updateProjectionMatrix(); controls.update(); customCamera=false;
 }
@@ -350,18 +536,23 @@ function updateScene() {
   const referenceState = sceneOrigin === "B" ? engine.stateB : step().id === "tle" && beatIndex >= 2 ? engine.preManeuverA : engine.stateA;
   const orbitPoints=Array.from({length:240},(_,i)=>transform(referenceState(currentHour+orbitHours*i/239).r));
   const covarianceFocus = step().id === "uncertainty" && beatIndex >= 2;
-  linePoints(orbit,orbitPoints); orbit.visible=config.display.showOrbit && !covarianceFocus;
+  linePoints(orbit,orbitPoints,config.display.referenceThickness); orbit.visible=config.display.showOrbit && !covarianceFocus;
   const trailStart=Math.max(config.display.startHour,currentHour-config.display.trailHours);
   const trailHours=Array.from({length:90},(_,i)=>trailStart+(currentHour-trailStart)*i/89);
-  linePoints(trailA,trailHours.map(t=>transform(engine.stateA(t).r))); linePoints(trailB,trailHours.map(t=>transform(engine.stateB(t).r)));
+  linePoints(trailA,trailHours.map(t=>transform(engine.stateA(t).r)),config.display.trailThickness);
+  linePoints(trailB,trailHours.map(t=>transform(engine.stateB(t).r)),config.display.trailThickness);
   trailA.visible=config.display.showTrail && !covarianceFocus; trailB.visible=config.display.showTrail&&visibility().objectB && !covarianceFocus;
   linePoints(vector,[markerA.position.clone(),markerB.position.clone()]); vector.visible=config.display.showVectors&&visibility().objectB && !covarianceFocus;
   const velocityTip={x:state.B.r.x+state.dv.x*3600,y:state.B.r.y+state.dv.y*3600,z:state.B.r.z+state.dv.z*3600};
   linePoints(velocityVector,[markerB.position.clone(),transform(velocityTip)]); velocityVector.visible=config.display.showVectors&&visibility().objectB && !covarianceFocus;
   ellipsoid.position.copy(markerA.position); const size=Math.max(.001,config.display.uncertaintyKm/scale);
-  ellipsoid.scale.set(size*1.8,size*.9,size); ellipsoid.visible=(config.display.showUncertainty||visibility().uncertainty)&&visibility().uncertainty;
+  const alongTrack=toScene(frame.along,1).normalize();
+  ellipsoid.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),alongTrack);
+  ellipsoid.scale.set(size*.9,size*2,size*.7); ellipsoid.visible=(config.display.showUncertainty||visibility().uncertainty)&&visibility().uncertainty;
   ellipsoidGrid.position.copy(ellipsoid.position); ellipsoidGrid.scale.copy(ellipsoid.scale); ellipsoidGrid.visible=ellipsoid.visible;
-  axes.position.copy(markerA.position); axes.visible=relative && (step().id === "neighbors" || (step().id === "uncertainty" && beatIndex === 1));
+  ellipsoidGrid.quaternion.copy(ellipsoid.quaternion);
+  axes.visible=false;
+  if(scene3d.borders){scene3d.borders.material.color.set(config.display.borderColor);scene3d.borders.material.opacity=config.display.borderOpacity;}
   if (relative&&!customCamera) {
     if (step().id === "uncertainty" && beatIndex >= 2) { controls.target.copy(markerA.position); camera.position.copy(markerA.position).add(new THREE.Vector3(1.3,.4,.8)); }
     else if (["uncertainty","neighbors"].includes(step().id)) { controls.target.set(-14,0,0); camera.position.set(18,4,7); }
@@ -375,14 +566,14 @@ function updateScene() {
   }
   if (!relative&&!customCamera) {
     controls.target.set(0,0,0);
-    if (["tle","uncertainty"].includes(step().id)) { camera.position.set(12,8,18); camera.up.set(0,1,0); }
-    else { camera.position.copy(toScene(frame.normal,1).multiplyScalar(26)); camera.up.copy(toScene(frame.along,1)); }
+    const distance=Math.max(4,3.4*(EARTH_KM+config.objectA.altitudeKm)/EARTH_KM);
+    camera.position.copy(toScene(frame.normal,1).multiplyScalar(distance));camera.up.copy(toScene(frame.along,1));
   }
   controls.update();
   $("distanceValue").textContent=`${fmtNum(state.distanceKm)} km`;
   $("speedValue").textContent=`${fmtNum(state.relativeSpeedMs)} m/s`;
   $("rangeValue").textContent=`${state.rangeRateMs>=0?"+":""}${fmtNum(state.rangeRateMs)} m/s`;
-  $("sceneMetrics").textContent=`${fmtNum(state.distanceKm)} km  ·  ${fmtNum(state.relativeSpeedMs)} m/s`;
+  $("sceneMetricsText").textContent=`${fmtNum(state.distanceKm)} km  ·  ${fmtNum(state.relativeSpeedMs)} m/s`;
   $("timeText").textContent=fmtDate(currentHour);
   $("timeSlider").value=Math.round((currentHour-config.display.startHour)/(config.display.endHour-config.display.startHour)*1000);
 }
@@ -410,29 +601,34 @@ function animate(now) {
   const dt=lastFrame?Math.min(.1,(now-lastFrame)/1000):0;lastFrame=now;
   if (chapter()&&playing&&engine) { currentHour+=dt*config.display.rateHoursPerSecond; if (currentHour>config.display.endHour) currentHour=config.display.startHour; updateScene(); drawCharts(); }
   if (step().id === "opening" && openingArt) openingArt.render(now);
+  if (!$("sectionArt").hidden && sectionArt) sectionArt.render(now);
   if (scene3d) scene3d.renderer.render(scene3d.scene,scene3d.camera);
   requestAnimationFrame(animate);
 }
 function bind() {
   document.addEventListener("keydown",event=>{
-    if (["INPUT","TEXTAREA","SELECT","BUTTON","A"].includes(document.activeElement?.tagName)) return;
-    if (event.key === "ArrowRight" || event.code === "Space") { event.preventDefault(); advance(1); }
-    if (event.key === "ArrowLeft") { event.preventDefault(); advance(-1); }
+    const active=document.activeElement;
+    if (["INPUT","TEXTAREA","SELECT"].includes(active?.tagName)||active?.isContentEditable||event.altKey||event.ctrlKey||event.metaKey)return;
+    if (["ArrowRight","PageDown"].includes(event.key)||event.code === "Space") { event.preventDefault(); advance(1); }
+    if (["ArrowLeft","PageUp"].includes(event.key)) { event.preventDefault(); advance(-1); }
   });
-  $("slide").addEventListener("click",event=>{ if (!spotMode && !event.target.closest("a,button") && !event.defaultPrevented) advance(1); });
+  $("slide").addEventListener("click",event=>{ if (!spotMode && !event.target.closest("a,button,[data-no-advance]") && !event.defaultPrevented) advance(1); });
+  $("previousStep").onclick=()=>advance(-1);$("nextStep").onclick=()=>advance(1);
+  $("beatSelect").onchange=()=>{beatIndex=Number($("beatSelect").value);applyBeat();};
   $("frameToggle").onclick=()=>{ change("display.mode",config.display.mode === "eci" ? "relative" : "eci"); applyBeat(false); };
   $("originToggle").onclick=()=>{ sceneOrigin = sceneOrigin === "A" ? "B" : "A"; $("originToggle").textContent = `Origin · Object ${sceneOrigin}`; updateScene(); };
   $("playButton").onclick=togglePlay;
   $("timeSlider").addEventListener("input",event=>{currentHour=config.display.startHour+Number(event.target.value)/1000*(config.display.endHour-config.display.startHour);updateScene();drawCharts();});
   for (const [id,path] of [["distanceThreshold","display.distanceThresholdKm"],["speedThreshold","display.speedThresholdMs"]]) $(id).addEventListener("input",event=>change(path,Number(event.target.value)));
-  $("presetSelect").onchange=()=>{ activePreset=$("presetSelect").value;config=clone(doc.presets[activePreset]);currentHour=config.display.startHour;syncControls();recalc();restoreCamera();$("saveStatus").textContent="Unsaved preset choice"; };
+  $("presetSelect").onchange=()=>{ activePreset=$("presetSelect").value;config=clone(doc.presets[activePreset]);config.display={trailThickness:1.8,referenceThickness:1.2,borderThickness:1.1,borderOpacity:.7,borderColor:"#707070",...config.display};currentHour=config.display.startHour;syncControls();recalc();restoreCamera();redrawSceneBorders();$("saveStatus").textContent="Unsaved preset choice"; };
   $("savePreset").onclick=async()=>{const name=prompt("Preset name",doc.presets[activePreset]?.label||"My scenario");if(!name)return;const key=/^[a-z0-9-]+$/.test(activePreset)&&doc.presets[activePreset]?.label===name?activePreset:`custom-${Date.now()}`;doc.presets[key]={...clone(config),label:name};activePreset=key;buildPresets();$("presetSelect").value=key;await saveDoc("Preset saved on this computer");};
   $("saveChapter").onclick=async()=>{doc.chapterOverrides[step().id]=clone(config);doc.chapterPresets[step().id]=activePreset;await saveDoc("Scenario saved for this chapter");};
   $("saveCamera").onclick=async()=>{const {camera,controls}=scene3d;doc.cameraViews[cameraKey()]={mode:config.display.mode,position:camera.position.toArray(),target:controls.target.toArray(),up:camera.up.toArray(),zoom:camera.zoom};await saveDoc("Camera saved for this moment");};
   $("resetCamera").onclick=()=>{delete doc.cameraViews[cameraKey()];customCamera=false;restoreCamera();$("saveStatus").textContent="Camera reset; save the chapter to keep this change";};
-  $("inspectorToggle").onclick=()=>{document.body.classList.toggle("inspectorCollapsed");$("inspectorToggle").textContent=document.body.classList.contains("inspectorCollapsed")?"Show controls":"Hide controls";setTimeout(resizeScene,20);};
+  $("inspectorToggle").onclick=()=>{document.body.classList.toggle("inspectorCollapsed");const collapsed=document.body.classList.contains("inspectorCollapsed");$("inspectorToggle").textContent=collapsed?"Show controls":"Hide controls";$("inspectorToggle").setAttribute("aria-expanded",String(!collapsed));setTimeout(resizeScene,20);};
   $("spotButton").onclick=()=>{spotMode=!spotMode;document.body.classList.toggle("spotMode",spotMode);$("spotButton").setAttribute("aria-pressed",spotMode);};
   $("commentsButton").onclick=()=>{$("commentsDrawer").hidden=!$("commentsDrawer").hidden;};$("closeComments").onclick=()=>{$("commentsDrawer").hidden=true;};
+  $("archivedToggle").onclick=()=>{showArchived=!showArchived;$("archivedToggle").setAttribute("aria-pressed",String(showArchived));renderComments();};
   $("cancelComment").onclick=()=>{$("commentForm").hidden=true;};
   $("commentForm").onsubmit=async event=>{event.preventDefault();try{const result=await request("/api/presentation-comments",{action:"add",comment:{...draft,text:$("commentText").value.trim()}});comments=result.comments;$("commentForm").hidden=true;$("commentText").value="";spotMode=false;document.body.classList.remove("spotMode");$("spotButton").setAttribute("aria-pressed","false");renderComments();}catch(error){alert(error.message);}};
   $("downloadComments").onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({schema:"presentation-comments-v1",comments},null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download="presentation-comments.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
@@ -443,8 +639,9 @@ function togglePlay(){playing=!playing;$("playButton").textContent=playing?"Paus
 function renderComments() {
   const open=comments.filter(item=>item.status!=="archived"), archived=comments.filter(item=>item.status==="archived");
   $("commentCount").textContent=open.length;const host=$("commentList");host.replaceChildren();
+  $("archivedToggle").textContent=`${showArchived?"Hide":"Show"} archived (${archived.length})`;
   if(!open.length){const p=document.createElement("p");p.textContent="No new comments yet.";host.append(p);}
-  for(const item of [...open,...archived]){
+  for(const item of [...open,...(showArchived?archived:[])]){
     const article=document.createElement("article");
     const jump=document.createElement("button");jump.textContent=`${item.stepTitle} · ${item.element}${item.status==="archived"?" · Archived":""}`;jump.onclick=()=>{const index=doc.steps.findIndex(step=>step.id===item.stepId);if(index>=0)go(index);if(Number.isFinite(item.atHour)&&chapter()){currentHour=item.atHour;updateScene();drawCharts();}};
     const p=document.createElement("p");p.textContent=item.text;article.append(jump,p);
