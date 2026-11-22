@@ -887,6 +887,11 @@ th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacit
 .episode-row:not(.selected):is(:hover,:focus-visible) .row-open-cue{transition-delay:.24s}
 .row-open-chevron{width:18px;height:7px}
 .row-open-chevron::before,.row-open-chevron::after{width:10px;top:1px}
+/* WordPress embeds use the table's own rounded border at the full content width. */
+html.embedded-table,html.embedded-table body{margin:0;background:#fff}
+html.embedded-table .component-wrap{width:100%;max-width:none;margin:0;padding:0}
+html.embedded-table .library{border-radius:12px;box-shadow:none}
+html.embedded-table .toolbar{border-radius:12px 12px 0 0}
 /* Keep collapsed content centered in a stable row while the invitation appears. */
 @media(min-width:901px){
   .table-wrap tr.episode-row td,

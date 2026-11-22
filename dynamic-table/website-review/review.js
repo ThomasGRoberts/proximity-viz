@@ -2,24 +2,26 @@ const $ = id => document.getElementById(id);
 const labels = {
   page: "Overall page layout",
   intro: "Introduction panel",
-  repository: "Data library icon and link",
+  repository: "Data repository icon and label",
   title: "Page title",
   language: "Introduction from Website Language A2",
   contributors: "Contributor strip",
   portraits: "Contributors from Website Language B2",
   table: "Embedded Dynamic Table",
-  "full-link": "Open in full window link",
+  "about-link": "About this project link",
+  "repo-meta": "Repository update and GitHub link",
 };
 const selectors = {
   page: ".espl-episodes-page",
   intro: ".espl-episodes-page .intro",
-  repository: ".espl-episodes-page .repo-link",
+  repository: ".espl-episodes-page .repo-kicker",
   title: ".espl-episodes-page h1",
   language: ".espl-episodes-page [data-espl-introduction]",
   contributors: ".espl-episodes-page .contributors",
   portraits: ".espl-episodes-page [data-espl-contributors]",
   table: ".espl-episodes-page iframe",
-  "full-link": ".espl-episodes-page .full-link",
+  "about-link": ".espl-episodes-page .about-link",
+  "repo-meta": ".espl-episodes-page .repo-meta",
 };
 
 let comments = [], draft = null, spotMode = false;
@@ -118,7 +120,7 @@ async function loadPreview() {
     const style = document.createElement("style"); style.id = "websiteSnippetStyles"; style.textContent = sourceStyle.textContent;
     document.head.append(style);
     const frame = sourcePage.querySelector("iframe");
-    if (frame) frame.src = new URL("../", location.href).href;
+    if (frame) frame.src = new URL("../?embed=1", location.href).href;
     $("pageHost").replaceChildren(sourcePage);
     annotate(); drawPins();
     await import(`../website-language.js?website-review=${Date.now()}`);

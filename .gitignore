@@ -10,3 +10,5 @@ node_modules/
 local/historical-sources/
 private/
 dynamic-table/website-review/comments.json
+presentation/config.json
+presentation/comments.json

@@ -8,7 +8,34 @@ const portraits = {
   "pradosh sivaramkumar": "pradosh-sivaramkumar.jpg",
   "thomas gonzalez roberts": "thomas-gonzalez-roberts.jpg",
 };
+const profileAnchors = {
+  "dayana alagirova": "dayana-alagirova",
+  "kate futrowsky": "kate-futrowsky",
+  "willa madsen": "willa-madsen",
+  "pradosh sivaramkumar": "pradosh-sivaramkumar",
+  "thomas gonzalez roberts": "biography",
+};
 const key = name => name.normalize("NFKD").replace(/\p{M}/gu, "").trim().toLowerCase();
+
+if (!window.__esplTableFrameHeightListener) {
+  window.__esplTableFrameHeightListener = true;
+  window.addEventListener("message", event => {
+    if (event.data?.type !== "espl-table-height" || !Number.isFinite(event.data.height)) return;
+    for (const frame of document.querySelectorAll("[data-espl-episodes-page] iframe")) {
+      if (frame.contentWindow !== event.source || new URL(frame.src).origin !== event.origin) continue;
+      frame.style.height = `${Math.max(300, Math.ceil(event.data.height))}px`;
+    }
+  });
+}
+
+void fetch("https://api.github.com/repos/ThomasGRoberts/proximity-viz/commits/main", { cache: "no-store" })
+  .then(response => { if (!response.ok) throw new Error(`GitHub returned ${response.status}`); return response.json(); })
+  .then(commit => {
+    const date = new Date(commit.commit?.committer?.date);
+    if (!Number.isFinite(date.valueOf())) throw new Error("Commit date unavailable");
+    const label = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" }).format(date);
+    document.querySelectorAll("[data-espl-last-updated]").forEach(node => { node.textContent = `Repository last updated ${label}`; });
+  }).catch(() => document.querySelectorAll("[data-espl-last-updated]").forEach(node => { node.textContent = "Repository update date unavailable"; }));
 
 function csvRows(text) {
   const rows = []; let row = [], cell = "", quoted = false;
@@ -62,17 +89,20 @@ function renderContributors(host, cell) {
   const list = document.createDocumentFragment();
   for (const name of names) {
     const item = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = `https://espl.ae.gatech.edu/people/#${profileAnchors[key(name)] || "lab-members"}`;
+    link.setAttribute("aria-label", `${name}’s biography`);
     const portrait = portraits[key(name)];
     if (portrait) {
       const image = document.createElement("img");
       image.src = new URL(`./assets/contributors/${portrait}`, import.meta.url).href;
-      image.alt = ""; image.loading = "lazy"; item.append(image);
+      image.alt = name; image.loading = "lazy"; link.append(image);
     } else {
       const initials = document.createElement("span"); initials.className = "espl-contributor-initials";
       initials.textContent = name.split(/\s+/).map(part => part[0]).slice(0, 2).join("").toUpperCase();
-      initials.setAttribute("aria-hidden", "true"); item.append(initials);
+      initials.setAttribute("aria-hidden", "true"); link.append(initials);
     }
-    item.append(document.createTextNode(name)); list.append(item);
+    item.append(link); list.append(item);
   }
   host.replaceChildren(list);
 }

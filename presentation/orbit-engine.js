@@ -1,0 +1,144 @@
+// Synthetic GEO teaching model: SGP4 from internally generated TLEs, followed
+// by continuous two-body propagation after optional tangential impulse burns.
+export const EPOCH_MS = Date.parse("2026-11-23T00:00:00Z");
+export const EARTH_KM = 6378.137;
+export const MU = 398600.4418;
+const HOUR = 3600000;
+const TWO_PI = 2 * Math.PI;
+const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+const norm = a => Math.hypot(a.x, a.y, a.z);
+const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+const cross = (a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
+const scale = (a, k) => ({ x: a.x * k, y: a.y * k, z: a.z * k });
+const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
+const unit = a => scale(a, 1 / norm(a));
+const wrap = angle => ((angle % 360) + 360) % 360;
+const checksum = line => {
+  const prefix = line.padEnd(68, " ").slice(0, 68);
+  let total = 0;
+  for (const character of prefix) total += character === "-" ? 1 : /\d/.test(character) ? Number(character) : 0;
+  return `${prefix}${total % 10}`;
+};
+
+export function syntheticTle(elements, number, designator) {
+  const { altitudeKm, eccentricity, inclinationDeg, raanDeg, argPerigeeDeg, meanAnomalyDeg } = elements;
+  const a = EARTH_KM + altitudeKm;
+  const meanMotion = Math.sqrt(MU / a ** 3) * 86400 / TWO_PI;
+  const angle = value => wrap(value).toFixed(4).padStart(8, " ");
+  const line1 = checksum(`1 ${number}U 26001${designator}   26327.00000000  .00000000  00000-0  00000-0 0  999`);
+  const line2 = checksum(`2 ${number} ${angle(inclinationDeg)} ${angle(raanDeg)} ${Math.round(eccentricity * 1e7).toString().padStart(7, "0")} ${angle(argPerigeeDeg)} ${angle(meanAnomalyDeg)} ${meanMotion.toFixed(8).padStart(11, " ")}${"1".padStart(5, " ")}`);
+  return { line1, line2, meanMotion, epochUtc: new Date(EPOCH_MS).toISOString() };
+}
+
+function stumpff(z) {
+  if (z > 1e-8) { const r = Math.sqrt(z); return { C: (1 - Math.cos(r)) / z, S: (r - Math.sin(r)) / (r ** 3) }; }
+  if (z < -1e-8) { const r = Math.sqrt(-z); return { C: (Math.cosh(r) - 1) / -z, S: (Math.sinh(r) - r) / (r ** 3) }; }
+  return { C: .5 - z / 24 + z * z / 720, S: 1 / 6 - z / 120 + z * z / 5040 };
+}
+
+// Universal-variable f/g solution keeps position continuous through a burn.
+function coast(initial, seconds) {
+  if (!seconds) return initial;
+  const r0 = norm(initial.r), v02 = dot(initial.v, initial.v);
+  const vr0 = dot(initial.r, initial.v) / r0;
+  const alpha = 2 / r0 - v02 / MU, sqrtMu = Math.sqrt(MU);
+  let chi = sqrtMu * Math.abs(alpha) * seconds;
+  for (let i = 0; i < 40; i++) {
+    const z = alpha * chi * chi, { C, S } = stumpff(z);
+    const f = r0 * vr0 / sqrtMu * chi * chi * C + (1 - alpha * r0) * chi ** 3 * S + r0 * chi - sqrtMu * seconds;
+    const df = r0 * vr0 / sqrtMu * chi * (1 - z * S) + (1 - alpha * r0) * chi * chi * C + r0;
+    const correction = f / df;
+    chi -= correction;
+    if (Math.abs(correction) < 1e-9) break;
+  }
+  const z = alpha * chi * chi, { C, S } = stumpff(z);
+  const f = 1 - chi * chi / r0 * C;
+  const g = seconds - chi ** 3 / sqrtMu * S;
+  const r = add(scale(initial.r, f), scale(initial.v, g));
+  const radius = norm(r);
+  const fdot = sqrtMu / (radius * r0) * (alpha * chi ** 3 * S - chi);
+  const gdot = 1 - chi * chi / radius * C;
+  return { r, v: add(scale(initial.r, fdot), scale(initial.v, gdot)) };
+}
+
+function burnEvents(maneuver) {
+  if (!maneuver?.enabled || !maneuver.deltaVms) return [];
+  const start = maneuver.startHour, end = start + Math.max(.1, maneuver.durationHours);
+  const impulse = maneuver.deltaVms;
+  if (maneuver.sequence === "drift") return [{ hour: start, dv: impulse }];
+  if (maneuver.sequence === "repeat") return [
+    { hour: start, dv: impulse }, { hour: end, dv: -impulse },
+    { hour: end + Math.max(.1, maneuver.durationHours), dv: -impulse },
+    { hour: end + 2 * Math.max(.1, maneuver.durationHours), dv: impulse },
+  ];
+  return [{ hour: start, dv: impulse }, { hour: end, dv: -impulse }];
+}
+
+export function createEngine(config) {
+  if (!window.satellite?.twoline2satrec) throw new Error("Bundled SGP4 library did not load");
+  const a = config.objectA, delta = config.objectB;
+  const b = {
+    altitudeKm: a.altitudeKm + delta.deltaAltitudeKm,
+    eccentricity: Math.max(0, a.eccentricity + delta.deltaEccentricity),
+    inclinationDeg: Math.max(.001, a.inclinationDeg + delta.deltaInclinationDeg),
+    raanDeg: wrap(a.raanDeg + delta.deltaRaanDeg),
+    argPerigeeDeg: a.argPerigeeDeg,
+    meanAnomalyDeg: wrap(a.meanAnomalyDeg + delta.relativeLongitudeDeg - delta.deltaRaanDeg),
+  };
+  for (const object of [a, b]) {
+    if (!(object.altitudeKm > 34000 && object.altitudeKm < 38000 && object.eccentricity >= 0 && object.eccentricity < .05))
+      throw new Error("Choose GEO altitude and eccentricity within the listed ranges");
+  }
+  const tleA = syntheticTle(a, "99901", "A"), tleB = syntheticTle(b, "99902", "B");
+  const satA = window.satellite.twoline2satrec(tleA.line1, tleA.line2);
+  const satB = window.satellite.twoline2satrec(tleB.line1, tleB.line2);
+  const sgp = (record, hour) => {
+    const state = window.satellite.propagate(record, new Date(EPOCH_MS + hour * HOUR));
+    if (!state.position || !state.velocity) throw new Error("SGP4 could not propagate this synthetic TLE");
+    return { r: state.position, v: state.velocity };
+  };
+  const events = burnEvents(config.maneuver);
+  const prepared = [];
+  for (const event of events) {
+    const prior = prepared.at(-1);
+    const before = prior ? coast(prior.state, (event.hour - prior.hour) * 3600) : sgp(satB, event.hour);
+    prepared.push({ ...event, state: { r: before.r, v: add(before.v, scale(unit(before.v), event.dv / 1000)) } });
+  }
+  const stateA = hour => sgp(satA, hour);
+  const stateB = hour => {
+    let latest = null;
+    for (const event of prepared) { if (event.hour <= hour) latest = event; else break; }
+    return latest ? coast(latest.state, (hour - latest.hour) * 3600) : sgp(satB, hour);
+  };
+  const at = hour => {
+    const A = stateA(hour), B = stateB(hour), dr = sub(B.r, A.r), dv = sub(B.v, A.v);
+    const distanceKm = norm(dr), relativeSpeedMs = norm(dv) * 1000;
+    return { hour, A, B, dr, dv, distanceKm, relativeSpeedMs,
+      rangeRateMs: distanceKm ? dot(dr, dv) / distanceKm * 1000 : 0 };
+  };
+  const sample = (startHour, endHour, points = 350) => Array.from({ length: points }, (_, i) => at(startHour + (endHour - startHour) * i / (points - 1)));
+  return { at, sample, stateA, stateB, tleA, tleB, events, objectB: b,
+    periodHours: 24 / tleA.meanMotion };
+}
+
+export function orbitalFrame(state) {
+  const radial = unit(state.r), normal = unit(cross(state.r, state.v));
+  const along = cross(normal, radial);
+  return { radial, along, normal };
+}
+
+export function relativeCoordinates(point, origin, frame) {
+  const d = sub(point, origin);
+  return { x: dot(d, frame.radial), y: dot(d, frame.normal), z: -dot(d, frame.along) };
+}
+
+export function dwellHours(series, distanceThresholdKm, speedThresholdMs) {
+  let hours = 0;
+  for (let i = 1; i < series.length; i++) {
+    const left = series[i - 1], right = series[i];
+    if ((left.distanceKm + right.distanceKm) / 2 <= distanceThresholdKm &&
+        (left.relativeSpeedMs + right.relativeSpeedMs) / 2 <= speedThresholdMs)
+      hours += right.hour - left.hour;
+  }
+  return hours;
+}
