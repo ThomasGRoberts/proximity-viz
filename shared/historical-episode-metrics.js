@@ -1,4 +1,4 @@
-import { episodeChapters, plottedObjects } from "./episode-feed.js?v=6";
+import { episodeChapters, plottedObjects } from "./episode-feed.js?v=7";
 
 const HOUR = 3600000;
 let satellitePromise;

@@ -1,4 +1,4 @@
-import { episodeChapters } from "./episode-feed.js?v=6";
+import { episodeChapters } from "./episode-feed.js?v=7";
 
 const root = new URL("../", import.meta.url);
 const reviewPath = asset => asset === "E-001" ? "visualization/dev/e001-review/"
@@ -19,6 +19,12 @@ function periodLabel(chapters) {
 export function installEpisodeNavigation(focus, episodes, assetId, { review = false, period = true } = {}) {
   if (!focus || focus.nextElementSibling?.classList.contains("episode-neighbors")) return;
   const rows = episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || ""));
+  try {
+    const order = JSON.parse(localStorage.getItem("espl-episode-order-v1") || "null");
+    if (Array.isArray(order) && order.length === rows.length &&
+        new Set(order).size === rows.length && rows.every(row => order.includes(row.ID)))
+      rows.sort((a, b) => order.indexOf(a.ID) - order.indexOf(b.ID));
+  } catch (error) { console.warn("Could not restore episode sort order", error); }
   const index = rows.findIndex(row => row.ID === assetId);
   if (index < 0 || !rows.length) return;
   const current = rows[index], chapters = episodeChapters(current);

@@ -4,7 +4,7 @@ import { feature } from "../../Viz/vendor/topojson/topojson-client.js";
 import { DOT_SCREEN_SIZE, dotTexture } from "../../Viz/relative-rendering.js?v=3";
 import { MARKER } from "../../../shared/marker-spec.js?v=3";
 import { spaceTrackHistoryUrl } from "../../../shared/tle-provenance.js?v=2";
-import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../../shared/episode-feed.js?v=6";
+import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../../shared/episode-feed.js?v=7";
 import { installReferenceOrbitHover } from "../../Viz/reference-orbit-hover.js";
 import { eciRateForState } from "../../Viz/orbital-playback.js";
 

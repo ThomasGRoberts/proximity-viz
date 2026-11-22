@@ -4,13 +4,13 @@ import { orientEarth } from "./earth-frame.js";
 import { eciRateForState } from "./orbital-playback.js";
 import { miniLandTexture } from "./mini-scene-style.js?v=2";
 import { miniCircularEarth } from "./mini-circular-earth.js?v=2";
-import { renderSharedCommentList } from "../dev/review-shell.js?v=2";
+import { renderSharedCommentList } from "../dev/review-shell.js?v=4";
 /* Local first pass for E-016. Two spacecraft remain visible; nearest dated
    Space-Track elements drive playback. Statistical chart gaps mark old TLEs. */
 import * as THREE from "./vendor/three/three.module.js";
 import { OrbitControls } from "./vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "./vendor/topojson/topojson-client.js";
-import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=6";
+import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=7";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
 import { wireTimelineHover } from "./playback-shared.js?v=3";

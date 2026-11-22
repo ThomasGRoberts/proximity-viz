@@ -23,8 +23,9 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
   };
   ui.addEventListener("scroll", updateStickyPair);
   const back = ui.querySelector(".backEpisodes");
-  const arrow = back?.querySelector(".libraryBackArrow")?.cloneNode(true);
-  const libraryUrl = back?.href || "../../dynamic-table/";
+  const existingFocus = ui.querySelector(".episode-focus");
+  const arrow = (back || existingFocus)?.querySelector(".libraryBackArrow")?.cloneNode(true);
+  const libraryUrl = back?.href || existingFocus?.querySelector(".episode-focus-link")?.href || "../../dynamic-table/";
   back?.remove();
   ui.querySelector(".episodeHeader h1").textContent = "Visualizing Proximity in the Space Domain";
   const title = ui.querySelector("#episodeTitle");
@@ -50,6 +51,11 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
       ? `from ${firstPeriod.part} to ${lastPeriod.part} ${firstPeriod.year}`
       : `from ${firstPeriod.part} ${firstPeriod.year} to ${lastPeriod.part} ${lastPeriod.year}`;
   focusLink.append(focusTop, title, period); focus.append(focusLink);
+  for (const selector of ["#episodeDescription", ".episode-info-toggle"]) {
+    const node = existingFocus?.querySelector(selector);
+    if (node) focus.append(node);
+  }
+  existingFocus?.remove();
   ui.querySelector(".episodeHeader h1").after(focus);
   installEpisodeNavigation(focus, episodes, "E-001", { review });
   ui.querySelector("#metricArea")?.closest(".panelSection")?.classList.add("results-section");

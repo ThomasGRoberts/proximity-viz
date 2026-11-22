@@ -4,13 +4,13 @@ import { orientEarth } from "./earth-frame.js";
 import { eciRateForState } from "./orbital-playback.js";
 import { miniLandTexture, miniMutedDotTexture, miniMutedColors, opaqueMutedDotTexture } from "./mini-scene-style.js?v=2";
 import { miniCircularEarth } from "./mini-circular-earth.js?v=2";
-import { renderSharedCommentList } from "../dev/review-shell.js?v=2";
+import { renderSharedCommentList } from "../dev/review-shell.js?v=4";
 /* Local first pass for E-006. Three spacecraft remain visible; nearest dated
    Space-Track elements drive playback. Statistical chart gaps mark old TLEs. */
 import * as THREE from "./vendor/three/three.module.js";
 import { OrbitControls } from "./vendor/three/addons/controls/OrbitControls.js";
 import { feature } from "./vendor/topojson/topojson-client.js";
-import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=6";
+import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=7";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js";
 import { wireTimelineHover } from "./playback-shared.js?v=3";
@@ -233,7 +233,7 @@ async function start() {
   chapterNav.hidden = chapters.length === 1;
   document.body.classList.toggle("e006-multi-chapter", chapters.length > 1);
   $("playbackDock").prepend(chapterNav);
-  let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "C", referenceSlot = "C", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 21600, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
+  let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "B", referenceSlot = "B", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 21600, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
   let relativeRate = rate;
   let miniLoopStart = chapter.centerMs - 2 * HOUR, miniLoopEnd = chapter.centerMs + 2 * HOUR;
   const miniPinnedTles = {};
@@ -521,7 +521,7 @@ async function start() {
     earth.position.copy(mode === "eci" ? new THREE.Vector3() : local(new THREE.Vector3(), frame));
     orientEarth(earth, mode, frame, current);
     updateReferenceOrbit(states);
-    if (miniScene && referenceSlot === "C") referenceOrbit.visible = false;
+    if (miniScene && referenceSlot === "B") referenceOrbit.visible = false;
     for (const item of participants) {
       const state = states[item.slot].state, marker = markers[item.slot]; marker.userData.available = !!state;
       marker.visible = !!state;
@@ -685,7 +685,7 @@ async function start() {
   }
   wireTimelineHover($("timelineSlider"), $("timelineHover"), $("timelineHoverTick"), () => [chapter.startMs, chapter.endMs]);
   pinMiniTles((miniLoopStart + miniLoopEnd) / 2);
-  chooseChaser("C"); chooseChapter(chapters[0].id, true); resize(); updateSticky();
+  chooseChaser("B"); chooseChapter(chapters[0].id, true); resize(); updateSticky();
   if (miniScene) current = miniLoopStart;
   playing = true; updatePlay(); render();
   if (miniScene) {

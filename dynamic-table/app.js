@@ -1,6 +1,6 @@
 import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
-import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar, parseCsv } from "../shared/episode-feed.js?v=6";
+import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar, parseCsv } from "../shared/episode-feed.js?v=7";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
 import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
@@ -19,7 +19,7 @@ const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.
 const EARTH_COLOR = 0xedeae5;
 const localE003Review = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
 const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(id);
-const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, historicalMetrics: {}, usePreview: false, selected: null, query: "", sort: { key: "date", direction: "desc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
+const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, historicalMetrics: {}, usePreview: false, selected: null, query: "", sort: { key: "date", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 let sourceCarouselCleanup = () => {};
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -258,7 +258,9 @@ document.addEventListener("pointerdown", event => { if (activeObject && !activeO
 document.addEventListener("keydown", event => { if (event.key === "Escape") closeObject(); });
 window.addEventListener("resize", positionObject); window.addEventListener("scroll", positionObject, true);
 function objectNode(info, row) {
-  const line = el("div", "object-line"), button = el("button", "object-trigger", info.name);
+  const compactName = ["1998-052A", "2021-129A", "2021-129B"].includes(info.cospar)
+    ? info.name.replace(/\s*\((?:PAS 7|SY-12 0[12])\)$/i, "") : info.name;
+  const line = el("div", "object-line"), button = el("button", "object-trigger", compactName);
   button.type = "button"; button.setAttribute("aria-haspopup", "dialog"); button.setAttribute("aria-expanded", "false"); button.setAttribute("aria-label", `${info.name}, show object metadata`);
   line.append(el("span", `dot ${info.role.toLowerCase()}${field(row, "ID") === "E-002" && info.role === "C" ? " e002-chaser" : ""}`), button);
   if (field(row, "ID") === "E-002" && info.role === "C") line.classList.add("e002-inactive-chaser");
@@ -312,9 +314,9 @@ function rowMetric(row, key) {
   const id = field(row, "ID"), name = key === "distance" ? "minimumDistance" : "minimumSpeed";
   return id === "E-001" ? state.series?.[name] : id === "E-002" ? state.e002Metrics?.[name] : state.historicalMetrics[id]?.[name];
 }
-function visibleRows() {
+function visibleRows(includeSearch = true) {
   const data = currentData(); if (!data) return [];
-  const query = state.query.toLocaleLowerCase();
+  const query = includeSearch ? state.query.toLocaleLowerCase() : "";
   const rows = data.episodes.filter(row => {
     if (!query) return true;
     const terms = [publicEpisodeId(row), title(row), episodeDescription(row), account(row), regime(row), regimeShort(row), ...["A", "B", "C"].flatMap(role => { const info = objectInfo(row, role, data); return info ? [info.name, info.cospar, info.norad, info.owner, ownerDisplay(info)] : []; })];
@@ -1190,8 +1192,7 @@ function startPreview(row) {
         if (!expanded?.isConnected || !host.isConnected) return;
         const area = expanded.getBoundingClientRect(), link = host.parentElement.getBoundingClientRect();
         const overlap = episodeId === "E-059" ? 2 : 1;
-        const records = expanded.querySelector(".evidence-section")?.getBoundingClientRect();
-        const height = episodeId === "E-059" && records ? Math.min(area.height + overlap, records.top - area.top + 95) : area.height + overlap;
+        const height = area.height + overlap;
         Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top - overlap}px`, width: `${area.width}px`, height: `${height}px` });
         positionMiniLoader(host, header, expanded);
         Object.assign(frame.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
@@ -1249,6 +1250,10 @@ function render() {
   sourceCarouselCleanup(); sourceCarouselCleanup = () => {};
   stopPreview(); closeObject(); updateSortHeaders();
   const data = currentData(), rows = visibleRows();
+  if (data?.source === "live") {
+    try { localStorage.setItem("espl-episode-order-v1", JSON.stringify(visibleRows(false).map(row => field(row, "ID")))); }
+    catch (error) { console.warn("Could not retain episode sort order", error); }
+  }
   if (state.selected && !rows.includes(state.selected)) state.selected = null;
   const recordCount = data?.descriptions?.length || 0;
   $("#count").textContent = `${rows.length} ${state.query ? "matching " : ""}${rows.length === 1 ? "episode" : "episodes"} · ${data?.descriptionError ? "records unavailable" : `${recordCount} ${recordCount === 1 ? "record" : "records"}`}`;
@@ -1257,7 +1262,7 @@ function render() {
   for (const [index, row] of rows.entries()) {
     const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);
     tr.tabIndex = 0; tr.dataset.episodeId = field(row, "ID"); tr.setAttribute("aria-label", `${title(row)}, ${open ? "collapse" : "expand"} details about the episode, orbital model, and records`);
-    if (["E-005", "E-006"].includes(field(row, "ID"))) tr.dataset.miniSelected = field(row, "ID") === "E-006" ? "C" : "B";
+    if (["E-005", "E-006"].includes(field(row, "ID"))) tr.dataset.miniSelected = "B";
     tr.setAttribute("aria-expanded", String(open));
     if (open) tr.setAttribute("aria-controls", `episode-detail-${field(row, "ID")}`);
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");

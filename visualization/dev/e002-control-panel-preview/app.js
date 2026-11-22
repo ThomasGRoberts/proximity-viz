@@ -1,8 +1,8 @@
 import { wireTimelineHover } from "../../Viz/playback-shared.js?v=3";
 import { loadOrbitalPreview, preloadOrbitalElements, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js?v=3";
 import { createGlobePreview } from "./globe-preview.js?v=9";
-import { reviewHref } from "../review-shell.js?v=2";
-import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-feed.js?v=6";
+import { reviewHref } from "../review-shell.js?v=4";
+import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-feed.js?v=7";
 import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.js";
 import { installGlossary } from "./glossary.js?v=2";
 import { createCameraWorkshop } from "./camera-workshop.js";

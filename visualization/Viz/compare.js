@@ -38,7 +38,7 @@ import { installReferenceOrbitHover } from "./reference-orbit-hover.js";
 import { DOT_SCREEN_SIZE, SATELLITE_STYLES, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
 import { applyMarkerCssVariables } from "../../shared/marker-spec.js?v=3";
 applyMarkerCssVariables();
-import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js?v=6";
+import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js?v=7";
 import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=4";
 import { renderEstimatedMinimum } from "./estimate-ui.js?v=2";
 import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js?v=3";

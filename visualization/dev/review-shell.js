@@ -1,12 +1,11 @@
 /* Shared navigation and comment presentation for the local design review. */
-import { loadCurrentEpisodes } from "../../shared/episode-feed.js?v=6";
+import { loadCurrentEpisodes } from "../../shared/episode-feed.js?v=7";
 const root = new URL("../../", import.meta.url);
-const surfaces = ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "Library", "Website Page"];
+const surfaces = ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "Library"];
 const publicLabels = new Map([["E-001", "E-001"], ["E-002", "E-002"], ["E-003", "E-003"], ["E-005", "E-004"], ["E-006", "E-005"], ["E-008", "E-006"], ["E-016", "E-007"], ["E-059", "E-008"]]);
 
 export function reviewHref(surface) {
   if (surface === "Library") return new URL("dynamic-table/", root).href;
-  if (surface === "Website Page") return "http://127.0.0.1:8771/dynamic-table/website-review/";
   if (surface === "E-001") return new URL("visualization/dev/e001-review/", root).href;
   if (surface === "E-002") return new URL("visualization/dev/e002-control-panel-preview/", root).href;
   return new URL(`visualization/Viz/compare.html?dev=1&episode=${publicLabels.get(surface) || surface}`, root).href;

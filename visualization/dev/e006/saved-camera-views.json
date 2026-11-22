@@ -6,7 +6,7 @@
       "createdAt": "2026-11-18T05:37:13+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T00:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -32,7 +32,7 @@
       "createdAt": "2026-11-18T05:37:13+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T02:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -58,7 +58,7 @@
       "createdAt": "2026-11-18T05:37:13+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T04:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -84,7 +84,7 @@
       "createdAt": "2026-11-18T05:37:14+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T06:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -110,7 +110,7 @@
       "createdAt": "2026-11-18T05:37:14+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T08:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -136,7 +136,7 @@
       "createdAt": "2026-11-18T05:37:14+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T10:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -162,7 +162,7 @@
       "createdAt": "2026-11-18T05:37:14+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T12:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -188,7 +188,7 @@
       "createdAt": "2026-11-18T05:37:14+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T14:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -214,7 +214,7 @@
       "createdAt": "2026-11-18T05:37:15+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T16:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -240,7 +240,7 @@
       "createdAt": "2026-11-18T05:37:15+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T18:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -266,7 +266,7 @@
       "createdAt": "2026-11-18T05:37:15+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T20:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -292,7 +292,7 @@
       "createdAt": "2026-11-18T05:37:15+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T22:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -318,7 +318,7 @@
       "createdAt": "2026-11-18T05:37:15+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T00:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -344,7 +344,7 @@
       "createdAt": "2026-11-18T05:37:16+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T02:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -370,7 +370,7 @@
       "createdAt": "2026-11-18T05:37:16+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T04:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -396,7 +396,7 @@
       "createdAt": "2026-11-18T05:37:16+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T06:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -422,7 +422,7 @@
       "createdAt": "2026-11-18T05:37:17+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T08:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -448,7 +448,7 @@
       "createdAt": "2026-11-18T05:37:17+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T10:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -474,7 +474,7 @@
       "createdAt": "2026-11-18T05:37:17+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T12:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -500,7 +500,7 @@
       "createdAt": "2026-11-18T05:37:17+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T14:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -526,7 +526,7 @@
       "createdAt": "2026-11-18T05:37:17+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T16:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -552,7 +552,7 @@
       "createdAt": "2026-11-18T05:37:18+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T18:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -578,7 +578,7 @@
       "createdAt": "2026-11-18T05:37:18+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T20:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -604,7 +604,7 @@
       "createdAt": "2026-11-18T05:37:18+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T22:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -630,7 +630,7 @@
       "createdAt": "2026-11-18T05:37:18+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T00:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -656,7 +656,7 @@
       "createdAt": "2026-11-18T05:37:18+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T02:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -682,7 +682,7 @@
       "createdAt": "2026-11-18T05:37:19+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T04:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -708,7 +708,7 @@
       "createdAt": "2026-11-18T05:37:19+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T06:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -734,7 +734,7 @@
       "createdAt": "2026-11-18T05:37:19+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T08:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -760,7 +760,7 @@
       "createdAt": "2026-11-18T05:37:19+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T10:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -786,7 +786,7 @@
       "createdAt": "2026-11-18T05:37:19+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T12:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -812,7 +812,7 @@
       "createdAt": "2026-11-18T05:37:20+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T14:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -838,7 +838,7 @@
       "createdAt": "2026-11-18T05:37:20+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T16:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -864,7 +864,7 @@
       "createdAt": "2026-11-18T05:37:20+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T18:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -890,7 +890,7 @@
       "createdAt": "2026-11-18T05:37:20+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T20:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -916,7 +916,7 @@
       "createdAt": "2026-11-18T05:37:20+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T22:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -942,7 +942,7 @@
       "createdAt": "2026-11-18T05:37:20+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T00:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -968,7 +968,7 @@
       "createdAt": "2026-11-18T05:37:21+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T02:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -994,7 +994,7 @@
       "createdAt": "2026-11-18T05:37:21+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T04:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1020,7 +1020,7 @@
       "createdAt": "2026-11-18T05:37:21+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T06:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1046,7 +1046,7 @@
       "createdAt": "2026-11-18T05:37:21+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T08:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1072,7 +1072,7 @@
       "createdAt": "2026-11-18T05:37:21+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T10:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1098,7 +1098,7 @@
       "createdAt": "2026-11-18T05:37:22+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T12:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1124,7 +1124,7 @@
       "createdAt": "2026-11-18T05:37:22+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T14:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1150,7 +1150,7 @@
       "createdAt": "2026-11-18T05:37:22+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T16:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1176,7 +1176,7 @@
       "createdAt": "2026-11-18T05:37:22+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T18:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1202,7 +1202,7 @@
       "createdAt": "2026-11-18T05:37:22+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T20:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1228,7 +1228,7 @@
       "createdAt": "2026-11-18T05:37:23+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T22:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1254,7 +1254,7 @@
       "createdAt": "2026-11-18T05:37:23+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T00:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1280,7 +1280,7 @@
       "createdAt": "2026-11-18T05:37:23+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T02:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1306,7 +1306,7 @@
       "createdAt": "2026-11-18T05:37:23+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T04:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1332,7 +1332,7 @@
       "createdAt": "2026-11-18T05:37:23+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T06:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1358,7 +1358,7 @@
       "createdAt": "2026-11-18T05:37:23+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T08:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1384,7 +1384,7 @@
       "createdAt": "2026-11-18T05:37:24+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T10:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1410,7 +1410,7 @@
       "createdAt": "2026-11-18T05:37:24+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T12:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1436,7 +1436,7 @@
       "createdAt": "2026-11-18T05:37:24+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T14:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1462,7 +1462,7 @@
       "createdAt": "2026-11-18T05:37:24+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T16:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1488,7 +1488,7 @@
       "createdAt": "2026-11-18T05:37:25+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T18:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1514,7 +1514,7 @@
       "createdAt": "2026-11-18T05:37:25+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T20:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1540,7 +1540,7 @@
       "createdAt": "2026-11-18T05:37:25+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T22:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1566,7 +1566,7 @@
       "createdAt": "2026-11-18T05:37:25+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T00:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1592,7 +1592,7 @@
       "createdAt": "2026-11-18T05:37:25+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T02:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1618,7 +1618,7 @@
       "createdAt": "2026-11-18T05:37:26+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T04:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1644,7 +1644,7 @@
       "createdAt": "2026-11-18T05:37:26+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T06:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1670,7 +1670,7 @@
       "createdAt": "2026-11-18T05:37:26+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T08:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1696,7 +1696,7 @@
       "createdAt": "2026-11-18T05:37:26+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T10:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1722,7 +1722,7 @@
       "createdAt": "2026-11-18T05:37:26+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T12:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1748,7 +1748,7 @@
       "createdAt": "2026-11-18T05:37:27+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T14:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1774,7 +1774,7 @@
       "createdAt": "2026-11-18T05:37:27+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T16:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1800,7 +1800,7 @@
       "createdAt": "2026-11-18T05:37:27+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T18:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1826,7 +1826,7 @@
       "createdAt": "2026-11-18T05:37:28+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T20:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1852,7 +1852,7 @@
       "createdAt": "2026-11-18T05:37:28+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T22:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1878,7 +1878,7 @@
       "createdAt": "2026-11-18T05:37:28+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T00:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1904,7 +1904,7 @@
       "createdAt": "2026-11-18T05:37:28+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T02:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1930,7 +1930,7 @@
       "createdAt": "2026-11-18T05:37:28+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T04:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1956,7 +1956,7 @@
       "createdAt": "2026-11-18T05:37:28+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T06:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -1982,7 +1982,7 @@
       "createdAt": "2026-11-18T05:37:29+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T08:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -2008,7 +2008,7 @@
       "createdAt": "2026-11-18T05:37:29+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T10:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -2034,7 +2034,7 @@
       "createdAt": "2026-11-18T05:37:29+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T12:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -2060,7 +2060,7 @@
       "createdAt": "2026-11-18T05:37:30+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T14:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -2086,7 +2086,7 @@
       "createdAt": "2026-11-18T05:37:30+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T16:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -2112,7 +2112,7 @@
       "createdAt": "2026-11-18T05:37:31+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T18:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -2138,7 +2138,7 @@
       "createdAt": "2026-11-18T05:37:31+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T20:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -2164,7 +2164,7 @@
       "createdAt": "2026-11-18T05:37:31+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T22:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -2190,7 +2190,7 @@
       "createdAt": "2026-11-18T05:37:31+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-02T00:00:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -2216,8 +2216,8 @@
       "createdAt": "2026-11-18T05:37:31+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T00:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2242,8 +2242,8 @@
       "createdAt": "2026-11-18T05:37:32+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T02:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2268,8 +2268,8 @@
       "createdAt": "2026-11-18T05:37:32+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T04:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2294,8 +2294,8 @@
       "createdAt": "2026-11-18T05:37:32+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T06:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2320,8 +2320,8 @@
       "createdAt": "2026-11-18T05:37:33+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T08:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2346,8 +2346,8 @@
       "createdAt": "2026-11-18T05:37:33+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T10:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2372,8 +2372,8 @@
       "createdAt": "2026-11-18T05:37:33+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T12:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2398,8 +2398,8 @@
       "createdAt": "2026-11-18T05:37:34+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T14:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2424,8 +2424,8 @@
       "createdAt": "2026-11-18T05:37:34+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T16:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2450,8 +2450,8 @@
       "createdAt": "2026-11-18T05:37:34+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T18:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2476,8 +2476,8 @@
       "createdAt": "2026-11-18T05:37:34+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T20:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2502,8 +2502,8 @@
       "createdAt": "2026-11-18T05:37:34+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T22:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2528,8 +2528,8 @@
       "createdAt": "2026-11-18T05:37:34+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T00:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2554,8 +2554,8 @@
       "createdAt": "2026-11-18T05:37:34+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T02:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2580,8 +2580,8 @@
       "createdAt": "2026-11-18T05:37:34+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T04:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2606,8 +2606,8 @@
       "createdAt": "2026-11-18T05:37:35+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T06:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2632,8 +2632,8 @@
       "createdAt": "2026-11-18T05:37:35+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T08:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2658,8 +2658,8 @@
       "createdAt": "2026-11-18T05:37:35+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T10:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2684,8 +2684,8 @@
       "createdAt": "2026-11-18T05:37:35+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T12:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2710,8 +2710,8 @@
       "createdAt": "2026-11-18T05:37:35+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T14:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2736,8 +2736,8 @@
       "createdAt": "2026-11-18T05:37:35+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T16:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2762,8 +2762,8 @@
       "createdAt": "2026-11-18T05:37:35+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T18:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2788,8 +2788,8 @@
       "createdAt": "2026-11-18T05:37:36+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T20:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2814,8 +2814,8 @@
       "createdAt": "2026-11-18T05:37:36+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T22:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2840,8 +2840,8 @@
       "createdAt": "2026-11-18T05:37:36+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T00:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2866,8 +2866,8 @@
       "createdAt": "2026-11-18T05:37:36+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T02:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2892,8 +2892,8 @@
       "createdAt": "2026-11-18T05:37:36+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T04:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2918,8 +2918,8 @@
       "createdAt": "2026-11-18T05:37:36+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T06:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2944,8 +2944,8 @@
       "createdAt": "2026-11-18T05:37:37+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T08:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2970,8 +2970,8 @@
       "createdAt": "2026-11-18T05:37:37+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T10:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -2996,8 +2996,8 @@
       "createdAt": "2026-11-18T05:37:37+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T12:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3022,8 +3022,8 @@
       "createdAt": "2026-11-18T05:37:37+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T14:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3048,8 +3048,8 @@
       "createdAt": "2026-11-18T05:37:37+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T16:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3074,8 +3074,8 @@
       "createdAt": "2026-11-18T05:37:37+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T18:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3100,8 +3100,8 @@
       "createdAt": "2026-11-18T05:37:37+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T20:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3126,8 +3126,8 @@
       "createdAt": "2026-11-18T05:37:38+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T22:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3152,8 +3152,8 @@
       "createdAt": "2026-11-18T05:37:38+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T00:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3178,8 +3178,8 @@
       "createdAt": "2026-11-18T05:37:38+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T02:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3204,8 +3204,8 @@
       "createdAt": "2026-11-18T05:37:38+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T04:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3230,8 +3230,8 @@
       "createdAt": "2026-11-18T05:37:38+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T06:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3256,8 +3256,8 @@
       "createdAt": "2026-11-18T05:37:38+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T08:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3282,8 +3282,8 @@
       "createdAt": "2026-11-18T05:37:38+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T10:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3308,8 +3308,8 @@
       "createdAt": "2026-11-18T05:37:39+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T12:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3334,8 +3334,8 @@
       "createdAt": "2026-11-18T05:37:39+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T14:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3360,8 +3360,8 @@
       "createdAt": "2026-11-18T05:37:39+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T16:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3386,8 +3386,8 @@
       "createdAt": "2026-11-18T05:37:39+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T18:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3412,8 +3412,8 @@
       "createdAt": "2026-11-18T05:37:39+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T20:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3438,8 +3438,8 @@
       "createdAt": "2026-11-18T05:37:39+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T22:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3464,8 +3464,8 @@
       "createdAt": "2026-11-18T05:37:40+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T00:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3490,8 +3490,8 @@
       "createdAt": "2026-11-18T05:37:40+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T02:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3516,8 +3516,8 @@
       "createdAt": "2026-11-18T05:37:40+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T04:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3542,8 +3542,8 @@
       "createdAt": "2026-11-18T05:37:40+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T06:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3568,8 +3568,8 @@
       "createdAt": "2026-11-18T05:37:40+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T08:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3594,8 +3594,8 @@
       "createdAt": "2026-11-18T05:37:40+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T10:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3620,8 +3620,8 @@
       "createdAt": "2026-11-18T05:37:41+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T12:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3646,8 +3646,8 @@
       "createdAt": "2026-11-18T05:37:41+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T14:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3672,8 +3672,8 @@
       "createdAt": "2026-11-18T05:37:41+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T16:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3698,8 +3698,8 @@
       "createdAt": "2026-11-18T05:37:41+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T18:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3724,8 +3724,8 @@
       "createdAt": "2026-11-18T05:37:41+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T20:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3750,8 +3750,8 @@
       "createdAt": "2026-11-18T05:37:41+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T22:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3776,8 +3776,8 @@
       "createdAt": "2026-11-18T05:37:41+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T00:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3802,8 +3802,8 @@
       "createdAt": "2026-11-18T05:37:42+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T02:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3828,8 +3828,8 @@
       "createdAt": "2026-11-18T05:37:42+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T04:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3854,8 +3854,8 @@
       "createdAt": "2026-11-18T05:37:42+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T06:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3880,8 +3880,8 @@
       "createdAt": "2026-11-18T05:37:42+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T08:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3906,8 +3906,8 @@
       "createdAt": "2026-11-18T05:37:42+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T10:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3932,8 +3932,8 @@
       "createdAt": "2026-11-18T05:37:42+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T12:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3958,8 +3958,8 @@
       "createdAt": "2026-11-18T05:37:42+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T14:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -3984,8 +3984,8 @@
       "createdAt": "2026-11-18T05:37:43+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T16:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4010,8 +4010,8 @@
       "createdAt": "2026-11-18T05:37:43+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T18:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4036,8 +4036,8 @@
       "createdAt": "2026-11-18T05:37:43+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T20:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4062,8 +4062,8 @@
       "createdAt": "2026-11-18T05:37:43+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T22:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4088,8 +4088,8 @@
       "createdAt": "2026-11-18T05:37:43+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T00:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4114,8 +4114,8 @@
       "createdAt": "2026-11-18T05:37:43+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T02:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4140,8 +4140,8 @@
       "createdAt": "2026-11-18T05:37:43+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T04:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4166,8 +4166,8 @@
       "createdAt": "2026-11-18T05:37:44+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T06:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4192,8 +4192,8 @@
       "createdAt": "2026-11-18T05:37:44+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T08:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4218,8 +4218,8 @@
       "createdAt": "2026-11-18T05:37:44+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T10:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4244,8 +4244,8 @@
       "createdAt": "2026-11-18T05:37:45+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T12:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4270,8 +4270,8 @@
       "createdAt": "2026-11-18T05:37:46+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T14:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4296,8 +4296,8 @@
       "createdAt": "2026-11-18T05:37:46+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T16:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4322,8 +4322,8 @@
       "createdAt": "2026-11-18T05:37:47+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T18:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4348,8 +4348,8 @@
       "createdAt": "2026-11-18T05:37:47+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T20:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4374,8 +4374,8 @@
       "createdAt": "2026-11-18T05:37:47+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T22:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4400,8 +4400,8 @@
       "createdAt": "2026-11-18T05:37:47+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-02T00:00:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -4426,7 +4426,7 @@
       "createdAt": "2026-11-18T05:37:47+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T00:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4452,7 +4452,7 @@
       "createdAt": "2026-11-18T05:37:47+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T02:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4478,7 +4478,7 @@
       "createdAt": "2026-11-18T05:37:48+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T04:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4504,7 +4504,7 @@
       "createdAt": "2026-11-18T05:37:48+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T06:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4530,7 +4530,7 @@
       "createdAt": "2026-11-18T05:37:48+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T08:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4556,7 +4556,7 @@
       "createdAt": "2026-11-18T05:37:48+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T10:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4582,7 +4582,7 @@
       "createdAt": "2026-11-18T05:37:48+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T12:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4608,7 +4608,7 @@
       "createdAt": "2026-11-18T05:37:49+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T14:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4634,7 +4634,7 @@
       "createdAt": "2026-11-18T05:37:49+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T16:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4660,7 +4660,7 @@
       "createdAt": "2026-11-18T05:37:49+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T18:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4686,7 +4686,7 @@
       "createdAt": "2026-11-18T05:37:49+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T20:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4712,7 +4712,7 @@
       "createdAt": "2026-11-18T05:37:49+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-25T22:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4738,7 +4738,7 @@
       "createdAt": "2026-11-18T05:37:49+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T00:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4764,7 +4764,7 @@
       "createdAt": "2026-11-18T05:37:49+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T02:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4790,7 +4790,7 @@
       "createdAt": "2026-11-18T05:37:50+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T04:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4816,7 +4816,7 @@
       "createdAt": "2026-11-18T05:37:50+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T06:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4842,7 +4842,7 @@
       "createdAt": "2026-11-18T05:37:50+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T08:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4868,7 +4868,7 @@
       "createdAt": "2026-11-18T05:37:50+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T10:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4894,7 +4894,7 @@
       "createdAt": "2026-11-18T05:37:50+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T12:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4920,7 +4920,7 @@
       "createdAt": "2026-11-18T05:37:50+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T14:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4946,7 +4946,7 @@
       "createdAt": "2026-11-18T05:37:50+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T16:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4972,7 +4972,7 @@
       "createdAt": "2026-11-18T05:37:51+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T18:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -4998,7 +4998,7 @@
       "createdAt": "2026-11-18T05:37:51+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T20:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5024,7 +5024,7 @@
       "createdAt": "2026-11-18T05:37:51+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-26T22:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5050,7 +5050,7 @@
       "createdAt": "2026-11-18T05:37:51+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T00:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5076,7 +5076,7 @@
       "createdAt": "2026-11-18T05:37:51+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T02:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5102,7 +5102,7 @@
       "createdAt": "2026-11-18T05:37:51+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T04:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5128,7 +5128,7 @@
       "createdAt": "2026-11-18T05:37:52+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T06:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5154,7 +5154,7 @@
       "createdAt": "2026-11-18T05:37:52+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T08:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5180,7 +5180,7 @@
       "createdAt": "2026-11-18T05:37:52+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T10:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5206,7 +5206,7 @@
       "createdAt": "2026-11-18T05:37:52+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T12:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5232,7 +5232,7 @@
       "createdAt": "2026-11-18T05:37:52+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T14:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5258,7 +5258,7 @@
       "createdAt": "2026-11-18T05:37:52+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T16:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5284,7 +5284,7 @@
       "createdAt": "2026-11-18T05:37:52+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T18:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5310,7 +5310,7 @@
       "createdAt": "2026-11-18T05:37:53+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T20:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5336,7 +5336,7 @@
       "createdAt": "2026-11-18T05:37:53+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-27T22:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5362,7 +5362,7 @@
       "createdAt": "2026-11-18T05:37:53+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T00:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5388,7 +5388,7 @@
       "createdAt": "2026-11-18T05:37:53+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T02:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5414,7 +5414,7 @@
       "createdAt": "2026-11-18T05:37:53+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T04:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5440,7 +5440,7 @@
       "createdAt": "2026-11-18T05:37:53+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T06:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5466,7 +5466,7 @@
       "createdAt": "2026-11-18T05:37:54+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T08:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5492,7 +5492,7 @@
       "createdAt": "2026-11-18T05:37:54+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T10:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5518,7 +5518,7 @@
       "createdAt": "2026-11-18T05:37:54+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T12:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5544,7 +5544,7 @@
       "createdAt": "2026-11-18T05:37:54+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T14:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5570,7 +5570,7 @@
       "createdAt": "2026-11-18T05:37:54+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T16:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5596,7 +5596,7 @@
       "createdAt": "2026-11-18T05:37:54+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T18:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5622,7 +5622,7 @@
       "createdAt": "2026-11-18T05:37:54+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T20:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5648,7 +5648,7 @@
       "createdAt": "2026-11-18T05:37:55+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-28T22:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5674,7 +5674,7 @@
       "createdAt": "2026-11-18T05:37:55+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T00:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5700,7 +5700,7 @@
       "createdAt": "2026-11-18T05:37:55+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T02:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5726,7 +5726,7 @@
       "createdAt": "2026-11-18T05:37:55+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T04:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5752,7 +5752,7 @@
       "createdAt": "2026-11-18T05:37:55+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T06:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5778,7 +5778,7 @@
       "createdAt": "2026-11-18T05:37:55+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T08:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5804,7 +5804,7 @@
       "createdAt": "2026-11-18T05:37:56+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T10:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5830,7 +5830,7 @@
       "createdAt": "2026-11-18T05:37:56+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T12:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5856,7 +5856,7 @@
       "createdAt": "2026-11-18T05:37:56+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T14:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5882,7 +5882,7 @@
       "createdAt": "2026-11-18T05:37:56+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T16:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5908,7 +5908,7 @@
       "createdAt": "2026-11-18T05:37:56+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T18:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5934,7 +5934,7 @@
       "createdAt": "2026-11-18T05:37:56+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T20:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5960,7 +5960,7 @@
       "createdAt": "2026-11-18T05:37:56+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-29T22:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -5986,7 +5986,7 @@
       "createdAt": "2026-11-18T05:37:57+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T00:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6012,7 +6012,7 @@
       "createdAt": "2026-11-18T05:37:57+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T02:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6038,7 +6038,7 @@
       "createdAt": "2026-11-18T05:37:57+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T04:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6064,7 +6064,7 @@
       "createdAt": "2026-11-18T05:37:57+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T06:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6090,7 +6090,7 @@
       "createdAt": "2026-11-18T05:37:57+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T08:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6116,7 +6116,7 @@
       "createdAt": "2026-11-18T05:37:57+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T10:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6142,7 +6142,7 @@
       "createdAt": "2026-11-18T05:37:58+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T12:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6168,7 +6168,7 @@
       "createdAt": "2026-11-18T05:37:58+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T14:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6194,7 +6194,7 @@
       "createdAt": "2026-11-18T05:37:58+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T16:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6220,7 +6220,7 @@
       "createdAt": "2026-11-18T05:37:58+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T18:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6246,7 +6246,7 @@
       "createdAt": "2026-11-18T05:37:58+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T20:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6272,7 +6272,7 @@
       "createdAt": "2026-11-18T05:37:58+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-30T22:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6298,7 +6298,7 @@
       "createdAt": "2026-11-18T05:37:58+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T00:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6324,7 +6324,7 @@
       "createdAt": "2026-11-18T05:37:59+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T02:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6350,7 +6350,7 @@
       "createdAt": "2026-11-18T05:37:59+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T04:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6376,7 +6376,7 @@
       "createdAt": "2026-11-18T05:37:59+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T06:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6402,7 +6402,7 @@
       "createdAt": "2026-11-18T05:37:59+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T08:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6428,7 +6428,7 @@
       "createdAt": "2026-11-18T05:37:59+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T10:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6454,7 +6454,7 @@
       "createdAt": "2026-11-18T05:37:59+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T12:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6480,7 +6480,7 @@
       "createdAt": "2026-11-18T05:37:59+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T14:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6506,7 +6506,7 @@
       "createdAt": "2026-11-18T05:38:00+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T16:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6532,7 +6532,7 @@
       "createdAt": "2026-11-18T05:38:01+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T18:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6558,7 +6558,7 @@
       "createdAt": "2026-11-18T05:38:01+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T20:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6584,7 +6584,7 @@
       "createdAt": "2026-11-18T05:38:01+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-01T22:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6610,7 +6610,7 @@
       "createdAt": "2026-11-18T05:38:01+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-07-02T00:00:00.000Z",
-      "selected": "C",
+      "selected": "B",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -6636,8 +6636,8 @@
       "createdAt": "2026-11-18T05:38:01+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-11T23:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6662,8 +6662,8 @@
       "createdAt": "2026-11-18T05:38:02+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T01:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6688,8 +6688,8 @@
       "createdAt": "2026-11-18T05:38:02+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T03:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6714,8 +6714,8 @@
       "createdAt": "2026-11-18T05:38:02+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T05:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6740,8 +6740,8 @@
       "createdAt": "2026-11-18T05:38:02+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T07:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6766,8 +6766,8 @@
       "createdAt": "2026-11-18T05:38:02+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T09:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6792,8 +6792,8 @@
       "createdAt": "2026-11-18T05:38:03+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T11:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6818,8 +6818,8 @@
       "createdAt": "2026-11-18T05:38:03+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T13:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6844,8 +6844,8 @@
       "createdAt": "2026-11-18T05:38:03+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T15:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6870,8 +6870,8 @@
       "createdAt": "2026-11-18T05:38:03+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T17:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6896,8 +6896,8 @@
       "createdAt": "2026-11-18T05:38:03+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T19:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6922,8 +6922,8 @@
       "createdAt": "2026-11-18T05:38:03+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T21:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6948,8 +6948,8 @@
       "createdAt": "2026-11-18T05:38:04+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T23:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -6974,8 +6974,8 @@
       "createdAt": "2026-11-18T05:38:04+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T01:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7000,8 +7000,8 @@
       "createdAt": "2026-11-18T05:38:04+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T03:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7026,8 +7026,8 @@
       "createdAt": "2026-11-18T05:38:04+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T05:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7052,8 +7052,8 @@
       "createdAt": "2026-11-18T05:38:04+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T07:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7078,8 +7078,8 @@
       "createdAt": "2026-11-18T05:38:04+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T09:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7104,8 +7104,8 @@
       "createdAt": "2026-11-18T05:38:04+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T11:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7130,8 +7130,8 @@
       "createdAt": "2026-11-18T05:38:05+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T13:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7156,8 +7156,8 @@
       "createdAt": "2026-11-18T05:38:05+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T15:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7182,8 +7182,8 @@
       "createdAt": "2026-11-18T05:38:05+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T17:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7208,8 +7208,8 @@
       "createdAt": "2026-11-18T05:38:05+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T19:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7234,8 +7234,8 @@
       "createdAt": "2026-11-18T05:38:05+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T21:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7260,8 +7260,8 @@
       "createdAt": "2026-11-18T05:38:05+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T23:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7286,8 +7286,8 @@
       "createdAt": "2026-11-18T05:38:05+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T01:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7312,8 +7312,8 @@
       "createdAt": "2026-11-18T05:38:06+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T03:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7338,8 +7338,8 @@
       "createdAt": "2026-11-18T05:38:06+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T05:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7364,8 +7364,8 @@
       "createdAt": "2026-11-18T05:38:06+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T07:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7390,8 +7390,8 @@
       "createdAt": "2026-11-18T05:38:06+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T09:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7416,8 +7416,8 @@
       "createdAt": "2026-11-18T05:38:06+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T11:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7442,8 +7442,8 @@
       "createdAt": "2026-11-18T05:38:06+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T13:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7468,8 +7468,8 @@
       "createdAt": "2026-11-18T05:38:06+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T15:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7494,8 +7494,8 @@
       "createdAt": "2026-11-18T05:38:07+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T17:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7520,8 +7520,8 @@
       "createdAt": "2026-11-18T05:38:07+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T19:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7546,8 +7546,8 @@
       "createdAt": "2026-11-18T05:38:07+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T21:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7572,8 +7572,8 @@
       "createdAt": "2026-11-18T05:38:07+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T23:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7598,8 +7598,8 @@
       "createdAt": "2026-11-18T05:38:07+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T01:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7624,8 +7624,8 @@
       "createdAt": "2026-11-18T05:38:07+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T03:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7650,8 +7650,8 @@
       "createdAt": "2026-11-18T05:38:08+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T05:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7676,8 +7676,8 @@
       "createdAt": "2026-11-18T05:38:08+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T07:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7702,8 +7702,8 @@
       "createdAt": "2026-11-18T05:38:08+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T09:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7728,8 +7728,8 @@
       "createdAt": "2026-11-18T05:38:08+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T11:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7754,8 +7754,8 @@
       "createdAt": "2026-11-18T05:38:08+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T13:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7780,8 +7780,8 @@
       "createdAt": "2026-11-18T05:38:08+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T15:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7806,8 +7806,8 @@
       "createdAt": "2026-11-18T05:38:09+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T17:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7832,8 +7832,8 @@
       "createdAt": "2026-11-18T05:38:09+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T19:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7858,8 +7858,8 @@
       "createdAt": "2026-11-18T05:38:09+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T21:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7884,8 +7884,8 @@
       "createdAt": "2026-11-18T05:38:09+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T23:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7910,8 +7910,8 @@
       "createdAt": "2026-11-18T05:38:09+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T01:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7936,8 +7936,8 @@
       "createdAt": "2026-11-18T05:38:09+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T03:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7962,8 +7962,8 @@
       "createdAt": "2026-11-18T05:38:10+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T05:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -7988,8 +7988,8 @@
       "createdAt": "2026-11-18T05:38:10+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T07:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8014,8 +8014,8 @@
       "createdAt": "2026-11-18T05:38:10+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T09:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8040,8 +8040,8 @@
       "createdAt": "2026-11-18T05:38:10+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T11:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8066,8 +8066,8 @@
       "createdAt": "2026-11-18T05:38:10+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T13:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8092,8 +8092,8 @@
       "createdAt": "2026-11-18T05:38:10+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T15:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8118,8 +8118,8 @@
       "createdAt": "2026-11-18T05:38:10+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T17:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8144,8 +8144,8 @@
       "createdAt": "2026-11-18T05:38:11+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T19:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8170,8 +8170,8 @@
       "createdAt": "2026-11-18T05:38:11+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T21:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8196,8 +8196,8 @@
       "createdAt": "2026-11-18T05:38:11+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T23:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8222,8 +8222,8 @@
       "createdAt": "2026-11-18T05:38:11+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T01:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8248,8 +8248,8 @@
       "createdAt": "2026-11-18T05:38:11+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T03:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8274,8 +8274,8 @@
       "createdAt": "2026-11-18T05:38:11+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T05:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8300,8 +8300,8 @@
       "createdAt": "2026-11-18T05:38:11+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T07:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8326,8 +8326,8 @@
       "createdAt": "2026-11-18T05:38:12+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T09:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8352,8 +8352,8 @@
       "createdAt": "2026-11-18T05:38:12+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T11:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8378,8 +8378,8 @@
       "createdAt": "2026-11-18T05:38:12+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T13:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8404,8 +8404,8 @@
       "createdAt": "2026-11-18T05:38:12+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T15:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8430,8 +8430,8 @@
       "createdAt": "2026-11-18T05:38:12+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T17:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8456,8 +8456,8 @@
       "createdAt": "2026-11-18T05:38:12+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T19:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8482,8 +8482,8 @@
       "createdAt": "2026-11-18T05:38:13+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T21:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8508,8 +8508,8 @@
       "createdAt": "2026-11-18T05:38:13+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T23:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8534,8 +8534,8 @@
       "createdAt": "2026-11-18T05:38:13+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T01:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8560,8 +8560,8 @@
       "createdAt": "2026-11-18T05:38:13+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T03:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8586,8 +8586,8 @@
       "createdAt": "2026-11-18T05:38:13+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T05:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8612,8 +8612,8 @@
       "createdAt": "2026-11-18T05:38:13+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T07:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8638,8 +8638,8 @@
       "createdAt": "2026-11-18T05:38:14+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T09:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8664,8 +8664,8 @@
       "createdAt": "2026-11-18T05:38:14+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T11:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8690,8 +8690,8 @@
       "createdAt": "2026-11-18T05:38:14+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T13:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8716,8 +8716,8 @@
       "createdAt": "2026-11-18T05:38:14+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T15:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8742,8 +8742,8 @@
       "createdAt": "2026-11-18T05:38:14+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T17:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8768,8 +8768,8 @@
       "createdAt": "2026-11-18T05:38:14+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T19:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8794,8 +8794,8 @@
       "createdAt": "2026-11-18T05:38:15+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T21:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8820,8 +8820,8 @@
       "createdAt": "2026-11-18T05:38:15+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T23:05:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -8846,7 +8846,7 @@
       "createdAt": "2026-11-18T05:38:15+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-11T23:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -8872,7 +8872,7 @@
       "createdAt": "2026-11-18T05:38:16+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T01:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -8898,7 +8898,7 @@
       "createdAt": "2026-11-18T05:38:16+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T03:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -8924,7 +8924,7 @@
       "createdAt": "2026-11-18T05:38:16+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T05:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -8950,7 +8950,7 @@
       "createdAt": "2026-11-18T05:38:16+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T07:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -8976,7 +8976,7 @@
       "createdAt": "2026-11-18T05:38:16+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T09:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9002,7 +9002,7 @@
       "createdAt": "2026-11-18T05:38:16+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T11:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9028,7 +9028,7 @@
       "createdAt": "2026-11-18T05:38:17+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T13:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9054,7 +9054,7 @@
       "createdAt": "2026-11-18T05:38:17+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T15:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9080,7 +9080,7 @@
       "createdAt": "2026-11-18T05:38:17+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T17:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9106,7 +9106,7 @@
       "createdAt": "2026-11-18T05:38:17+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T19:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9132,7 +9132,7 @@
       "createdAt": "2026-11-18T05:38:17+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T21:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9158,7 +9158,7 @@
       "createdAt": "2026-11-18T05:38:17+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-12T23:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9184,7 +9184,7 @@
       "createdAt": "2026-11-18T05:38:18+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T01:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9210,7 +9210,7 @@
       "createdAt": "2026-11-18T05:38:18+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T03:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9236,7 +9236,7 @@
       "createdAt": "2026-11-18T05:38:18+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T05:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9262,7 +9262,7 @@
       "createdAt": "2026-11-18T05:38:18+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T07:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9288,7 +9288,7 @@
       "createdAt": "2026-11-18T05:38:18+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T09:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9314,7 +9314,7 @@
       "createdAt": "2026-11-18T05:38:18+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T11:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9340,7 +9340,7 @@
       "createdAt": "2026-11-18T05:38:19+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T13:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9366,7 +9366,7 @@
       "createdAt": "2026-11-18T05:38:19+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T15:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9392,7 +9392,7 @@
       "createdAt": "2026-11-18T05:38:19+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T17:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9418,7 +9418,7 @@
       "createdAt": "2026-11-18T05:38:19+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T19:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9444,7 +9444,7 @@
       "createdAt": "2026-11-18T05:38:19+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T21:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9470,7 +9470,7 @@
       "createdAt": "2026-11-18T05:38:19+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-13T23:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9496,7 +9496,7 @@
       "createdAt": "2026-11-18T05:38:19+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T01:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9522,7 +9522,7 @@
       "createdAt": "2026-11-18T05:38:20+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T03:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9548,7 +9548,7 @@
       "createdAt": "2026-11-18T05:38:20+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T05:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9574,7 +9574,7 @@
       "createdAt": "2026-11-18T05:38:20+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T07:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9600,7 +9600,7 @@
       "createdAt": "2026-11-18T05:38:20+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T09:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9626,7 +9626,7 @@
       "createdAt": "2026-11-18T05:38:20+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T11:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9652,7 +9652,7 @@
       "createdAt": "2026-11-18T05:38:20+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T13:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9678,7 +9678,7 @@
       "createdAt": "2026-11-18T05:38:21+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T15:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9704,7 +9704,7 @@
       "createdAt": "2026-11-18T05:38:21+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T17:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9730,7 +9730,7 @@
       "createdAt": "2026-11-18T05:38:21+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T19:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9756,7 +9756,7 @@
       "createdAt": "2026-11-18T05:38:21+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T21:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9782,7 +9782,7 @@
       "createdAt": "2026-11-18T05:38:21+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T23:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9808,7 +9808,7 @@
       "createdAt": "2026-11-18T05:38:21+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T01:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9834,7 +9834,7 @@
       "createdAt": "2026-11-18T05:38:22+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T03:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9860,7 +9860,7 @@
       "createdAt": "2026-11-18T05:38:22+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T05:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9886,7 +9886,7 @@
       "createdAt": "2026-11-18T05:38:22+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T07:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9912,7 +9912,7 @@
       "createdAt": "2026-11-18T05:38:22+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T09:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9938,7 +9938,7 @@
       "createdAt": "2026-11-18T05:38:22+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T11:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9964,7 +9964,7 @@
       "createdAt": "2026-11-18T05:38:22+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T13:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -9990,7 +9990,7 @@
       "createdAt": "2026-11-18T05:38:23+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T15:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10016,7 +10016,7 @@
       "createdAt": "2026-11-18T05:38:23+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T17:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10042,7 +10042,7 @@
       "createdAt": "2026-11-18T05:38:23+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T19:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10068,7 +10068,7 @@
       "createdAt": "2026-11-18T05:38:23+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T21:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10094,7 +10094,7 @@
       "createdAt": "2026-11-18T05:38:23+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-15T23:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10120,7 +10120,7 @@
       "createdAt": "2026-11-18T05:38:23+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T01:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10146,7 +10146,7 @@
       "createdAt": "2026-11-18T05:38:23+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T03:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10172,7 +10172,7 @@
       "createdAt": "2026-11-18T05:38:24+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T05:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10198,7 +10198,7 @@
       "createdAt": "2026-11-18T05:38:24+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T07:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10224,7 +10224,7 @@
       "createdAt": "2026-11-18T05:38:24+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T09:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10250,7 +10250,7 @@
       "createdAt": "2026-11-18T05:38:24+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T11:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10276,7 +10276,7 @@
       "createdAt": "2026-11-18T05:38:24+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T13:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10302,7 +10302,7 @@
       "createdAt": "2026-11-18T05:38:24+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T15:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10328,7 +10328,7 @@
       "createdAt": "2026-11-18T05:38:25+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T17:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10354,7 +10354,7 @@
       "createdAt": "2026-11-18T05:38:25+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T19:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10380,7 +10380,7 @@
       "createdAt": "2026-11-18T05:38:25+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T21:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10406,7 +10406,7 @@
       "createdAt": "2026-11-18T05:38:25+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-16T23:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10432,7 +10432,7 @@
       "createdAt": "2026-11-18T05:38:25+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T01:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10458,7 +10458,7 @@
       "createdAt": "2026-11-18T05:38:25+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T03:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10484,7 +10484,7 @@
       "createdAt": "2026-11-18T05:38:26+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T05:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10510,7 +10510,7 @@
       "createdAt": "2026-11-18T05:38:26+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T07:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10536,7 +10536,7 @@
       "createdAt": "2026-11-18T05:38:26+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T09:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10562,7 +10562,7 @@
       "createdAt": "2026-11-18T05:38:26+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T11:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10588,7 +10588,7 @@
       "createdAt": "2026-11-18T05:38:26+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T13:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10614,7 +10614,7 @@
       "createdAt": "2026-11-18T05:38:27+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T15:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10640,7 +10640,7 @@
       "createdAt": "2026-11-18T05:38:27+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T17:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10666,7 +10666,7 @@
       "createdAt": "2026-11-18T05:38:27+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T19:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10692,7 +10692,7 @@
       "createdAt": "2026-11-18T05:38:27+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T21:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10718,7 +10718,7 @@
       "createdAt": "2026-11-18T05:38:28+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-17T23:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10744,7 +10744,7 @@
       "createdAt": "2026-11-18T05:38:28+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T01:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10770,7 +10770,7 @@
       "createdAt": "2026-11-18T05:38:28+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T03:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10796,7 +10796,7 @@
       "createdAt": "2026-11-18T05:38:28+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T05:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10822,7 +10822,7 @@
       "createdAt": "2026-11-18T05:38:28+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T07:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10848,7 +10848,7 @@
       "createdAt": "2026-11-18T05:38:28+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T09:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10874,7 +10874,7 @@
       "createdAt": "2026-11-18T05:38:29+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T11:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10900,7 +10900,7 @@
       "createdAt": "2026-11-18T05:38:29+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T13:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10926,7 +10926,7 @@
       "createdAt": "2026-11-18T05:38:29+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T15:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10952,7 +10952,7 @@
       "createdAt": "2026-11-18T05:38:29+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T17:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -10978,7 +10978,7 @@
       "createdAt": "2026-11-18T05:38:29+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T19:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -11004,7 +11004,7 @@
       "createdAt": "2026-11-18T05:38:30+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T21:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -11030,7 +11030,7 @@
       "createdAt": "2026-11-18T05:38:30+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-18T23:05:00.000Z",
-      "selected": "B",
+      "selected": "C",
       "referenceSlot": "A",
       "position": [
         0.7691175169827767,
@@ -11056,8 +11056,8 @@
       "createdAt": "2026-11-18T05:39:24+00:00",
       "chapterId": "chapter-2",
       "timeUtc": "2015-07-14T01:05:00.000Z",
-      "selected": "C",
-      "referenceSlot": "C",
+      "selected": "B",
+      "referenceSlot": "B",
       "position": [
         0.7691175169827767,
         0.3589961394998266,
@@ -11082,8 +11082,8 @@
       "createdAt": "2026-11-18T05:48:32+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-18T00:00:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.794917830337515,
         0.2705418499731484,
@@ -11108,8 +11108,8 @@
       "createdAt": "2026-11-18T05:48:42+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-18T00:00:00.000Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.670195866602623,
         0.30359380574591716,
@@ -11134,8 +11134,8 @@
       "createdAt": "2026-11-18T05:49:15+00:00",
       "chapterId": "chapter-1",
       "timeUtc": "2015-06-18T06:27:42.240Z",
-      "selected": "B",
-      "referenceSlot": "B",
+      "selected": "C",
+      "referenceSlot": "C",
       "position": [
         0.8982976566574192,
         0.5475418081972867,

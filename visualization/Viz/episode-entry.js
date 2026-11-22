@@ -1,5 +1,5 @@
 // Public links use the current sheet ID; internal mini scenes name an orbital asset.
-import { loadCurrentEpisodes } from "../../shared/episode-feed.js?v=6";
+import { loadCurrentEpisodes } from "../../shared/episode-feed.js?v=7";
 import { installEpisodeNavigation } from "../../shared/episode-navigation.js?v=3";
 const query = new URLSearchParams(location.search);
 const publicId = query.get("episode") || "E-001";
@@ -17,10 +17,10 @@ if (!episodeId) {
   }
 }
 const episodeModule = {
-  "E-001": "./compare.js?v=27", "E-002": "./episode-e002.js?v=15",
-  "E-005": "./episode-e005.js?v=18", "E-003": "./episode-e003.js?v=13",
-  "E-006": "./episode-e006.js?v=20", "E-008": "./episode-e008.js?v=12",
-  "E-016": "./episode-e016.js?v=10", "E-059": "./episode-e059.js?v=11",
+  "E-001": "./compare.js?v=28", "E-002": "./episode-e002.js?v=16",
+  "E-005": "./episode-e005.js?v=19", "E-003": "./episode-e003.js?v=14",
+  "E-006": "./episode-e006.js?v=21", "E-008": "./episode-e008.js?v=13",
+  "E-016": "./episode-e016.js?v=11", "E-059": "./episode-e059.js?v=12",
 }[episodeId];
 if (episodeModule) import(episodeModule).then(async () => {
   if (query.get("mini") === "1") return;

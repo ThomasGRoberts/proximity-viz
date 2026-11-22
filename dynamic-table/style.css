@@ -887,3 +887,11 @@ th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacit
 .episode-row:not(.selected):is(:hover,:focus-visible) .row-open-cue{transition-delay:.24s}
 .row-open-chevron{width:18px;height:7px}
 .row-open-chevron::before,.row-open-chevron::after{width:10px;top:1px}
+/* Keep collapsed content centered in a stable row while the invitation appears. */
+@media(min-width:901px){
+  .table-wrap tr.episode-row td,
+  .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{
+    padding-top:26px;padding-bottom:26px;vertical-align:middle;
+    transition:background-color .24s ease;
+  }
+}
