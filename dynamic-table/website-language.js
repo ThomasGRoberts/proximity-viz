@@ -18,13 +18,19 @@ const profileAnchors = {
 };
 const key = name => name.normalize("NFKD").replace(/\p{M}/gu, "").trim().toLowerCase();
 
+// WordPress may retain an earlier full-page block when a replacement is pasted below it.
+// Keep the newest block so the table, contributors, and return route have one destination.
+const tablePages = [...document.querySelectorAll("[data-espl-episodes-page]")];
+for (const previous of tablePages.slice(0, -1)) previous.remove();
+
 // Preserve the selected episode when returning from a full visualization.
 const requestedEpisode = new URLSearchParams(location.search).get("review");
 if (requestedEpisode && /^E-\d{3}$/.test(requestedEpisode)) {
   for (const frame of document.querySelectorAll("[data-espl-episodes-page] iframe")) {
     const url = new URL(frame.src);
     url.searchParams.set("review", requestedEpisode);
-    frame.src = url.href;
+    frame.addEventListener("load", () => frame.scrollIntoView({ block: "start" }), { once: true });
+    if (frame.src !== url.href) frame.src = url.href;
   }
 }
 

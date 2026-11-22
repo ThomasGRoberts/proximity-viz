@@ -2,7 +2,7 @@
 <script>
 (() => {
   const episode = new URLSearchParams(location.search).get('episode');
-  if (!/^E-00[1-8]$/.test(episode || '')) return;
+  if (!/^E-\d{3}$/.test(episode || '')) return;
   const frame = [...document.querySelectorAll('iframe')]
     .find(node => node.src.includes('thomasgroberts.github.io/proximity-viz/visualization/'));
   if (!frame) return;

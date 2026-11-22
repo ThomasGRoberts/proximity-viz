@@ -45,8 +45,14 @@ export function installEpisodeNavigation(focus, episodes, assetId, { review = fa
   for (const [offset, direction] of [[-1, "Previous"], [1, "Next"]]) {
     const next = rows[(index + offset + rows.length) % rows.length];
     const link = focus.ownerDocument.createElement("a");
-    const path = review ? reviewPath(next.ID) : next.ID === "E-001" ? "visualization/e001/" : next.ID === "E-002" ? "visualization/e002/" : "visualization/Viz/compare.html?episode=";
-    link.href = new URL(path + (path.endsWith("episode=") ? encodeURIComponent(next["Episode ID"]) : ""), root).href;
+    if (review) {
+      const path = reviewPath(next.ID);
+      link.href = new URL(path + (path.endsWith("episode=") ? encodeURIComponent(next["Episode ID"]) : ""), root).href;
+    } else {
+      const destination = new URL("https://espl.ae.gatech.edu/research/models/proximity/");
+      destination.searchParams.set("episode", next["Episode ID"]);
+      link.href = destination.href;
+    }
     link.target = "_top";
     link.textContent = direction;
     link.setAttribute("aria-label", next["Episode Name"] ? `${direction} episode: ${next["Episode Name"]}` : `${direction} episode`);

@@ -1,4 +1,4 @@
-<!-- Paste this block into a Custom HTML block on the lab website. -->
+<!-- Replace the previous Episodes of Concern Custom HTML block with this block. -->
 <style>
   .espl-episodes-page{--ink:#303030;--muted:#69645b;max-width:1220px;margin:0 auto;color:var(--ink);font-family:inherit;container-type:inline-size}
   .espl-episodes-page *{box-sizing:border-box}
@@ -68,15 +68,4 @@
   </div>
   <iframe src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/?embed=1" title="Interactive Episodes of Concern table" loading="eager"></iframe>
 </section>
-<script type="module" src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-language.js?v=5"></script>
-<script>
-/* Preserve the selected episode when returning from the full visualization. */
-(() => {
-  const episode = new URLSearchParams(location.search).get('review');
-  if (!/^E-\d{3}$/.test(episode || '')) return;
-  const frame = document.querySelector('.espl-episodes-page iframe');
-  if (!frame) return;
-  const url = new URL(frame.src); url.searchParams.set('review', episode); frame.src = url.href;
-  frame.addEventListener('load', () => frame.scrollIntoView({ block: 'start' }), { once: true });
-})();
-</script>
+<script type="module" src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-language.js?v=6"></script>
