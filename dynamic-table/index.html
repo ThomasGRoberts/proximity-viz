@@ -6,8 +6,8 @@
   <script>if(new URLSearchParams(location.search).get("embed")==="1")document.documentElement.classList.add("embedded-table")</script>
   <title>Episodes of Concern · ESPL</title>
   <link rel="icon" type="image/png" href="./assets/polyhedron-icon.png">
-  <link rel="stylesheet" href="./style.css?v=40">
-  <script type="module" src="./app.js?v=55"></script>
+  <link rel="stylesheet" href="./style.css?v=41">
+  <script type="module" src="./app.js?v=56"></script>
   <script type="module" src="./embed-resize.js?v=1"></script>
   <script type="module" src="../visualization/dev/review-shell.js?v=4"></script>
 <link rel="stylesheet" href="../shared/episode-loading.css?v=3">
@@ -34,5 +34,10 @@
       <div id="empty" class="empty" hidden></div>
     </section>
   </main>
+  <dialog id="mobile-model-notice" class="mobile-model-notice" aria-labelledby="mobile-model-title">
+    <h2 id="mobile-model-title">Open the orbital model?</h2>
+    <p>This full visualization was optimized for desktop screens. You can still open it here, though some controls may be easier to use on a computer.</p>
+    <div class="mobile-model-actions"><button type="button" id="mobile-model-cancel">Stay here</button><a id="mobile-model-open" href="#" target="_blank" rel="noopener noreferrer">Open model ↗</a></div>
+  </dialog>
 </body>
 </html>

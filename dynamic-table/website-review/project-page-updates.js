@@ -29,15 +29,12 @@
     #espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:70px;height:70px}
     #espl-project-page .espl-table-icon .table-scan{opacity:.25;transform:translateY(0)}
     #espl-project-page .data-repository-card:is(:hover,:focus-within) .table-scan{opacity:.8;animation:espl-table-scan-bounce 1.15s ease-in-out 1}
-    .espl-proximity-mobile-cta{display:none;max-width:1080px;margin:0 auto;padding:9px 28px 15px;background:#fff}
-    .espl-proximity-mobile-cta a{display:inline-flex;align-items:center;gap:8px;color:#666;text-decoration:none;font:400 12px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-    .espl-proximity-mobile-cta svg{width:38px;height:38px;flex:none}
     @keyframes espl-data-link-nudge{0%,100%{transform:translateX(0)}45%{transform:translateX(4px)}70%{transform:translateX(-1px)}}
     @keyframes espl-table-scan-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(25px)}}
     @media(max-width:999px){#espl-project-page .project-outputs .publication-card{grid-template-columns:1fr}#espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;min-height:0;padding:0 1.65rem 1.25rem}}
-    @media(max-width:767px){#espl-project-page .espl-special-card{grid-template-columns:1fr}#espl-project-page .espl-special-card .model-output-media{min-height:0;padding:0 1.2rem 1.2rem;gap:0}#espl-project-page .espl-special-card .model-text-link{white-space:normal;font-size:10.5px}#espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem}#espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:56px;height:56px}.espl-proximity-mobile-cta{display:block}}
+    @media(max-width:767px){#espl-project-page .espl-special-card{grid-template-columns:1fr}#espl-project-page .espl-special-card .model-output-media{min-height:0;padding:0 1.2rem 1.2rem;gap:8px}#espl-project-page .espl-special-card .model-text-link{gap:5px;white-space:nowrap;font-size:10.5px}#espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem}#espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:56px;height:56px}}
     @media(max-width:380px){#espl-project-page .espl-special-card .model-output-media{flex-wrap:wrap}#espl-project-page .espl-special-card .model-text-link{width:100%;font-size:11px}}
-    @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan),.espl-proximity-mobile-cta *{animation:none!important;transition:none!important}}
+    @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
   projectRoot.prepend(styles);
 
@@ -154,18 +151,19 @@
       let doc;try{doc=frame.contentDocument}catch{return}
       const banner=doc?.querySelector('main.banner');if(!banner||doc.getElementById('espl-proximity-table-link'))return;
       const style=doc.createElement('style');style.textContent=`
-        .espl-table-hero-link{position:absolute;left:max(28px,calc((100% - 1080px)/2 + 28px));bottom:10px;z-index:4;display:flex;align-items:center;width:46px;height:46px;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);pointer-events:none;transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
+        .espl-table-hero-link{position:absolute;left:var(--title-left,max(28px,calc((100% - 1080px)/2 + 28px)));bottom:10px;z-index:3;display:flex;align-items:center;width:46px;height:46px;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);pointer-events:none;transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
         .espl-table-hero-link.is-arrived{visibility:visible;opacity:1;transform:translateY(0);pointer-events:auto}
-        .espl-table-hero-icon{position:relative;width:46px;height:46px;flex:0 0 46px}
-        .espl-table-hero-icon svg{position:absolute;top:-6px;left:-6px;width:58px;height:58px;opacity:.9;transition:opacity .24s ease}
+        .espl-table-hero-icon{position:relative;z-index:2;width:46px;height:46px;flex:0 0 46px}
+        .espl-table-hero-icon svg{position:absolute;top:-6px;left:-6px;display:block;width:58px;height:58px;opacity:.9;transition:opacity .24s ease}
         .espl-table-hero-icon .table-scan{opacity:.25;transform:translateY(0)}
         .espl-table-hero-link.is-open .table-scan{opacity:.8;animation:espl-table-scan-bounce 1.15s ease-in-out 1}
-        .espl-table-hero-label{position:absolute;top:0;left:46px;height:46px;display:flex;align-items:center;white-space:nowrap;padding-left:10px;opacity:0;clip-path:inset(0 100% 0 0);color:#666;font-size:clamp(11px,1.05vw,15px);font-weight:400;transition:clip-path .5s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
+        .espl-table-hero-label{position:absolute;top:0;left:46px;height:46px;display:flex;align-items:center;white-space:nowrap;padding-left:10px;opacity:0;clip-path:inset(0 100% 0 0);color:#666;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(11px,1.05vw,15px);font-weight:400;line-height:normal;transition:clip-path .5s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
         .espl-table-hero-link:is(.is-open,:hover,:focus-visible) .espl-table-hero-label{opacity:1;clip-path:inset(0)}
         .espl-table-hero-link:focus-visible{outline:2px solid rgba(180,145,35,.9);outline-offset:4px}
-        .espl-table-hero-link.is-nudging{animation:espl-data-link-nudge .7s ease}
+        .espl-table-hero-link.is-nudging .espl-table-hero-label{animation:espl-data-link-nudge .7s ease}
         @keyframes espl-data-link-nudge{0%,100%{transform:translateX(0)}45%{transform:translateX(4px)}70%{transform:translateX(-1px)}}
         @keyframes espl-table-scan-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(25px)}}
+        @media(max-aspect-ratio:1.2/1){.espl-table-hero-link{bottom:10px}.espl-table-hero-label{font-size:13px}}
         @media(max-width:767px){.espl-table-hero-link{display:none}}
         @media(prefers-reduced-motion:reduce){.espl-table-hero-link,.espl-table-hero-label,.espl-table-hero-icon .table-scan{animation:none!important;transition:none!important}}
       `;doc.head.append(style);
@@ -184,11 +182,6 @@
     };
     frame.addEventListener('load',apply);
     if(frame.contentDocument?.readyState==='complete') apply();
-    if(!projectRoot.querySelector('.espl-proximity-mobile-cta')){
-      const mobile=document.createElement('div');mobile.className='espl-proximity-mobile-cta';
-      mobile.innerHTML=`<a href="https://espl.ae.gatech.edu/research/tables/proximity" aria-label="Explore the data">${tableIcon()}<span>Explore the data&nbsp; →</span></a>`;
-      projectRoot.querySelector('.espl-proximity-banner-embed')?.after(mobile);
-    }
   }
 
   async function installResearchCards() {

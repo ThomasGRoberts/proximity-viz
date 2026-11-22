@@ -53,10 +53,10 @@ const peopleSelectors = {
 };
 const panes = {
   library: { surface: "Website Page", snippet: "../website-embed-snippet.html", copyLabel: "Copy table HTML" },
-  sbi: { surface: "SBI Project", snippet: "./sbi-project-embed-snippet.html", copyLabel: "Copy SBI HTML" },
-  proximity: { surface: "Proximity Project", snippet: "./proximity-project-embed-snippet.html", copyLabel: "Copy proximity HTML" },
-  research: { surface: "Research", snippet: "./research-page-embed-snippet.html", copyLabel: "Copy research HTML" },
-  people: { surface: "People", snippet: "/api/people-wordpress", copyLabel: "Copy People HTML" },
+  sbi: { surface: "SBI Project", snippet: "./sbi-complete-block.html", copyLabel: "Copy SBI HTML" },
+  proximity: { surface: "Proximity Project", snippet: "./proximity-complete-block.html", copyLabel: "Copy proximity HTML" },
+  research: { surface: "Research", snippet: "./research-complete-block.html", copyLabel: "Copy Research page" },
+  people: { surface: "People", snippet: "./people-complete-block.html", copyLabel: "Copy People HTML" },
 };
 const paneSelectors = { library: selectors, sbi: projectSelectors, proximity: projectSelectors, research: researchSelectors, people: peopleSelectors };
 const paneName = { sbi: "SBI project", proximity: "proximity project", research: "research", people: "People" };
@@ -295,7 +295,7 @@ $("copyHtml").addEventListener("click", async () => {
       if (!copied) throw new Error("Clipboard access is unavailable");
     }
     button.textContent = "Copied HTML";
-    status(pane === "library" ? "The table page Custom HTML block is on your clipboard." : `The ${paneName[pane]} update block is on your clipboard. Add it after the existing page block.`);
+    status(pane === "library" ? "The complete table page Custom HTML block is on your clipboard." : pane === "research" ? "The complete Research page Code Editor content is on your clipboard." : `The complete ${paneName[pane]} Custom HTML block is on your clipboard. Replace the existing block with it.`);
     setTimeout(() => { if (activePane === pane) button.textContent = panes[pane].copyLabel; }, 1800);
   } catch (error) { status(`Could not copy HTML: ${error.message}`); }
 });

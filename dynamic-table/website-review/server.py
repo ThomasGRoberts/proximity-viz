@@ -79,7 +79,7 @@ class Handler(SimpleHTTPRequestHandler):
                     html = source.read().decode("utf-8", "replace")
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
                 script_name = "project-page-updates.js" if slug in {"sbi", "proximity"} else f"{slug}-page-updates.js"
-                local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=3'
+                local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=4'
                 addon = f'<script src="{local_script}" data-espl-project="{slug}"></script>'
                 html = html.replace("</body>", addon + "</body>", 1)
                 encoded = html.encode("utf-8")

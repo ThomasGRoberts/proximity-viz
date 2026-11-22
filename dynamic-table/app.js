@@ -179,12 +179,14 @@ function externalLink(label, url) {
 }
 function visualizationLink(url, label = "Open orbital visualization") {
   const link = el("a", "visual-link model-link"); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.setAttribute("aria-label", label);
+  warnMobileModel(link);
   const preview = el("div", "orbital-preview");
   link.append(preview);
   return link;
 }
 function visualizationActionLink(url, label = "Open orbital visualization") {
   const link = el("a", "context-model-link model-link"); link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.setAttribute("aria-label", label);
+  warnMobileModel(link);
   const action = el("span", "model-action"), icon = el("span", "model-icon"), fallback = el("img", "model-static"), flourish = el("canvas", "model-canvas");
   fallback.src = "./assets/polyhedron-icon.png"; fallback.alt = "";
   flourish.width = flourish.height = 116; flourish.setAttribute("aria-hidden", "true");
@@ -194,6 +196,18 @@ function visualizationActionLink(url, label = "Open orbital visualization") {
   import("./model-link.js?v=4").then(module => module.decorateModelLink(link)).catch(() => link.classList.add("model-static-fallback"));
   return link;
 }
+function warnMobileModel(link) {
+  link.addEventListener("click", event => {
+    if (!matchMedia("(max-width:760px)").matches) return;
+    const notice = document.getElementById("mobile-model-notice");
+    if (!notice?.showModal) return;
+    event.preventDefault();
+    document.getElementById("mobile-model-open").href = link.href;
+    notice.showModal();
+  });
+}
+document.getElementById("mobile-model-cancel")?.addEventListener("click", () => document.getElementById("mobile-model-notice").close());
+document.getElementById("mobile-model-open")?.addEventListener("click", () => document.getElementById("mobile-model-notice").close());
 
 const popover = el("div", "object-popover"); popover.id = "object-popover"; popover.hidden = true; popover.setAttribute("role", "dialog"); popover.setAttribute("aria-label", "Space object metadata"); document.body.append(popover);
 let activeObject = null, pinnedObject = false, hideTimer = null, showTimer = null;
@@ -797,6 +811,14 @@ async function applyPublishedMiniConfig(frame, episodeId) {
       mini.setRate(config.rate);
       const offset = config.camera?.viewportOffset || {};
       const x = Number(offset.x) || 0, y = Number(offset.y) || 0;
+      if (matchMedia("(max-width:760px)").matches) {
+        frame.style.transform = "none";
+        frame.style.width = "100%";
+        frame.style.height = "100%";
+        mini.setPlaying(true);
+        frame.dataset.miniConfigured = "1";
+        return;
+      }
       frame.style.transform = `translate(${x}px, ${y}px)`;
       if (frame.classList.contains("e002-mini")) {
         frame.dataset.miniOffsetY = String(y);
@@ -920,6 +942,7 @@ function prewarmE005() {
 function stageEpisodeAssets() {
   // Let the table paint first. Browser prefetches use low network priority and
   // do not create eight simultaneous WebGL contexts in hidden iframes.
+  if (matchMedia("(max-width:760px)").matches) return;
   const idle = callback => "requestIdleCallback" in window
     ? requestIdleCallback(callback, { timeout: 1500 }) : setTimeout(callback, 250);
   const orbitalAssets = [["e003", 13], ["e005", 18], ["e006", 20], ["e008", 12], ["e016", 10], ["e059", 13]];
@@ -1128,6 +1151,20 @@ function startPreview(row) {
   const episodeId = field(row, "ID");
   if (!hasEpisodeVisual(episodeId)) return;
   const host = document.querySelector(".expanded-row .orbital-preview"); if (!host) return;
+  if (matchMedia("(max-width:760px)").matches) {
+    const frame = el("iframe", `${episodeId === "E-002" ? "e002" : `e${episodeId.slice(2)}`}-mini`);
+    frame.title = `Animated ${publicEpisodeId(row)} miniature orbital reconstruction`;
+    frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
+    frame.src = new URL(episodeId === "E-002"
+      ? "../visualization/dev/e002-control-panel-preview/table-mini.html?table=35"
+      : episodeId === "E-001" ? "../visualization/Viz/compare.html?mini=1&episode=E-001&table=33"
+      : `../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=34`, location.href).href;
+    host.replaceChildren(frame);
+    miniFrame = frame; miniBackdropHost = host;
+    revealMiniAsOneScene(frame);
+    frame.addEventListener("load", () => { localReview?.attachMini(frame); void applyPublishedMiniConfig(frame, episodeId); });
+    return;
+  }
   // A direct link can open E-004 before the background warm-up reaches it.
   // Create the same full-width scene now instead of falling through to the
   // clipped, column-sized fallback.
