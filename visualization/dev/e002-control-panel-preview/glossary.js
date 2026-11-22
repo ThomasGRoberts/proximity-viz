@@ -71,7 +71,9 @@ export async function installGlossary(panel, frame = null) {
     popover.replaceChildren(heading, definition, sources); popover.hidden = false;
     const rect = trigger.getBoundingClientRect();
     const host = trigger.ownerDocument === document ? { left: 0, top: 0 } : frame?.getBoundingClientRect() || { left: 0, top: 0 };
-    const left = Math.max(10, Math.min(rect.left + host.left, innerWidth - popover.offsetWidth - 10));
+    // Keep the definition to the right of the label so the next label below
+    // remains reachable while a reader moves down a stack of glossary terms.
+    const left = Math.max(10, Math.min(rect.right + host.left + 12, innerWidth - popover.offsetWidth - 10));
     const below = rect.bottom + host.top + 7;
     const top = below + popover.offsetHeight > innerHeight ? rect.top + host.top - popover.offsetHeight - 7 : below;
     popover.style.left = `${left}px`; popover.style.top = `${Math.max(8, top)}px`;

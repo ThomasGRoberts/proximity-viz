@@ -605,7 +605,7 @@ function expandedContent(row, data) {
   overview.append(context);
   if (hasEpisodeVisual(episodeId)) {
     const publicId = publicEpisodeId(row);
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/?v=6" : episodeId === "E-002" ? "../visualization/e002/?build=2" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=2`, location.href).href;
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/?v=7" : episodeId === "E-002" ? "../visualization/e002/?build=3" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=3`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -882,7 +882,7 @@ function prewarmE001() {
   warmedE001Frame = el("iframe", "e001-mini");
   warmedE001Frame.dataset.miniBaseHeight = "450";
   revealMiniAsOneScene(warmedE001Frame);
-  warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=32", location.href).href;
+  warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=33", location.href).href;
   warmedE001Frame.title = "Animated E-001 satellite-centered orbital reconstruction";
   warmedE001Frame.tabIndex = -1; warmedE001Frame.setAttribute("aria-hidden", "true");
   warmedE001Host.append(warmedE001Frame); table.append(warmedE001Host);
@@ -916,7 +916,7 @@ function prewarmE005() {
   warmedE005Host = el("div", "orbital-preview e005-prewarm");
   warmedE005Frame = el("iframe", "e005-mini");
   revealMiniAsOneScene(warmedE005Frame);
-  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&asset=E-005&table=32", location.href).href;
+  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&asset=E-005&table=33", location.href).href;
   warmedE005Frame.title = `Animated ${state.live?.episodes?.find(row => row.ID === "E-005")?.["Episode ID"] || "E-004"} miniature orbital reconstruction`;
   warmedE005Frame.tabIndex = -1; warmedE005Frame.setAttribute("aria-hidden", "true");
   warmedE005Host.append(warmedE005Frame); table.append(warmedE005Host);
@@ -931,18 +931,18 @@ function stageEpisodeAssets() {
   // do not create eight simultaneous WebGL contexts in hidden iframes.
   const idle = callback => "requestIdleCallback" in window
     ? requestIdleCallback(callback, { timeout: 1500 }) : setTimeout(callback, 250);
-  const orbitalAssets = [["e003", 11], ["e005", 16], ["e006", 18], ["e008", 10], ["e016", 8], ["e059", 9]];
+  const orbitalAssets = [["e003", 12], ["e005", 17], ["e006", 19], ["e008", 11], ["e016", 9], ["e059", 10]];
   const assets = [
     "../visualization/Viz/vendor/three/three.module.js",
     "../visualization/Viz/vendor/countries-50m.json",
     "../visualization/dev/e002-control-panel-preview/table-mini.html",
     ...orbitalAssets.map(([name, version]) => `../visualization/Viz/episode-${name}.js?v=${version}`),
     ...orbitalAssets.map(([name]) => `../visualization/dev/${name}/data/provenance.json`),
-    "../visualization/Viz/compare.html?build=2",
-    "../visualization/e001/?v=6",
-    "../visualization/e002/?build=2",
+    "../visualization/Viz/compare.html?build=3",
+    "../visualization/e001/?v=7",
+    "../visualization/e002/?build=3",
     "../visualization/e001/public.js?v=9",
-    "../visualization/dev/e002-control-panel-preview/app.js?v=13",
+    "../visualization/dev/e002-control-panel-preview/app.js?v=14",
   ];
   let index = 0, queued = false;
   const scheduleNext = () => {
@@ -1135,6 +1135,10 @@ function startPreview(row) {
   const episodeId = field(row, "ID");
   if (!hasEpisodeVisual(episodeId)) return;
   const host = document.querySelector(".expanded-row .orbital-preview"); if (!host) return;
+  // A direct link can open E-004 before the background warm-up reaches it.
+  // Create the same full-width scene now instead of falling through to the
+  // clipped, column-sized fallback.
+  if (episodeId === "E-005" && !warmedE005Host) prewarmE005();
   showMiniDotsOverDescription();
   // One live scene spans the header, overview, and records. The link remains
   // the interaction target while the canvas is a clipped background layer.
@@ -1187,7 +1191,7 @@ function startPreview(row) {
   if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
     revealMiniAsOneScene(frame);
-    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=32`, location.href).href;
+    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=33`, location.href).href;
     frame.title = `Animated ${publicEpisodeId(row)} miniature orbital reconstruction`;
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
     host.replaceChildren(frame);
@@ -1263,7 +1267,7 @@ function render() {
   for (const [index, row] of rows.entries()) {
     const open = state.selected === row, tr = el("tr", `episode-row${open ? " selected" : ""}`);
     tr.tabIndex = 0; tr.dataset.episodeId = field(row, "ID"); tr.setAttribute("aria-label", `${title(row)}, ${open ? "collapse" : "expand"} details about the episode, orbital model, and records`);
-    if (["E-005", "E-006"].includes(field(row, "ID"))) tr.dataset.miniSelected = "B";
+    if (["E-005", "E-006"].includes(field(row, "ID"))) tr.dataset.miniSelected = field(row, "ID") === "E-006" ? "C" : "B";
     tr.setAttribute("aria-expanded", String(open));
     if (open) tr.setAttribute("aria-controls", `episode-detail-${field(row, "ID")}`);
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");

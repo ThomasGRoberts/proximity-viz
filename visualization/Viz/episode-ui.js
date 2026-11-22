@@ -1,6 +1,6 @@
 // Only the editorial markup used in the published Episodes sheet is displayed.
 import { loadCurrentEpisodes, episodeUtcInterval } from "../../shared/episode-feed.js?v=6";
-import { installEpisodeDescriptionToggle } from "./panel-enhancements.js?v=4";
+import { installEpisodeDescriptionToggle } from "./panel-enhancements.js?v=5";
 // Parse in an inert document, then create fresh, explicitly allowed DOM nodes.
 const allowed = new Set(["P", "BR", "I", "EM", "B", "STRONG"]);
 const discarded = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "SVG", "MATH", "IMG", "VIDEO", "AUDIO", "FORM", "INPUT", "BUTTON"]);
@@ -23,10 +23,26 @@ export function sanitizeEpisodeDescription(markup) {
   return clean;
 }
 
-const description = document.getElementById("episodeDescription");
-const storyToggle = installEpisodeDescriptionToggle(description);
 const query = new URLSearchParams(location.search);
 const publicId = query.get("episode") || "E-001";
+if ((query.get("asset") || publicId) === "E-001") {
+  const header = document.querySelector("#ui .episodeHeader");
+  const back = header?.querySelector(".backEpisodes"), title = header?.querySelector("#episodeTitle");
+  if (header && back && title && !header.querySelector(".episode-focus")) {
+    document.body.classList.add("e001-shared");
+    const focus = document.createElement("section"); focus.id = "episodeFocus"; focus.className = "episode-focus";
+    const link = document.createElement("a"); link.href = back.href; link.className = "episode-focus-link";
+    link.setAttribute("aria-label", "Choose a different episode");
+    const top = document.createElement("div"); top.className = "episode-focus-top";
+    const eyebrow = document.createElement("span"); eyebrow.className = "episode-eyebrow"; eyebrow.textContent = "Current episode";
+    const action = document.createElement("span"); action.className = "episode-hover-action";
+    action.append(back.querySelector(".libraryBackArrow")?.cloneNode(true) || document.createTextNode("←"), document.createTextNode("Choose a different episode"));
+    top.append(eyebrow, action); link.append(top, title); focus.append(link);
+    back.remove(); header.querySelector("h1")?.after(focus);
+  }
+}
+const description = document.getElementById("episodeDescription");
+const storyToggle = installEpisodeDescriptionToggle(description);
 loadCurrentEpisodes().then(feed => {
   const episode = feed.episodes.find(row => query.has("asset") ? row.ID === query.get("asset") : row["Episode ID"] === publicId);
   if (!episode) throw new Error(`${publicId} missing from current Episodes sheet`);

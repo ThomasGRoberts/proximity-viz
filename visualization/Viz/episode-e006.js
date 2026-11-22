@@ -16,7 +16,7 @@ import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, 
 import { wireTimelineHover } from "./playback-shared.js?v=2";
 import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
-import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
+import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js?v=2";
 import { formatDwellDuration } from "../../shared/format-duration.js";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 
@@ -233,7 +233,7 @@ async function start() {
   chapterNav.hidden = chapters.length === 1;
   document.body.classList.toggle("e006-multi-chapter", chapters.length > 1);
   $("playbackDock").prepend(chapterNav);
-  let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "B", referenceSlot = "B", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 21600, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
+  let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "C", referenceSlot = "C", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 21600, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
   let relativeRate = rate;
   let miniLoopStart = chapter.centerMs - 2 * HOUR, miniLoopEnd = chapter.centerMs + 2 * HOUR;
   const miniPinnedTles = {};
@@ -420,7 +420,7 @@ async function start() {
     $("thresholdSummary").textContent = `${distance.toLocaleString()} km · ${speed.toLocaleString()} m/s`;
     $("dwellStat").textContent = qualifications.both.validSamples ? formatDwellDuration(qualifications.both.totalMs) : "—";
     $("dwellUnit").textContent = "";
-    $("dwellLabel").textContent = "Dwell time";
+    if ($("dwellLabel").textContent !== "Dwell time") $("dwellLabel").textContent = "Dwell time";
     const dwellKey = $("dwellMetric").querySelector(".dwellKey");
     if (!dwellKey.dataset.explained) {
       const gold = document.createElement("strong"), gray = document.createElement("strong");
@@ -468,7 +468,7 @@ async function start() {
   function updateCards(states) {
     for (const item of participants) {
       const { tle, ageHours } = states[item.slot], entry = cards[item.slot], signed = Math.floor(Math.abs(current - tle.ms) / HOUR), sign = current < tle.ms ? "−" : "+";
-      entry.age.textContent = "Space-Track";
+      if (entry.age.textContent !== "Space-Track") entry.age.textContent = "Space-Track";
       if (entry.card.dataset.epoch !== tle.epoch) {
         entry.card.dataset.epoch = tle.epoch; entry.card.dataset.sourceData = "Space-Track"; entry.card.dataset.sourceQueryHref = spaceTrackHistoryUrl(item.norad, tle.epoch);
         entry.card.dataset.tleAge = current < item.launchMs ? "Not yet launched" : `${sign}${signed} ${signed === 1 ? "hour" : "hours"}`; entry.card.dataset.tleLine2 = tle.line2;
@@ -685,7 +685,7 @@ async function start() {
   }
   wireTimelineHover($("timelineSlider"), $("timelineHover"), $("timelineHoverTick"), () => [chapter.startMs, chapter.endMs]);
   pinMiniTles((miniLoopStart + miniLoopEnd) / 2);
-  chooseChaser("B"); chooseChapter(chapters[0].id, true); resize(); updateSticky();
+  chooseChaser("C"); chooseChapter(chapters[0].id, true); resize(); updateSticky();
   if (miniScene) current = miniLoopStart;
   playing = true; updatePlay(); render();
   if (miniScene) {

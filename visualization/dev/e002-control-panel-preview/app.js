@@ -4,11 +4,11 @@ import { createGlobePreview } from "./globe-preview.js?v=9";
 import { reviewHref } from "../review-shell.js?v=2";
 import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-feed.js?v=6";
 import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.js";
-import { installGlossary } from "./glossary.js";
+import { installGlossary } from "./glossary.js?v=2";
 import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
 import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=2";
-import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=4";
+import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=5";
 
 const $ = id => document.getElementById(id);
 void preloadOrbitalElements().catch(() => {});

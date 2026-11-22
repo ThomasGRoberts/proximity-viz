@@ -160,35 +160,32 @@ export function installEpisodeDescriptionToggle(description) {
   description.dataset.toggleInstalled = "1";
   const toggle = document.createElement("button");
   toggle.type = "button";
-  toggle.className = "episode-story-toggle";
+  toggle.className = "episode-story-toggle episode-info-toggle";
   toggle.setAttribute("aria-controls", description.id);
   toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-label", "Show episode description");
+  toggle.title = "Show episode description";
   toggle.hidden = true;
-  toggle.classList.add("story-nav-toggle");
-  toggle.innerHTML = '<span class="story-toggle-label">About this Episode</span>';
+  toggle.innerHTML = '<span class="episode-info-glyph" aria-hidden="true">i</span>';
   description.before(toggle);
-  const preview = document.createElement("div");
-  preview.className = "story-peek"; preview.setAttribute("aria-hidden", "true"); description.before(preview);
-  const updatePreview = () => {
-    const full = description.textContent.trim().replace(/\s+/g, " ");
-    preview.textContent = full.length > 96 ? `${full.slice(0, 96).replace(/\s+\S*$/, "")}…` : full;
-  };
-  updatePreview();
-  new MutationObserver(updatePreview).observe(description, { childList: true, characterData: true, subtree: true });
   description.classList.add("story-collapsed");
-  const placeInNavigation = () => {
-    const nav = description.closest(".episodeHeader")?.querySelector(".episode-neighbors");
-    if (!nav) return false;
-    nav.insertBefore(toggle, nav.lastElementChild); return true;
+  const header = description.closest(".episodeHeader");
+  const placeInFocus = () => {
+    const focus = header?.querySelector(".episode-focus");
+    if (!focus) return false;
+    focus.append(description, toggle);
+    return true;
   };
-  if (!placeInNavigation()) {
-    const observer = new MutationObserver(() => { if (placeInNavigation()) observer.disconnect(); });
-    observer.observe(description.closest(".episodeHeader"), { childList: true, subtree: true });
+  if (!placeInFocus() && header) {
+    const observer = new MutationObserver(() => { if (placeInFocus()) observer.disconnect(); });
+    observer.observe(header, { childList: true, subtree: true });
   }
   toggle.addEventListener("click", () => {
     const expanded = toggle.getAttribute("aria-expanded") !== "true";
     toggle.setAttribute("aria-expanded", String(expanded));
-    toggle.querySelector(".story-toggle-label").textContent = expanded ? "Hide description" : "About this Episode";
+    toggle.setAttribute("aria-label", expanded ? "Hide episode description" : "Show episode description");
+    toggle.title = expanded ? "Hide episode description" : "Show episode description";
+    toggle.querySelector(".episode-info-glyph").textContent = expanded ? "×" : "i";
     description.classList.toggle("story-collapsed", !expanded);
     description.classList.toggle("story-expanded", expanded);
   });

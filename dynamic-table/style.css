@@ -751,11 +751,7 @@ body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden
 /* The scene covers the expanded viewport; only the reading column fades it. */
 .table-wrap .expanded-row:is([data-episode-id="E-003"],[data-episode-id="E-005"],[data-episode-id="E-006"],[data-episode-id="E-016"]) .expanded-inner.has-visual{background:transparent!important}
 .table-wrap .expanded-row:is([data-episode-id="E-003"],[data-episode-id="E-005"],[data-episode-id="E-006"],[data-episode-id="E-016"]) .context-block::before{background:radial-gradient(ellipse 125% 105% at 26% 42%,#fffcf6 0%,#fffcf6ef 48%,#fffcf680 74%,transparent 100%)!important;right:-70px}
-/* The miniature plots the selected pair, while the collapsed row still lists all objects. */
-.episode-row.selected[data-episode-id="E-005"][data-mini-selected="B"] .object-line:has(.dot.c),
-.episode-row.selected[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b),
-.episode-row.selected[data-episode-id="E-006"][data-mini-selected="B"] .object-line:has(.dot.c),
-.episode-row.selected[data-episode-id="E-006"][data-mini-selected="C"] .object-line:has(.dot.b){display:none}
+/* All three objects remain listed while the miniature highlights one pair. */
 
 /* Small row cues reveal the three kinds of material available on expansion. */
 .column-meta-label{display:block;margin-top:3px;color:#9b9b9b;font-size:8px;font-weight:600;letter-spacing:.045em;line-height:1.1}
@@ -868,3 +864,7 @@ th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacit
 .detail-section-heading{display:flex;align-items:center;gap:7px}
 .detail-section-heading .episode-books-icon{width:16px;height:16px}
 .detail-section-heading .row-record-icon{width:16px;height:15px;box-shadow:none;transform:rotate(4deg)}
+/* Let the row make room before revealing its invitation. */
+.episode-row:not(.selected):is(:hover,:focus-visible) .row-open-cue{transition-delay:.24s}
+.row-open-chevron{width:18px;height:7px}
+.row-open-chevron::before,.row-open-chevron::after{width:10px;top:1px}

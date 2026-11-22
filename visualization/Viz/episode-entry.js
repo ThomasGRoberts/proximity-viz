@@ -18,9 +18,9 @@ if (!episodeId) {
 }
 const episodeModule = {
   "E-001": "./compare.js?v=26", "E-002": "./episode-e002.js?v=14",
-  "E-005": "./episode-e005.js?v=16", "E-003": "./episode-e003.js?v=11",
-  "E-006": "./episode-e006.js?v=18", "E-008": "./episode-e008.js?v=10",
-  "E-016": "./episode-e016.js?v=8", "E-059": "./episode-e059.js?v=9",
+  "E-005": "./episode-e005.js?v=17", "E-003": "./episode-e003.js?v=12",
+  "E-006": "./episode-e006.js?v=19", "E-008": "./episode-e008.js?v=11",
+  "E-016": "./episode-e016.js?v=9", "E-059": "./episode-e059.js?v=10",
 }[episodeId];
 if (episodeModule) import(episodeModule).then(async () => {
   if (query.get("mini") === "1") return;
