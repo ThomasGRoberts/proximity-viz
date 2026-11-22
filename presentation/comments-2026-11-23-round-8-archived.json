@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "archivedAt": "2026-11-22T23:26:17.843331+00:00",
+  "comments": [
+    {
+      "id": "0f84f2beddbe4e139114fb3a0afa8e26",
+      "createdAt": "2026-11-22T23:01:42.281232+00:00",
+      "status": "open",
+      "stepId": "closing",
+      "stepTitle": "How Close Is Too Close?",
+      "element": "slide",
+      "x": 0.3783068783068783,
+      "y": 0.2785185185185185,
+      "atHour": null,
+      "text": "I just noticed that the yellow bar is now very close to the titling. There needs to be some breathing room there."
+    },
+    {
+      "id": "08934d23708a4f089db60b45c8c406bb",
+      "createdAt": "2026-11-22T23:02:09.354837+00:00",
+      "status": "open",
+      "stepId": "opening",
+      "stepTitle": "How Close Is Too Close?",
+      "element": "slide",
+      "x": 0.5440917107583775,
+      "y": 0.29185185185185186,
+      "atHour": null,
+      "text": "This title slide should be exactly the same as the last slide; last slide should just be a copy of this one."
+    },
+    {
+      "id": "4cf003e1e79a458d8307e269a7cee852",
+      "createdAt": "2026-11-22T23:02:27.855028+00:00",
+      "status": "open",
+      "stepId": "opening",
+      "stepTitle": "How Close Is Too Close?",
+      "element": "slide",
+      "x": 0.6278659611992945,
+      "y": 0.25037037037037035,
+      "atHour": null,
+      "text": "If the yellow dot is getting smaller because it's getting further away, then the trail should also get smaller, because it is getting farther away, too."
+    }
+  ]
+}

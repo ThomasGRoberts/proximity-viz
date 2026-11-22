@@ -129,6 +129,10 @@ export function mountOpeningArt(host, initialOptions = {}) {
     });
     trail.geometry.dispose();trail.geometry=fadingTrailGeometry(trailPoints);
     trail.material.uniforms.uResolution.value.set(host.clientWidth,host.clientHeight);
+    // The sprite has perspective size attenuation. Its recent trail should
+    // recede at the same rate when the chaser travels away from the camera.
+    const perspectiveScale=camera.position.distanceTo(controls.target)/Math.max(.01,camera.position.distanceTo(chaser.position));
+    trail.material.uniforms.uHalfWidthPx.value=Number(options.trailThickness)/2*perspectiveScale;
     if(borderMesh)borderMesh.material.uniforms.uResolution.value.set(host.clientWidth,host.clientHeight);
     trail.material.uniforms.uOpacity.value=.94*Math.max(0,edgeFade);
     renderer.render(scene, camera);
