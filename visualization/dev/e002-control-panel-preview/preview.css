@@ -389,7 +389,7 @@ body.e002-shared #gtLogo:focus-visible{outline:2px solid #b49123;outline-offset:
 
 /* SBI panel geometry: a modest breathing gap, shadow, and left-edge collapse tab. */
 body.e002-shared .panel-column{margin-top:22px;height:calc(100% - 38px)}
-body.e002-published .panel-column{margin:24px 0 18px 18px;height:calc(100% - 42px)}
+body.e002-published .panel-column{margin:18px 0 18px 18px;height:calc(100% - 36px)}
 body.e002-shared #panelMount{gap:14px}
 body.e002-shared #ui,body.e002-shared .playbackDock{box-shadow:0 12px 35px rgba(0,0,0,.10)}
 body.e002-shared #ui{transition:transform .28s ease,opacity .28s ease}

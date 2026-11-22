@@ -1,6 +1,7 @@
 // Hydrate the lab website's table introduction from the published editorial tab.
 const LANGUAGE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera/pub?output=csv&gid=253374416";
 const THOMAS = "Thomas González Roberts";
+const PAGE_TITLE = "Episodes of Concerning Satellite Proximity";
 const portraits = {
   "dayana alagirova": "dayana-alagirova.jpg",
   "kate futrowsky": "kate-futrowsky.jpg",
@@ -16,6 +17,16 @@ const profileAnchors = {
   "thomas gonzalez roberts": "biography",
 };
 const key = name => name.normalize("NFKD").replace(/\p{M}/gu, "").trim().toLowerCase();
+
+// Preserve the selected episode when returning from a full visualization.
+const requestedEpisode = new URLSearchParams(location.search).get("review");
+if (requestedEpisode && /^E-\d{3}$/.test(requestedEpisode)) {
+  for (const frame of document.querySelectorAll("[data-espl-episodes-page] iframe")) {
+    const url = new URL(frame.src);
+    url.searchParams.set("review", requestedEpisode);
+    frame.src = url.href;
+  }
+}
 
 if (!window.__esplTableFrameHeightListener) {
   window.__esplTableFrameHeightListener = true;
@@ -114,12 +125,14 @@ try {
   if (rows[0]?.[0]?.replace(/^\uFEFF/, "").trim() !== "Introduction HTML" || rows[0]?.[1]?.trim() !== "Contributors")
     throw new Error("Website Language headers changed");
   const [introduction = "", contributors = ""] = rows[1] || [];
+  if (!introduction.trim()) throw new Error("Website Language A2 is empty");
   for (const page of document.querySelectorAll("[data-espl-episodes-page]")) {
-    if (introduction.trim()) page.querySelector("[data-espl-introduction]")?.replaceChildren(safeIntroduction(introduction));
+    page.querySelector("[data-espl-title]")?.replaceChildren(PAGE_TITLE);
+    page.querySelector("[data-espl-introduction]")?.replaceChildren(safeIntroduction(introduction));
     const people = page.querySelector("[data-espl-contributors]");
     if (people) renderContributors(people, contributors);
     page.dataset.languageSource = "live";
   }
 } catch (error) {
-  console.warn("Website language unavailable; showing the page's introductory fallback.", error);
+  console.warn("Website language unavailable; the introductory panel is awaiting live text.", error);
 }

@@ -1,6 +1,6 @@
 // Public links use the current sheet ID; internal mini scenes name an orbital asset.
 import { loadCurrentEpisodes } from "../../shared/episode-feed.js?v=7";
-import { installEpisodeNavigation } from "../../shared/episode-navigation.js?v=3";
+import { installEpisodeNavigation } from "../../shared/episode-navigation.js?v=4";
 const query = new URLSearchParams(location.search);
 const publicId = query.get("episode") || "E-001";
 let episodeId = query.get("asset");

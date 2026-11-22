@@ -193,3 +193,36 @@ export function installEpisodeDescriptionToggle(description) {
 }
 
 installPanelEnhancements();
+
+// SBI's disclosure tab remains outside the scrolling panel so it is usable
+// after the panel is hidden. E-002 has the same tab in its own panel shell.
+if (!document.body.classList.contains("e002-shared") && !document.getElementById("episodePanelToggle")) {
+  const button = document.createElement("button");
+  button.id = "episodePanelToggle";
+  button.type = "button";
+  button.setAttribute("aria-controls", "ui");
+  button.setAttribute("aria-expanded", "true");
+  button.setAttribute("aria-label", "Hide control panel");
+  button.title = "Hide control panel";
+  button.textContent = "‹";
+  const panel = document.getElementById("ui");
+  const placeButton = () => {
+    if (!panel) return;
+    button.style.top = `${panel.offsetTop + 32}px`;
+    button.style.left = document.body.classList.contains("episode-panel-collapsed") ? "0px" : `${panel.offsetLeft + panel.offsetWidth - 1}px`;
+  };
+  button.addEventListener("click", () => {
+    const collapsed = document.body.classList.toggle("episode-panel-collapsed");
+    button.setAttribute("aria-expanded", String(!collapsed));
+    button.setAttribute("aria-label", collapsed ? "Show control panel" : "Hide control panel");
+    button.title = collapsed ? "Show control panel" : "Hide control panel";
+    button.textContent = collapsed ? "›" : "‹";
+    if (collapsed) button.style.left = "0px";
+    else placeButton();
+  });
+  document.body.append(button);
+  requestAnimationFrame(placeButton);
+  window.addEventListener("resize", placeButton);
+  new ResizeObserver(placeButton).observe(panel);
+  new MutationObserver(placeButton).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+}

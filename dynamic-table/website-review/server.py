@@ -66,7 +66,7 @@ class Handler(SimpleHTTPRequestHandler):
                 with urlopen(request, timeout=20) as source:
                     html = source.read().decode("utf-8", "replace")
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
-                local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=1'
+                local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=2'
                 addon = f'<script src="{local_script}" data-espl-project="{slug}"></script>'
                 html = html.replace("</body>", addon + "</body>", 1)
                 encoded = html.encode("utf-8")

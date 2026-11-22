@@ -7,8 +7,8 @@ import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.j
 import { installGlossary } from "./glossary.js?v=2";
 import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
-import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=2";
-import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=6";
+import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=4";
+import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=7";
 import { supportedUsa245Chapters } from "../e002/chapter-support.js";
 
 const $ = id => document.getElementById(id);

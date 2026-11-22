@@ -4,6 +4,7 @@
   .espl-episodes-page *{box-sizing:border-box}
   .espl-episodes-page .intro{position:relative;width:100vw;margin-left:calc(50% - 50vw);border-top:1px solid #e8dfc9;border-bottom:1px solid #e8dfc9;background:linear-gradient(120deg,#fff5d9,#fffcf6 68%)}
   .espl-episodes-page .intro-inner{width:calc(100vw - 24px);max-width:1220px;margin:0 auto;padding:clamp(22px,4vw,48px) 0}
+  .espl-episodes-page:not([data-language-source="live"]) .intro-inner{visibility:hidden}
   @supports(width:100cqw){.espl-episodes-page .intro-inner{width:100cqw}}
   .espl-episodes-page .about-link{display:inline-flex;align-items:center;gap:.45em;color:#5f6265;font:700 12px/1.2 Roboto,Arial,sans-serif;letter-spacing:.07em;text-decoration:none;text-transform:uppercase;transition:opacity .18s ease}
   .espl-episodes-page .about-link:hover,.espl-episodes-page .about-link:focus-visible{color:#5f6265;opacity:.65;text-decoration:none}
@@ -50,8 +51,8 @@
       </svg>
       <span>Interactive Data Repository</span>
     </div>
-    <h1 id="episodes-library-title">Episodes of Concerning Satellite Proximity</h1>
-    <div class="description" data-espl-introduction><p>Explore documented satellite proximity episodes through illustrative orbital reconstructions, modeled separation and relative speed, and linked source records.</p></div>
+    <h1 id="episodes-library-title" data-espl-title></h1>
+    <div class="description" data-espl-introduction></div>
     <div class="repo-meta"><span>Last updated on <span data-espl-last-updated>checking date…</span></span><span class="repo-meta-divider" aria-hidden="true">•</span><a class="repo-link" href="https://github.com/ThomasGRoberts/proximity-viz" target="_blank" rel="noopener noreferrer">GitHub repository <svg viewBox="0 0 18 18" aria-hidden="true"><path class="external-box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><g class="external-arrow"><path d="M9.25 2.75h6v6"/><path d="m8 10 7.25-7.25"/></g></svg></a></div>
     </div>
   </header>
@@ -67,4 +68,4 @@
   </div>
   <iframe src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/?embed=1" title="Interactive Episodes of Concern table" loading="eager"></iframe>
 </section>
-<script type="module" src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-language.js?v=4"></script>
+<script type="module" src="https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-language.js?v=5"></script>

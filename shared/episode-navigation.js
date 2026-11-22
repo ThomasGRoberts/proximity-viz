@@ -28,6 +28,13 @@ export function installEpisodeNavigation(focus, episodes, assetId, { review = fa
   const index = rows.findIndex(row => row.ID === assetId);
   if (index < 0 || !rows.length) return;
   const current = rows[index], chapters = episodeChapters(current);
+  const libraryLink = focus.querySelector(".episode-focus-link");
+  if (libraryLink) {
+    const destination = new URL("https://espl.ae.gatech.edu/research/tables/proximity/");
+    destination.searchParams.set("review", current["Episode ID"]);
+    libraryLink.href = destination.href;
+    libraryLink.target = "_top";
+  }
   if (period && chapters.length && !focus.querySelector(".episode-focus-period")) {
     const label = focus.ownerDocument.createElement("span");
     label.className = "episode-focus-period"; label.textContent = periodLabel(chapters);

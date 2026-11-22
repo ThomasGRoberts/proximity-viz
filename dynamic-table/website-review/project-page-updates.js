@@ -19,13 +19,21 @@
     #espl-project-page .espl-special-card .model-link-arrow{display:inline-block}
     #espl-project-page .espl-special-card:is(:hover,:focus-within) .model-link-arrow{animation:espl-data-link-nudge .7s ease}
     #espl-project-page .espl-special-card .knowledge-slide__summary{max-width:60ch}
+    /* SBI's Research Updates card geometry, applied to both project pages. */
+    #espl-project-page .project-outputs .publication-card{grid-template-columns:minmax(0,1fr) minmax(350px,34%)}
+    #espl-project-page .project-outputs .publication-card.no-portraits{grid-template-columns:1fr}
+    #espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;padding:16px 12px}
+    #espl-project-page .project-outputs .publication-card .knowledge-slide__people{flex-direction:column;align-items:flex-start;justify-content:flex-start;flex-wrap:nowrap;gap:7px;width:max-content;max-width:100%}
+    #espl-project-page .project-outputs .publication-card .knowledge-person-row{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%}
+    #espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:70px;height:70px}
     #espl-project-page .espl-table-icon .table-scan{opacity:.25;transform:translateY(0);transition:transform .7s cubic-bezier(.22,1,.36,1),opacity .7s ease}
     #espl-project-page .espl-table-icon-link:is(:hover,:focus-visible) .table-scan{opacity:.8;transform:translateY(25px);transition-duration:.95s}
     .espl-proximity-mobile-cta{display:none;max-width:1080px;margin:0 auto;padding:9px 28px 15px;background:#fff}
     .espl-proximity-mobile-cta a{display:inline-flex;align-items:center;gap:8px;color:#666;text-decoration:none;font:400 12px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     .espl-proximity-mobile-cta svg{width:38px;height:38px;flex:none}
     @keyframes espl-data-link-nudge{0%,100%{transform:translateX(0)}45%{transform:translateX(4px)}70%{transform:translateX(-1px)}}
-    @media(max-width:767px){#espl-project-page .espl-special-card{grid-template-columns:1fr}#espl-project-page .espl-special-card .model-output-media{min-height:0;padding:0 1.2rem 1.2rem;gap:8px}#espl-project-page .espl-special-card .model-text-link{white-space:normal;font-size:10.5px}.espl-proximity-mobile-cta{display:block}}
+    @media(max-width:999px){#espl-project-page .project-outputs .publication-card{grid-template-columns:1fr}#espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;min-height:0;padding:0 1.65rem 1.25rem}}
+    @media(max-width:767px){#espl-project-page .espl-special-card{grid-template-columns:1fr}#espl-project-page .espl-special-card .model-output-media{min-height:0;padding:0 1.2rem 1.2rem;gap:8px}#espl-project-page .espl-special-card .model-text-link{white-space:normal;font-size:10.5px}#espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem}#espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:56px;height:56px}.espl-proximity-mobile-cta{display:block}}
     @media(max-width:380px){#espl-project-page .espl-special-card .model-output-media{flex-wrap:wrap}#espl-project-page .espl-special-card .model-text-link{width:100%;font-size:11px}}
     @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan),.espl-proximity-mobile-cta *{animation:none!important;transition:none!important}}
   `;
@@ -37,12 +45,10 @@
   const archiveURL = 'https://docs.google.com/spreadsheets/d/1eW3y9Rsp1vj4Jop-LcUEFNGY-7c2FZzXHDOzUpAGl-o/gviz/tq?tqx=out:json&gid=1886090417';
   const projectName = slug === 'sbi' ? 'Space-based Interceptors and Strategic Stability' : 'How Close is Too Close';
   const tableIcon = () => `
-    <svg class="espl-table-icon" viewBox="0 0 76 76" aria-hidden="true" focusable="false">
-      <rect x="11" y="11" width="54" height="54" rx="7" fill="#fff7df" stroke="#83755d" stroke-width="1.4"/>
-      <rect x="14" y="14" width="48" height="12" rx="3" fill="#eaaa00" opacity=".76"/>
-      <path d="M14 27h48M14 39h48M14 51h48M32 27v35M48 27v35" fill="none" stroke="#83755d" stroke-width="1.4"/>
-      <rect class="table-scan" x="15" y="28" width="46" height="10" fill="#eaaa00"/>
-      <circle cx="23" cy="20" r="2" fill="#6f6045"/><circle cx="39" cy="20" r="2" fill="#6f6045"/><circle cx="55" cy="20" r="2" fill="#6f6045"/>
+    <svg class="espl-table-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+      <rect x="8" y="9" width="32" height="8" rx="2" fill="#edcc73"/>
+      <rect class="table-scan" x="8" y="19" width="32" height="8" rx="1" fill="#eaaa00" opacity=".34"/>
+      <path d="M8 17h32M8 28h32M8 39h32M20 17v22M30 17v22M8 17v22h32V17" fill="none" stroke="#76664b" stroke-width="1.3"/>
     </svg>`;
 
   function mountPolyhedron(canvas) {
@@ -111,7 +117,7 @@
   function makeSpecialCard(row) {
     const model = typeOf(row) === 'model', href = rowField(row,'URL'), title = rowField(row,'Title');
     const detail = model
-      ? slug === 'sbi' ? 'Explore how different missile threats shape the interceptor constellations needed for boost-phase defense.' : 'Explore illustrative orbital reconstructions of satellite proximity episodes.'
+      ? slug === 'sbi' ? 'Explore how different missile threats shape the interceptor constellations needed for boost-phase defense.' : 'See and understand the inter-spacecraft dynamics of satellite proximity episodes that have concerned state actors in recent history'
       : 'Browse documented satellite proximity episodes, orbital reconstructions, and linked source records.';
     const card = document.createElement('article');
     card.className = `knowledge-output-card model-card espl-special-card ${model?'archive-model-card':'data-repository-card'} is-clickable`;
@@ -162,8 +168,8 @@
       `;doc.head.append(style);
       const link=doc.createElement('a');link.id='espl-proximity-table-link';link.className='espl-table-hero-link';
       link.href='https://espl.ae.gatech.edu/research/tables/proximity';link.target='_top';
-      link.setAttribute('aria-label','Learn about episodes of concerning satellite proximity');
-      link.innerHTML=`<span class="espl-table-hero-icon" aria-hidden="true">${tableIcon()}</span><span class="espl-table-hero-label">Learn about episodes of concerning satellite proximity&nbsp; →</span>`;
+      link.setAttribute('aria-label','Explore the data');
+      link.innerHTML=`<span class="espl-table-hero-icon" aria-hidden="true">${tableIcon()}</span><span class="espl-table-hero-label">Explore the data&nbsp; →</span>`;
       banner.append(link);
       const reduced=doc.defaultView.matchMedia('(prefers-reduced-motion: reduce)');let open=false;
       const reveal=()=>{if(!open){open=true;link.classList.add('is-open')}};
@@ -177,7 +183,7 @@
     if(frame.contentDocument?.readyState==='complete') apply();
     if(!projectRoot.querySelector('.espl-proximity-mobile-cta')){
       const mobile=document.createElement('div');mobile.className='espl-proximity-mobile-cta';
-      mobile.innerHTML=`<a href="https://espl.ae.gatech.edu/research/tables/proximity" aria-label="Learn about episodes of concerning satellite proximity">${tableIcon()}<span>Learn about episodes of concerning satellite proximity&nbsp; →</span></a>`;
+      mobile.innerHTML=`<a href="https://espl.ae.gatech.edu/research/tables/proximity" aria-label="Explore the data">${tableIcon()}<span>Explore the data&nbsp; →</span></a>`;
       projectRoot.querySelector('.espl-proximity-banner-embed')?.after(mobile);
     }
   }
