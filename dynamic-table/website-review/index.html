@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Episodes of Concern website page · local review</title>
+  <link rel="icon" type="image/png" href="../assets/polyhedron-icon.png">
+  <link rel="stylesheet" href="./review.css">
+  <script type="module" src="./review.js"></script>
+</head>
+<body>
+  <header class="review-bar" id="reviewBar">
+    <nav class="review-switcher" aria-label="Local review panes">
+      <a href="http://127.0.0.1:8769/dynamic-table/">Dynamic Table</a>
+      <a href="./" aria-current="page">Website page</a>
+    </nav>
+    <div class="review-actions">
+      <button id="refreshPreview" type="button">Refresh page</button>
+      <button id="spotMode" type="button" aria-pressed="false">✚ Spot comment</button>
+      <button id="commentsToggle" type="button" aria-expanded="false">Comments <span id="commentCount">0</span></button>
+    </div>
+  </header>
+  <p class="review-status" id="reviewStatus" role="status">Loading the website page draft…</p>
+  <main class="preview-area" id="previewArea">
+    <div id="pageHost" class="page-host" aria-label="Website page preview"></div>
+    <div id="pinLayer" class="pin-layer" aria-label="Saved website comment locations"></div>
+  </main>
+  <div id="spotLayer" class="spot-layer" hidden aria-label="Choose a location on the website page"></div>
+  <div id="spotHighlight" class="spot-highlight" hidden aria-hidden="true"></div>
+  <aside id="commentDrawer" class="comment-drawer" hidden aria-label="Website page comments">
+    <div class="drawer-head"><strong>Website page comments</strong><button id="closeDrawer" type="button" aria-label="Close comments">×</button></div>
+    <form id="commentForm" hidden>
+      <label for="commentText">Comment on <strong id="commentLocation">—</strong></label>
+      <textarea id="commentText" rows="5" maxlength="4000" required></textarea>
+      <div class="form-actions"><button class="primary" type="submit" id="saveComment">Save comment</button><button id="cancelComment" type="button">Cancel</button></div>
+    </form>
+    <div id="commentList" class="comment-list"></div>
+    <button id="exportComments" class="export-comments" type="button">Export website comments JSON</button>
+  </aside>
+</body>
+</html>
