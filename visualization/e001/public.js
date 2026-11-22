@@ -1,12 +1,12 @@
 import { loadCurrentEpisodes, episodeChapters } from "../../shared/episode-feed.js?v=6";
-import { installChapterButtons } from "../dev/e001-review/panel-layout.js?v=4";
+import { installChapterButtons } from "../dev/e001-review/panel-layout.js?v=5";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 
 const $ = id => document.getElementById(id);
 const frame = $("episodeFrame");
 const doc = () => frame.contentDocument;
 const api = () => frame.contentWindow?.__proximityWorkshop;
-const chapterDateLabel = value => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(value));
+const chapterDateLabel = value => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" }).format(new Date(value)).replace(/^([A-Za-z]{3})(?=\s)/, "$1.");
 const dateLabel = value => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value)) + " UTC";
 let chapters = [], selected = 0, switching = false, lastTime = 0, wasPlaying = false;
 let savedCameraViews = [];
@@ -84,7 +84,7 @@ async function init() {
   selected = 0;
   lastTime = api().state.time;
   syncClock();
-  requestAnimationFrame(() => requestAnimationFrame(() => {
+  Promise.resolve(window.episodeLoadingHoldUntil).then(() => requestAnimationFrame(() => {
     $("episodeLoading").classList.add("is-leaving");
     setTimeout(() => { $("episodeLoading").hidden = true; }, 420);
   }));

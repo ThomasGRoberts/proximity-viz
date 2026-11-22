@@ -3,7 +3,7 @@ import { OrbitControls } from "../../Viz/vendor/three/addons/controls/OrbitContr
 import { feature } from "../../Viz/vendor/topojson/topojson-client.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "../../Viz/relative-rendering.js?v=5";
 import { MARKER } from "../../../shared/marker-spec.js";
-import { miniLandTexture, miniMutedDotTexture, miniMutedColors, opaqueMutedDotTexture } from "../../Viz/mini-scene-style.js";
+import { miniLandTexture, miniMutedDotTexture, miniMutedColors, opaqueMutedDotTexture } from "../../Viz/mini-scene-style.js?v=2";
 
 const EARTH_KM = 6378.137;
 const toScene = point => new THREE.Vector3(point.x / EARTH_KM, point.z / EARTH_KM, -point.y / EARTH_KM);
@@ -309,7 +309,9 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     if (near) {
       const name = names[referenceMode === "target" ? "B" : focus];
       const movingSlot = referenceMode === "target" ? focus : "B";
-      orbitTooltip.textContent = `This reference orbit describes ${name}'s trajectory around the Earth. The motion of ${names[movingSlot]} is shown relative to ${name} in ${movingSlot === "B" ? "gray" : "gold"}.`;
+      orbitTooltip.replaceChildren("This reference orbit describes ");
+      const italic = value => { const node = document.createElement("em"); node.textContent = value; return node; };
+      orbitTooltip.append(italic(name), "'s trajectory around the Earth. The motion of ", italic(names[movingSlot]), " is shown relative to ", italic(name), ` in ${movingSlot === "B" ? "gray" : "gold"}.`);
       const stageRect = stage.getBoundingClientRect();
       orbitTooltip.style.left = `${Math.max(8, Math.min(stage.clientWidth - 245, event.clientX - stageRect.left + 14))}px`;
       orbitTooltip.style.top = `${Math.max(8, Math.min(stage.clientHeight - 68, event.clientY - stageRect.top + 14))}px`;

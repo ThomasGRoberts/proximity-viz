@@ -10,13 +10,14 @@
   <link id="previewCss" rel="stylesheet" href="preview.css?v=2">
   <script type="importmap">{"imports":{"three":"../../Viz/vendor/three/three.module.js","three/addons/":"../../Viz/vendor/three/addons/"}}</script>
   <script src="../../Viz/vendor/satellite/satellite.min.js"></script>
-  <link rel="stylesheet" href="../../../shared/episode-loading.css">
+  <link rel="stylesheet" href="../../../shared/episode-loading.css?v=2">
   <link rel="stylesheet" href="../../../shared/episode-panel.css?v=3">
-  <link rel="stylesheet" href="../../Viz/panel-enhancements.css?v=1">
+  <link rel="stylesheet" href="../../Viz/panel-enhancements.css?v=4">
   <style>#episodeLoading{background:#fff}</style>
+  <link rel="stylesheet" href="../../../shared/episode-description.css">
 </head>
 <body class="e002-shared e002-published" data-heading-style="quiet" data-books="off" data-calendar-icon="off">
-  <div id="episodeLoading" class="episode-loading" role="status" aria-live="polite"><span class="episode-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><strong id="episodeLoadingText">Loading episode</strong></div>
+  <div id="episodeLoading" class="episode-loading" role="status" aria-live="polite"><span class="episode-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><strong id="episodeLoadingText">Loading episode</strong><span id="episodeLoadingContext" class="episode-loading-context">Finding the episode’s spacecraft…</span></div>
   <header class="review-header">
     <div><span class="review-kicker">E-002 · LOCAL DESIGN REVIEW</span><h1>Visualizing Proximity in the Space Domain</h1></div>
     <div class="review-actions"><button id="workshopToggle" type="button" aria-expanded="false" aria-controls="cameraWorkshop" disabled>Camera workshop</button><button id="saveCameraBtn" type="button" title="Save the current 3D camera angle locally">Save camera view <span id="cameraViewCount">0</span></button><button id="feedbackToggle" type="button" aria-expanded="false" aria-controls="feedbackRail">Comments <span id="headerCommentCount">0</span></button><button id="commentMode" type="button" aria-pressed="false">✚ Add spot comment</button></div>
@@ -69,7 +70,8 @@
     </aside>
   </main>
   <a id="gtLogo" data-spot-key="gtLogo" href="https://espl.ae.gatech.edu/" target="_top" aria-label="Engineering Space Policy Laboratory home"><img src="../../Viz/assets/ESPL.png" alt=""></a>
-  <script type="module" src="app.js?v=10"></script>
+  <script type="module" src="app.js?v=13"></script>
   <script type="module" src="../../Viz/project-flourish.js"></script>
+  <script type="module" src="../../../shared/episode-loading.js?v=2"></script>
 </body>
 </html>

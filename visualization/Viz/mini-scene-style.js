@@ -4,8 +4,8 @@ import { MARKER } from "../../shared/marker-spec.js";
 // the same radius as the ocean. Both colors darken with the globe on hover.
 export function miniLandTexture(THREE, features) {
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = 2048;
+  canvas.height = 1024;
   const context = canvas.getContext("2d");
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
@@ -45,6 +45,7 @@ export function miniLandTexture(THREE, features) {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.magFilter = THREE.LinearFilter;
+  texture.anisotropy = 8;
   return texture;
 }
 

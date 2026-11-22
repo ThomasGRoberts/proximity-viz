@@ -91,7 +91,7 @@ export async function installGlossary(panel, frame = null) {
     const doc = root.ownerDocument;
     const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
-        if (!node.nodeValue.trim() || node.parentElement?.closest(".glossaryTrigger,button,a,select,option,script,style,textarea,.satCard[hidden]")) return NodeFilter.FILTER_REJECT;
+        if (!node.nodeValue.trim() || node.parentElement?.closest(".glossaryTrigger,button,a,select,option,script,style,textarea,.satCard[hidden],.chartBandTip")) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
     });
@@ -99,7 +99,8 @@ export async function installGlossary(panel, frame = null) {
     for (const node of nodes) {
       expression.lastIndex = 0; let match, cursor = 0, found = false; const fragment = doc.createDocumentFragment();
       while ((match = expression.exec(node.nodeValue))) {
-        const label = match[2], entry = variants.get(label.toLowerCase()); if (!entry) continue;
+        const label = match[2], entry = variants.get(label.toLowerCase());
+        if (!entry || (label.toLowerCase() === "dwell time" && node.parentElement?.closest(".dwellKey"))) continue;
         const start = match.index + match[1].length;
         fragment.append(doc.createTextNode(node.nodeValue.slice(cursor, start)), triggerFor(label, entry, doc));
         cursor = start + label.length; found = true;

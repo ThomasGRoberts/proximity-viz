@@ -1,5 +1,6 @@
+import { wireTimelineHover } from "../../Viz/playback-shared.js?v=2";
 import { loadOrbitalPreview, preloadOrbitalElements, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js?v=3";
-import { createGlobePreview } from "./globe-preview.js?v=7";
+import { createGlobePreview } from "./globe-preview.js?v=9";
 import { reviewHref } from "../review-shell.js?v=2";
 import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-feed.js?v=6";
 import { safeEpisodeName, episodeNameText } from "../../../shared/episode-name.js";
@@ -7,7 +8,7 @@ import { installGlossary } from "./glossary.js";
 import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
 import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=2";
-import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=1";
+import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=4";
 
 const $ = id => document.getElementById(id);
 void preloadOrbitalElements().catch(() => {});
@@ -72,10 +73,10 @@ let cameraWorkshop = null;
 const prettyDate = value => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(value)) + " UTC";
 function finishEpisodeLoading() {
   const loading = $("episodeLoading");
-  setTimeout(() => {
+  Promise.resolve(window.episodeLoadingHoldUntil).then(() => {
     loading.classList.add("is-leaving");
     setTimeout(() => { loading.hidden = true; }, 420);
-  }, 0);
+  });
 }
 function showEpisodeLoadError(error) {
   $("episodeLoadingText").textContent = `Could not load episode: ${error.message}`;
@@ -358,8 +359,8 @@ function renderDwellDescription(node) {
   if (node.dataset.explained) return;
   const gray = document.createElement("strong"), gold = document.createElement("strong");
   gray.className = "single"; gray.textContent = "gray"; gold.className = "both"; gold.textContent = "Gold";
-  node.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds. Adjust threshold values by clicking and dragging the labels on the charts above. ",
-    gold, " markings on the dynamic charts above indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
+  node.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds, which can be adjusted on the charts above. ",
+    gold, " markings on horizontal axes indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
   node.dataset.explained = "1";
 }
 
@@ -373,7 +374,7 @@ function showMinimum(node, minimum, unit) {
   if (!minimum) { node.textContent = "Minimum this chapter: unavailable"; return; }
   const strong = document.createElement("strong");
   strong.textContent = `${Math.round(minimum.value).toLocaleString("en-US")} ${unit}`;
-  const link = document.createElement("a"); link.href = "#"; link.textContent = datePart(minimum.ms);
+  const link = document.createElement("a"); link.href = "#"; link.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(minimum.ms));
   link.insertAdjacentHTML("beforeend", '<svg class="minimumCalendar" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3.5h10v10H3zM3 6h10"/><path class="calendarPage" d="M6.1 8.4h3.8l-2.4 3.6"/></svg>');
   link.title = `Jump to ${prettyDate(minimum.ms)}`;
   link.addEventListener("click", event => {
@@ -401,6 +402,7 @@ function renderOrbitalPanel() {
   const speed = thresholdValue("speedThresholdSlider", "speed");
   const qualifications = orbitalModel.qualifications(currentWindow, slot, distance, speed);
   renderTimeBands(currentWindow, slot, distance, speed, qualifications);
+  $("timelineSlider").dataset.dwellMessage = `${chaser} is dwelling next to ${catalogNames.B || "USA 245"}.`;
   $("rangeStat").textContent = Number.isFinite(current?.distanceKm) ? `${roundedFive(current.distanceKm).toLocaleString()} km` : "—";
   $("speedStat").textContent = Number.isFinite(current?.speedMs) ? compactSpeed(current.speedMs) : "—";
   const minimumWithinChapter = key => {
@@ -453,14 +455,16 @@ function wirePlayback(dock, windows) {
   const slider = dock.querySelector("#timelineSlider"), counter = dock.querySelector("#sliderNow"), play = dock.querySelector("#playBtn");
   const switcher = document.createElement("div"); switcher.id = "chapterSwitch"; switcher.className = "chapter-switch";
   switcher.setAttribute("role", "group"); switcher.setAttribute("aria-label", "Episode chapters");
+  switcher.style.gridTemplateColumns = `repeat(${windows.length}, minmax(0, 1fr))`;
   const chapterButtons = windows.map((window, index) => {
     const button = document.createElement("button"); button.type = "button"; button.dataset.chapterId = window.id;
     button.dataset.spotKey = `chapter-${window.id}`;
-    button.textContent = window.chapterLabel || window.chapterShort; button.title = window.chapterTitle;
+    button.textContent = window.chapterShort || window.chapterLabel; button.title = window.chapterTitle;
     button.addEventListener("click", () => { minimumMarker = null; void switchWindow(index); });
     switcher.append(button); return button;
   });
   dock.prepend(switcher);
+  wireTimelineHover(slider, dock.querySelector("#timelineHover"), dock.querySelector("#timelineHoverTick"), () => currentWindow ? [Date.parse(currentWindow.start), Date.parse(currentWindow.end)] : [0, 0]);
   let activeIndex = 0, playbackMinute = 0, lastTick = 0, lastPaint = 0, transitioning = false;
   const overlay = $("chapterTransition"), stage = $("globeStage");
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -582,7 +586,8 @@ async function buildPanel() {
   const configuredWindows = sheetChapters.map((chapter, index) => {
     const id = ["dec9", "dec30"][index] || chapter.id;
     const label = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(chapter.centerMs));
-    return { id, chapterShort: label.replace(/,? \d{4}$/, ""), chapterLabel: label,
+    const chapterShort = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(chapter.centerMs)).replace(/^([A-Za-z]{3})(?=\s)/, "$1.");
+    return { id, chapterShort, chapterLabel: label,
       chapterTitle: label, start: chapter.start, end: chapter.end, anchor: chapter.center, visualAgeHours: 120 };
   });
   episodeConfig = { ...episode, windows: configuredWindows, maximumDisplayTleAgeHours: 120, maximumStatisticTleAgeHours: 120 };
@@ -613,7 +618,7 @@ async function buildPanel() {
   const actionText = document.createElement("span"); actionText.className = "episode-hover-text"; actionText.textContent = "Choose a different episode"; action.append(actionText);
   focusTop.append(eyebrow, action); focusLink.append(focusTop, episodeTitle); focus.append(focusLink);
   ui.querySelector(".episodeHeader h1").after(focus);
-  installEpisodeNavigation(focus, sheet.episodes, "E-002", { review: !publishedMode, period: false });
+  installEpisodeNavigation(focus, sheet.episodes, "E-002", { review: !publishedMode, period: true });
   ui.querySelector("#metricArea").closest(".panelSection").classList.add("results-section");
   const description = ui.querySelector("#episodeDescription");
   const paragraph = document.createElement("p");

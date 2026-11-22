@@ -1,3 +1,4 @@
+import { episodeDescriptionIcon } from "../../shared/episode-description-icon.js";
 /* Shared interactions for the eight episode control panels. */
 const isDistance = group => group.id === "distanceChartGroup";
 const thresholdSource = group => document.body.className.includes("-shared")
@@ -100,14 +101,14 @@ function installBandTooltip(group) {
   tooltip.setAttribute("role", "tooltip");
   group.append(tooltip);
   const distance = isDistance(group);
-  const messages = {
-    gray: distance
-      ? "Gray marks periods when separation distance meets its threshold, but relative speed does not."
-      : "Gray marks periods when relative speed meets its threshold, but separation distance does not.",
-    gold: distance
-      ? "Gold marks periods when both separation distance and relative speed meet their thresholds."
-      : "Gold marks periods when both relative speed and separation distance meet their thresholds."
+  const message = () => {
+    const gold = document.createElement("strong"), gray = document.createElement("strong");
+    gold.className = "both"; gold.textContent = "gold";
+    gray.className = "single"; gray.textContent = "gray";
+    tooltip.replaceChildren("Periods in ", gold, " represent dwell time. Periods in ", gray,
+      ` represent periods when only the ${distance ? "separation distance" : "relative speed"} threshold is met.`);
   };
+  message();
   canvas.addEventListener("pointermove", event => {
     const bandY = Number(canvas.dataset.bandY), bandEndY = Number(canvas.dataset.bandEndY || bandY + 5);
     const rect = canvas.getBoundingClientRect();
@@ -121,7 +122,7 @@ function installBandTooltip(group) {
     const gold = Math.abs(pixel[0] - 234) < 30 && Math.abs(pixel[1] - 170) < 30 && pixel[2] < 45;
     const gray = Math.abs(pixel[0] - 169) < 25 && Math.abs(pixel[1] - 169) < 25 && Math.abs(pixel[2] - 169) < 25;
     tooltip.hidden = !gold && !gray;
-    if (!tooltip.hidden) tooltip.textContent = messages[gold ? "gold" : "gray"];
+    // The same explanation works on both markings, preserving their colors.
   });
   canvas.addEventListener("pointerleave", () => { tooltip.hidden = true; });
 }
@@ -163,13 +164,31 @@ export function installEpisodeDescriptionToggle(description) {
   toggle.setAttribute("aria-controls", description.id);
   toggle.setAttribute("aria-expanded", "false");
   toggle.hidden = true;
-  toggle.innerHTML = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 4.2C6.9 3.2 4.5 3.1 2 3.7v10.1c2.5-.6 4.9-.5 7 .5 2.1-1 4.5-1.1 7-.5V3.7c-2.5-.6-4.9-.5-7 .5Z"/><path d="M9 4.2v10.1"/></svg><span class="story-toggle-label">Learn more about this episode</span><span class="story-chevron" aria-hidden="true">‹</span>';
+  toggle.classList.add("story-nav-toggle");
+  toggle.innerHTML = '<span class="story-toggle-label">About this Episode</span>';
   description.before(toggle);
+  const preview = document.createElement("div");
+  preview.className = "story-peek"; preview.setAttribute("aria-hidden", "true"); description.before(preview);
+  const updatePreview = () => {
+    const full = description.textContent.trim().replace(/\s+/g, " ");
+    preview.textContent = full.length > 96 ? `${full.slice(0, 96).replace(/\s+\S*$/, "")}…` : full;
+  };
+  updatePreview();
+  new MutationObserver(updatePreview).observe(description, { childList: true, characterData: true, subtree: true });
   description.classList.add("story-collapsed");
+  const placeInNavigation = () => {
+    const nav = description.closest(".episodeHeader")?.querySelector(".episode-neighbors");
+    if (!nav) return false;
+    nav.insertBefore(toggle, nav.lastElementChild); return true;
+  };
+  if (!placeInNavigation()) {
+    const observer = new MutationObserver(() => { if (placeInNavigation()) observer.disconnect(); });
+    observer.observe(description.closest(".episodeHeader"), { childList: true, subtree: true });
+  }
   toggle.addEventListener("click", () => {
     const expanded = toggle.getAttribute("aria-expanded") !== "true";
     toggle.setAttribute("aria-expanded", String(expanded));
-    toggle.querySelector(".story-toggle-label").textContent = expanded ? "Hide episode description" : "Learn more about this episode";
+    toggle.querySelector(".story-toggle-label").textContent = expanded ? "Hide description" : "About this Episode";
     description.classList.toggle("story-collapsed", !expanded);
     description.classList.toggle("story-expanded", expanded);
   });

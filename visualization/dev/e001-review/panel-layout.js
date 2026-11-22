@@ -127,10 +127,10 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     body.e002-shared #ui .episode-focus{border:1px solid #e3d4ab!important;border-left:3px solid #d6a527!important;background:#fff4cf!important}
     body.e002-shared #ui .episode-focus-link{padding:8px 10px 10px!important}
     body.e002-shared #ui .episode-focus .titleEpisode{margin:5px 0 0!important;padding:0!important;border:0!important;background:none!important;color:#3d382b!important;-webkit-text-fill-color:#3d382b!important;font-weight:700!important}
-    body.e002-shared #ui .episode-focus-period{display:block;margin:4px 0 0;color:#857454;font-size:10px;line-height:1.25;font-weight:600}
+    body.e002-shared #ui .episode-focus-period{display:block;margin:4px 0 0;color:#857454;font-size:10px;line-height:1.25;font-weight:400}
     body.e002-shared #ui .pair-sticky{border-bottom:1px solid #e2d4ad!important;border-left:3px solid #d6a527!important;background:#fff4cf!important}
     body.e002-shared #ui .chartGroup .currentValue{width:max-content!important;min-width:0!important;max-width:calc(100% - 70px);padding-inline:2px!important}
-    .e001-chapters button{min-height:25px;padding:2px;border:1px solid transparent;border-radius:5px;background:transparent;color:#777;font-size:10px;font-weight:700;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}
+    .e001-chapters button{white-space:nowrap;overflow:hidden;font-size:clamp(7px,.8vw,10px);min-height:25px;padding:2px;border:1px solid transparent;border-radius:5px;background:transparent;color:#777;font-size:10px;font-weight:700;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}
     .e001-chapters button:hover{background:#ffffffb3;color:#444}.e001-chapters button.active{border-color:#aaa;background:#fff;box-shadow:0 1px 3px #00000012;color:#333}
     #cameraControls .cameraBtn{font-size:18px!important;transition:background .15s,color .15s,box-shadow .15s!important}
     #cameraControls .cameraBtn:hover{background:#f5f5f5!important;box-shadow:0 4px 12px #00000016!important}
@@ -148,5 +148,5 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     @media(max-width:760px){body.e002-shared #ui{width:calc(100vw - 36px)!important;height:auto!important;max-height:calc(52vh - 54px)!important}body.e002-shared .playbackDock{width:calc(100vw - 36px)!important}#panelToggleBtn{left:calc(100vw - 19px)!important}body.ui-collapsed #panelToggleBtn{left:0!important}#gtLogo{width:160px!important}}
   `;
   doc().head.append(style);
-  doc().getElementById("speed").value = "900";
+  doc().getElementById("speed").value = "21600";
 }

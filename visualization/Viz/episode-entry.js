@@ -12,14 +12,15 @@ if (!episodeId) {
     document.getElementById("episodeTitle").textContent = `Current episode information unavailable: ${error.message}`;
     const boot = document.getElementById("episodeBootText");
     if (boot) boot.textContent = `Could not load episode: ${error.message}`;
+    document.getElementById("episodeBoot")?.classList.add("is-error");
     throw error;
   }
 }
 const episodeModule = {
-  "E-001": "./compare.js?v=23", "E-002": "./episode-e002.js?v=12",
-  "E-005": "./episode-e005.js?v=13", "E-003": "./episode-e003.js?v=8",
-  "E-006": "./episode-e006.js?v=15", "E-008": "./episode-e008.js?v=7",
-  "E-016": "./episode-e016.js?v=5", "E-059": "./episode-e059.js?v=6",
+  "E-001": "./compare.js?v=26", "E-002": "./episode-e002.js?v=14",
+  "E-005": "./episode-e005.js?v=16", "E-003": "./episode-e003.js?v=11",
+  "E-006": "./episode-e006.js?v=18", "E-008": "./episode-e008.js?v=10",
+  "E-016": "./episode-e016.js?v=8", "E-059": "./episode-e059.js?v=9",
 }[episodeId];
 if (episodeModule) import(episodeModule).then(async () => {
   if (query.get("mini") === "1") return;
@@ -31,5 +32,6 @@ if (episodeModule) import(episodeModule).then(async () => {
   console.error(error);
   const boot = document.getElementById("episodeBootText");
   if (boot) boot.textContent = `Could not load episode: ${error.message}`;
+  document.getElementById("episodeBoot")?.classList.add("is-error");
 });
 else document.getElementById("episodeTitle").textContent = `${publicId}: visualization unavailable`;

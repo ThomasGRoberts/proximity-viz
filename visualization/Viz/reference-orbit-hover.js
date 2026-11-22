@@ -53,7 +53,17 @@ export function installReferenceOrbitHover({ canvas, camera, orbit, earth, descr
     }
     if (distanceSquared > 64) { hide(); return; }
     const label = description();
-    if (label !== last) { tooltip.textContent = label; last = label; }
+    if (label !== last) {
+      tooltip.replaceChildren();
+      const satellite = /\b(?:Athena-Fidus|Luch(?:[- ]Olymp(?:-K)?)?|Olymp(?:-K)?|ICEYE[- ]X\d+|(?:Cosmos|Kosmos|USA|SJ|Shijian|Shiyan|GSSAP|SY)[ -]\d+(?:[ -]\d+)?)\b/gi;
+      let start = 0, match;
+      while ((match = satellite.exec(label))) {
+        tooltip.append(document.createTextNode(label.slice(start, match.index)));
+        const italic = document.createElement("em"); italic.textContent = match[0]; tooltip.append(italic);
+        start = match.index + match[0].length;
+      }
+      tooltip.append(document.createTextNode(label.slice(start))); last = label;
+    }
     tooltip.hidden = false;
     tooltip.style.left = `${Math.min(innerWidth - tooltip.offsetWidth - 12, event.clientX + 14)}px`;
     tooltip.style.top = `${Math.min(innerHeight - tooltip.offsetHeight - 12, event.clientY + 16)}px`;

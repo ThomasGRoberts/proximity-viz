@@ -803,3 +803,68 @@ th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacit
 .episode-row[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b) .object-trigger,
 .episode-row[data-episode-id="E-006"][data-mini-selected="B"] .object-line:has(.dot.c) .object-trigger,
 .episode-row[data-episode-id="E-006"][data-mini-selected="C"] .object-line:has(.dot.b) .object-trigger{color:#767676}
+
+/* Review refinements: clearer sort, row discovery, and consistent iconography. */
+.table-wrap th .sort-head{gap:7px;padding-right:12px}
+.table-wrap th .sort-indicator,.table-wrap th:nth-child(4) .sort-indicator,.table-wrap th:nth-child(5) .sort-indicator,.records-head .sort-indicator{position:static;left:auto;right:auto;display:inline-block;min-width:9px;color:#9a7620;font-size:13px;font-weight:700}
+th[aria-sort="none"] .sort-indicator{opacity:.62}
+th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacity:1}
+.table-glossary-label{text-decoration-line:underline;text-decoration-style:dotted;text-decoration-color:#cfc4aa;text-decoration-thickness:1px;text-underline-offset:1px;cursor:help}
+.table-glossary-label:is(:hover,:focus-visible){text-decoration-color:#967d40}
+.news-record-icon{transform:rotate(var(--record-tilt,-4deg))}
+.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:62px;vertical-align:top;background:#fff8df;transition:padding-bottom .24s ease}
+.episode-row .row-discovery{position:absolute;left:20px;right:18px;bottom:9px;display:flex;flex-direction:column;align-items:flex-start;gap:0;max-height:0;margin:0;overflow:hidden;opacity:0;transform:translateY(-4px);pointer-events:none;transition:max-height .24s ease,opacity .2s ease,transform .24s ease}
+.episode-row:not(.selected):is(:hover,:focus-visible) .row-discovery{max-height:53px;margin:0;opacity:1;transform:none}
+.row-discovery-item{display:flex;flex:0 0 17px;align-items:center;gap:6px;height:17px;color:#755c21;font-size:9px;font-weight:600;white-space:nowrap}
+.row-discovery-item .row-discovery-text{display:block;overflow:hidden;white-space:nowrap;clip-path:inset(0 100% 0 0)}
+.episode-row:is(:hover,:focus-visible) .row-discovery-item .row-discovery-text{animation:row-discovery-type .5s steps(34,end) both}
+.episode-row:is(:hover,:focus-visible) .row-discovery-item:nth-child(2) .row-discovery-text{animation-delay:.18s}
+.episode-row:is(:hover,:focus-visible) .row-discovery-item:nth-child(3) .row-discovery-text{animation-delay:.36s}
+@keyframes row-discovery-type{to{clip-path:inset(0 0 0 0)}}
+.row-discovery-item img{width:14px;height:14px;filter:none}
+.row-discovery-item .row-record-icon{width:14px;height:13px;box-shadow:none;transform:rotate(4deg)}
+.row-discovery-item .row-record-icon::before{left:3px;width:7px}
+.row-discovery-item .row-record-icon span{display:none}
+.episode-row:is(:hover,:focus-visible) .row-discovery-item:first-child .episode-books-top{transform:rotate(-10deg)}
+.expanded-inner.has-visual .context-block{background:linear-gradient(90deg,#fffcf6 0%,#fffcf6ed 70%,#fffcf600 100%)}
+@media(prefers-reduced-motion:reduce){.episode-row:is(:hover,:focus-visible) .row-discovery-item .row-discovery-text{animation:none;clip-path:none}}
+.episode-row{position:relative}
+.episode-row:not(.selected):is(:hover,:focus-visible){z-index:6}
+/* One quiet, centered invitation replaces the three discovery icons. */
+.episode-row .row-open-cue{position:absolute;left:50%;bottom:7px;display:flex;align-items:center;justify-content:center;gap:12px;width:max-content;max-width:calc(100% - 24px);color:#806b41;font-size:10px;font-weight:500;letter-spacing:.01em;white-space:nowrap;opacity:0;transform:translate(-50%,-3px);pointer-events:none;transition:opacity .18s ease,transform .22s ease}
+.episode-row:not(.selected):is(:hover,:focus-visible) .row-open-cue{opacity:1;transform:translate(-50%,0)}
+.row-open-chevron{position:relative;display:block;width:26px;height:9px}
+.row-open-chevron::before,.row-open-chevron::after{content:"";position:absolute;top:1px;width:14px;border-top:1.5px solid #a78737}
+.row-open-chevron::before{left:0;transform:rotate(22deg);transform-origin:left center}
+.row-open-chevron::after{right:0;transform:rotate(-22deg);transform-origin:right center}
+.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:34px}
+@media(max-width:900px){.episode-row .row-open-cue{display:none}.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:11px}}
+/* The miniature meets the selected row, while the reading column feathers over it. */
+.table-wrap .episode-row.selected td{border-bottom:0}
+.table-wrap .expanded-row:has(.has-visual)>td{background:transparent!important;border-top:0;padding-top:0}
+.table-wrap .expanded-row .expanded-inner.has-visual{background:transparent!important}
+.table-wrap .expanded-row .expanded-inner.has-visual .context-block{background:transparent!important}
+.table-wrap .expanded-row .expanded-inner.has-visual .context-block::before{content:"";position:absolute;z-index:-1;inset:-18px -100px -18px -20px;background:radial-gradient(ellipse 130% 105% at 24% 40%,#fffcf6 0%,#fffcf6f6 44%,#fffcf6c9 68%,#fffcf600 100%)!important;pointer-events:none}
+.table-wrap .expanded-row .expanded-inner.has-visual .context-model-link{margin-bottom:2px!important}
+.table-wrap .expanded-row .expanded-inner.has-visual .evidence-section{margin-top:3px;padding-top:5px}
+.source-media.global-security-logo{background:#fff}
+.source-media.global-security-logo img{width:83%;height:auto;max-height:70%;object-fit:contain}
+.source-media.uk-parliament-logo{background:#2c253d}
+.source-media.uk-parliament-logo img{transform:scale(1.3);transform-origin:left center;object-fit:cover;object-position:left center}
+/* A single fade belongs to the reading pane, above the scene and below text. */
+@media(min-width:901px){
+  .table-wrap .expanded-row .detail-overview{position:relative;isolation:isolate}
+  .table-wrap .expanded-row .detail-overview::before{content:none}
+  .table-wrap .expanded-row .expanded-inner.has-visual .context-block{position:relative;z-index:3;background:transparent!important}
+  .table-wrap .expanded-row .expanded-inner.has-visual .context-block::before{content:""!important;position:absolute;z-index:0;inset:-18px -145px -18px -20px;background:linear-gradient(90deg,#fffcf6 0%,#fffcf6 38%,#fffcf6e8 57%,#fffcf687 79%,transparent 100%)!important;pointer-events:none}
+  .table-wrap .expanded-row .expanded-inner.has-visual .context-block>*{position:relative;z-index:1}
+  .table-wrap .expanded-row .orbital-preview:not(.mini-editing-viewport){mask-image:none!important;-webkit-mask-image:none!important}
+  .table-wrap>.orbital-preview.e001-live,.table-wrap>.orbital-preview.e005-live{mask-image:none!important;-webkit-mask-image:none!important}
+  .table-wrap>.orbital-preview.e005-live{z-index:4}
+}
+/* Hover adds room below the row while its existing columns keep their top edge. */
+.table-wrap tr.episode-row td{vertical-align:top}
+.episode-row .row-open-cue{flex-direction:column;gap:2px;line-height:1.1;text-align:center}
+.detail-section-heading{display:flex;align-items:center;gap:7px}
+.detail-section-heading .episode-books-icon{width:16px;height:16px}
+.detail-section-heading .row-record-icon{width:16px;height:15px;box-shadow:none;transform:rotate(4deg)}

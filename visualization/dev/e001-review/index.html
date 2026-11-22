@@ -10,7 +10,7 @@
   <script type="module" src="../review-shell.js?v=2"></script>
 </head>
 <body>
-  <div id="episodeLoading" class="episode-loading" role="status" aria-live="polite"><span class="episode-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><strong id="episodeLoadingText">Loading episode</strong></div>
+  <div id="episodeLoading" class="episode-loading" role="status" aria-live="polite"><span class="episode-loading-dots" aria-hidden="true"><i></i><i></i><i></i></span><strong id="episodeLoadingText">Loading episode</strong><span id="episodeLoadingContext" class="episode-loading-context">Finding the episode’s spacecraft…</span></div>
   <header class="review-bar">
     <nav class="review-switcher" aria-label="Local design review"><a href="http://127.0.0.1:8769/visualization/dev/e001-review/" aria-current="page">E-001</a><a href="http://127.0.0.1:8769/visualization/dev/e002-control-panel-preview/">E-002</a><a href="http://127.0.0.1:8769/visualization/Viz/compare.html?dev=1&amp;episode=E-003">E-003</a><a href="http://127.0.0.1:8769/visualization/Viz/compare.html?dev=1&amp;episode=E-005">E-004</a><a href="http://127.0.0.1:8769/visualization/Viz/compare.html?dev=1&amp;episode=E-006">E-005</a><a href="http://127.0.0.1:8769/visualization/Viz/compare.html?dev=1&amp;episode=E-008">E-006</a><a href="http://127.0.0.1:8769/dynamic-table/">Dynamic Library</a></nav>
     <nav aria-label="Development tools">
@@ -55,6 +55,7 @@
     <details class="saved-views"><summary>Saved camera views</summary><div id="cameraViewList"></div><button id="downloadViews" type="button">Download camera views JSON</button></details>
   </aside>
   <div id="chapterTransition" role="status" aria-live="polite" hidden><span class="transition-dots" aria-hidden="true"><i></i><i></i><i></i></span><strong id="transitionText">Moving through the episode</strong><span class="transition-dates"><span id="transitionFromDate"></span><span aria-hidden="true">→</span><span id="transitionToDate"></span></span></div>
-  <script type="module" src="./review.js?v=4"></script>
+  <script type="module" src="./review.js?v=5"></script>
+  <script type="module" src="../../../shared/episode-loading.js"></script>
 </body>
 </html>

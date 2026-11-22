@@ -210,3 +210,5 @@ body.e005-review.e005-eci #scene,body.e005-review.e005-eci #e005ScreenLabels{lef
 @media(max-width:800px){body.e005-review .e005-workshop{left:12px;right:12px;bottom:12px;max-height:42vh}body.e005-review.e005-eci #scene,body.e005-review.e005-eci #e005ScreenLabels{left:14px}}
 
 @media(min-width:761px){body.e005-shared:not(.e005-review) #ui{max-height:calc(100vh - 145px)}}
+.e005-chapters{flex-wrap:nowrap;overflow:hidden}
+.e005-chapters button{white-space:nowrap;overflow:hidden;font-size:clamp(7px,.8vw,10px)}

@@ -212,3 +212,6 @@ body.e059-review.e059-eci #scene,body.e059-review.e059-eci #e059ScreenLabels{lef
 @media(max-width:800px){body.e059-review .e059-workshop{left:12px;right:12px;bottom:12px;max-height:42vh}body.e059-review.e059-eci #scene,body.e059-review.e059-eci #e059ScreenLabels{left:14px}}
 
 @media(min-width:761px){body.e059-shared:not(.e059-review) #ui{max-height:calc(100vh - 145px)}}
+
+.e059-chapters{flex-wrap:nowrap;overflow:hidden}
+.e059-chapters button{white-space:nowrap;overflow:hidden;font-size:clamp(7px,.8vw,10px)}

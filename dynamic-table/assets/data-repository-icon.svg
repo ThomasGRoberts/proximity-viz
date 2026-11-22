@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Episodes data repository</title>
+  <rect x="5" y="5" width="54" height="54" rx="10" fill="#fffaf0" stroke="#bfa25b" stroke-width="1.6"/>
+  <rect x="12" y="13" width="40" height="11" rx="2" fill="#edcc73"/>
+  <rect x="12" y="29" width="40" height="8" rx="2" fill="#eaaa00" opacity=".34"/>
+  <path d="M12 24h40M12 37h40M12 49h40M25 24v25M39 24v25" fill="none" stroke="#76664b" stroke-width="1.5"/>
+  <path d="M12 24v25h40V24" fill="none" stroke="#76664b" stroke-width="1.5" stroke-linejoin="round"/>
+  <circle cx="46" cy="18.5" r="2.1" fill="#fffaf0"/>
+</svg>

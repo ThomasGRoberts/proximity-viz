@@ -4,7 +4,7 @@ import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=4";
 import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js?v=6";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
-import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
+import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js?v=2";
 import { CHART_PADDING, CHART_COLOR } from "./chart-style.js";
 import { formatDwellDuration } from "../../shared/format-duration.js";
 
@@ -93,7 +93,7 @@ const { episodeModel: model } = await import("../dev/e002/player.js?v=20");
 for (const window of model.windows) {
   const title = window.chapterTitle || window.label;
   const button = document.createElement("button"); button.type = "button";
-  button.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(window.anchor || window.start));
+  button.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(window.anchor || window.start)).replace(/^([A-Za-z]{3})(?=\s)/, "$1.");
   button.title = `${title} · ${formatTime(Date.parse(window.start))}–${formatTime(Date.parse(window.end))}`;
   button.setAttribute("aria-label", `Chapter: ${title}`); button.dataset.window = window.id;
   chapterGroup.append(button); chapterButtons.set(window.id, button);
@@ -237,7 +237,7 @@ function updateCharts() {
     const gold = document.createElement("strong"), gray = document.createElement("strong");
     gold.className = "both"; gold.textContent = "Gold";
     gray.className = "single"; gray.textContent = "gray";
-    explanation.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds. Adjust threshold values by clicking and dragging the labels on the charts above. ", gold, " markings on the dynamic charts above indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
+    explanation.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds, which can be adjusted on the charts above. ", gold, " markings on horizontal axes indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
     explanation.dataset.explained = "1";
   }
   if (comparisons.length > 1) {

@@ -1,5 +1,5 @@
 const caveat = "Positions and velocities are estimated by propagating publicly available orbital element sets. Covariance information is unavailable for these reconstructions, so we cannot quantify the uncertainty of the displayed separation and relative speed. Numerical precision does not establish physical accuracy.";
-const dateText = ms => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(ms);
+const dateText = ms => new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }).format(ms);
 
 export function renderEstimatedMinimum(target, { episodeId, metric, value, unit, ms, onJump }) {
   if (!Number.isFinite(value) || !Number.isFinite(ms)) {

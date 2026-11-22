@@ -2,7 +2,8 @@ import { placeEpisodeScreenLabels } from "./screen-label-layout.js";
 import { installReferenceOrbitHover } from "./reference-orbit-hover.js";
 import { orientEarth } from "./earth-frame.js";
 import { eciRateForState } from "./orbital-playback.js";
-import { miniLandTexture } from "./mini-scene-style.js";
+import { miniLandTexture } from "./mini-scene-style.js?v=2";
+import { miniCircularEarth } from "./mini-circular-earth.js";
 import { renderSharedCommentList } from "../dev/review-shell.js?v=2";
 /* Local first pass for E-003. Two spacecraft remain visible; nearest dated
    Space-Track elements drive playback. Statistical chart gaps mark old TLEs. */
@@ -12,7 +13,7 @@ import { feature } from "./vendor/topojson/topojson-client.js";
 import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=6";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
-import { wireTimelineHover } from "./playback-shared.js";
+import { wireTimelineHover } from "./playback-shared.js?v=2";
 import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
@@ -34,6 +35,7 @@ try { await start(); } catch (error) {
   const status = $("sceneStatus") || document.createElement("p");
   status.id = "sceneStatus"; status.textContent = `E-003 could not load: ${error.message}`; document.body.append(status);
   const bootText = document.getElementById("episodeBootText"); if (bootText) bootText.textContent = `Could not load episode: ${error.message}`;
+  document.getElementById("episodeBoot")?.classList.add("is-error");
 }
 
 async function start() {
@@ -158,6 +160,7 @@ async function start() {
   scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2.4));
   const earthSurface = new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({ color: miniScene ? 0xd8cbb9 : 0xf7f7f7 }));
   const earth = new THREE.Group(); earth.add(earthSurface); scene.add(earth);
+  const renderMiniEarth = miniScene ? miniCircularEarth(THREE, renderer, scene, earth, camera, sceneHost) : () => {};
   fetch("./vendor/countries-50m.json").then(r => r.json()).then(topology => {
     if (miniScene) {
       earthSurface.material.map = miniLandTexture(THREE, feature(topology, topology.objects.countries).features);
@@ -210,7 +213,7 @@ async function start() {
   // E-003 has one chaser and one target, so each gets its own disclosure card.
   const selector = cards.B.card;
   const chapterNav = document.createElement("div"); chapterNav.className = "e003-chapters";
-  for (const item of chapters) { const button = document.createElement("button"); button.type = "button"; button.dataset.chapter = item.id; button.textContent = shortUtc(item.centerMs); button.title = `${utc(item.startMs)} to ${utc(item.endMs)}`; chapterNav.append(button); }
+  for (const item of chapters) { const button = document.createElement("button"); button.type = "button"; button.dataset.chapter = item.id; button.textContent = shortUtc(item.centerMs).replace(/^([A-Za-z]{3})(?=\s)/, "$1."); button.title = `${utc(item.startMs)} to ${utc(item.endMs)}`; chapterNav.append(button); }
   chapterNav.hidden = chapters.length === 1;
   document.body.classList.toggle("e003-multi-chapter", chapters.length > 1);
   $("playbackDock").prepend(chapterNav);
@@ -337,7 +340,7 @@ async function start() {
       if (!min) { target.textContent = "Minimum this chapter: unavailable"; continue; }
       const strong = document.createElement("strong");
       strong.textContent = `${Math.round(min[selected][key]).toLocaleString("en-US")} ${unit}`;
-      const link = document.createElement("a"); link.href = "#playbackDock"; link.textContent = shortUtc(min.ms);
+      const link = document.createElement("a"); link.href = "#playbackDock"; link.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(min.ms));
       link.title = `Jump playback to ${new Date(min.ms).toISOString()}`;
       link.setAttribute("aria-label", link.title);
       link.addEventListener("click", event => { event.preventDefault(); focusedMinimumMs = min.ms; setTime(min.ms, true); });
@@ -390,10 +393,11 @@ async function start() {
       const gold = document.createElement("strong"), gray = document.createElement("strong");
       gold.className = "both"; gold.textContent = "Gold";
       gray.className = "single"; gray.textContent = "gray";
-      dwellKey.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds. Adjust threshold values by clicking and dragging the labels on the charts above. ",
-        gold, " markings on the dynamic charts above indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
+      dwellKey.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds, which can be adjusted on the charts above. ",
+        gold, " markings on horizontal axes indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
       dwellKey.dataset.explained = "1";
     }
+    $("timelineSlider").dataset.dwellMessage = `${participants.find(item => item.slot === "A").name} is dwelling next to ${participants.find(item => item.slot === selected).name}.`;
     const bands = $("dwellSegments"); bands.replaceChildren();
     const span = chapter.endMs - chapter.startMs;
     for (const [kind, intervals] of [["single", qualifications.single], ["both", qualifications.both.intervals]]) {
@@ -510,14 +514,14 @@ async function start() {
       for (const item of participants) { trails[item.slot].geometry.dispose(); trails[item.slot].geometry = fadingTrailGeometry(trails[item.slot].visible ? trailPoints(item.slot, current, states[item.slot], states[referenceSlot]) : []); }
     }
     controls.update(); updateScreenLabels();
-    renderer.render(scene, camera);
+    renderMiniEarth(); renderer.render(scene, camera);
     const pair = pairAt(selected, current), age = Math.max(states.A.ageHours, states[selected].ageHours);
     $("rangeStat").textContent = pair ? `${Math.round(pair.distanceKm).toLocaleString()} km` : "—";
     $("speedStat").textContent = pair ? pair.speedMs < 1000 ? `${Math.round(pair.speedMs)} m/s` : `${(pair.speedMs / 1000).toFixed(2)} km/s` : "—";
     status.textContent = current < participants.find(item => item.slot === selected).launchMs ? `${displayName(participants.find(item => item.slot === selected).name)} had not launched at this playback time.` : "";
     $("timelineSlider").value = String(current);
     $("sliderNow").textContent = utc(current);
-    $("sliderNow").title = utc(current);
+    $("sliderNow").title = "";
     updateCards(states); drawCharts(!playing); syncReferenceButton();
   }
   function setTime(ms, preserveMinimum = false) { if (transitioning) return; if (!preserveMinimum) focusedMinimumMs = null; current = Math.max(chapter.startMs, Math.min(chapter.endMs, ms)); playing = false; updatePlay(); render(); }
@@ -683,11 +687,11 @@ async function start() {
       const signature = `${camera.position.toArray().map(value => value.toFixed(2))}:${controls.target.toArray().map(value => value.toFixed(2))}:${camera.zoom.toFixed(2)}`;
       if (!autoCamera && signature !== lastCameraTrailSignature && now - lastCameraTrailPaint > 200) {
         lastCameraTrailSignature = signature; lastCameraTrailPaint = now; lastTrailKey = ""; render();
-      } else { updateScreenLabels(); renderer.render(scene, camera); }
+      } else { updateScreenLabels(); renderMiniEarth(); renderer.render(scene, camera); }
     }
   }
   requestAnimationFrame(animate);
-  requestAnimationFrame(() => document.documentElement.classList.remove("episode-initializing"));
+  Promise.resolve(window.episodeLoadingHoldUntil).then(() => requestAnimationFrame(() => document.documentElement.classList.remove("episode-initializing")));
   if (new URLSearchParams(location.search).get("dev") === "1" && ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769") {
     makeReviewBar();
     const captureCamera = () => ({ position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray(), zoom: camera.zoom, fov: camera.fov });

@@ -16,7 +16,7 @@ const epochText = value => {
   const fraction = value.match(/\.(\d+)Z$/)?.[1];
   return `${whole}${fraction ? `.${fraction}` : ""} UTC`;
 };
-const owner = code => code === "CIS" ? "Russia (CIS) 🇷🇺" : code === "FRIT" ? "France / Italy 🇫🇷 🇮🇹" : code === "PRC" ? "China (PRC) 🇨🇳" : code;
+const owner = code => code === "CIS" ? "Russia (CIS) 🇷🇺" : code === "FRIT" ? "France 🇫🇷 / Italy 🇮🇹" : code === "PRC" ? "China (PRC) 🇨🇳" : code;
 const siteFlags = code => ["TYMSC", "TTMTR"].includes(code) ? " 🇰🇿 🇷🇺" : code === "FRGUI" ? " 🇫🇷" : code === "WSC" ? " 🇨🇳" : "";
 function link(label, href) {
   const anchor = document.createElement("a");

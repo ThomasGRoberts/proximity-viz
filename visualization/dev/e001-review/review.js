@@ -1,7 +1,7 @@
 import { loadCurrentEpisodes, episodeChapters } from "../../../shared/episode-feed.js";
 import { createCameraWorkshop } from "../e002-control-panel-preview/camera-workshop.js";
 import { installGlossary } from "../e002-control-panel-preview/glossary.js";
-import { installChapterButtons } from "./panel-layout.js?v=4";
+import { installChapterButtons } from "./panel-layout.js?v=5";
 import { reviewHref } from "../review-shell.js?v=2";
 
 const $ = id => document.getElementById(id);
@@ -17,10 +17,10 @@ const chapterDateLabel = value => new Intl.DateTimeFormat("en-US", { timeZone: "
 const message = value => { $("workshopStatus").textContent = value; };
 function finishEpisodeLoading() {
   const loading = $("episodeLoading");
-  setTimeout(() => {
+  Promise.resolve(window.episodeLoadingHoldUntil).then(() => {
     loading.classList.add("is-leaving");
     setTimeout(() => { loading.hidden = true; }, 420);
-  }, 0);
+  });
 }
 
 async function request(path, payload) {

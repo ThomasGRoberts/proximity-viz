@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Episodes of Concern · ESPL</title>
   <link rel="icon" type="image/png" href="./assets/polyhedron-icon.png">
-  <link rel="stylesheet" href="./style.css?v=32">
-  <script type="module" src="./app.js?v=46"></script>
+  <link rel="stylesheet" href="./style.css?v=35">
+  <script type="module" src="./app.js?v=49"></script>
   <script type="module" src="../visualization/dev/review-shell.js?v=2"></script>
-<link rel="stylesheet" href="../shared/episode-loading.css">
+<link rel="stylesheet" href="../shared/episode-loading.css?v=2">
+  <link rel="stylesheet" href="../shared/episode-description.css">
 </head>
 <body>
   <main class="component-wrap">
@@ -20,9 +21,9 @@
       <div id="preview-controls" class="preview-controls" hidden><label><input id="preview-toggle" type="checkbox"> <span class="preview-label">Preview all episodes</span> <small>(local development only)</small></label></div>
       <div id="status" class="status" role="status">Loading published records…</div>
       <div class="table-wrap"><table><thead><tr>
-        <th scope="col"><button class="sort-head" data-sort="title" type="button">Episode <span class="sort-indicator" aria-hidden="true"></span></button></th>
+        <th scope="col"><span class="table-glossary-label" data-glossary-term="Episode">Episode</span></th>
         <th scope="col">Orbit</th>
-        <th scope="col">Space objects <span class="column-meta-label">COSPAR ID</span></th>
+        <th scope="col"><span class="table-glossary-label" data-glossary-term="Space Objects">Space objects</span> <span class="column-meta-label">COSPAR ID</span></th>
         <th scope="col"><button class="sort-head" data-sort="date" type="button">Period <span class="sort-indicator" aria-hidden="true"></span></button></th>
         <th scope="col"><button class="sort-head metric-heading" data-sort="distance" data-glossary-term="Minimum Separation Distance" type="button"><span class="table-glossary-label">Minimum Separation Distance</span><span class="sort-indicator" aria-hidden="true"></span></button></th>
         <th scope="col"><button class="sort-head metric-heading" data-sort="speed" data-glossary-term="Minimum Relative Speed" type="button"><span class="table-glossary-label">Minimum Relative Speed</span><span class="sort-indicator" aria-hidden="true"></span></button></th>

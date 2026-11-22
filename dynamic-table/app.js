@@ -19,7 +19,7 @@ const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.
 const EARTH_COLOR = 0xedeae5;
 const localE003Review = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
 const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(id);
-const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, historicalMetrics: {}, usePreview: false, selected: null, query: "", sort: { key: "index", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
+const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, historicalMetrics: {}, usePreview: false, selected: null, query: "", sort: { key: "date", direction: "desc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 let sourceCarouselCleanup = () => {};
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -147,6 +147,24 @@ function formattedDescription(value) {
   }
   if (parsed.querySelector("p")) copy(parsed, fragment);
   else { const paragraph = el("p", "episode-description"); copy(parsed, paragraph); fragment.append(paragraph); }
+  return fragment;
+}
+function safeRecordHeadline(value) {
+  const fragment = safeEpisodeName(value);
+  const matcher = /\b(?:Athena-Fidus|Luch(?:[- ]Olymp(?:-K)?)?|Olymp(?:-K)?|ICEYE[- ]X\d+|(?:Cosmos|Kosmos|USA|SJ|Shijian|Shiyan|GSSAP|SY)[ -]\d+(?:[ -]\d+)?)\b/gi;
+  const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT);
+  const nodes = []; while (walker.nextNode()) if (!walker.currentNode.parentElement?.closest("em")) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const text = node.textContent; matcher.lastIndex = 0;
+    if (!matcher.test(text)) continue;
+    matcher.lastIndex = 0;
+    const replacement = document.createDocumentFragment(); let previous = 0, match;
+    while ((match = matcher.exec(text))) {
+      replacement.append(document.createTextNode(text.slice(previous, match.index)));
+      replacement.append(el("em", "", match[0])); previous = match.index + match[0].length;
+    }
+    replacement.append(document.createTextNode(text.slice(previous))); node.replaceWith(replacement);
+  }
   return fragment;
 }
 function account(row) { return field(row, "Reported behavior", "Short Description", "Summary", "Context", "Description"); }
@@ -324,11 +342,13 @@ function updateSortHeaders() {
   for (const button of document.querySelectorAll(".sort-head")) {
     const active = button.dataset.sort === state.sort.key, th = button.closest("th");
     th.setAttribute("aria-sort", active ? (state.sort.direction === "desc" ? "descending" : "ascending") : "none");
-    button.querySelector(".sort-indicator").textContent = active ? (state.sort.direction === "desc" ? "↓" : "↑") : "↕";
+    button.querySelector(".sort-indicator").textContent = active ? (state.sort.direction === "desc" ? "↓" : "↑") : "↓";
     if (!button.dataset.glossaryTerm) button.title = `Sort by ${button.textContent.replace(/[↑↓↕]/g, "").trim()}`;
   }
 }
 const headerGlossaryFallback = {
+  "Episode": "An episode brings together dated evidence and an illustrative orbital reconstruction of a proximity event.",
+  "Space Objects": "The satellites and other spacecraft involved in an episode.",
   "Minimum Separation Distance": "The lowest separation distance calculated between any two space objects with different operators within an episode. An episode's reported minimum separation distance may occur at a different point in time than its reported minimum relative speed.",
   "Minimum Relative Speed": "The lowest relative speed calculated between any two space objects with different operators within an episode. An episode's reported minimum relative speed may occur at a different point in time than its reported minimum separation distance.",
 };
@@ -338,6 +358,7 @@ function installHeaderGlossary() {
   for (const button of document.querySelectorAll("[data-glossary-term]")) {
     const term = button.dataset.glossaryTerm;
     button.setAttribute("aria-describedby", tip.id);
+    button.tabIndex = 0;
     const show = () => {
       tip.replaceChildren(el("strong", "", term), el("p", "", headerGlossary[term] || "Definition unavailable.")); tip.hidden = false;
       const rect = button.getBoundingClientRect();
@@ -528,7 +549,8 @@ const reviewedSourceMetadata = {
 };
 function sourceCard(group, data) {
   const { url, ref, items } = group, d = items[0].row, meta = { ...(data.sourceMetadata?.[ref] || {}), ...(reviewedSourceMetadata[ref] || {}) };
-  if (field(d, "Override Title")) { meta.title = field(d, "Override Title"); meta.titleEnglish = ""; }
+  const overrideTitle = field(d, "Override Title");
+  if (overrideTitle) { meta.title = overrideTitle; meta.titleEnglish = ""; }
   if (field(d, "Override Date")) { meta.publishedDate = field(d, "Override Date"); meta.publishedLabel = ""; }
   if (field(d, "Override Source Name")) meta.publisher = field(d, "Override Source Name");
   const card = el("article", `source-card${url ? " source-clickable" : ""}`);
@@ -540,18 +562,21 @@ function sourceCard(group, data) {
   const [category, kind] = recordCategory(d), eyebrow = el("div", "source-eyebrow"); eyebrow.append(categoryIcon(kind), el("span", "", category)); card.append(eyebrow);
   const document = meta.kind === "document" || /\.pdf(?:$|[?#])/i.test(ref);
   const media = el("div", `source-media${document ? " document-media" : ""}`);
+  const publisherLogo = ref.startsWith("https://www.globalsecurity.org/") ? "./assets/source-previews/global-security-logo.gif"
+    : /^https:\/\/(?:[^/]+\.)?parliament\.uk\//i.test(ref) ? "./assets/source-previews/e008-hansard-parliament.jpg" : "";
+  if (publisherLogo) media.classList.add(ref.includes("globalsecurity.org") ? "global-security-logo" : "uk-parliament-logo");
   const capturedPreview = ref === "https://www.globalsecurity.org/space/library/news/2022/space-220630-globaltimes01.htm" ? "./assets/source-previews/e005-global-times-source.png" : "";
-  const imageUrl = meta.imagePath || meta.previewPath || safeUrl(meta.imageUrl) || capturedPreview;
+  const imageUrl = publisherLogo || meta.imagePath || meta.previewPath || capturedPreview || safeUrl(meta.imageUrl);
   if (imageUrl) {
-    const img = el("img"); img.src = imageUrl; img.alt = capturedPreview && imageUrl === capturedPreview ? "Cropped Global Times article masthead and headline" : meta.imageAlt || (meta.kind === "document" ? "First page of source document" : "Publisher's featured image for this source"); img.loading = "lazy";
+    const img = el("img"); img.src = imageUrl; img.alt = publisherLogo ? ref.includes("globalsecurity.org") ? "GlobalSecurity.org logo" : "UK Parliament logo" : capturedPreview && imageUrl === capturedPreview ? "Cropped Global Times article masthead and headline" : meta.imageAlt || (meta.kind === "document" ? "First page of source document" : "Publisher's featured image for this source"); img.loading = "lazy";
     img.onerror = () => { img.remove(); media.append(sourceFallback(meta, d, url, document)); };
     media.append(img);
   } else media.append(sourceFallback(meta, d, url, document));
   card.append(media);
   const content = el("div", "source-content");
   const needsTranslation = !meta.titleEnglish && meta.title && (/[\u0400-\u052f\u0600-\u06ff\u4e00-\u9fff]/u.test(meta.title) || (meta.language && !/^en(?:-|_|$)/i.test(meta.language)));
-  const headline = meta.titleEnglish || (needsTranslation ? `Untranslated title: ${meta.title}` : meta.title) || (document ? (/statement/i.test(field(d, "Voice type", "Description type")) ? "Official statement" : "Source document") : "Source page");
-  const heading = el("h4", "source-headline", headline);
+  const headline = meta.titleEnglish || (needsTranslation && !overrideTitle ? `Untranslated title: ${meta.title}` : meta.title) || (document ? (/statement/i.test(field(d, "Voice type", "Description type")) ? "Official statement" : "Source document") : "Source page");
+  const heading = el("h4", "source-headline"); heading.append(safeRecordHeadline(headline));
   if (meta.titleEnglish && meta.title) { heading.title = `Original title: ${meta.title}`; heading.append(el("span", "visually-hidden", ` Original title: ${meta.title}`)); }
   content.append(heading);
   if (meta.publishedDate) {
@@ -580,7 +605,7 @@ function expandedContent(row, data) {
   overview.append(context);
   if (hasEpisodeVisual(episodeId)) {
     const publicId = publicEpisodeId(row);
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/?v=5" : episodeId === "E-002" ? "../visualization/e002/" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}`, location.href).href;
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/?v=6" : episodeId === "E-002" ? "../visualization/e002/?build=2" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=2`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -651,15 +676,15 @@ function expandedContent(row, data) {
             card.animate([{ translate: `${direction * 36}px 0`, opacity: .35 }, { translate: "0 0", opacity: 1 }], { duration: 300, easing: "cubic-bezier(.22,1,.36,1)" });
           }
         }
-        if (dots.children.length !== total) {
+        if (dots.children.length !== cards.length) {
           dots.replaceChildren();
-          for (let position = 0; position < total; position++) {
+          for (let position = 0; position < cards.length; position++) {
             const dot = el("button", "source-carousel-dot"); dot.type = "button";
-            dot.setAttribute("aria-label", `Show record group ${position + 1} of ${total}`);
-            dot.addEventListener("click", () => { show(position, true); restart(); }); dots.append(dot);
+            dot.setAttribute("aria-label", `Show record ${position + 1} of ${cards.length}`);
+            dot.addEventListener("click", () => { show(Math.floor(position / pageSize()), true); restart(); }); dots.append(dot);
           }
         }
-        [...dots.children].forEach((dot, position) => { dot.classList.toggle("is-active", position === page); dot.setAttribute("aria-pressed", String(position === page)); });
+        [...dots.children].forEach((dot, position) => { dot.classList.toggle("is-active", position === page * size); dot.setAttribute("aria-pressed", String(position === page * size)); });
         previous.disabled = page === 0; next.disabled = page === total - 1;
       };
       previous.addEventListener("click", () => { show(page - 1, true); restart(); });
@@ -857,7 +882,7 @@ function prewarmE001() {
   warmedE001Frame = el("iframe", "e001-mini");
   warmedE001Frame.dataset.miniBaseHeight = "450";
   revealMiniAsOneScene(warmedE001Frame);
-  warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=31", location.href).href;
+  warmedE001Frame.src = new URL("../visualization/Viz/compare.html?mini=1&episode=E-001&table=32", location.href).href;
   warmedE001Frame.title = "Animated E-001 satellite-centered orbital reconstruction";
   warmedE001Frame.tabIndex = -1; warmedE001Frame.setAttribute("aria-hidden", "true");
   warmedE001Host.append(warmedE001Frame); table.append(warmedE001Host);
@@ -874,7 +899,7 @@ function prewarmE002() {
   warmedE002Host = el("div", "orbital-preview e002-prewarm");
   warmedE002Frame = el("iframe", "e002-mini");
   revealMiniAsOneScene(warmedE002Frame);
-  warmedE002Frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=32", location.href).href;
+  warmedE002Frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=35", location.href).href;
   warmedE002Frame.title = "Animated E-002 miniature orbital reconstruction";
   warmedE002Frame.tabIndex = -1; warmedE002Frame.setAttribute("aria-hidden", "true");
   warmedE002Host.append(warmedE002Frame); table.append(warmedE002Host);
@@ -891,7 +916,7 @@ function prewarmE005() {
   warmedE005Host = el("div", "orbital-preview e005-prewarm");
   warmedE005Frame = el("iframe", "e005-mini");
   revealMiniAsOneScene(warmedE005Frame);
-  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&asset=E-005&table=31", location.href).href;
+  warmedE005Frame.src = new URL("../visualization/Viz/compare.html?mini=1&asset=E-005&table=32", location.href).href;
   warmedE005Frame.title = `Animated ${state.live?.episodes?.find(row => row.ID === "E-005")?.["Episode ID"] || "E-004"} miniature orbital reconstruction`;
   warmedE005Frame.tabIndex = -1; warmedE005Frame.setAttribute("aria-hidden", "true");
   warmedE005Host.append(warmedE005Frame); table.append(warmedE005Host);
@@ -906,18 +931,18 @@ function stageEpisodeAssets() {
   // do not create eight simultaneous WebGL contexts in hidden iframes.
   const idle = callback => "requestIdleCallback" in window
     ? requestIdleCallback(callback, { timeout: 1500 }) : setTimeout(callback, 250);
-  const orbitalAssets = [["e003", 6], ["e005", 11], ["e006", 13], ["e008", 5], ["e016", 3], ["e059", 4]];
+  const orbitalAssets = [["e003", 11], ["e005", 16], ["e006", 18], ["e008", 10], ["e016", 8], ["e059", 9]];
   const assets = [
-    "../visualization/Viz/compare.html",
-    "../visualization/e001/?v=5",
-    "../visualization/e002/",
-    "../visualization/e001/public.js?v=6",
-    "../visualization/dev/e002-control-panel-preview/app.js?v=9",
     "../visualization/Viz/vendor/three/three.module.js",
     "../visualization/Viz/vendor/countries-50m.json",
-    ...orbitalAssets.map(([name, version]) => `../visualization/Viz/episode-${name}.js?v=${version}`),
     "../visualization/dev/e002-control-panel-preview/table-mini.html",
+    ...orbitalAssets.map(([name, version]) => `../visualization/Viz/episode-${name}.js?v=${version}`),
     ...orbitalAssets.map(([name]) => `../visualization/dev/${name}/data/provenance.json`),
+    "../visualization/Viz/compare.html?build=2",
+    "../visualization/e001/?v=6",
+    "../visualization/e002/?build=2",
+    "../visualization/e001/public.js?v=9",
+    "../visualization/dev/e002-control-panel-preview/app.js?v=13",
   ];
   let index = 0, queued = false;
   const scheduleNext = () => {
@@ -935,7 +960,8 @@ function stageEpisodeAssets() {
             if (!source.sha256 || /^https?:/.test(source.url)) continue;
             const dataUrl = new URL(source.url, new URL("../", url));
             dataUrl.searchParams.set("sha", source.sha256.slice(0, 16));
-            assets.push(dataUrl.href);
+            // Mini orbital histories warm before the full-page HTML and controls.
+            assets.splice(index, 0, dataUrl.href);
           }
           scheduleNext();
         }).catch(error => console.warn(`Background elements unavailable: ${url.pathname}`, error));
@@ -1061,10 +1087,10 @@ function setMiniEditing(open) {
 function updateMiniBackdropBounds(host, tableWrap, header, expanded) {
   if (miniEditing || !host.isConnected || !expanded.isConnected) return;
   const origin = tableWrap.getBoundingClientRect(), heading = header.getBoundingClientRect(), detail = expanded.getBoundingClientRect();
-  host.style.top = `${heading.top - origin.top}px`;
+  host.style.top = `${heading.top - origin.top - 1}px`;
   host.style.left = `${heading.left - origin.left}px`;
   host.style.width = `${heading.width}px`;
-  host.style.height = `${heading.height + detail.height}px`;
+  host.style.height = `${heading.height + detail.height + 2}px`;
   positionMiniLoader(host, header, expanded);
   const frame = host.querySelector("iframe.e002-mini"), block = expanded.querySelector(".visual-block");
   if (frame && block) {
@@ -1073,7 +1099,7 @@ function updateMiniBackdropBounds(host, tableWrap, header, expanded) {
     // its apparent zoom when the scene returns behind the expanded row.
     const featherWidth = Math.min(200, Math.max(0, rect.left - heading.left - 24));
     const offsetY = Number(frame.dataset.miniOffsetY) || 0;
-    Object.assign(frame.style, { position: "absolute", left: `${rect.left - heading.left - featherWidth}px`, top: `${detail.top - heading.top}px`, width: `${heading.right - rect.left + featherWidth}px`, height: `${detail.height + Math.max(0, -offsetY)}px` });
+    Object.assign(frame.style, { position: "absolute", left: `${rect.left - heading.left - featherWidth}px`, top: `${detail.top - heading.top - 1}px`, width: `${heading.right - rect.left + featherWidth}px`, height: `${detail.height + Math.max(0, -offsetY) + 2}px` });
   }
 }
 function positionMiniLoader(host, header, expanded) {
@@ -1099,10 +1125,10 @@ function updateE001BackdropBounds(host, tableWrap, expanded) {
   if (!placeholder) return;
   const origin = tableWrap.getBoundingClientRect(), rect = placeholder.getBoundingClientRect();
   const detail = expanded.getBoundingClientRect();
-  const header = host.classList.contains("e001-live") ? expanded.previousElementSibling?.getBoundingClientRect() : null;
+  const header = host.classList.contains("e001-live") || host.classList.contains("e005-live") ? expanded.previousElementSibling?.getBoundingClientRect() : null;
   const top = header?.top ?? rect.top;
   const table = tableWrap.querySelector("table")?.getBoundingClientRect() || origin;
-  Object.assign(host.style, { top: `${top - origin.top}px`, left: `${table.left - origin.left}px`, width: `${table.width}px`, height: `${detail.bottom - top}px` });
+  Object.assign(host.style, { top: `${top - origin.top - 1}px`, left: `${table.left - origin.left}px`, width: `${table.width}px`, height: `${detail.bottom - top + 2}px` });
   positionMiniLoader(host, expanded.previousElementSibling, expanded);
 }
 function startPreview(row) {
@@ -1133,7 +1159,7 @@ function startPreview(row) {
     }
     if (frame !== warmedE002Frame) {
       revealMiniAsOneScene(frame);
-      frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=32", location.href).href;
+      frame.src = new URL("../visualization/dev/e002-control-panel-preview/table-mini.html?table=35", location.href).href;
       frame.title = "Animated E-002 miniature orbital reconstruction";
       frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
       backdrop.append(frame);
@@ -1144,8 +1170,14 @@ function startPreview(row) {
     return;
   }
   if (episodeId === "E-005" && warmedE005Host && warmedE005Frame) {
-    host.replaceWith(warmedE005Host);
+    // Keep the warmed canvas behind the entire card; placing it inside the
+    // visual column clipped the orbit and made the globe look flattened.
+    host.style.visibility = "hidden";
     warmedE005Host.classList.remove("e005-prewarm"); warmedE005Host.classList.add("e005-live");
+    updateE001BackdropBounds(warmedE005Host, tableWrap, expanded);
+    miniResizeObserver?.disconnect();
+    miniResizeObserver = new ResizeObserver(() => updateE001BackdropBounds(warmedE005Host, tableWrap, expanded));
+    miniResizeObserver.observe(header); miniResizeObserver.observe(expanded);
     positionMiniLoader(warmedE005Host, header, expanded);
     miniFrame = warmedE005Frame; miniBackdropHost = warmedE005Host;
     localReview?.attachMini(warmedE005Frame);
@@ -1155,7 +1187,7 @@ function startPreview(row) {
   if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
     revealMiniAsOneScene(frame);
-    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=31`, location.href).href;
+    frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=32`, location.href).href;
     frame.title = `Animated ${publicEpisodeId(row)} miniature orbital reconstruction`;
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
     host.replaceChildren(frame);
@@ -1165,7 +1197,8 @@ function startPreview(row) {
       const fillExpandedRow = () => {
         if (!expanded?.isConnected || !host.isConnected) return;
         const area = expanded.getBoundingClientRect(), link = host.parentElement.getBoundingClientRect();
-        Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top - 1}px`, width: `${area.width}px`, height: `${area.height + 1}px` });
+        const overlap = episodeId === "E-059" ? 2 : 1;
+        Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top - overlap}px`, width: `${area.width}px`, height: `${area.height + overlap}px` });
         positionMiniLoader(host, header, expanded);
         Object.assign(frame.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
       };
@@ -1213,22 +1246,10 @@ function newsIndicator(row, count) {
   if (count) { wrap.type = "button"; wrap.setAttribute("aria-label", `Show ${count} linked ${count === 1 ? "record" : "records"} for ${title(row)}`); wrap.addEventListener("click", event => { event.stopPropagation(); toggleRow(row); }); }
   else wrap.setAttribute("aria-label", "0 linked records");
   const icon = el("span", "news-record-icon"); icon.setAttribute("aria-hidden", "true");
+  icon.style.setProperty("--record-tilt", Number.parseInt(field(row, "ID").slice(2), 10) % 2 ? "-4deg" : "4deg");
   icon.append(el("span", "news-record-count", count ? `×${count}` : "0"));
   wrap.title = `${count} linked ${count === 1 ? "record" : "records"}`; wrap.append(icon);
   return wrap;
-}
-function rowDiscovery() {
-  const hints = el("div", "row-discovery"); hints.setAttribute("aria-hidden", "true");
-  const book = el("span", "row-discovery-item", "Episode");
-  book.insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 4.2c-1.9-1.1-4.1-1.3-6.3-.7v10.3c2.2-.6 4.4-.4 6.3.7 1.9-1.1 4.1-1.3 6.3-.7V3.5c-2.2-.6-4.4-.4-6.3.7Zm0 0v10.3"/></svg>');
-  book.title = "Learn more about this episode";
-  const model = el("span", "row-discovery-item", "Model");
-  const poly = el("img"); poly.src = "./assets/polyhedron-icon.png"; poly.alt = ""; model.prepend(poly);
-  model.title = "Explore the interactive model";
-  const records = el("span", "row-discovery-item", "Records");
-  records.insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M4 3.5h8v10H4zM6 5.5h8v10H6zM8 8h4M8 10h4M8 12h3"/></svg>');
-  records.title = "Read records about expressions of concern";
-  hints.append(book, model, records); return hints;
 }
 function render() {
   sourceCarouselCleanup(); sourceCarouselCleanup = () => {};
@@ -1236,7 +1257,7 @@ function render() {
   const data = currentData(), rows = visibleRows();
   if (state.selected && !rows.includes(state.selected)) state.selected = null;
   const recordCount = data?.descriptions?.length || 0;
-  $("#count").textContent = `${rows.length} ${state.query ? "matching " : ""}${rows.length === 1 ? "episode" : "episodes"} · ${data?.descriptionError ? "records unavailable" : `${recordCount} ${recordCount === 1 ? "record" : "records"} total`}`;
+  $("#count").textContent = `${rows.length} ${state.query ? "matching " : ""}${rows.length === 1 ? "episode" : "episodes"} · ${data?.descriptionError ? "records unavailable" : `${recordCount} ${recordCount === 1 ? "record" : "records"}`}`;
   $("#count").title = data?.source === "live" && !state.usePreview ? "Episodes with titles in the current Episodes tab." : "";
   const body = $("#rows"); body.replaceChildren();
   for (const [index, row] of rows.entries()) {
@@ -1248,7 +1269,9 @@ function render() {
     const episode = el("td", "episode-cell"), heading = el("div", "episode-heading");
     const badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row);
     const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
-    heading.append(name, rowDiscovery());
+    const cue = el("span", "row-open-cue"); cue.setAttribute("aria-hidden", "true");
+    cue.append(el("span", "", "Learn more"), el("span", "row-open-chevron"));
+    heading.append(name, cue);
     episode.append(heading); tr.append(episode);
     const orbitCell = el("td", "orbit-cell"); orbitCell.append(badge); tr.append(orbitCell);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);

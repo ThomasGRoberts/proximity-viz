@@ -1,0 +1,4 @@
+.episode-books-icon{display:block;width:16px;height:16px;flex:none;fill:#f8f0d7;stroke:#8e7650;stroke-width:1.2;stroke-linejoin:round}
+.episode-books-top{transform-origin:7px 9px;transition:transform .24s ease}
+:is(.row-discovery-item,.episode-story-toggle):is(:hover,:focus-visible) .episode-books-top{transform:rotate(-10deg)}
+@media(prefers-reduced-motion:reduce){.episode-books-top{transition:none}}

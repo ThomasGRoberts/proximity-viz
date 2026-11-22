@@ -41,10 +41,10 @@ applyMarkerCssVariables();
 import { loadCurrentEpisodes, episodeUtcInterval, episodeChapters } from "../../shared/episode-feed.js?v=6";
 import { tleProvenance, spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=4";
 import { renderEstimatedMinimum } from "./estimate-ui.js";
-import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js";
+import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js?v=2";
 import { CHART_PADDING } from "./chart-style.js";
 import { formatDwellDuration } from "../../shared/format-duration.js";
-import { miniLandTexture } from "./mini-scene-style.js";
+import { miniLandTexture } from "./mini-scene-style.js?v=2";
 import { dwellSatelliteName } from "../../shared/dwell-name.js";
 
 // satellite.js was loaded by a <script> tag in compare.html, which put it on
@@ -917,10 +917,11 @@ function updateThresholds() {
   if (dwellKey) {
     const gray = document.createElement("strong"), gold = document.createElement("strong");
     gray.className = "single"; gray.textContent = "gray"; gold.className = "both"; gold.textContent = "Gold";
-    dwellKey.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds. Adjust threshold values by clicking and dragging the labels on the charts above. ",
-      gold, " markings on the dynamic charts above indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
+    dwellKey.replaceChildren("The dwell time is a function of the selected separation distance and relative speed thresholds, which can be adjusted on the charts above. ",
+      gold, " markings on horizontal axes indicate dwell periods, while ", gray, " ones indicate periods in which one threshold is met, but not the other.");
   }
   renderDwellSegments();
+  $("timelineSlider").dataset.dwellMessage = `${slotName("A")} is dwelling next to ${slotName("B")}.`;
   const minimum = (id, item, unit, metric) => {
     renderEstimatedMinimum($(id), { episodeId: "E-001", metric, value: item?.value, unit, ms: item?.ms, onJump(ms) {
       const slider = $("timelineSlider");
@@ -2614,6 +2615,8 @@ try {
   reportedPeriod = { start: episodeStartMs, end: episodeEndMs };
   caseNorads = episodeConfig.participants.map(participant => participant.norad);
   await setPair(caseNorads[0], caseNorads[1]);
+  // Match the six simulated hours per real second used by the other GEO episodes.
+  if (!miniScene) $("speed").value = "21600";
   if (chapterMode.get("mini") === "1") {
     const chapter = episodeChapters(liveEpisode)[0];
     if (!chapter) throw new Error("E-001 mini scene has no published chapter");
@@ -2713,6 +2716,7 @@ try {
   if (document.documentElement.classList.contains("mini-scene")) {
     const bootText = document.getElementById("episodeBootText");
     if (bootText) bootText.textContent = `Mini preview unavailable: ${error.message}`;
+    document.getElementById("episodeBoot")?.classList.add("is-error");
   }
   console.error(error);
 }

@@ -211,3 +211,6 @@ body.e016-review.e016-eci #scene,body.e016-review.e016-eci #e016ScreenLabels{lef
 @media(max-width:800px){body.e016-review .e016-workshop{left:12px;right:12px;bottom:12px;max-height:42vh}body.e016-review.e016-eci #scene,body.e016-review.e016-eci #e016ScreenLabels{left:14px}}
 
 @media(min-width:761px){body.e016-shared:not(.e016-review) #ui{max-height:calc(100vh - 145px)}}
+
+.e016-chapters{flex-wrap:nowrap;overflow:hidden}
+.e016-chapters button{white-space:nowrap;overflow:hidden;font-size:clamp(7px,.8vw,10px)}
