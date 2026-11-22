@@ -20,14 +20,37 @@ const checksum = line => {
   return `${prefix}${total % 10}`;
 };
 
-export function syntheticTle(elements, number, designator) {
+export function syntheticTle(elements, number, designator, epochMs = EPOCH_MS) {
   const { altitudeKm, eccentricity, inclinationDeg, raanDeg, argPerigeeDeg, meanAnomalyDeg } = elements;
   const a = EARTH_KM + altitudeKm;
   const meanMotion = Math.sqrt(MU / a ** 3) * 86400 / TWO_PI;
   const angle = value => wrap(value).toFixed(4).padStart(8, " ");
-  const line1 = checksum(`1 ${number}U 26001${designator}   26327.00000000  .00000000  00000-0  00000-0 0  999`);
+  const date = new Date(epochMs), year = String(date.getUTCFullYear()).slice(-2);
+  const yearStart = Date.UTC(date.getUTCFullYear(), 0, 1);
+  const day = 1 + (epochMs - yearStart) / 86400000;
+  const epoch = `${year}${day.toFixed(8).padStart(12, "0")}`;
+  const line1 = checksum(`1 ${number}U 26001${designator}   ${epoch}  .00000000  00000-0  00000-0 0  999`);
   const line2 = checksum(`2 ${number} ${angle(inclinationDeg)} ${angle(raanDeg)} ${Math.round(eccentricity * 1e7).toString().padStart(7, "0")} ${angle(argPerigeeDeg)} ${angle(meanAnomalyDeg)} ${meanMotion.toFixed(8).padStart(11, " ")}${"1".padStart(5, " ")}`);
-  return { line1, line2, meanMotion, epochUtc: new Date(EPOCH_MS).toISOString() };
+  return { line1, line2, meanMotion, epochUtc: date.toISOString() };
+}
+
+function elementsFromState(state) {
+  const { r, v } = state, radius = norm(r), h = cross(r, v), hLength = norm(h);
+  const node = { x: -h.y, y: h.x, z: 0 }, nodeLength = norm(node);
+  const eccentricityVector = sub(scale(cross(v, h), 1 / MU), scale(r, 1 / radius));
+  const eccentricity = norm(eccentricityVector);
+  const a = 1 / (2 / radius - dot(v, v) / MU);
+  const inclination = Math.acos(h.z / hLength), raan = Math.atan2(node.y, node.x);
+  const signedAngle = (left, right, leftLength, rightLength) => Math.atan2(
+    dot(cross(left, right), h) / (leftLength * rightLength * hLength),
+    dot(left, right) / (leftLength * rightLength)
+  );
+  const argument = signedAngle(node, eccentricityVector, nodeLength, eccentricity);
+  const trueAnomaly = signedAngle(eccentricityVector, r, eccentricity, radius);
+  const eccentricAnomaly = 2 * Math.atan2(Math.sqrt(1 - eccentricity) * Math.sin(trueAnomaly / 2), Math.sqrt(1 + eccentricity) * Math.cos(trueAnomaly / 2));
+  const meanAnomaly = eccentricAnomaly - eccentricity * Math.sin(eccentricAnomaly);
+  return { altitudeKm: a - EARTH_KM, eccentricity, inclinationDeg: inclination * 180 / Math.PI,
+    raanDeg: raan * 180 / Math.PI, argPerigeeDeg: argument * 180 / Math.PI, meanAnomalyDeg: meanAnomaly * 180 / Math.PI };
 }
 
 function stumpff(z) {
@@ -104,7 +127,16 @@ export function createEngine(config) {
     const before = prior ? coast(prior.state, (event.hour - prior.hour) * 3600) : sgp(satB, event.hour);
     prepared.push({ ...event, state: { r: before.r, v: add(before.v, scale(unit(before.v), event.dv / 1000)) } });
   }
-  const stateA = hour => sgp(satA, hour);
+  const teaching = config.teachingPlaneChange;
+  const preManeuverA = hour => sgp(satA, hour);
+  let planeChange = null, tleAfterA = null;
+  if (teaching && Number.isFinite(teaching.hour) && Number.isFinite(teaching.dvMs)) {
+    const before = preManeuverA(teaching.hour);
+    const normal = unit(cross(before.r, before.v));
+    planeChange = { hour: teaching.hour, state: { r: before.r, v: add(before.v, scale(normal, teaching.dvMs / 1000)) } };
+    tleAfterA = syntheticTle(elementsFromState(planeChange.state), "99901", "A", EPOCH_MS + teaching.hour * HOUR);
+  }
+  const stateA = hour => planeChange && hour >= planeChange.hour ? coast(planeChange.state, (hour - planeChange.hour) * 3600) : preManeuverA(hour);
   const stateB = hour => {
     let latest = null;
     for (const event of prepared) { if (event.hour <= hour) latest = event; else break; }
@@ -117,7 +149,7 @@ export function createEngine(config) {
       rangeRateMs: distanceKm ? dot(dr, dv) / distanceKm * 1000 : 0 };
   };
   const sample = (startHour, endHour, points = 350) => Array.from({ length: points }, (_, i) => at(startHour + (endHour - startHour) * i / (points - 1)));
-  return { at, sample, stateA, stateB, tleA, tleB, events, objectB: b,
+  return { at, sample, stateA, preManeuverA, stateB, tleA, tleAfterA, tleB, events, objectB: b,
     periodHours: 24 / tleA.meanMotion };
 }
 

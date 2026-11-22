@@ -2,8 +2,10 @@
   "schema": "espl-orbital-carousel-v1",
   "steps": [
     { "id": "opening", "kind": "slide", "title": "How Close Is Too Close?", "subtitle": "Building Shared Understanding of Satellite Behavior", "body": "UN side event · Fourth Session of the OEWG on PAROS · November 23, 2026" },
-    { "id": "statements-close", "kind": "slide", "title": "How States describe close approaches", "subtitle": "Diplomatic statements", "body": "Place verified statements and citations here." },
-    { "id": "statements-shadow", "kind": "slide", "title": "How States describe shadowing", "subtitle": "Diplomatic statements", "body": "Place verified statements and citations here." },
+    { "id": "lab", "kind": "slide", "title": "Engineering Space Policy Laboratory", "subtitle": "Georgia Tech", "body": "Engineering insight. Policy impact." },
+    { "id": "statements-close", "kind": "slide", "title": "Close approaches and shadowing", "subtitle": "How States describe behavior in orbit", "body": "What does it mean to remain near another satellite?" },
+    { "id": "statements-shadow", "kind": "slide", "title": "What does it mean to shadow another satellite?", "subtitle": "Statements · OEWG on PAROS · 9 July 2026", "body": "" },
+    { "id": "statements-focus", "kind": "slide", "title": "What makes repeated or sustained proximity different?", "subtitle": "The stakes of shadowing", "body": "" },
     { "id": "tle", "kind": "chapter", "title": "What is a TLE?", "subtitle": "01 · Orbital estimates", "body": "A two-line element set is a dated estimate. SGP4 turns it into positions and velocities that can be drawn in an Earth-centered inertial frame." },
     { "id": "uncertainty", "kind": "chapter", "title": "Orbital uncertainty", "subtitle": "02 · What a TLE does not say", "body": "The pale ellipsoid is hypothetical. Public TLEs generally provide no covariance, so its size and shape are not measured uncertainty." },
     { "id": "neighbors", "kind": "chapter", "title": "Two neighboring GEO satellites", "subtitle": "03 · Shared orbital region", "body": "Object A and Object B occupy nearby geostationary longitudes. Their TLE estimates can be updated as observations arrive." },

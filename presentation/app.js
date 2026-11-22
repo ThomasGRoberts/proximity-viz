@@ -3,14 +3,15 @@ import { OrbitControls } from "../visualization/Viz/vendor/three/addons/controls
 import { feature } from "../visualization/Viz/vendor/topojson/topojson-client.js";
 import { dotTexture } from "../visualization/Viz/relative-rendering.js";
 import { createEngine, EPOCH_MS, EARTH_KM, orbitalFrame, relativeCoordinates, dwellHours } from "./orbit-engine.js";
+import { mountOpeningArt } from "./opening-art.js";
 
 const $ = id => document.getElementById(id);
 const clone = value => structuredClone(value);
 const chapterIds = ["tle", "uncertainty", "neighbors", "relative", "time-series", "conjunction", "thresholds", "shadowing"];
 const initialVisibility = {
-  tle: { objectB:false, tle:true, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
-  uncertainty: { objectB:false, tle:true, uncertainty:true, metrics:false, charts:false, thresholds:false, maneuvers:false },
-  neighbors: { objectB:true, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
+  tle: { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
+  uncertainty: { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
+  neighbors: { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
   relative: { objectB:true, tle:false, uncertainty:false, metrics:true, charts:false, thresholds:false, maneuvers:true },
   "time-series": { objectB:true, tle:false, uncertainty:false, metrics:true, charts:true, thresholds:false, maneuvers:true },
   conjunction: { objectB:true, tle:false, uncertainty:false, metrics:true, charts:true, thresholds:false, maneuvers:false },
@@ -46,7 +47,19 @@ const fieldLabels = { objectB:"Object B card", tle:"TLE and epoch", uncertainty:
 const toScene = (point, scale) => new THREE.Vector3(point.x / scale, point.z / scale, -point.y / scale);
 const fmtDate = hour => new Intl.DateTimeFormat("en-US", { timeZone:"UTC", month:"short", day:"numeric", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:false }).format(new Date(EPOCH_MS + hour * 3600000)) + " UTC";
 const fmtNum = value => Number.isFinite(value) ? new Intl.NumberFormat("en-US", {maximumFractionDigits: value < 10 ? 2 : 0}).format(value) : "—";
-let doc, stepIndex = 0, config, engine, series, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], activePreset = "neighbors", customCamera = false, scene3d;
+const beatCounts = { lab:4, tle:3, uncertainty:3, neighbors:3 };
+const statementCards = {
+  "statements-shadow": [
+    { flag:"🇦🇺", country:"Australia", quote:"Nonconsensual proximity operations including close approach or <strong>so-called shadowing</strong> may be perceived as interference with the state's control over its space object or as coercive signaling.", source:"Australian delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=5363" },
+    { flag:"🇪🇺", country:"European Union", quote:"Unfortunately, we continue to witness examples of unfriendly and even aggressive operations, including <strong>satellites being shadowed by other ones</strong> ...", source:"European Union delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=88" },
+    { flag:"🇳🇱", country:"Netherlands", quote:"The risks increase when such operations interfere with another space object or <strong>force it to perform an evasive maneuver</strong>.", source:"Dutch delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=8206" },
+  ],
+  "statements-focus": [
+    { flag:"🇦🇺", country:"Australia", quote:"Nonconsensual proximity operations including close approach or <strong>so-called shadowing</strong> may be perceived as interference with the state's control over its space object or as coercive signaling.", source:"Australian delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=5363" },
+    { flag:"🇪🇺", country:"European Union", quote:"Unfortunately, we continue to witness examples of unfriendly and even aggressive operations, including <strong>satellites being shadowed by other ones</strong> ...", source:"European Union delegation · OEWG on PAROS, third substantive session", url:"https://conf.unog.ch/digitalrecordings/en/clients/12.1266/meetings/6D062758-D961-4805-BF6F-B39345439672/10h14/en?position=88" },
+  ],
+};
+let doc, stepIndex = 0, beatIndex = 0, config, engine, series, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt;
 
 async function request(path, payload) {
   const res = await fetch(path, payload ? { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) } : { cache:"no-store" });
@@ -67,11 +80,17 @@ queueMicrotask(async () => {
 
 function setup() {
   stepIndex = Math.max(0, doc.steps.findIndex(step => step.id === location.hash.slice(1)));
-  buildStepNav(); buildControls(); buildVisibility(); buildPresets(); setupScene(); bind(); showStep(); animate(0); renderComments();
+  buildStepNav(); buildControls(); buildVisibility(); buildPresets(); setupScene(); openingArt = mountOpeningArt($("openingArt")); bind(); showStep(); animate(0); renderComments();
 }
 function step() { return doc.steps[stepIndex]; }
 function chapter() { return step().kind === "chapter"; }
-function visibility() { return { ...initialVisibility[step().id], ...doc.chapterVisibility[step().id] }; }
+function visibility() {
+  const show = { ...initialVisibility[step().id], ...doc.chapterVisibility[step().id] };
+  if (step().id === "tle") Object.assign(show, { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false });
+  if (step().id === "uncertainty") Object.assign(show, { objectB:false, tle:false, uncertainty:beatIndex >= 2, metrics:false, charts:false, thresholds:false, maneuvers:false });
+  if (step().id === "neighbors") Object.assign(show, { objectB:beatIndex >= 1, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false });
+  return show;
+}
 function buildStepNav() {
   $("steps").replaceChildren();
   doc.steps.forEach((item, index) => {
@@ -80,21 +99,99 @@ function buildStepNav() {
     button.title = item.title; button.addEventListener("click", () => go(index)); $("steps").append(button);
   });
 }
-function go(index) { if (index < 0 || index >= doc.steps.length) return; stepIndex = index; history.replaceState(null, "", `#${step().id}`); showStep(); }
+function go(index, lastBeat = false) { if (index < 0 || index >= doc.steps.length) return; stepIndex = index; beatIndex = lastBeat ? (beatCounts[step().id] || 1) - 1 : 0; history.replaceState(null, "", `#${step().id}`); showStep(); }
+function advance(direction) {
+  const count = beatCounts[step().id] || 1;
+  if (direction > 0 && beatIndex + 1 < count) { beatIndex++; applyBeat(); return; }
+  if (direction < 0 && beatIndex > 0) { beatIndex--; applyBeat(); return; }
+  go(stepIndex + direction, direction < 0);
+}
+function enterStep() {
+  const node = chapter() ? $("episode") : $("slide");
+  node.classList.remove("entering"); void node.offsetWidth; node.classList.add("entering");
+}
+function renderQuoteCards(id) {
+  const cards = statementCards[id] || [], host = $("quoteCards"); host.replaceChildren();
+  host.hidden = !cards.length; host.classList.toggle("two", cards.length === 2);
+  for (const item of cards) {
+    const card = document.createElement("article"); card.className = "quoteCard";
+    const head = document.createElement("div"); head.className = "quoteHead";
+    const name = document.createElement("strong"); name.textContent = `${item.flag} ${item.country}`;
+    const date = document.createElement("time"); date.textContent = "9 July 2026";
+    head.append(name, date);
+    const quote = document.createElement("blockquote"); quote.innerHTML = `“${item.quote}”`;
+    const source = document.createElement("p"); source.textContent = item.source;
+    const link = document.createElement("a"); link.href = item.url; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = "Recording ↗";
+    card.append(head, quote, source, link); host.append(card);
+  }
+}
 function showStep() {
   const item = step();
   [...$("steps").children].forEach((node, index) => index === stepIndex ? node.setAttribute("aria-current", "step") : node.removeAttribute("aria-current"));
-  $("stepPosition").textContent = `${stepIndex + 1} / ${doc.steps.length}`;
-  $("previous").disabled = stepIndex === 0; $("next").disabled = stepIndex === doc.steps.length - 1;
+  document.body.dataset.step = item.id;
+  document.body.classList.toggle("chapterActive", chapter());
   $("slide").hidden = chapter(); $("episode").hidden = !chapter(); $("inspector").hidden = !chapter() || presentMode;
-  if (!chapter()) { $("slideTitle").textContent = item.title; $("slideEyebrow").textContent = item.subtitle || ""; $("slideBody").textContent = item.body || ""; placePins(); return; }
+  if (!chapter()) {
+    $("slideTitle").textContent = item.title; $("slideEyebrow").textContent = item.subtitle || ""; $("slideBody").textContent = item.body || "";
+    $("openingArt").hidden = item.id !== "opening"; $("labIntro").hidden = item.id !== "lab"; $("slideCopy").hidden = item.id === "lab";
+    $("slidePrompt").hidden = !["statements-shadow", "statements-focus"].includes(item.id);
+    $("slidePrompt").textContent = item.id === "statements-shadow" ? "What makes repeated or sustained proximity different?" : "Statements describe perceived risks; the visual evidence cannot establish intent.";
+    renderQuoteCards(item.id); applyBeat(); enterStep(); placePins(); return;
+  }
   activePreset = doc.chapterPresets[item.id] || "neighbors";
   config = clone(doc.chapterOverrides[item.id] || doc.presets[activePreset]);
+  const teaching = ["tle","uncertainty","neighbors"].includes(item.id);
+  document.body.classList.toggle("inspectorCollapsed", teaching && !presentMode);
+  $("inspectorToggle").textContent = teaching && !presentMode ? "Show controls" : "Hide controls";
+  setTimeout(resizeScene, 30);
   if (item.id === "conjunction") config.display.mode = "relative";
+  if (item.id === "tle") { config.display.mode = "eci"; config.display.rateHoursPerSecond = 2.4; config.display.trailHours = 8; config.display.showTrail = true; }
+  if (item.id === "tle" && beatIndex >= 2) config.teachingPlaneChange = { hour:8, dvMs:60 };
+  if (item.id === "tle" && beatIndex < 2) delete config.teachingPlaneChange;
+  if (item.id === "neighbors") config.display.mode = "relative";
+  if (item.id === "neighbors" && !doc.chapterOverrides[item.id]) config.objectB.relativeLongitudeDeg = 1.2;
+  if (item.id === "uncertainty") config.display.mode = beatIndex ? "relative" : "eci";
+  if (item.id === "uncertainty" && !doc.chapterOverrides[item.id]) config.display.uncertaintyKm = 150;
   currentHour = config.display.startHour; customCamera = false;
+  if (["tle","uncertainty","neighbors"].includes(item.id)) { playing = true; $("playButton").textContent = "Pause"; }
+  sceneOrigin = "A";
   $("chapterNumber").textContent = item.subtitle; $("chapterTitle").textContent = item.title; $("chapterBody").textContent = item.body;
   $("presetSelect").value = activePreset;
-  syncControls(); updateVisibility(); recalc(); restoreCamera(); placePins();
+  syncControls(); updateVisibility(); recalc(); restoreCamera(); applyBeat(false); enterStep(); placePins();
+}
+function applyBeat(rebuild = true) {
+  const id = step().id;
+  document.body.dataset.beat = String(beatIndex);
+  if (id === "lab") {
+    [...$("researchAreas").children].forEach((node, index) => node.classList.toggle("revealed", index < beatIndex));
+  }
+  if (!chapter()) return;
+  if (id === "tle") {
+    const changed = (beatIndex >= 2) !== Boolean(config.teachingPlaneChange);
+    if (beatIndex >= 2) { config.teachingPlaneChange = { hour:8, dvMs:60 }; if (changed) currentHour = 8; }
+    else delete config.teachingPlaneChange;
+    if (changed && rebuild) recalc();
+    $("legendA").open = beatIndex >= 1;
+  }
+  if (id === "uncertainty") {
+    const mode = beatIndex >= 1 ? "relative" : "eci";
+    if (config.display.mode !== mode) { config.display.mode = mode; customCamera = false; if (rebuild) { syncControls(); recalc(); restoreCamera(); } }
+    config.display.showUncertainty = beatIndex >= 2;
+    $("legendA").open = false;
+  }
+  if (id === "neighbors") { $("legendB").open = beatIndex >= 1; }
+  $("sceneLegend").hidden = id === "tle" ? beatIndex === 0 : id === "uncertainty";
+  $("panel").hidden = ["tle", "neighbors"].includes(id) || (id === "uncertainty" && beatIndex < 2);
+  $("playback").hidden = ["tle", "uncertainty", "neighbors"].includes(id);
+  $("sceneMetrics").hidden = ["tle", "uncertainty", "neighbors"].includes(id);
+  $("frameTools").hidden = id === "neighbors" ? beatIndex < 2 : id === "uncertainty" || config.display.mode !== "relative";
+  $("frameToggle").textContent = config.display.mode === "eci" ? "ECI frame" : "Local frame";
+  $("originToggle").textContent = `Origin · Object ${sceneOrigin}`;
+  $("originToggle").hidden = config.display.mode !== "relative";
+  if (rebuild && doc.cameraViews[cameraKey()]?.mode === config.display.mode) restoreCamera();
+  updateVisibility(); updateScene();
+  if (rebuild) { const node = $("episode"); node.classList.remove("beat-change"); void node.offsetWidth; node.classList.add("beat-change"); }
+  placePins();
 }
 function buildPresets() {
   $("presetSelect").replaceChildren(); for (const [key, preset] of Object.entries(doc.presets)) {
@@ -167,9 +264,12 @@ async function saveDoc(message) { await request("/api/presentation-config", doc)
 function recalc() {
   engine = createEngine(config);
   series = engine.sample(config.display.startHour, config.display.endHour, 260);
-  $("tleText").textContent = `${engine.tleA.line1}\n${engine.tleA.line2}`;
-  $("epochText").textContent = engine.tleA.epochUtc.replace(".000Z", " UTC").replace("T", " ");
-  $("aElements").textContent = `Synthetic TLE · ${(EARTH_KM + config.objectA.altitudeKm).toFixed(0)} km semi-major axis`;
+  const displayedA = step().id === "tle" && beatIndex >= 2 && engine.tleAfterA ? engine.tleAfterA : engine.tleA;
+  $("tleText").textContent = `${displayedA.line1}\n${displayedA.line2}`;
+  $("legendTleA").textContent = `${displayedA.line1}\n${displayedA.line2}`;
+  $("legendTleB").textContent = `${engine.tleB.line1}\n${engine.tleB.line2}`;
+  $("epochText").textContent = displayedA.epochUtc.replace(".000Z", " UTC").replace("T", " ");
+  $("aElements").textContent = `${engine.tleAfterA && step().id === "tle" && beatIndex >= 2 ? "Updated synthetic TLE" : "Synthetic TLE"} · ${(EARTH_KM + config.objectA.altitudeKm).toFixed(0)} km semi-major axis`;
   $("bElements").textContent = `Synthetic TLE · ${config.objectB.relativeLongitudeDeg}° relative longitude at epoch`;
   $("speedText").textContent = `${config.display.rateHoursPerSecond} h/s`;
   const events = $("maneuverList"); events.replaceChildren();
@@ -207,7 +307,11 @@ function setupScene() {
   const orbit = line(0x555555,.72), trailA = line(0xeaaa00,.76), trailB = line(0x777777,.78), vector = line(0x8d6d11,.78), velocityVector = line(0x7890a5,.86);
   for (const item of [orbit,trailA,trailB,vector,velocityVector]) scene.add(item);
   const ellipsoid = new THREE.Mesh(new THREE.SphereGeometry(1,24,16),new THREE.MeshBasicMaterial({color:0xe9c977,transparent:true,opacity:.22,depthWrite:false})); scene.add(ellipsoid);
-  scene3d = {host,scene,camera,renderer,controls,earth,markerA,markerB,orbit,trailA,trailB,vector,velocityVector,ellipsoid};
+  const ellipsoidGrid = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.SphereGeometry(1.002,16,10)),new THREE.LineBasicMaterial({color:0xa77e17,transparent:true,opacity:.48,depthWrite:false})); scene.add(ellipsoidGrid);
+  const axes = new THREE.Group();
+  for (const [direction,color] of [[new THREE.Vector3(1,0,0),0xb58820],[new THREE.Vector3(0,-1,0),0x727b82],[new THREE.Vector3(0,0,-1),0x9d8672]]) axes.add(new THREE.ArrowHelper(direction,new THREE.Vector3(),1.7,color,.25,.12));
+  scene.add(axes);
+  scene3d = {host,scene,camera,renderer,controls,earth,markerA,markerB,orbit,trailA,trailB,vector,velocityVector,ellipsoid,ellipsoidGrid,axes};
   new ResizeObserver(resizeScene).observe(host);
 }
 function resizeScene() {
@@ -215,23 +319,27 @@ function resizeScene() {
   camera.aspect=width/height; camera.updateProjectionMatrix(); renderer.setSize(width,height,false);
 }
 function linePoints(line, points) { line.geometry.dispose(); line.geometry = new THREE.BufferGeometry().setFromPoints(points); line.visible = points.length > 1; }
+function cameraKey() { return beatCounts[step().id] ? `${step().id}-${beatIndex}` : step().id; }
 function restoreCamera() {
   if (!scene3d || !chapter()) return;
-  const {camera,controls} = scene3d, saved = doc.cameraViews[step().id];
+  const {camera,controls} = scene3d, saved = doc.cameraViews[cameraKey()] || doc.cameraViews[step().id];
   if (saved && saved.mode === config.display.mode) {
     camera.position.set(...saved.position); camera.up.set(...saved.up); controls.target.set(...saved.target);
     camera.zoom = saved.zoom || 1; camera.updateProjectionMatrix(); controls.update(); customCamera = true; return;
   }
-  if (config.display.mode === "eci") { const frame=orbitalFrame(engine.stateA(currentHour)); camera.position.copy(toScene(frame.normal,1).multiplyScalar(26)); camera.up.copy(toScene(frame.along,1)); controls.target.set(0,0,0); }
+  if (["tle","uncertainty","neighbors"].includes(step().id)) {
+    camera.position.set(...(config.display.mode === "eci" ? [12,8,18] : [18,4,7]));
+    controls.target.set(...(config.display.mode === "eci" ? [0,0,0] : [-14,0,0]));
+  } else if (config.display.mode === "eci") { const frame=orbitalFrame(engine.stateA(currentHour)); camera.position.copy(toScene(frame.normal,1).multiplyScalar(26)); camera.up.copy(toScene(frame.along,1)); controls.target.set(0,0,0); }
   else { camera.position.set(0,1.2,3.8); controls.target.set(0,0,0); }
   if (config.display.mode !== "eci") camera.up.set(0,1,0); camera.zoom=1; camera.updateProjectionMatrix(); controls.update(); customCamera=false;
 }
 function updateScene() {
   if (!engine || !scene3d || !chapter()) return;
-  const {earth,markerA,markerB,trailA,trailB,orbit,vector,velocityVector,ellipsoid,camera,controls} = scene3d;
-  const state=engine.at(currentHour), frame=orbitalFrame(state.A), relative=config.display.mode === "relative";
+  const {earth,markerA,markerB,trailA,trailB,orbit,vector,velocityVector,ellipsoid,ellipsoidGrid,axes,camera,controls} = scene3d;
+  const state=engine.at(currentHour), originState=sceneOrigin === "B" ? state.B : state.A, frame=orbitalFrame(originState), relative=config.display.mode === "relative";
   const scale=relative ? 1000 : EARTH_KM;
-  const transform = p => relative ? toScene(relativeCoordinates(p,state.A.r,frame),scale) : toScene(p,scale);
+  const transform = p => relative ? toScene(relativeCoordinates(p,originState.r,frame),scale) : toScene(p,scale);
   earth.position.copy(transform({x:0,y:0,z:0})); earth.scale.setScalar(EARTH_KM/scale);
   // Earth and its border map rotate with sidereal time in ECI.
   earth.rotation.y = window.satellite.gstime(new Date(EPOCH_MS+currentHour*3600000));
@@ -239,25 +347,37 @@ function updateScene() {
   const diameter=config.display.markerSizePx * 128/89 * 2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/(Math.max(1,scene3d.host.clientHeight)*camera.zoom);
   markerA.scale.setScalar(diameter); markerB.scale.setScalar(diameter); markerB.visible=visibility().objectB;
   const orbitHours=engine.periodHours;
-  const orbitPoints=Array.from({length:240},(_,i)=>transform(engine.stateA(currentHour+orbitHours*i/239).r));
-  linePoints(orbit,orbitPoints); orbit.visible=config.display.showOrbit;
+  const referenceState = sceneOrigin === "B" ? engine.stateB : step().id === "tle" && beatIndex >= 2 ? engine.preManeuverA : engine.stateA;
+  const orbitPoints=Array.from({length:240},(_,i)=>transform(referenceState(currentHour+orbitHours*i/239).r));
+  const covarianceFocus = step().id === "uncertainty" && beatIndex >= 2;
+  linePoints(orbit,orbitPoints); orbit.visible=config.display.showOrbit && !covarianceFocus;
   const trailStart=Math.max(config.display.startHour,currentHour-config.display.trailHours);
   const trailHours=Array.from({length:90},(_,i)=>trailStart+(currentHour-trailStart)*i/89);
   linePoints(trailA,trailHours.map(t=>transform(engine.stateA(t).r))); linePoints(trailB,trailHours.map(t=>transform(engine.stateB(t).r)));
-  trailA.visible=config.display.showTrail; trailB.visible=config.display.showTrail&&visibility().objectB;
-  linePoints(vector,[markerA.position.clone(),markerB.position.clone()]); vector.visible=config.display.showVectors&&visibility().objectB;
+  trailA.visible=config.display.showTrail && !covarianceFocus; trailB.visible=config.display.showTrail&&visibility().objectB && !covarianceFocus;
+  linePoints(vector,[markerA.position.clone(),markerB.position.clone()]); vector.visible=config.display.showVectors&&visibility().objectB && !covarianceFocus;
   const velocityTip={x:state.B.r.x+state.dv.x*3600,y:state.B.r.y+state.dv.y*3600,z:state.B.r.z+state.dv.z*3600};
-  linePoints(velocityVector,[markerB.position.clone(),transform(velocityTip)]); velocityVector.visible=config.display.showVectors&&visibility().objectB;
+  linePoints(velocityVector,[markerB.position.clone(),transform(velocityTip)]); velocityVector.visible=config.display.showVectors&&visibility().objectB && !covarianceFocus;
   ellipsoid.position.copy(markerA.position); const size=Math.max(.001,config.display.uncertaintyKm/scale);
   ellipsoid.scale.set(size*1.8,size*.9,size); ellipsoid.visible=(config.display.showUncertainty||visibility().uncertainty)&&visibility().uncertainty;
+  ellipsoidGrid.position.copy(ellipsoid.position); ellipsoidGrid.scale.copy(ellipsoid.scale); ellipsoidGrid.visible=ellipsoid.visible;
+  axes.position.copy(markerA.position); axes.visible=relative && (step().id === "neighbors" || (step().id === "uncertainty" && beatIndex === 1));
   if (relative&&!customCamera) {
-    const midpoint=markerA.position.clone().add(markerB.position).multiplyScalar(.5);
-    const separation=markerA.position.distanceTo(markerB.position);
-    const distance=Math.max(1.6,separation*4/Math.max(.55,camera.aspect));
-    const direction=new THREE.Vector3(.42,.68,.6).normalize();
-    controls.target.copy(midpoint);camera.position.copy(midpoint).addScaledVector(direction,distance);
+    if (step().id === "uncertainty" && beatIndex >= 2) { controls.target.copy(markerA.position); camera.position.copy(markerA.position).add(new THREE.Vector3(1.3,.4,.8)); }
+    else if (["uncertainty","neighbors"].includes(step().id)) { controls.target.set(-14,0,0); camera.position.set(18,4,7); }
+    else {
+      const midpoint=markerA.position.clone().add(markerB.position).multiplyScalar(.5);
+      const separation=markerA.position.distanceTo(markerB.position);
+      const distance=Math.max(1.6,separation*4/Math.max(.55,camera.aspect));
+      const direction=new THREE.Vector3(.42,.68,.6).normalize();
+      controls.target.copy(midpoint);camera.position.copy(midpoint).addScaledVector(direction,distance);
+    }
   }
-  if (!relative&&!customCamera) { controls.target.set(0,0,0); camera.position.copy(toScene(frame.normal,1).multiplyScalar(26)); camera.up.copy(toScene(frame.along,1)); }
+  if (!relative&&!customCamera) {
+    controls.target.set(0,0,0);
+    if (["tle","uncertainty"].includes(step().id)) { camera.position.set(12,8,18); camera.up.set(0,1,0); }
+    else { camera.position.copy(toScene(frame.normal,1).multiplyScalar(26)); camera.up.copy(toScene(frame.along,1)); }
+  }
   controls.update();
   $("distanceValue").textContent=`${fmtNum(state.distanceKm)} km`;
   $("speedValue").textContent=`${fmtNum(state.relativeSpeedMs)} m/s`;
@@ -289,20 +409,27 @@ function drawCharts() {
 function animate(now) {
   const dt=lastFrame?Math.min(.1,(now-lastFrame)/1000):0;lastFrame=now;
   if (chapter()&&playing&&engine) { currentHour+=dt*config.display.rateHoursPerSecond; if (currentHour>config.display.endHour) currentHour=config.display.startHour; updateScene(); drawCharts(); }
+  if (step().id === "opening" && openingArt) openingArt.render(now);
   if (scene3d) scene3d.renderer.render(scene3d.scene,scene3d.camera);
   requestAnimationFrame(animate);
 }
 function bind() {
-  $("previous").onclick=()=>go(stepIndex-1); $("next").onclick=()=>go(stepIndex+1);
-  document.addEventListener("keydown",event=>{ if (["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)) return; if(event.key==="ArrowRight")go(stepIndex+1);if(event.key==="ArrowLeft")go(stepIndex-1);if(event.code==="Space"&&chapter()){event.preventDefault();togglePlay();} });
+  document.addEventListener("keydown",event=>{
+    if (["INPUT","TEXTAREA","SELECT","BUTTON","A"].includes(document.activeElement?.tagName)) return;
+    if (event.key === "ArrowRight" || event.code === "Space") { event.preventDefault(); advance(1); }
+    if (event.key === "ArrowLeft") { event.preventDefault(); advance(-1); }
+  });
+  $("slide").addEventListener("click",event=>{ if (!spotMode && !event.target.closest("a,button") && !event.defaultPrevented) advance(1); });
+  $("frameToggle").onclick=()=>{ change("display.mode",config.display.mode === "eci" ? "relative" : "eci"); applyBeat(false); };
+  $("originToggle").onclick=()=>{ sceneOrigin = sceneOrigin === "A" ? "B" : "A"; $("originToggle").textContent = `Origin · Object ${sceneOrigin}`; updateScene(); };
   $("playButton").onclick=togglePlay;
   $("timeSlider").addEventListener("input",event=>{currentHour=config.display.startHour+Number(event.target.value)/1000*(config.display.endHour-config.display.startHour);updateScene();drawCharts();});
   for (const [id,path] of [["distanceThreshold","display.distanceThresholdKm"],["speedThreshold","display.speedThresholdMs"]]) $(id).addEventListener("input",event=>change(path,Number(event.target.value)));
   $("presetSelect").onchange=()=>{ activePreset=$("presetSelect").value;config=clone(doc.presets[activePreset]);currentHour=config.display.startHour;syncControls();recalc();restoreCamera();$("saveStatus").textContent="Unsaved preset choice"; };
   $("savePreset").onclick=async()=>{const name=prompt("Preset name",doc.presets[activePreset]?.label||"My scenario");if(!name)return;const key=/^[a-z0-9-]+$/.test(activePreset)&&doc.presets[activePreset]?.label===name?activePreset:`custom-${Date.now()}`;doc.presets[key]={...clone(config),label:name};activePreset=key;buildPresets();$("presetSelect").value=key;await saveDoc("Preset saved on this computer");};
   $("saveChapter").onclick=async()=>{doc.chapterOverrides[step().id]=clone(config);doc.chapterPresets[step().id]=activePreset;await saveDoc("Scenario saved for this chapter");};
-  $("saveCamera").onclick=async()=>{const {camera,controls}=scene3d;doc.cameraViews[step().id]={mode:config.display.mode,position:camera.position.toArray(),target:controls.target.toArray(),up:camera.up.toArray(),zoom:camera.zoom};await saveDoc("Camera saved for this chapter");};
-  $("resetCamera").onclick=()=>{delete doc.cameraViews[step().id];customCamera=false;restoreCamera();$("saveStatus").textContent="Camera reset; save the chapter to keep this change";};
+  $("saveCamera").onclick=async()=>{const {camera,controls}=scene3d;doc.cameraViews[cameraKey()]={mode:config.display.mode,position:camera.position.toArray(),target:controls.target.toArray(),up:camera.up.toArray(),zoom:camera.zoom};await saveDoc("Camera saved for this moment");};
+  $("resetCamera").onclick=()=>{delete doc.cameraViews[cameraKey()];customCamera=false;restoreCamera();$("saveStatus").textContent="Camera reset; save the chapter to keep this change";};
   $("inspectorToggle").onclick=()=>{document.body.classList.toggle("inspectorCollapsed");$("inspectorToggle").textContent=document.body.classList.contains("inspectorCollapsed")?"Show controls":"Hide controls";setTimeout(resizeScene,20);};
   $("spotButton").onclick=()=>{spotMode=!spotMode;document.body.classList.toggle("spotMode",spotMode);$("spotButton").setAttribute("aria-pressed",spotMode);};
   $("commentsButton").onclick=()=>{$("commentsDrawer").hidden=!$("commentsDrawer").hidden;};$("closeComments").onclick=()=>{$("commentsDrawer").hidden=true;};
@@ -310,7 +437,7 @@ function bind() {
   $("commentForm").onsubmit=async event=>{event.preventDefault();try{const result=await request("/api/presentation-comments",{action:"add",comment:{...draft,text:$("commentText").value.trim()}});comments=result.comments;$("commentForm").hidden=true;$("commentText").value="";spotMode=false;document.body.classList.remove("spotMode");$("spotButton").setAttribute("aria-pressed","false");renderComments();}catch(error){alert(error.message);}};
   $("downloadComments").onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({schema:"presentation-comments-v1",comments},null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download="presentation-comments.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
   document.addEventListener("click",event=>{if(!spotMode||presentMode)return;const target=event.target.closest("[data-spot]")||event.target.closest("#slide")||event.target.closest("#playback");if(!target||event.target.closest("#commentsDrawer,#reviewBar"))return;event.preventDefault();event.stopPropagation();const rect=target.getBoundingClientRect();draft={stepId:step().id,stepTitle:step().title,element:target.dataset.spot||target.id||"Slide",x:(event.clientX-rect.left)/rect.width,y:(event.clientY-rect.top)/rect.height,atHour:chapter()?currentHour:null};$("commentLocation").textContent=`${step().title} · ${draft.element}`;$("commentsDrawer").hidden=false;$("commentForm").hidden=false;$("commentText").focus();},true);
-  window.addEventListener("resize",()=>{resizeScene();drawCharts();placePins();}); window.addEventListener("hashchange",()=>{const index=doc.steps.findIndex(item=>item.id===location.hash.slice(1));if(index>=0){stepIndex=index;showStep();}});
+  window.addEventListener("resize",()=>{resizeScene();openingArt?.resize();drawCharts();placePins();}); window.addEventListener("hashchange",()=>{const index=doc.steps.findIndex(item=>item.id===location.hash.slice(1));if(index>=0){stepIndex=index;beatIndex=0;showStep();}});
 }
 function togglePlay(){playing=!playing;$("playButton").textContent=playing?"Pause":"Play";}
 function renderComments() {
