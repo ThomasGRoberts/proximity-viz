@@ -142,6 +142,7 @@ const statementCards = {
   ],
 };
 let doc, stepIndex = 0, beatIndex = 0, config, engine, series, geoChart = null, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], showArchived = false, activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt, sectionArt, saveStyleTimer, saveWordingTimer, saveTeachingTimer;
+const modelChartScales = new Map();
 
 async function request(path, payload) {
   const res = await fetch(path, payload ? { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) } : { cache:"no-store" });
@@ -189,7 +190,7 @@ function setup() {
   sectionArt = mountOpeningArt($("sectionArt"),{...doc.openingStyle,cameraView:doc.openingStyle.sectionCameraView||null,sectionMode:true,markerSizePx:Math.max(10,doc.openingStyle.markerSizePx*.6),animationRate:85,earthScale:doc.openingStyle.sectionEarthScale??.55,artScale:doc.openingStyle.sectionArtScale??.8});
   applySectionArtLayout();
   bind(); bindLayoutDrag(); showStep(); animate(0); renderComments();
-  loadGeoChart().then(value=>{geoChart=value;drawCharts(true);}).catch(error=>{console.warn("GEO chart unavailable",error);$("geoChartLabel").textContent="GEO example unavailable";});
+  loadGeoChart().then(value=>{geoChart=value;updateModelSceneNote();drawCharts(true);}).catch(error=>{console.warn("GEO chart unavailable",error);$("geoChartLabel").textContent="GEO example unavailable";$("modelChartStatus").textContent="Historical GEO measurements unavailable";});
   if(doc.inspectorPosition){Object.assign($("inspector").style,{left:`${doc.inspectorPosition.x}%`,top:`${Math.max(8,doc.inspectorPosition.y)}%`,right:"auto",bottom:"auto"});}
   requestAnimationFrame(clampInspector);
 }
@@ -209,6 +210,9 @@ function clampInspector(){
 }
 function step() { return doc.steps[stepIndex]; }
 function chapter() { return step().kind === "chapter"; }
+function updateModelSceneNote() {
+  if(step()?.id === "relative" && geoChart) $("modelChartStatus").textContent=`E-003 TLE charts · synthetic ${config.display.mode === "relative" ? "relative" : "Earth"} view`;
+}
 function visibility() {
   const show = { ...initialVisibility[step().id], ...doc.chapterVisibility[step().id] };
   if (step().id === "tle") Object.assign(show, { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false });
@@ -367,13 +371,19 @@ function showStep() {
   config = clone(doc.chapterOverrides[cameraKey()] || doc.chapterOverrides[item.id] || exampleConfig(item.id,beatIndex) || (item.id==="uncertainty" ? doc.chapterOverrides.tle : null) || doc.presets[activePreset]);
   if(item.id==="uncertainty"&&!doc.chapterOverrides[item.id])delete config.teachingApogeeKick;
   config.display={trailThickness:1.8,referenceThickness:1.2,borderThickness:1.1,borderOpacity:.7,borderColor:"#707070",...config.display};
-  const teaching = ["uncertainty","neighbors"].includes(item.id);
+  const teaching = ["uncertainty","neighbors","relative"].includes(item.id);
   document.body.classList.toggle("inspectorCollapsed", teaching && !presentMode);
   $("inspectorToggle").textContent = teaching && !presentMode ? "Show controls" : "Hide controls";
   $("inspectorToggle").setAttribute("aria-expanded",String(!teaching || presentMode));
   setTimeout(resizeScene, 30);
   if (item.id === "conjunction") config.display.mode = "relative";
   if (item.id === "tle") config.display.mode = "eci";
+  if (item.id === "relative" && !doc.chapterOverrides[cameraKey()] && !doc.chapterOverrides[item.id]) {
+    // An Earth-centred overview keeps the globe and the close pair in frame.
+    // The frame button still lets the presenter switch to relative motion.
+    config.display.mode = "eci";
+    config.display.markerSizePx = Math.max(18,config.display.markerSizePx);
+  }
   if (item.id === "tle" && beatIndex >= 2) config.teachingApogeeKick = { hour:apogeeKickHour(), dvMs:180 };
   if (item.id === "tle" && beatIndex < 2) delete config.teachingApogeeKick;
   if (item.id === "neighbors") config.display.mode = "relative";
@@ -424,6 +434,11 @@ function applyBeat(rebuild = true) {
     if(rebuild&&config.display.mode!==mode){config.display.mode=mode;customCamera=false;syncControls();recalc();restoreCamera();}
     $("legendB").open = beatIndex >= 1;
   }
+  if(id === "relative" && rebuild && !doc.chapterOverrides[cameraKey()]) {
+    const mode=beatIndex ? "relative" : "eci";
+    if(config.display.mode!==mode){config.display.mode=mode;customCamera=false;syncControls();recalc();restoreCamera();}
+  }
+  if(id === "relative") updateModelSceneNote();
   if (["conjunction","covariance-examples","future-examples"].includes(id) && rebuild) {
     config=clone(doc.chapterOverrides[cameraKey()] || exampleConfig(id,beatIndex));
     config.display={trailThickness:2.7,referenceThickness:1,borderThickness:1.1,borderOpacity:.7,borderColor:"#707070",...config.display};
@@ -431,6 +446,8 @@ function applyBeat(rebuild = true) {
   }
   $("sceneLegend").hidden = false;
   $("panel").hidden = ["tle", "uncertainty", "neighbors"].includes(id);
+  $("ui").hidden = id !== "relative";
+  if(id === "relative") $("nowModeling").open = true;
   $("teachingIntro").hidden=true;
   $("playback").hidden = false;
   $("sceneMetrics").hidden = true;
@@ -450,6 +467,7 @@ function applyBeat(rebuild = true) {
   $("chartBlock").dataset.chart=id==="relative"?(beatIndex===0?"distance":"both"):"both";
   if (rebuild && doc.cameraViews[cameraKey()]?.mode === config.display.mode) restoreCamera();
   updateVisibility(); resizeScene(); updateScene();
+  if(id === "relative") drawCharts(true);
   if (rebuild) { const node = $("episode"); node.classList.remove("beat-change"); void node.offsetWidth; node.classList.add("beat-change"); }
   updateProgress();placePins();
 }
@@ -825,9 +843,17 @@ function drawCharts(force=false) {
     if(!geoChart)return;
     const fraction=Math.max(0,Math.min(1,(currentHour-config.display.startHour)/(config.display.endHour-config.display.startHour)));
     const index=Math.round(fraction*(geoChart.samples.length-1));
-    const realMs=geoChart.samples[index].ms;
+    const realSample=geoChart.samples[index],realMs=realSample.ms;
     const realQualifications=thresholdIntervals(geoChart.samples,config.display.distanceThresholdKm,config.display.speedThresholdMs);
-    drawOrbitalChart($("distanceChart"),geoChart.samples,"distanceKm",{window:geoChart.window,currentMs:realMs,threshold:config.display.distanceThresholdKm,title:"Separation distance (km)",maximum:50000,qualifications:realQualifications,fixedWindow:true,timeOnly:false});
+    // These are the published model's chart renderer and the archived E-003
+    // GEO pair, rather than measurements from the synthetic teaching scene.
+    modelChartScales.set("distance",drawOrbitalChart($("modelDistanceChart"),geoChart.samples,"distanceKm",{window:geoChart.window,currentMs:realMs,threshold:config.display.distanceThresholdKm,title:"Separation distance (km)",maximum:50000,qualifications:realQualifications,fixedWindow:true,timeOnly:false}));
+    modelChartScales.set("speed",drawOrbitalChart($("modelSpeedChart"),geoChart.samples,"speedMs",{window:geoChart.window,currentMs:realMs,threshold:config.display.speedThresholdMs,title:"Relative speed (m/s)",maximum:1000,qualifications:realQualifications,fixedWindow:true,timeOnly:false,speedUnit:"m/s"}));
+    $("modelRangeStat").textContent=Number.isFinite(realSample.distanceKm)?`${fmtNum(realSample.distanceKm)} km`:"—";
+    $("modelSpeedStat").textContent=Number.isFinite(realSample.speedMs)?`${fmtNum(realSample.speedMs)} m/s`:"—";
+    const dwellMs=realQualifications.both.intervals.reduce((sum,interval)=>sum+interval.end-interval.start,0);
+    $("modelDwellStat").textContent=fmtNum(dwellMs/3600000);
+    $("modelDwellUnit").textContent="h";
   }else{
     drawOrbitalChart($("distanceChart"),samples,"distanceKm",{window,currentMs,threshold:config.display.distanceThresholdKm,title:"Separation distance (km)",maximum:50000,qualifications,fixedWindow:true,timeOnly:false});
     drawOrbitalChart($("speedChart"),samples,"speedMs",{window,currentMs,threshold:config.display.speedThresholdMs,title:"Relative speed (m/s)",maximum:1000,qualifications,fixedWindow:true,timeOnly:false,speedUnit:"m/s"});
@@ -873,8 +899,29 @@ function bind() {
   $("originToggle").onclick=()=>{ sceneOrigin = sceneOrigin === "A" ? "B" : "A"; customCamera=false;$("originToggle").title=`Center Object ${sceneOrigin === "A" ? "B" : "A"}`;$("originToggle").setAttribute("aria-label",$("originToggle").title);updateScene(); };
   for(const [id,factor] of [["zoomIn",.8],["zoomOut",1.25]])$(id).onclick=()=>{const {camera,controls}=scene3d;camera.position.sub(controls.target).multiplyScalar(factor).add(controls.target);customCamera=true;controls.update();};
   $("playButton").onclick=togglePlay;
-  $("timeSlider").addEventListener("input",event=>{currentHour=config.display.startHour+Number(event.target.value)/1000*(config.display.endHour-config.display.startHour);updateScene();drawCharts();});
+  $("timeSlider").addEventListener("input",event=>{currentHour=config.display.startHour+Number(event.target.value)/1000*(config.display.endHour-config.display.startHour);updateScene();drawCharts(true);});
   for (const [id,path] of [["distanceThreshold","display.distanceThresholdKm"],["speedThreshold","display.speedThresholdMs"],["distanceThresholdRange","display.distanceThresholdKm"],["speedThresholdRange","display.speedThresholdMs"]]) $(id).addEventListener("input",event=>change(path,Number(event.target.value)));
+  const setModelThreshold=(path,value)=>{
+    config.display[path.split(".")[1]]=value;
+    syncControls();drawCharts(true);
+    $("saveStatus").textContent="Unsaved chapter changes";
+  };
+  for(const [kind,edgeId,chartId,path,maximum,stepSize] of [["distance","modelDistanceEdge","modelDistanceChart","display.distanceThresholdKm",50000,10],["speed","modelSpeedEdge","modelSpeedChart","display.speedThresholdMs",1000,.1]]){
+    const edge=$(edgeId),canvas=$(chartId);
+    const setAt=clientY=>{
+      const scale=modelChartScales.get(kind);if(!scale)return;
+      const rect=canvas.getBoundingClientRect();
+      const chartY=(clientY-rect.top)*155/Math.max(1,rect.height);
+      const value=Math.max(0,Math.min(maximum,(scale.bottom-chartY)/(scale.bottom-scale.top)*scale.max));
+      setModelThreshold(path,Number((Math.round(value/stepSize)*stepSize).toFixed(stepSize<1?1:0)));
+    };
+    edge.addEventListener("pointerdown",event=>{edge.setPointerCapture(event.pointerId);setAt(event.clientY);});
+    edge.addEventListener("pointermove",event=>{if(edge.hasPointerCapture(event.pointerId))setAt(event.clientY);});
+    edge.addEventListener("keydown",event=>{
+      if(!["ArrowUp","ArrowDown"].includes(event.key))return;
+      event.preventDefault();setModelThreshold(path,Number(Math.max(0,Math.min(maximum,Number(config.display[path.split(".")[1]])+(event.key==="ArrowUp"?stepSize:-stepSize))).toFixed(stepSize<1?1:0)));
+    });
+  }
   $("presetSelect").onchange=()=>{ activePreset=$("presetSelect").value;config=clone(doc.presets[activePreset]);config.display={trailThickness:1.8,referenceThickness:1.2,borderThickness:1.1,borderOpacity:.7,borderColor:"#707070",...config.display};currentHour=config.display.startHour;syncControls();recalc();restoreCamera();redrawSceneBorders();$("saveStatus").textContent="Unsaved preset choice"; };
   $("savePreset").onclick=async()=>{const name=prompt("Preset name",doc.presets[activePreset]?.label||"My scenario");if(!name)return;const key=/^[a-z0-9-]+$/.test(activePreset)&&doc.presets[activePreset]?.label===name?activePreset:`custom-${Date.now()}`;doc.presets[key]={...clone(config),label:name};activePreset=key;buildPresets();$("presetSelect").value=key;await saveDoc("Preset saved on this computer");};
   $("saveChapter").onclick=async()=>{doc.chapterOverrides[beatCounts[step().id]?cameraKey():step().id]=clone(config);doc.chapterPresets[step().id]=activePreset;await saveDoc("Scenario saved for this chapter");};
