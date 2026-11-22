@@ -4,6 +4,13 @@ body[class*="-shared"] #ui .episode-focus-link{padding:8px 10px 10px!important}
 body[class*="-shared"] #ui .episode-focus .titleEpisode{margin-top:5px!important;padding-left:0!important;color:#3d382b!important;-webkit-text-fill-color:#3d382b!important;font-weight:700!important}
 body[class*="-shared"] #ui .episode-focus-period{display:block;margin:4px 0 0;color:#857454;font-size:10px;line-height:1.25;font-weight:400}
 body[class*="-shared"] #ui :is(.pair-sticky,.e003-pair-sticky,.e005-pair-sticky,.e006-pair-sticky,.e008-pair-sticky,.e016-pair-sticky,.e059-pair-sticky){border-bottom:1px solid #e2d4ad!important;border-left:3px solid #d6a527!important;background:#fff4cf!important}
+body[class*="-shared"] #ui :is(.pair-sticky,.e003-pair-sticky,.e005-pair-sticky,.e006-pair-sticky,.e008-pair-sticky,.e016-pair-sticky,.e059-pair-sticky) b{font-size:9px!important;font-weight:700!important;line-height:1.1!important}
+body[class*="-shared"] :is(.e003-chapter-arrow,.e005-chapter-arrow,.e006-chapter-arrow,.e008-chapter-arrow,.e016-chapter-arrow,.e059-chapter-arrow){color:#b88913!important}
+@media(min-width:761px){
+  body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared):not([class*="-multi-chapter"]):not([class*="-review"]) #ui{max-height:calc(100vh - 101px)}
+  body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared)[class*="-review"]:not([class*="-multi-chapter"]) #ui{max-height:calc(100vh - 182px)}
+}
+body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared):not([class*="-multi-chapter"]) .playbackDock{padding-top:5px;padding-bottom:2px}
 .episode-neighbors{display:flex;align-items:center;justify-content:space-between;margin:5px 2px 0;font:600 9px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .episode-neighbors a{padding:4px 5px;border-radius:4px;color:#8a7b5d;text-decoration:none;transition:background .16s,color .16s}
 .episode-neighbors a:hover,.episode-neighbors a:focus-visible{background:#fff3d2;color:#654a0c}

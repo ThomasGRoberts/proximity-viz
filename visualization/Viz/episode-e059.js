@@ -3,7 +3,7 @@ import { installReferenceOrbitHover } from "./reference-orbit-hover.js";
 import { orientEarth } from "./earth-frame.js";
 import { eciRateForState } from "./orbital-playback.js";
 import { miniLandTexture } from "./mini-scene-style.js?v=2";
-import { miniCircularEarth } from "./mini-circular-earth.js";
+import { miniCircularEarth } from "./mini-circular-earth.js?v=2";
 import { renderSharedCommentList } from "../dev/review-shell.js?v=2";
 /* Local E-059 full visualization. Two spacecraft remain visible; nearest dated
    Space-Track elements drive playback. Statistical chart gaps mark old TLEs. */
@@ -13,7 +13,7 @@ import { feature } from "./vendor/topojson/topojson-client.js";
 import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=6";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
-import { wireTimelineHover } from "./playback-shared.js?v=2";
+import { wireTimelineHover } from "./playback-shared.js?v=3";
 import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js?v=2";
@@ -217,7 +217,7 @@ async function start() {
   chapterNav.hidden = chapters.length === 1;
   document.body.classList.toggle("e059-multi-chapter", chapters.length > 1);
   $("playbackDock").prepend(chapterNav);
-  let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "B", referenceSlot = "B", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 21600, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
+  let chapter = chapters[0], current = chapter.centerMs, playing = false, transitioning = false, selected = "B", referenceSlot = "B", mode = miniScene ? "eci" : "relative", autoCamera = true, rate = miniScene ? 3600 : 10800, series = [], lastTrailKey = "", lastReferenceOrbitKey = "";
   let relativeRate = rate;
   let miniLoopStart = chapter.centerMs - 2 * HOUR, miniLoopEnd = chapter.centerMs + 2 * HOUR;
   const miniPinnedTles = {};
@@ -341,7 +341,7 @@ async function start() {
       const target = $(nodeId); target.replaceChildren();
       if (!min) { target.textContent = "Minimum this chapter: unavailable"; continue; }
       const strong = document.createElement("strong");
-      strong.textContent = `${Math.round(min[selected][key]).toLocaleString("en-US")} ${unit}`;
+      strong.textContent = min[selected][key] >= 0 && min[selected][key] < 1 ? `< 1 ${unit}` : `${Math.round(min[selected][key]).toLocaleString("en-US")} ${unit}`;
       const link = document.createElement("a"); link.href = "#playbackDock"; link.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(min.ms));
       link.title = `Jump playback to ${new Date(min.ms).toISOString()}`;
       link.setAttribute("aria-label", link.title);
@@ -599,7 +599,7 @@ async function start() {
   $("resetBtn").hidden = true; $("resetBtn").addEventListener("click", () => { autoCamera = true; camera.zoom = 1; camera.updateProjectionMatrix(); render(); });
   $("zoomInBtn").addEventListener("click", () => { camera.zoom = Math.min(5, camera.zoom * 1.15); camera.updateProjectionMatrix(); render(); });
   $("zoomOutBtn").addEventListener("click", () => { camera.zoom = Math.max(.4, camera.zoom / 1.15); camera.updateProjectionMatrix(); render(); });
-  const speeds = [3600, 21600, 86400, 259200]; let speedIndex = 1;
+  const speeds = [3600, 10800, 21600, 86400, 259200]; let speedIndex = 1;
   for (const [id, step] of [["speedDownBtn", -1], ["speedUpBtn", 1]]) $(id).addEventListener("click", () => { speedIndex = Math.max(0, Math.min(speeds.length - 1, speedIndex + step)); rate = speeds[speedIndex]; $(id).title = `${rate / 3600} simulated hours per second`; });
   for (const [id, output, unit] of [["distanceThresholdSlider", "distanceThresholdOutput", "km"], ["speedThresholdSlider", "speedThresholdOutput", "m/s"]]) $(id).addEventListener("input", () => { if ($(output)) $(output).textContent = `${$(id).value} ${unit}`; drawCharts(); });
   for (const [id, groupId] of [["separationChart", "distanceChartGroup"], ["speedChart", "speedChartGroup"]]) {

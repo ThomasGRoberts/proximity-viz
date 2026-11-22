@@ -3,7 +3,7 @@ import { installReferenceOrbitHover } from "./reference-orbit-hover.js";
 import { orientEarth } from "./earth-frame.js";
 import { eciRateForState } from "./orbital-playback.js";
 import { miniLandTexture } from "./mini-scene-style.js?v=2";
-import { miniCircularEarth } from "./mini-circular-earth.js";
+import { miniCircularEarth } from "./mini-circular-earth.js?v=2";
 import { renderSharedCommentList } from "../dev/review-shell.js?v=2";
 /* Local first pass for E-016. Two spacecraft remain visible; nearest dated
    Space-Track elements drive playback. Statistical chart gaps mark old TLEs. */
@@ -13,7 +13,7 @@ import { feature } from "./vendor/topojson/topojson-client.js";
 import { loadCurrentEpisodes, episodeChapters, plottedObjects } from "../../shared/episode-feed.js?v=6";
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js";
 import { DOT_SCREEN_SIZE, dotTexture, fadingTrailGeometry, fadingTrailMaterial, miniMarkerScale } from "./relative-rendering.js?v=4";
-import { wireTimelineHover } from "./playback-shared.js?v=2";
+import { wireTimelineHover } from "./playback-shared.js?v=3";
 import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis.js";
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js?v=2";
@@ -339,7 +339,7 @@ async function start() {
       const target = $(nodeId); target.replaceChildren();
       if (!min) { target.textContent = "Minimum this chapter: unavailable"; continue; }
       const strong = document.createElement("strong");
-      strong.textContent = `${Math.round(min[selected][key]).toLocaleString("en-US")} ${unit}`;
+      strong.textContent = min[selected][key] >= 0 && min[selected][key] < 1 ? `< 1 ${unit}` : `${Math.round(min[selected][key]).toLocaleString("en-US")} ${unit}`;
       const link = document.createElement("a"); link.href = "#playbackDock"; link.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(min.ms));
       link.title = `Jump playback to ${new Date(min.ms).toISOString()}`;
       link.setAttribute("aria-label", link.title);

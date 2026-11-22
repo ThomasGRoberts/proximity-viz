@@ -7,7 +7,7 @@ export function miniCircularEarth(THREE, renderer, scene, earth, camera, sceneHo
   planet.position.set(0, 0, 0);
   planetScene.add(planet);
   const planetCamera = new THREE.OrthographicCamera(-1.2, 1.2, 1.2, -1.2, .1, 10);
-  const target = new THREE.WebGLRenderTarget(256, 256, { depthBuffer: true, stencilBuffer: false });
+  const target = new THREE.WebGLRenderTarget(768, 768, { depthBuffer: true, stencilBuffer: false });
   const disk = new THREE.Sprite(new THREE.SpriteMaterial({ map: target.texture, transparent: true, alphaTest: .02, depthTest: true, depthWrite: true, sizeAttenuation: false }));
   disk.renderOrder = 0;
   scene.add(disk);

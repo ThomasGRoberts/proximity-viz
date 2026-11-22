@@ -605,7 +605,7 @@ function expandedContent(row, data) {
   overview.append(context);
   if (hasEpisodeVisual(episodeId)) {
     const publicId = publicEpisodeId(row);
-    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/?v=7" : episodeId === "E-002" ? "../visualization/e002/?build=3" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=3`, location.href).href;
+    const viz = el("section", "visual-block"), target = new URL(episodeId === "E-001" ? "../visualization/e001/?v=8" : episodeId === "E-002" ? "../visualization/e002/?build=4" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=4`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -705,20 +705,6 @@ function loadingDetail(row, data) {
   context.append(el("p", "partial-period", period(row)), objects(row, data));
   wrap.append(context, el("p", "partial-records", `${linkedDescriptions(row, data).length} linked records; details loading…`));
   return wrap;
-}
-async function measureExpandedRowHeight() {
-  const rows = state.live?.episodes?.filter(row => hasEpisodeVisual(field(row, "ID"))) || [];
-  const longest = rows.reduce((best, row) => episodeDescription(row).length > episodeDescription(best).length ? row : best, rows[0]);
-  if (!longest) return;
-  const detail = await ensureDetail(longest);
-  const sample = el("tr", "expanded-row"); sample.dataset.episodeId = field(longest, "ID");
-  const cell = el("td"); cell.colSpan = 7; sample.append(cell);
-  sample.style.visibility = "hidden"; sample.style.pointerEvents = "none";
-  cell.append(expandedContent(detail.row, detail));
-  document.querySelector("#rows").append(sample);
-  const height = Math.ceil(cell.querySelector(".expanded-inner").scrollHeight) + 4;
-  sample.remove(); sourceCarouselCleanup(); sourceCarouselCleanup = () => {};
-  document.documentElement.style.setProperty("--review-expanded-height", `${height}px`);
 }
 function animateIn(node) { if (!reducedMotion.matches) node.animate([{ opacity: 0, transform: "translateY(-5px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 190, easing: "ease-out" }); }
 let scrollFrame = 0, scrollResolve = null, selectionToken = 0, collapseAnimation = null;
@@ -931,18 +917,18 @@ function stageEpisodeAssets() {
   // do not create eight simultaneous WebGL contexts in hidden iframes.
   const idle = callback => "requestIdleCallback" in window
     ? requestIdleCallback(callback, { timeout: 1500 }) : setTimeout(callback, 250);
-  const orbitalAssets = [["e003", 12], ["e005", 17], ["e006", 19], ["e008", 11], ["e016", 9], ["e059", 10]];
+  const orbitalAssets = [["e003", 13], ["e005", 18], ["e006", 20], ["e008", 12], ["e016", 10], ["e059", 11]];
   const assets = [
     "../visualization/Viz/vendor/three/three.module.js",
     "../visualization/Viz/vendor/countries-50m.json",
     "../visualization/dev/e002-control-panel-preview/table-mini.html",
     ...orbitalAssets.map(([name, version]) => `../visualization/Viz/episode-${name}.js?v=${version}`),
     ...orbitalAssets.map(([name]) => `../visualization/dev/${name}/data/provenance.json`),
-    "../visualization/Viz/compare.html?build=3",
-    "../visualization/e001/?v=7",
-    "../visualization/e002/?build=3",
+    "../visualization/Viz/compare.html?build=4",
+    "../visualization/e001/?v=8",
+    "../visualization/e002/?build=4",
     "../visualization/e001/public.js?v=9",
-    "../visualization/dev/e002-control-panel-preview/app.js?v=14",
+    "../visualization/dev/e002-control-panel-preview/app.js?v=15",
   ];
   let index = 0, queued = false;
   const scheduleNext = () => {
@@ -1128,7 +1114,9 @@ function updateE001BackdropBounds(host, tableWrap, expanded) {
   const header = host.classList.contains("e001-live") || host.classList.contains("e005-live") ? expanded.previousElementSibling?.getBoundingClientRect() : null;
   const top = header?.top ?? rect.top;
   const table = tableWrap.querySelector("table")?.getBoundingClientRect() || origin;
-  Object.assign(host.style, { top: `${top - origin.top - 1}px`, left: `${table.left - origin.left}px`, width: `${table.width}px`, height: `${detail.bottom - top + 2}px` });
+  const records = expanded.querySelector(".evidence-section")?.getBoundingClientRect();
+  const height = host.classList.contains("e005-live") && records ? Math.min(detail.bottom - top + 2, records.top - top + 95) : detail.bottom - top + 2;
+  Object.assign(host.style, { top: `${top - origin.top - 1}px`, left: `${table.left - origin.left}px`, width: `${table.width}px`, height: `${height}px` });
   positionMiniLoader(host, expanded.previousElementSibling, expanded);
 }
 function startPreview(row) {
@@ -1202,7 +1190,9 @@ function startPreview(row) {
         if (!expanded?.isConnected || !host.isConnected) return;
         const area = expanded.getBoundingClientRect(), link = host.parentElement.getBoundingClientRect();
         const overlap = episodeId === "E-059" ? 2 : 1;
-        Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top - overlap}px`, width: `${area.width}px`, height: `${area.height + overlap}px` });
+        const records = expanded.querySelector(".evidence-section")?.getBoundingClientRect();
+        const height = episodeId === "E-059" && records ? Math.min(area.height + overlap, records.top - area.top + 95) : area.height + overlap;
+        Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top - overlap}px`, width: `${area.width}px`, height: `${height}px` });
         positionMiniLoader(host, header, expanded);
         Object.assign(frame.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
       };
@@ -1366,7 +1356,6 @@ async function init() {
     }
     if (state.sort.key === "distance" || state.sort.key === "speed") render();
   });
-  await measureExpandedRowHeight().catch(error => console.warn("Expanded-row measurement unavailable", error));
   state.selected = initialSelection; render();
   for (const id of ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"]) {
     const row = state.live.episodes?.find(item => item.ID === id);

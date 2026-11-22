@@ -807,6 +807,25 @@ th[aria-sort="none"] .sort-indicator{opacity:.62}
 th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacity:1}
 .table-glossary-label{text-decoration-line:underline;text-decoration-style:dotted;text-decoration-color:#cfc4aa;text-decoration-thickness:1px;text-underline-offset:1px;cursor:help}
 .table-glossary-label:is(:hover,:focus-visible){text-decoration-color:#967d40}
+
+/* Keep each expanded row compact while its records remain reachable. */
+@media(min-width:901px){
+  .table-wrap .expanded-row .expanded-inner.has-visual{min-height:0;max-height:calc(100dvh - 110px)!important;overflow-y:auto;grid-template-rows:auto auto}
+  .table-wrap .expanded-row .expanded-inner.has-visual .context-block{min-height:0}
+  .table-wrap .expanded-row .expanded-inner.has-visual .evidence-section{align-self:start;margin-top:0;padding-bottom:10px!important}
+  .table-wrap .expanded-row[data-episode-id="E-005"]:has(.expanded-inner.has-visual)>td{background:transparent!important}
+}
+.table-wrap th:nth-child(1){width:29%}
+.table-wrap th:nth-child(2){width:7%}
+.table-wrap th:nth-child(3){width:18%}
+.table-wrap th:nth-child(4),.table-wrap th:nth-child(5),.table-wrap th:nth-child(6){width:13%}
+.table-wrap th:nth-child(7){width:7%}
+.table-wrap th:nth-child(n+4){text-align:center}
+.table-wrap th:nth-child(n+4) .sort-head{position:relative;display:flex;width:100%;justify-content:center;padding:0;text-decoration:none}
+.table-wrap th:nth-child(n+4) .sort-indicator{position:absolute;right:0;left:auto;color:#c6c6c6;opacity:1;transform:none}
+.table-wrap th:nth-child(n+4) .sort-head:is(:hover,:focus-visible) .sort-indicator{color:#d8b75b;opacity:1}
+.table-wrap th:nth-child(n+4)[aria-sort]:not([aria-sort="none"]) .sort-indicator{color:#9a7313}
+.table-wrap th:nth-child(n+4) .sort-head:is(:hover,:focus-visible) .table-glossary-label{text-decoration-color:#a88c45}
 .news-record-icon{transform:rotate(var(--record-tilt,-4deg))}
 .episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:62px;vertical-align:top;background:#fff8df;transition:padding-bottom .24s ease}
 .episode-row .row-discovery{position:absolute;left:20px;right:18px;bottom:9px;display:flex;flex-direction:column;align-items:flex-start;gap:0;max-height:0;margin:0;overflow:hidden;opacity:0;transform:translateY(-4px);pointer-events:none;transition:max-height .24s ease,opacity .2s ease,transform .24s ease}

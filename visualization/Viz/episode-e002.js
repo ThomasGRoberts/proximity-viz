@@ -3,8 +3,8 @@
 import { spaceTrackHistoryUrl } from "../../shared/tle-provenance.js?v=4";
 import { loadCurrentEpisodes, plottedObjects } from "../../shared/episode-feed.js?v=6";
 import { safeEpisodeName } from "../../shared/episode-name.js";
-import { renderEstimatedMinimum } from "./estimate-ui.js";
-import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js?v=2";
+import { renderEstimatedMinimum } from "./estimate-ui.js?v=2";
+import { updatePlaybackCounter, wireSpeedButtons, wireTimelineHover } from "./playback-shared.js?v=3";
 import { CHART_PADDING, CHART_COLOR } from "./chart-style.js";
 import { formatDwellDuration } from "../../shared/format-duration.js";
 

@@ -1,4 +1,4 @@
-import { wireTimelineHover } from "../../Viz/playback-shared.js?v=2";
+import { wireTimelineHover } from "../../Viz/playback-shared.js?v=3";
 import { loadOrbitalPreview, preloadOrbitalElements, drawOrbitalChart, resetOrbitalChartScale } from "./orbital-preview.js?v=3";
 import { createGlobePreview } from "./globe-preview.js?v=9";
 import { reviewHref } from "../review-shell.js?v=2";
@@ -8,7 +8,7 @@ import { installGlossary } from "./glossary.js?v=2";
 import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
 import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=2";
-import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=5";
+import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=6";
 
 const $ = id => document.getElementById(id);
 void preloadOrbitalElements().catch(() => {});
@@ -373,7 +373,7 @@ function showMinimum(node, minimum, unit) {
   node.replaceChildren();
   if (!minimum) { node.textContent = "Minimum this chapter: unavailable"; return; }
   const strong = document.createElement("strong");
-  strong.textContent = `${Math.round(minimum.value).toLocaleString("en-US")} ${unit}`;
+  strong.textContent = minimum.value >= 0 && minimum.value < 1 ? `< 1 ${unit}` : `${Math.round(minimum.value).toLocaleString("en-US")} ${unit}`;
   const link = document.createElement("a"); link.href = "#"; link.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(minimum.ms));
   link.insertAdjacentHTML("beforeend", '<svg class="minimumCalendar" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3.5h10v10H3zM3 6h10"/><path class="calendarPage" d="M6.1 8.4h3.8l-2.4 3.6"/></svg>');
   link.title = `Jump to ${prettyDate(minimum.ms)}`;

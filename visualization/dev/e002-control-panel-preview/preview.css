@@ -222,7 +222,7 @@ body.e002-shared .playbackDock{position:relative;bottom:auto;flex:0 0 auto;box-s
 .chapter-transition #chapterTransitionDates{display:flex;align-items:center;justify-content:center;gap:7px;height:18px;color:#777;font-size:10px;line-height:18px}
 #chapterTransitionDates>span{opacity:0;transform:translateY(4px);transition:opacity .38s ease,transform .38s ease}
 .chapter-transition.show-dates #chapterFromDate{opacity:1;transform:none;transition-delay:.04s}
-.chapter-transition.show-dates #chapterTransitionDates .chapter-date-arrow{opacity:1;transform:none;transition-delay:.32s;color:#aaa}
+.chapter-transition.show-dates #chapterTransitionDates .chapter-date-arrow{opacity:1;transform:none;transition-delay:.32s;color:#b88913}
 .chapter-transition.show-dates #chapterToDate{opacity:1;transform:none;transition-delay:.6s}
 .chapter-transition-dots{position:relative;width:88px;height:16px;margin-bottom:3px}
 .chapter-transition-dots i{position:absolute;top:3px;left:calc(50% - 5px);display:block;box-sizing:border-box;width:10px;height:10px;border:1.5px solid #777;border-radius:50%;background:#a9a9a9;animation:chapterPass 2.4s linear infinite}

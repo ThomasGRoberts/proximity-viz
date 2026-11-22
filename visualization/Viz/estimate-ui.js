@@ -7,7 +7,7 @@ export function renderEstimatedMinimum(target, { episodeId, metric, value, unit,
     return;
   }
   const caption = document.createElement("span"); caption.className = "estimateCaption"; caption.textContent = "Minimum this chapter:";
-  const strong = document.createElement("strong"); strong.textContent = `${Math.round(value).toLocaleString("en-US")} ${unit}`;
+  const strong = document.createElement("strong"); strong.textContent = value >= 0 && value < 1 ? `< 1 ${unit}` : `${Math.round(value).toLocaleString("en-US")} ${unit}`;
   const link = document.createElement("a"); link.href = "#playbackDock";
   const label = document.createElement("span"); label.textContent = dateText(ms);
   link.append(label);

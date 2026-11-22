@@ -39,22 +39,21 @@ export function wireTimelineHover(slider, hover, tick, range) {
   wrap.addEventListener("pointermove", event => {
     const [start, end] = range(); if (!(end > start)) return;
     const rect = slider.getBoundingClientRect(), x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-    const minute = Math.max(start, Math.min(end, Math.round((start + x / rect.width * (end - start)) / 60000) * 60000));
     const fraction = x / rect.width;
     const marks = [...document.querySelectorAll("#dwellSegments span")];
     const mark = marks.find(node => {
       const left = parseFloat(node.style.left) / 100, width = parseFloat(node.style.width) / 100;
       return node.classList.contains("both") && fraction >= left && fraction <= left + width;
-    }) || marks.find(node => {
-      const left = parseFloat(node.style.left) / 100, width = parseFloat(node.style.width) / 100;
-      return node.classList.contains("single") && fraction >= left && fraction <= left + width;
     });
-    hover.textContent = mark?.classList.contains("both")
-      ? slider.dataset.dwellMessage || "These space objects are dwelling next to one another."
-      : mark?.classList.contains("single") ? ""
-        : new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(minute)) + " UTC";
+    const message = mark ? slider.dataset.dwellMessage || "These space objects are dwelling next to one another." : "";
+    const names = message.match(/^(.*?) is dwelling next to (.*?)\.$/);
+    if (names) {
+      const first = document.createElement("em"), second = document.createElement("em");
+      first.textContent = names[1]; second.textContent = names[2];
+      hover.replaceChildren(first, " is dwelling next to ", second, ".");
+    } else hover.textContent = message;
     tick.style.left = `${x}px`; hover.style.left = `${Math.max(40, Math.min(rect.width - 40, x))}px`;
-    hover.style.transform = "translateX(-50%)"; hover.hidden = !hover.textContent; tick.hidden = false;
+    hover.style.transform = "translateX(-50%)"; hover.hidden = !message; tick.hidden = !message;
   });
   wrap.addEventListener("pointerleave", () => { hover.hidden = tick.hidden = true; });
 }
