@@ -51,7 +51,7 @@ select { width:100%; height:34px; padding:0 9px; border:1px solid #ccc; border-r
 .miniControl { height:27px; min-width:28px; padding:0 7px; border:1px solid #ccc; border-radius:7px; color:#555; background:#fff; font:inherit; font-size:11px; font-weight:700; cursor:pointer; }
 .speedMiniGroup { display:flex; gap:3px; }
 .activeSpeed { color:#fff; border-color:#555; background:#555; }
-#cameraControls { position:fixed; z-index:10; top:20px; right:20px; display:flex; flex-direction:column; gap:8px; }
+#cameraControls { position:fixed; z-index:10; top:18px; right:18px; display:flex; flex-direction:column; gap:8px; }
 .cameraBtn { width:46px; height:46px; border:1px solid #ddd; border-radius:50%; color:#555; background:rgba(255,255,255,.94); box-shadow:0 3px 12px rgba(0,0,0,.1); font-size:22px; cursor:pointer; }
 #brand { position:fixed; right:28px; bottom:24px; width:220px; opacity:.32; }
 #brand img { display:block; width:100%; height:auto; }

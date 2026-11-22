@@ -12,13 +12,16 @@ from uuid import uuid4
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
+PEOPLE_BLOCK = REPO.parents[2] / "Web Content/WordPress Code Blocks/People/people-WORDPRESS-SAFE-V13-COMPLETE-PASTE.html"
 COMMENTS = HERE / "comments.json"
 PORT = 8771
-SPOTS = {"page", "intro", "repository", "title", "language", "contributors", "portraits", "table", "full-link", "about-link", "repo-meta", "project-page", "project-banner", "research-updates", "special-model", "special-data", "hero-table-link"}
-SURFACES = {"Website Page", "SBI Project", "Proximity Project"}
+SPOTS = {"page", "intro", "repository", "title", "language", "contributors", "portraits", "table", "full-link", "about-link", "repo-meta", "project-page", "project-banner", "research-updates", "special-model", "special-data", "hero-table-link", "research-page", "publication-table", "people-page", "student-biocards", "student-research-updates"}
+SURFACES = {"Website Page", "SBI Project", "Proximity Project", "Research", "People"}
 PROJECT_URLS = {
     "sbi": "https://espl.ae.gatech.edu/research/projects/sbi/",
     "proximity": "https://espl.ae.gatech.edu/research/projects/proximity/",
+    "research": "https://espl.ae.gatech.edu/research/",
+    "people": "https://espl.ae.gatech.edu/people/",
 }
 
 
@@ -54,6 +57,15 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(encoded)
 
     def do_GET(self):
+        if urlsplit(self.path).path == "/api/people-wordpress":
+            markup = PEOPLE_BLOCK.read_text(encoding="utf-8") + "\n" + (HERE / "people-page-embed-snippet.html").read_text(encoding="utf-8")
+            encoded = markup.encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+            return
         if self.path == "/api/website-comments":
             return self.respond(200, {"schema": "espl-website-review-v1", "comments": read_comments()})
         path = urlsplit(self.path).path
@@ -66,7 +78,8 @@ class Handler(SimpleHTTPRequestHandler):
                 with urlopen(request, timeout=20) as source:
                     html = source.read().decode("utf-8", "replace")
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
-                local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=2'
+                script_name = "project-page-updates.js" if slug in {"sbi", "proximity"} else f"{slug}-page-updates.js"
+                local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=3'
                 addon = f'<script src="{local_script}" data-espl-project="{slug}"></script>'
                 html = html.replace("</body>", addon + "</body>", 1)
                 encoded = html.encode("utf-8")

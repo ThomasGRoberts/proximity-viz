@@ -16,6 +16,11 @@ const labels = {
   "special-model": "Interactive model card",
   "special-data": "Data repository card",
   "hero-table-link": "Banner table link",
+  "research-page": "Research page",
+  "publication-table": "Publication table",
+  "people-page": "People page",
+  "student-biocards": "Student biography cards",
+  "student-research-updates": "Student research updates",
 };
 const selectors = {
   page: ".espl-episodes-page",
@@ -37,17 +42,30 @@ const projectSelectors = {
   "special-data": "#espl-project-page .data-repository-card",
   "hero-table-link": "#espl-project-page .espl-proximity-banner-embed",
 };
+const researchSelectors = {
+  "research-page": "#espl-research-projects",
+  "publication-table": "#publications-overview",
+};
+const peopleSelectors = {
+  "people-page": "#espl-people-page",
+  "student-biocards": "#espl-people-page .student-card, #espl-people-page .person-card",
+  "student-research-updates": "#studentOverlay .project-outputs, #studentOverlay #publicationStage",
+};
 const panes = {
   library: { surface: "Website Page", snippet: "../website-embed-snippet.html", copyLabel: "Copy table HTML" },
   sbi: { surface: "SBI Project", snippet: "./sbi-project-embed-snippet.html", copyLabel: "Copy SBI HTML" },
   proximity: { surface: "Proximity Project", snippet: "./proximity-project-embed-snippet.html", copyLabel: "Copy proximity HTML" },
+  research: { surface: "Research", snippet: "./research-page-embed-snippet.html", copyLabel: "Copy research HTML" },
+  people: { surface: "People", snippet: "/api/people-wordpress", copyLabel: "Copy People HTML" },
 };
+const paneSelectors = { library: selectors, sbi: projectSelectors, proximity: projectSelectors, research: researchSelectors, people: peopleSelectors };
+const paneName = { sbi: "SBI project", proximity: "proximity project", research: "research", people: "People" };
 
 let comments = [], draft = null, spotMode = false, activePane = "library";
 const visibleComments = () => comments.filter(item => (item.surface || "Website Page") === panes[activePane].surface);
 const projectFrame = () => document.getElementById("projectFrame");
 const previewDocument = () => activePane === "library" ? document : projectFrame()?.contentDocument;
-const spotNode = spot => previewDocument()?.querySelector((activePane === "library" ? selectors : projectSelectors)[spot]);
+const spotNode = spot => previewDocument()?.querySelector(paneSelectors[activePane][spot]);
 const spotRect = node => {
   const rect = node.getBoundingClientRect();
   if (activePane === "library") return rect;
@@ -132,7 +150,7 @@ function renderComments() {
 
 function annotate() {
   const doc = previewDocument();
-  for (const [spot, selector] of Object.entries(activePane === "library" ? selectors : projectSelectors)) {
+  for (const [spot, selector] of Object.entries(paneSelectors[activePane])) {
     const node = doc?.querySelector(selector);
     if (node) node.dataset.websiteSpot = spot;
   }
@@ -140,29 +158,29 @@ function annotate() {
 
 async function loadPreview() {
   const pane = activePane;
-  status(pane === "library" ? "Loading the current website embed draft…" : `Loading the live ${pane === "sbi" ? "SBI" : "proximity"} project page…`);
+  status(pane === "library" ? "Loading the current website embed draft…" : `Loading the live ${paneName[pane]} page…`);
   try {
     if (pane !== "library") {
       const frame = document.createElement("iframe");
       frame.id = "projectFrame"; frame.className = "project-frame";
-      frame.title = `${pane === "sbi" ? "SBI" : "Proximity"} project page preview`;
+      frame.title = `${paneName[pane]} page preview`;
       frame.src = `/api/project-preview/${pane}?refresh=${Date.now()}`;
       frame.addEventListener("load", () => {
         if (activePane !== pane || frame !== projectFrame()) return;
         try {
-          if (!frame.contentDocument?.querySelector("#espl-project-page")) throw new Error("Project page unavailable");
+          if (!frame.contentDocument?.querySelector(pane === "people" ? "#espl-people-page" : pane === "research" ? "#espl-research-projects" : "#espl-project-page")) throw new Error("Page unavailable");
           annotate(); drawPins();
           frame.contentWindow.addEventListener("scroll", drawPins, { passive: true });
-          const publications = frame.contentDocument.querySelector(".project-publications");
+          const publications = frame.contentDocument.querySelector(pane === "people" ? "#studentOverlay" : pane === "research" ? "#publications-overview" : ".project-publications");
           if (publications) {
             let scheduled = false;
             new MutationObserver(() => {
               if (scheduled) return;
               scheduled = true;
               requestAnimationFrame(() => { scheduled = false; if (activePane === pane && frame === projectFrame()) { annotate(); drawPins(); } });
-            }).observe(publications, { childList: true });
+            }).observe(publications, { childList: true, subtree: pane === "people" });
           }
-          status(`Live ${pane === "sbi" ? "SBI" : "proximity"} project page with local updates. Spot comments save in this pane only.`);
+          status(`Live ${paneName[pane]} page with local updates. Spot comments save in this pane only.`);
         } catch (error) { status(`Could not display project page: ${error.message}`); }
       });
       $("pageHost").replaceChildren(frame);
@@ -277,7 +295,7 @@ $("copyHtml").addEventListener("click", async () => {
       if (!copied) throw new Error("Clipboard access is unavailable");
     }
     button.textContent = "Copied HTML";
-    status(pane === "library" ? "The table page Custom HTML block is on your clipboard." : `The ${pane === "sbi" ? "SBI" : "proximity"} project update block is on your clipboard. Add it after the existing project block.`);
+    status(pane === "library" ? "The table page Custom HTML block is on your clipboard." : `The ${paneName[pane]} update block is on your clipboard. Add it after the existing page block.`);
     setTimeout(() => { if (activePane === pane) button.textContent = panes[pane].copyLabel; }, 1800);
   } catch (error) { status(`Could not copy HTML: ${error.message}`); }
 });
@@ -292,4 +310,4 @@ window.addEventListener("keydown", event => { if (event.key === "Escape") { setS
 
 try { comments = await requestComments(); renderComments(); }
 catch (error) { status(`Could not load website comments: ${error.message}`); }
-selectPane("library");
+selectPane(panes[new URLSearchParams(location.search).get("pane")] ? new URLSearchParams(location.search).get("pane") : "library");
