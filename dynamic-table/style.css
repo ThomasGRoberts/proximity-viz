@@ -896,8 +896,11 @@ html.embedded-table .toolbar{border-radius:12px 12px 0 0}
 @media(min-width:901px){
   .table-wrap tr.episode-row td,
   .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{
-    padding-top:30px;padding-bottom:30px;vertical-align:top;
+    padding-top:30px;padding-bottom:30px;vertical-align:middle;
     transition:padding-bottom .24s ease,background-color .24s ease;
   }
   .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:68px}
 }
+.table-wrap tr.episode-row.is-receding{z-index:6}
+.table-wrap tr.episode-row.is-receding td{background:#fff8df}
+.table-wrap th.records-head{padding-left:0;padding-right:0;text-align:center}

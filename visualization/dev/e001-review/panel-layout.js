@@ -93,7 +93,7 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
   nav.style.setProperty("--chapter-count", String(chapters.length));
   chapters.forEach((chapter, index) => {
     const button = doc().createElement("button"); button.type = "button"; button.textContent = chapter.label; button.title = `${dateLabel(chapter.start)}–${dateLabel(chapter.end)}`;
-    button.addEventListener("click", () => selectChapter(index)); nav.append(button);
+    button.addEventListener("click", () => selectChapter(index, null, !review)); nav.append(button);
   });
   dock.prepend(nav);
   const style = doc().createElement("style"); style.textContent = `
@@ -106,7 +106,7 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     #panelToggleBtn:hover,#panelToggleBtn:focus-visible{background:#f5f5f5!important;color:#555!important}
     body.ui-collapsed #panelToggleBtn{left:0!important}
     body.e002-shared #ui .episodeHeader h1{max-width:275px!important;font-size:24px!important;line-height:1.08!important;font-weight:800!important;letter-spacing:-.035em!important;white-space:normal!important}
-    body.e002-shared #ui .episode-focus{position:relative!important;min-height:62px!important;margin:13px 0 0!important;padding:0!important;border:1px solid #ddd9d0!important;border-radius:9px!important;background:#fff!important}
+    body.e002-shared #ui .episode-focus{position:relative!important;min-height:0!important;margin:13px 0 0!important;padding:0!important;border:1px solid #ddd9d0!important;border-radius:9px!important;background:#fff!important}
     body.e002-shared #ui .episode-focus .titleEpisode{display:block!important;margin:6px 0 0!important;padding:0 0 0 17px!important;border:0!important;background:none!important;-webkit-text-fill-color:#38352d!important;color:#38352d!important;font-size:13px!important;font-weight:700!important;line-height:1.34!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
     body.e002-shared #ui .episodeHeader .episodeDescription{margin-top:11px!important;font-size:11px!important;line-height:1.42!important}
     body.e002-shared #ui .sourceSummary{display:none!important}
@@ -131,7 +131,8 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     .e001-chapters{display:grid;grid-template-columns:repeat(var(--chapter-count),minmax(0,1fr));gap:3px;margin:0 8px 5px;padding:2px;border:1px solid #d2d2d2;border-radius:7px;background:#f1f1f1}
     body.e002-shared #ui .episodeHeader h1{position:static!important;top:auto!important;margin:0 0 7px!important;padding:0!important;border:0!important;box-shadow:none!important;background:none!important}
     body.e002-shared #ui .episode-focus{border:1px solid #e3d4ab!important;border-left:3px solid #d6a527!important;background:#fff4cf!important}
-    body.e002-shared #ui .episode-focus-link{padding:8px 10px 10px!important}
+    body.e002-shared #ui .episode-focus-link{padding:8px 10px 3px!important}
+    body.e002-shared #ui .episode-focus .episodeDescription.story-collapsed{margin:0!important}
     body.e002-shared #ui .episode-focus .titleEpisode{margin:5px 0 0!important;padding:0!important;border:0!important;background:none!important;color:#3d382b!important;-webkit-text-fill-color:#3d382b!important;font-weight:700!important}
     body.e002-shared #ui .episode-focus-period{display:block;margin:4px 0 0;color:#857454;font-size:10px;line-height:1.25;font-weight:400}
     body.e002-shared #ui .pair-sticky{border-bottom:1px solid #e2d4ad!important;border-left:3px solid #d6a527!important;background:#fff4cf!important}

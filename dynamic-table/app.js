@@ -215,7 +215,7 @@ function buildObjectPopover(info) {
   addMetadata(dl, "NORAD ID", s.NORAD_CAT_ID);
   const ownerRow = el("div"), ownerValue = el("dd"); ownerRow.append(el("dt", "", "Country / Org."));
   ownerValue.append(document.createTextNode(ownerDisplay(info)));
-  if (!organizationKind(info) && info.owner !== "FRIT") for (const flag of emojiForOwner(info.owner)) ownerValue.append(document.createTextNode(` ${flag}`));
+  if (info.owner !== "FRIT") for (const flag of emojiForOwner(info.owner)) ownerValue.append(document.createTextNode(` ${flag}`));
   ownerRow.append(ownerValue); dl.append(ownerRow);
   addMetadata(dl, "Object type", objectTypes[s.OBJECT_TYPE] || s.OBJECT_TYPE);
   addMetadata(dl, "Launch date", fullDate(s.LAUNCH || s.LAUNCH_DATE));
@@ -663,7 +663,7 @@ function expandedContent(row, data) {
       const pageCount = () => Math.ceil(cards.length / pageSize());
       const restart = () => {
         clearInterval(advance);
-        advance = window.setInterval(() => { if (grid.isConnected && !document.hidden) show((page + 1) % pageCount(), true); }, 10000);
+        advance = window.setInterval(() => { if (grid.isConnected && !document.hidden) show((page + 1) % pageCount(), true); }, 20000);
       };
       const show = (requestedPage, animate = false) => {
         const oldPage = page, size = pageSize(), total = pageCount();
@@ -919,7 +919,7 @@ function stageEpisodeAssets() {
   // do not create eight simultaneous WebGL contexts in hidden iframes.
   const idle = callback => "requestIdleCallback" in window
     ? requestIdleCallback(callback, { timeout: 1500 }) : setTimeout(callback, 250);
-  const orbitalAssets = [["e003", 13], ["e005", 18], ["e006", 20], ["e008", 12], ["e016", 10], ["e059", 11]];
+  const orbitalAssets = [["e003", 13], ["e005", 18], ["e006", 20], ["e008", 12], ["e016", 10], ["e059", 13]];
   const assets = [
     "../visualization/Viz/vendor/three/three.module.js",
     "../visualization/Viz/vendor/countries-50m.json",
@@ -929,7 +929,7 @@ function stageEpisodeAssets() {
     "../visualization/Viz/compare.html?build=4",
     "../visualization/e001/?v=8",
     "../visualization/e002/?build=4",
-    "../visualization/e001/public.js?v=9",
+    "../visualization/e001/public.js?v=10",
     "../visualization/dev/e002-control-panel-preview/app.js?v=15",
   ];
   let index = 0, queued = false;
@@ -964,7 +964,7 @@ function stageEpisodeAssets() {
   };
   scheduleNext();
   // Stagger the three reusable mini scenes after the rows exist.
-  const warmers = [prewarmE002, prewarmE001, prewarmE005];
+  const warmers = [prewarmE001, prewarmE002, prewarmE005];
   let warmIndex = 0;
   const warm = () => {
     if (warmIndex >= warmers.length) return;
@@ -1129,6 +1129,7 @@ function startPreview(row) {
   // Create the same full-width scene now instead of falling through to the
   // clipped, column-sized fallback.
   if (episodeId === "E-005" && !warmedE005Host) prewarmE005();
+  if (episodeId === "E-001" && !warmedE001Host) prewarmE001();
   showMiniDotsOverDescription();
   // One live scene spans the header, overview, and records. The link remains
   // the interaction target while the canvas is a clipped background layer.
@@ -1279,6 +1280,14 @@ function render() {
     const speed = el("td", "speed-column"); speed.append(proximityNode(row, "speed")); tr.append(speed);
     const newsCell = el("td", "news-column"); newsCell.append(newsIndicator(row, linkedDescriptions(row, data).length)); tr.append(newsCell);
     tr.addEventListener("click", event => { if (!event.target.closest("button, a, input, select, .gterm")) toggleRow(row); });
+    let recedeTimer;
+    tr.addEventListener("pointerenter", () => { clearTimeout(recedeTimer); tr.classList.remove("is-receding"); });
+    tr.addEventListener("pointerleave", () => {
+      if (tr.classList.contains("selected")) return;
+      tr.classList.add("is-receding");
+      clearTimeout(recedeTimer);
+      recedeTimer = setTimeout(() => tr.classList.remove("is-receding"), 300);
+    });
     tr.addEventListener("keydown", event => { if (event.target === tr && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleRow(row); } });
     body.append(tr);
     if (open) {
