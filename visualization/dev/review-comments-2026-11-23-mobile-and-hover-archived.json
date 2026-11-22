@@ -1,0 +1,30 @@
+{
+  "schema": "espl-shared-review-v1",
+  "archivedAt": "2026-11-22T23:19:45.214014+00:00",
+  "comments": [
+    {
+      "id": "12512fca3f634abd9d2818b893b9b6d2",
+      "createdAt": "2026-11-22T21:44:35+00:00",
+      "surface": "Library",
+      "root": "table",
+      "key": "heading-0",
+      "label": "Column heading · Episode",
+      "x": 0.7245724572457246,
+      "y": 0.5454545454545454,
+      "text": "You said there's a chance to see how this page looks like on mobile? Where is that feature? \n\nWhen I load the actual published-to-git version of the table on mobile, it's a total mess: way worse than before my comment to you about it. Please address this. My preference was to look at a mobile preview of the dynamic table here in VScode and still be able to use this comment tool to tell you about things.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "b8d5db6a06854297aa7eb65fe30d4435",
+      "createdAt": "2026-11-22T22:41:51+00:00",
+      "surface": "Library",
+      "root": "table",
+      "key": "E-006-cell-0",
+      "label": "E-005 · Episode",
+      "x": 0.9632606877420251,
+      "y": 0.2318007223654091,
+      "text": "On some computers, the rows seem to ‘shiver’ while moving the mouse through them. Please also get rid of the scroll bar when expanded cards are unfurled since users can always scroll down on the entire web page if they need to see some more.",
+      "appliesToAllEpisodes": true
+    }
+  ]
+}

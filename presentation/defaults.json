@@ -6,35 +6,36 @@
       "kind": "slide",
       "title": "How Close Is Too Close?",
       "subtitle": "Side event",
-      "body": "OEWG on PAROS · Fourth Session · November 23, 2026"
+      "body": "OEWG on PAROS, Fourth Session · November 23, 2026",
+      "tagline": "Building Shared Understanding of Satellite Behavior"
     },
     {
       "id": "lab",
       "kind": "slide",
-      "title": "Engineering Space Policy Laboratory",
-      "subtitle": "Georgia Tech",
+      "title": "Research areas",
+      "subtitle": "The lab's",
       "body": ""
     },
     {
       "id": "statements-close",
       "kind": "slide",
-      "title": "Close approaches and shadowing",
+      "title": "Proximity operations, close approaches, and shadowing",
       "subtitle": "Official statements",
-      "body": "States describe close approaches and shadowing as concerning, but those terms remain undefined. Separation distance alone cannot explain the dynamic behavior—or the concern it creates."
+      "body": "States describe these activities, in certain contexts, as concerning. Although each of these terms can be defined with physical conditions, states do not share their understanding of those conditions in public fora."
     },
     {
       "id": "statements-shadow",
       "kind": "slide",
       "title": "Six voices on proximity",
-      "subtitle": "Official statements",
+      "subtitle": "",
       "body": ""
     },
     {
       "id": "statements-focus",
       "kind": "slide",
-      "title": "Beyond the physical parameters",
-      "subtitle": "A closer look · United States",
-      "body": "Distance, speed, and duration help describe an encounter. They are a starting point for understanding concern, not the whole explanation."
+      "title": "Physical parameters as a basis for concern",
+      "subtitle": "A closer look",
+      "body": "Observed dynamics can help establish what is unusual. Whether they are disturbing also depends on context that States may not share. What physical basis of concern could we describe in common?"
     },
     {
       "id": "tle",
@@ -69,7 +70,7 @@
       "kind": "chapter",
       "title": "Measurements through time",
       "subtitle": "05 · Geometry and charts",
-      "body": "The two charts follow the same simulated states shown in the 3D scene."
+      "body": "Separation distance and relative speed change over time. Dwell is the cumulative time spent inside both selected thresholds."
     },
     {
       "id": "conjunction",
@@ -100,11 +101,25 @@
       "body": "Explore documented episodes, orbital reconstructions, and linked source records."
     },
     {
+      "id": "project-page",
+      "kind": "project",
+      "title": "How Close Is Too Close?",
+      "subtitle": "Project page",
+      "body": ""
+    },
+    {
       "id": "limitations",
       "kind": "slide",
       "title": "Limits of public reconstructions",
       "subtitle": "What the model cannot establish",
       "body": "Sparse observations, dated TLEs, unknown covariance, and unobserved maneuvers limit what a public reconstruction can claim."
+    },
+    {
+      "id": "covariance-examples",
+      "kind": "chapter",
+      "title": "Uncertainty in three scenarios",
+      "subtitle": "Illustrative covariance",
+      "body": "The ellipsoids are illustrative, not measured covariance from a TLE."
     },
     {
       "id": "future",
@@ -114,11 +129,33 @@
       "body": "Congestion, statistical baselines, and proximity between energy-related space systems."
     },
     {
+      "id": "future-examples",
+      "kind": "chapter",
+      "title": "Further behavioral questions",
+      "subtitle": "Future research",
+      "body": "Energy-space proximity and sustained line of sight are distinct from separation distance alone."
+    },
+    {
       "id": "discussion",
       "kind": "slide",
       "title": "Discussion",
       "subtitle": "Questions for the room",
-      "body": "Which observed features help States describe behavior? Which uncertainties should remain visible?"
+      "body": ""
+    },
+    {
+      "id": "discussion-questions",
+      "kind": "slide",
+      "title": "Questions for discussion",
+      "subtitle": "OEWG on PAROS",
+      "body": "Which measurable characteristics of satellite behavior are most useful for distinguishing routine proximity operations from activities that may warrant concern, clarification, or consultation?\n\nWhere might states’ interpretations of close approaches, shadowing, and other proximity operations converge or diverge, and what additional operational context is necessary to understand those differences?\n\nWhat information could states reasonably share to substantiate their concerns or enable independent assessments, without disclosing sensitive space domain awareness capabilities?\n\nHow might shared physical descriptions and evidentiary practices contribute to voluntary transparency and confidence-building measures, legally binding instruments, or both?"
+    },
+    {
+      "id": "closing",
+      "kind": "slide",
+      "title": "How Close Is Too Close?",
+      "subtitle": "Side event",
+      "tagline": "Building Shared Understanding of Satellite Behavior",
+      "body": "OEWG on PAROS, Fourth Session · November 23, 2026"
     }
   ],
   "presets": {
@@ -396,12 +433,27 @@
     "earthScale": 1,
     "artScale": 1,
     "sectionEarthScale": 0.55,
-    "sectionArtScale": 0.8
+    "sectionArtScale": 0.8,
+    "chaserDaKm": 0,
+    "chaserDlambdaKm": -25,
+    "chaserDexKm": 35,
+    "chaserDeyKm": 0,
+    "chaserDixKm": 35,
+    "chaserDiyKm": 0,
+    "sectionOffsetX": 0,
+    "sectionOffsetY": 0,
+    "sectionRotationDeg": -16,
+    "targetAltitudeKm": 550,
+    "targetInclinationDeg": 53,
+    "targetEccentricity": 0.001,
+    "targetRaanDeg": 93,
+    "targetArgPerigeeDeg": 35,
+    "targetMeanAnomalyDeg": 358
   },
   "chapterLayout": {},
   "chapterLabels": {
     "tle": {
-      "A": "Satellite",
+      "A": "Object A",
       "B": "Object B"
     }
   }

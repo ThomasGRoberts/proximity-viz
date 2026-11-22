@@ -128,16 +128,15 @@ export function createEngine(config) {
     const before = prior ? coast(prior.state, (event.hour - prior.hour) * 3600) : sgp(satB, event.hour);
     prepared.push({ ...event, state: { r: before.r, v: add(before.v, scale(unit(before.v), event.dv / 1000)) } });
   }
-  const teaching = config.teachingPlaneChange;
+  const teaching = config.teachingApogeeKick;
   const preManeuverA = hour => sgp(satA, hour);
-  let planeChange = null, tleAfterA = null;
+  let apogeeKick = null, tleAfterA = null;
   if (teaching && Number.isFinite(teaching.hour) && Number.isFinite(teaching.dvMs)) {
     const before = preManeuverA(teaching.hour);
-    const normal = unit(cross(before.r, before.v));
-    planeChange = { hour: teaching.hour, state: { r: before.r, v: add(before.v, scale(normal, teaching.dvMs / 1000)) } };
-    tleAfterA = syntheticTle(elementsFromState(planeChange.state), "99901", "A", EPOCH_MS + teaching.hour * HOUR);
+    apogeeKick = { hour: teaching.hour, state: { r: before.r, v: add(before.v, scale(unit(before.v), teaching.dvMs / 1000)) } };
+    tleAfterA = syntheticTle(elementsFromState(apogeeKick.state), "99901", "A", EPOCH_MS + teaching.hour * HOUR);
   }
-  const stateA = hour => planeChange && hour >= planeChange.hour ? coast(planeChange.state, (hour - planeChange.hour) * 3600) : preManeuverA(hour);
+  const stateA = hour => apogeeKick && hour >= apogeeKick.hour ? coast(apogeeKick.state, (hour - apogeeKick.hour) * 3600) : preManeuverA(hour);
   const stateB = hour => {
     let latest = null;
     for (const event of prepared) { if (event.hour <= hour) latest = event; else break; }

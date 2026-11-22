@@ -135,7 +135,7 @@ export function chapterTickHours(widthHours) {
   return choices.reduce((best, choice) => Math.abs(choice - target) < Math.abs(best - target) ? choice : best);
 }
 
-export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, threshold, title, maximum, qualifications, markedMs = null, speedUnit = "km/s", connectSwitches = false, maxConnectionGapMs = Infinity, minimumTickHours = 0, contextSamples = null, fixedWindow = false }) {
+export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, threshold, title, maximum, qualifications, markedMs = null, speedUnit = "km/s", connectSwitches = false, maxConnectionGapMs = Infinity, minimumTickHours = 0, contextSamples = null, fixedWindow = false, timeOnly = false }) {
   const width = Math.max(260, Math.round(canvas.clientWidth || 306)), height = 155;
   const ratio = Math.min(Math.max(globalThis.devicePixelRatio || 1, 2), 3), context = canvas.getContext("2d");
   canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); context.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -220,8 +220,8 @@ export function drawOrbitalChart(canvas, samples, metric, { window, currentMs, t
     const px = x(ms);
     context.strokeStyle = "#aaa"; context.beginPath(); context.moveTo(px, bottom); context.lineTo(px, bottom + 4); context.stroke();
     context.fillStyle = CHART_COLOR.text; context.textAlign = "center"; context.font = '9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    context.fillText(axisTime(ms), px, height - 20);
-    context.fillText(shortDate(ms).replace(/,\s*\d{4}$/, ""), px, height - 9);
+    context.fillText(axisTime(ms), px, timeOnly ? height - 12 : height - 20);
+    if (!timeOnly) context.fillText(shortDate(ms).replace(/,\s*\d{4}$/, ""), px, height - 9);
   }
   const oneThreshold = metric === "distanceKm" ? qualifications?.distanceOnly : qualifications?.speedOnly;
   for (const [intervals, color] of [[oneThreshold || qualifications?.single || [], "#a9a9a9"], [qualifications?.both.intervals || [], "#eaaa00"]]) {

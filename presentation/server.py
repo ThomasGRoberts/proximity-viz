@@ -5,12 +5,14 @@ import json
 import os
 import tempfile
 import uuid
+from urllib.request import Request, urlopen
 from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parent.parent
 HERE = Path(__file__).resolve().parent
 CONFIG = HERE / "config.json"
 COMMENTS = HERE / "comments.json"
+PROJECT_URL = "https://espl.ae.gatech.edu/research/projects/proximity/"
 
 def read_json(path, fallback):
     try:
@@ -39,6 +41,21 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
+        if self.path == "/api/proximity-project":
+            try:
+                request = Request(PROJECT_URL, headers={"User-Agent": "Mozilla/5.0"})
+                with urlopen(request, timeout=12) as response:
+                    page = response.read(2_000_000).decode("utf-8", "replace")
+                page = page.replace("<head>", f'<head><base href="{PROJECT_URL}">', 1)
+                data = page.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                return self.wfile.write(data)
+            except Exception as error:
+                return self.send_json({"error": f"Project preview unavailable: {error}"}, 502)
         if self.path == "/api/presentation-config":
             return self.send_json(read_json(CONFIG, read_json(HERE / "defaults.json", {})))
         if self.path == "/api/presentation-comments":

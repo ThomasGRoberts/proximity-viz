@@ -202,3 +202,236 @@ body[data-step="tle"] #playback{left:20px;right:20px}
 .equatorSwatch{background:#d3b968}.eclipticSwatch{background:#8f9da6}
 body[data-step="tle"] #displayControls>label:has([data-path="display.mode"]),body[data-step="tle"] #displayControls>label:has([data-path="display.showVectors"]),body[data-step="tle"] #displayControls>label:has([data-path="display.showUncertainty"]),body[data-step="tle"] #displayControls>label:has([data-path="display.uncertaintyKm"]),body[data-step="tle"] #displayControls>label:has([data-path="display.distanceThresholdKm"]),body[data-step="tle"] #displayControls>label:has([data-path="display.speedThresholdMs"]){display:none}
 body[data-step="statements-focus"] .quoteCards{max-width:1240px}
+
+/* Review controls stay usable on every beat. The clean view omits numbering. */
+.slideControls{display:flex!important;gap:6px;align-items:center;max-width:min(92vw,720px);background:#fffefbf2}
+.slideControls button{min-height:34px;padding:8px 12px;font-size:12px}
+.slideControls select{max-width:210px;min-height:33px;padding:5px 9px;border:1px solid #ded8c9;border-radius:5px;background:#fff;color:#514b40;font-size:11px;font-weight:650}
+.slideControls span{min-width:76px;font-size:11px}
+body.presentation .slideControls{opacity:.72;transition:opacity .18s ease}
+body.presentation .slideControls:hover,body.presentation .slideControls:focus-within{opacity:1}
+body.presentation .slideControls #progressText{display:none}
+body.presentation .slideControls button{font-size:13px}
+
+/* Keep the opening stripe with the heading, leaving event metadata below it. */
+body[data-step="opening"] .slide,body[data-step="opening"] .openingArt{background:#fff}
+body[data-step="opening"] .slideCopy{display:flex;flex-direction:column;justify-content:center;width:min(58vw,800px);padding:0;border:0}
+body[data-step="opening"] #slideHeadline{border-left:4px solid var(--gold);padding:8px 0 10px clamp(22px,2.3vw,36px)}
+body[data-step="opening"] #slideTitle{font-size:clamp(62px,6.6vw,110px);white-space:nowrap}
+body[data-step="opening"] #openingSubtitle{display:block;max-width:650px;margin:16px 0 0;color:#514d44;font-size:clamp(19px,2vw,28px);font-weight:450;line-height:1.24}
+body[data-step="opening"] #slideBody{position:absolute;left:0;bottom:58px;max-width:640px;margin:0;font-size:clamp(14px,1.2vw,17px)}
+
+/* The supplied neutral research icons remain visible until their individual beat. */
+.researchArea img{filter:none}
+.researchArea.active video{display:block}
+.researchArea.active img{visibility:hidden}
+.researchArea video,.researchArea.active video{position:relative;top:auto;left:auto;display:block;width:min(100%,260px);aspect-ratio:1;transform:none;filter:none;pointer-events:none}
+
+/* The physical section scene stays behind the copy and can be positioned in review. */
+.sectionArt{right:-17vw;top:4vh;width:65vw;height:86vh;transform:translate(var(--section-x,0vw),var(--section-y,0vh)) rotate(var(--section-rotation,-16deg));opacity:.82;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 19%);-webkit-mask-image:linear-gradient(90deg,transparent,#000 19%)}
+body[data-step="statements-close"] .slide h1{font-size:clamp(43px,4.7vw,71px);font-style:normal}
+
+/* Six diplomatic excerpts fit three across. The U.S. card expands in place next. */
+body[data-step="statements-shadow"] .quoteCards{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));width:calc(100% - min(10vw,145px));gap:12px}
+body[data-step="statements-shadow"] .quoteCard{padding:16px 17px}
+body[data-step="statements-shadow"] .quoteCard blockquote{font-size:clamp(14px,1.22vw,18px);line-height:1.33}
+body[data-step="statements-shadow"] .quoteCard p{font-size:clamp(9px,.76vw,11px)}
+body[data-step="statements-focus"] .quoteCards{display:block;max-width:min(850px,80vw);margin:auto 0}
+body[data-step="statements-focus"] .quoteCard{min-height:290px;padding:32px 38px;animation:focus-card-zoom .75s cubic-bezier(.22,1,.36,1) both}
+body[data-step="statements-focus"] .quoteCard blockquote{font-size:clamp(25px,2.7vw,40px)}
+body[data-step="statements-focus"] .quoteCard strong[class$="Word"]{background-size:0% 100%}
+body[data-step="statements-focus"] .quoteCards[data-focus="0"] .unusualWord,body[data-step="statements-focus"] .quoteCards[data-focus="1"] .disturbingWord{animation:quote-highlight .9s .55s both}
+@keyframes focus-card-zoom{from{opacity:0;transform:translateY(24px) scale(.88)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* The first teaching beats use the satellite disclosures as their only card. */
+.sceneLegend{flex-direction:column;gap:2px;width:min(350px,calc(100% - 38px));padding:6px 10px;background:#f2f2f2ed}
+.sceneLegend details{width:100%;max-width:none}
+.sceneLegend summary{min-height:36px;padding:4px 0;font-size:13px}
+.sceneLegend summary::after{content:"";width:7px;height:7px;margin-left:auto;border-right:1.7px solid #706a60;border-bottom:1.7px solid #706a60;transform:rotate(45deg);transition:transform .2s ease}
+.sceneLegend details[open] summary::after{transform:rotate(225deg)}
+.sceneLegend .elementList{min-width:0;width:100%;max-width:none}
+body[data-step="tle"] #teachingIntro,body[data-step="tle"] #playback{display:none!important}
+body[data-step="relative"] #panel{bottom:auto;max-height:none;width:min(360px,35vw);padding:0;overflow:visible;border:0;background:transparent;box-shadow:none}
+body[data-step="relative"] #panel .panelHead,body[data-step="relative"] #panel .panelBlock,body[data-step="relative"] #panel #metricBlock,body[data-step="relative"] #panel #thresholdBlock,body[data-step="relative"] #panel #maneuverBlock,body[data-step="relative"] #panel #uncertaintyBlock,body[data-step="relative"] #panel #tleBlock{display:none!important}
+body[data-step="relative"] #chartBlock{margin:0;padding:12px 14px;border:1px solid #e3dfd5;border-radius:8px;background:#fffdf9f5;box-shadow:0 3px 12px #0000000d}
+body[data-step="relative"] #chartBlock h2{display:none}
+body[data-step="relative"] #chartBlock #dwellLabel{display:none}
+body[data-step="relative"] #chartBlock[data-chart="distance"] label:nth-of-type(2),body[data-step="relative"] #chartBlock[data-chart="speed"] label:nth-of-type(1){display:none}
+#inspector>header[data-drag],#panel .panelHead[data-drag]{cursor:grab;touch-action:none;user-select:none}
+#inspector>header[data-drag]:active,#panel .panelHead[data-drag]:active{cursor:grabbing}
+#inspector{width:340px}
+@media(max-width:900px){body[data-step="statements-shadow"] .quoteCards{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));width:100%}#inspector{width:270px}}
+@media(max-width:650px){body[data-step="statements-shadow"] .quoteCards{grid-template-columns:1fr;grid-template-rows:none}body[data-step="opening"] .slideCopy{width:76vw}body[data-step="opening"] #slideTitle{font-size:clamp(39px,7vw,64px)}.slideControls select{max-width:115px}body[data-step="relative"] #panel{width:min(290px,70vw)}}
+
+/* Fifth carousel review: presentation navigation stays in the review ribbon. */
+.slideControls,body.presentation .slideControls{display:none!important}
+body[data-step="opening"] .slideCopy,body[data-step="closing"] .slideCopy{margin-left:clamp(22px,3.5vw,58px);width:min(61vw,850px)}
+body[data-step="opening"] #slideHeadline,body[data-step="closing"] #slideHeadline{padding-top:22px;padding-bottom:24px}
+body[data-step="opening"] #slideTitle,body[data-step="closing"] #slideTitle{line-height:1.1}
+body[data-step="opening"] #openingSubtitle,body[data-step="closing"] #openingSubtitle{margin-top:25px;line-height:1.35}
+body[data-step="opening"] #slideBody,body[data-step="closing"] #slideBody{left:clamp(22px,2.3vw,36px);font-weight:400}
+body[data-step="closing"] .slide,body[data-step="closing"] .openingArt{background:#fff}
+body[data-step="closing"] .slide{padding:0}
+body[data-step="closing"] .slideCopy{display:flex;flex-direction:column;justify-content:center;height:100%}
+body[data-step="closing"] #slideHeadline{border-left:4px solid var(--gold)}
+body[data-step="closing"] #slideTitle{font-size:clamp(62px,6.6vw,110px);white-space:nowrap}
+body[data-step="closing"] #slideBody{position:absolute;bottom:58px;margin:0;font-size:clamp(14px,1.2vw,17px)}
+body[data-step="closing"] .openingArt{inset:0 0 0 43%}
+
+/* The three lab areas begin as the supplied static images. */
+.labIntroCopy{align-items:flex-start;justify-content:flex-start;max-width:none;padding:clamp(40px,7vh,82px) clamp(32px,5vw,90px);text-align:left}
+.labIntro h1{margin:8px 0 clamp(28px,5vh,55px)}
+.researchAreas{max-width:1100px;margin:0 auto}
+.researchArea,.researchArea:hover,.researchArea:focus-visible{position:relative;display:flex;align-items:center;padding:0;background:none;border:0;border-radius:0;cursor:default}
+.researchArea img{display:block;width:min(100%,260px);filter:none}
+.researchArea video,.researchArea.active video{position:absolute;top:0;left:50%;display:none;width:min(100%,260px);transform:translateX(-50%);filter:none}
+.researchArea.active video{display:block}
+.researchArea.active img{visibility:hidden}
+
+body[data-step="statements-shadow"] #slideEyebrow{display:none}
+body[data-step="statements-shadow"] .quoteCards{align-self:start;flex:none;height:calc(100% - 75px);grid-template-rows:repeat(2,minmax(0,1fr));width:calc(100% - min(10vw,145px));padding-bottom:35px}
+body[data-step="statements-shadow"] .quoteCard{height:fit-content;max-height:100%;padding:13px 16px}
+body[data-step="statements-shadow"] .quoteCard:nth-child(2),body[data-step="statements-shadow"] .quoteCard:nth-child(5){margin-top:15px}
+body[data-step="statements-shadow"] .quoteCard blockquote{margin:8px 0;font-size:clamp(17px,1.45vw,23px);line-height:1.25}
+body[data-step="statements-shadow"] .quoteCard p{font-size:clamp(10px,.84vw,12px)}
+body[data-step="statements-focus"] .quoteCards{max-width:min(900px,76vw)}
+body[data-step="statements-focus"] .quoteCard{min-height:360px;padding:36px 42px}
+body[data-step="statements-focus"] .quoteCard blockquote{font-size:clamp(27px,3vw,44px);line-height:1.28}
+.quoteCard[hidden]{display:none!important}
+
+/* Space-object cards and chart stack use the episode visualizers' layout. */
+body.chapterActive #scene{left:0}
+body.chapterActive #panel,body[data-step="relative"] #panel{left:28px;top:128px;bottom:auto;display:flex;flex-direction:column;width:min(350px,33vw);max-height:calc(100% - 215px);padding:0;overflow:auto;border:0;border-radius:0;background:transparent;box-shadow:none}
+body.chapterActive #panel[hidden]{display:none!important}
+body.chapterActive #panel .panelHead,body.chapterActive #panel .panelBlock,body.chapterActive #panel #tleBlock,body.chapterActive #panel #maneuverBlock{display:none!important}
+body.chapterActive #chartBlock{order:0;margin:0;padding:10px 12px;border:1px solid #e2ded7;border-radius:7px;background:#fffdf9f5;box-shadow:0 2px 8px #0000000d}
+body.chapterActive #thresholdBlock{order:1;margin-top:8px;padding:6px 10px;border:1px solid #e2ded7;border-radius:7px;background:#fffdf9f5}
+body.chapterActive #thresholdBlock input[type="range"]{display:block;width:100%;margin:7px 0 10px;accent-color:#b8891d}
+body.chapterActive #metricBlock{order:2;margin-top:8px;padding:6px 10px;border:1px solid #e2ded7;border-radius:7px;background:#fffdf9f5}
+#lineOfSightRow[hidden]{display:none!important}
+body.chapterActive #uncertaintyBlock{order:3;margin-top:8px;padding:6px 10px;border:1px solid #e2ded7;border-radius:7px;background:#fffdf9f5}
+body[data-step="relative"] #panel #thresholdBlock{display:block!important}
+body[data-step="relative"] #panel #metricBlock{display:block!important}
+body.chapterActive .sceneHint{display:none}
+body.chapterActive .sceneMetrics[hidden]{display:none!important}
+body[data-step="relative"] #chartBlock .chartGroup:nth-of-type(2){display:block}
+body[data-step="relative"][data-beat="0"] #chartBlock .chartGroup:nth-of-type(2){display:none}
+body.chapterActive #dwellLabel{font-size:10px;color:#6d655a}
+body[data-step="tle"] #playback{display:flex!important}
+.sceneLegend{left:28px;top:18px;display:flex;flex-direction:column;gap:10px;width:min(350px,33vw);max-width:none;padding:0;border:0;background:transparent}
+.sceneLegend details{width:100%;min-width:0;padding:4px 11px;border:1px solid #d8d8d8;border-radius:8px;background:#f1f1f1}
+.sceneLegend summary{min-height:39px;padding:2px 0;font-size:13px;font-weight:650}
+.sceneLegend .elementList{display:block;width:100%;margin:3px 0 5px;padding:8px 0 0;border-top:1px solid #dedede;border-radius:0;background:transparent}
+.sceneLegend .elementList div{display:flex;gap:9px;margin:6px 0;align-items:baseline}
+.sceneLegend .elementList div:last-child{display:block}
+.sceneLegend .elementList div:last-child dd{text-align:left;line-height:1.4}
+.sceneLegend .elementList dd{overflow-wrap:anywhere}
+.sceneTools{right:70px;top:18px;display:flex;flex-direction:column;gap:8px}
+body.presentation .sceneTools{right:18px}
+.sceneTools .cameraBtn{display:grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid #ddd;border-radius:50%;background:#ffffffed;box-shadow:0 3px 12px #00000018;color:#555;font-size:20px;cursor:pointer;transition:background .18s,color .18s,transform .18s}
+.sceneTools .cameraBtn:hover{background:#f6edda;color:#8f6815;transform:translateY(-1px)}
+.sceneTools .cameraBtn[hidden]{display:none!important}
+.sceneTools .cameraBtn svg{display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+#playback{left:28px;right:28px;bottom:16px;min-height:52px;border-radius:9px;background:#fffdf9f4}
+#playButton{min-width:38px;height:34px;border-radius:50%!important;font-size:15px}
+#examplePicker{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:10px;font-weight:650}
+#examplePicker[hidden]{display:none!important}
+#exampleSelect{max-width:180px;padding:6px;border:1px solid #ddd4c6;border-radius:6px;background:#fff;color:#514b40}
+.chartGroup{position:relative;margin:5px 0 9px}
+.chartGroup>strong{display:block;margin:0 0 3px;color:#514b40;font-size:11px;font-weight:650}
+.chartGroup canvas{display:block;width:100%;height:155px;border:0;background:#fff}
+.chartGroup .thresholdEdge,.chartGroup .currentValue{position:absolute;right:0;min-width:60px;padding:1px 2px;background:#fff;color:#625c52;font-size:10px;font-weight:700;line-height:15px;pointer-events:none}
+.chartGroup .currentValue{color:#333}
+.projectVisit{position:absolute;inset:0;z-index:5;background:#fff}
+.projectVisit iframe{display:block;width:100%;height:100%;border:0}
+.projectVisit button{position:absolute;right:18px;top:18px;z-index:1;width:43px;height:43px;border:1px solid #ddd;border-radius:50%;background:#fff;color:#555;font-size:28px;cursor:pointer}
+.projectVisit button:hover{background:#f6edda}
+#slide[hidden],#episode[hidden],#projectVisit[hidden],#quoteCards[hidden],#labIntro[hidden],#sectionArt[hidden],#openingArt[hidden],#playback[hidden],#frameTools[hidden],#examplePicker[hidden],#inspector[hidden],#panel[hidden],#sceneLegend[hidden]{display:none!important}
+body[data-step="discussion-questions"] .slide{justify-content:flex-start;padding:clamp(42px,7vh,90px) clamp(38px,6vw,100px)}
+body[data-step="discussion-questions"] .slideCopy{width:100%;height:100%}
+body[data-step="discussion-questions"] #slideTitle{margin-bottom:clamp(25px,5vh,55px);font-size:clamp(43px,5vw,72px)}
+body[data-step="discussion-questions"] #slideBody{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(18px,4vw,50px);width:calc(100% - min(12vw,160px));max-width:none;margin:0;color:#38352e;font-size:clamp(18px,1.7vw,25px);line-height:1.38}
+body[data-step="discussion-questions"] #slideBody span{display:block;padding-top:13px;border-top:2px solid #d9b35f}
+@media(max-width:750px){body[data-step="discussion-questions"] #slideBody{grid-template-columns:1fr;width:100%;font-size:16px}}
+@media(max-width:900px){.sceneLegend,body.chapterActive #panel{width:min(300px,43vw)}.researchAreas{gap:10px}.researchArea img,.researchArea video,.researchArea.active video{width:min(100%,180px)}}
+
+/* Review round: keep section artwork fully visible and directly adjustable. */
+body[data-step="statements-close"] .slide,body[data-step="library"] .slide,body[data-step="limitations"] .slide,body[data-step="future"] .slide{background:#fff}
+body[data-step="statements-close"] .sectionArt,body[data-step="library"] .sectionArt,body[data-step="limitations"] .sectionArt,body[data-step="future"] .sectionArt{right:0;top:4vh;width:60vw;height:84vh;opacity:1;overflow:hidden;mask-image:none;-webkit-mask-image:none;pointer-events:auto}
+.sectionArt canvas{touch-action:none;cursor:grab}
+.sectionArt canvas:active{cursor:grabbing}
+body[data-step="statements-close"] #slideCopy,body[data-step="library"] #slideCopy,body[data-step="limitations"] #slideCopy,body[data-step="future"] #slideCopy{position:relative;z-index:2;pointer-events:none}
+body[data-step="statements-close"] #slideCopy a,body[data-step="library"] #slideCopy a,body[data-step="limitations"] #slideCopy a,body[data-step="future"] #slideCopy a{pointer-events:auto}
+body[data-step="lab"] .labIntroCopy{padding-top:clamp(20px,3vh,40px)}
+body[data-step="lab"] .labIntro h1{margin-top:3px;margin-bottom:clamp(22px,3vh,38px)}
+body[data-step="statements-focus"] .slideCopy{padding-top:clamp(48px,7vh,82px)}
+body[data-step="statements-focus"] .quoteCards{align-self:start;margin-top:clamp(12px,2vh,24px)}
+body[data-step="statements-focus"] .quoteCard{min-height:315px}
+body[data-step="statements-focus"] .slidePrompt{margin-bottom:9vh!important}
+body[data-step="discussion-questions"] #slideBody{display:block;width:min(900px,80vw)}
+body[data-step="discussion-questions"] #slideBody span{font-size:clamp(23px,2.5vw,36px)}
+body[data-step="discussion-questions"] #slideBody span[hidden]{display:none!important}
+body[data-step="relative"] #chartBlock{padding:8px 0!important;border:0!important;border-radius:0!important;background:#fff!important;box-shadow:none!important}
+body[data-step="relative"] #chartBlock .chartGroup:has(#speedChart){display:none!important}
+body[data-step="relative"] #chartBlock .chartGroup>strong{display:none}
+body[data-step="relative"] #geoChartLabel{margin:2px 0 3px;color:#746f65;font-size:10px;line-height:1.2}
+body[data-step="relative"] #panel{top:132px;overflow:visible!important}
+body.chapterActive #panel{scrollbar-width:none}
+body.chapterActive #panel::-webkit-scrollbar{display:none}
+.sceneTools,body.presentation .sceneTools{right:18px;top:18px}
+#projectLink{position:relative;display:flex;justify-content:center;align-items:center;width:46px;height:46px;color:#444;text-decoration:none;z-index:1}
+.projectLinkIcon{display:block;width:46px;height:46px;flex:0 0 46px}
+#projectFlourishCanvas{display:block;width:46px;height:46px;opacity:.9}
+.projectLinkLabel{position:absolute;top:0;right:46px;height:46px;display:flex;align-items:center;padding-right:9px;white-space:nowrap;color:#666;font-size:12px;opacity:0;pointer-events:none;transition:opacity .25s ease}
+#projectLink.is-open .projectLinkLabel{opacity:1}
+#timeText{display:inline-block;min-width:5.2ch;text-align:right;font-variant-numeric:tabular-nums}
+body[data-step="opening"] #saveSectionCamera,body[data-step="closing"] #saveSectionCamera,body[data-step="statements-close"] #saveOpeningCamera,body[data-step="library"] #saveOpeningCamera,body[data-step="limitations"] #saveOpeningCamera,body[data-step="future"] #saveOpeningCamera{display:none!important}
+.projectVisit iframe{width:125%;height:125%;transform:scale(.8);transform-origin:top left}
+
+/* Keep the review overlays usable and put the lab mark in the actual viewport corner. */
+#inspector{max-height:calc(100vh - 70px)}
+#inspectorBody{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin}
+body.chapterActive #labSignature,body.review.chapterActive:not(.inspectorCollapsed) #labSignature{right:26px;bottom:24px}
+body.chapterActive.review #scene{right:0}
+.labIntroCopy{justify-content:center}
+.researchArea{gap:20px}
+
+/* The quotation pair stays on one slide; the second card is revealed on the next beat. */
+body[data-step="statements-focus"] .quoteCards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;max-width:calc(100vw - 12vw);width:100%;margin:auto 0}
+body[data-step="statements-focus"] .quoteCard{min-height:380px;padding:clamp(25px,2.7vw,45px)}
+body[data-step="statements-focus"] .quoteCard blockquote{font-size:clamp(25px,2.5vw,40px)}
+body[data-step="statements-focus"] .quoteCard .quoteHead,body[data-step="statements-focus"] .quoteCard .quoteHead strong{font-size:clamp(17px,1.35vw,22px)}
+body[data-step="statements-focus"] .quoteCard p,body[data-step="statements-focus"] .quoteCard a{font-size:clamp(13px,1vw,17px)}
+body[data-step="statements-focus"] #slidePrompt{display:none!important}
+
+/* Use the complete canvas for the six statements, reserving the mark's corner. */
+body[data-step="statements-shadow"] .slide{padding:clamp(24px,3vh,42px) clamp(28px,3vw,52px)}
+body[data-step="statements-shadow"] .quoteCards{width:100%;height:100%;grid-template-rows:repeat(2,minmax(0,1fr));gap:clamp(12px,1.2vw,20px);padding:0}
+body[data-step="statements-shadow"] .quoteCard{height:100%;max-height:none;padding:clamp(17px,1.5vw,27px)}
+body[data-step="statements-shadow"] .quoteCard:nth-child(2),body[data-step="statements-shadow"] .quoteCard:nth-child(5){margin-top:0}
+body[data-step="statements-shadow"] .quoteCard:last-child{height:calc(100% - 100px);align-self:start}
+
+/* Match the compact episode dock and its chapter segmented switch. */
+#playback{left:28px;right:auto;bottom:16px;width:min(350px,calc(100vw - 56px));min-height:39px;padding:4px 8px;border-color:#d2d2d2;border-radius:8px;background:#ffffffef;gap:5px}
+#playButton{flex:none;min-width:30px;width:30px;height:28px;padding:0;border:0!important;background:transparent!important;font-size:15px}
+#playButton:hover{background:#f7f7f7!important}
+#timeSlider{min-width:35px}
+#timeText{font-size:10px;color:#727272}
+#speedText{display:none}
+#playback:has(#examplePicker:not([hidden])){display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:4px 5px}
+#examplePicker{grid-column:1/-1;grid-row:1;width:100%}
+#playback:has(#examplePicker:not([hidden])) #playButton,#playback:has(#examplePicker:not([hidden])) #timeSlider,#playback:has(#examplePicker:not([hidden])) #timeText{grid-row:2}
+.episodeSegmented{display:flex;gap:2px;width:100%;height:28px;padding:2px;border:1px solid #d0d0d0;border-radius:6px;background:#fafafa}
+.episodeSegmented button{flex:1;min-width:0;height:22px;padding:0 3px;border:0!important;border-radius:4px!important;background:transparent!important;color:#777!important;font:400 10px/22px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.episodeSegmented button:hover,.episodeSegmented button:focus-visible{background:#f5f5f5!important;outline:1px solid #bda979}
+.episodeSegmented button.active{background:#fff!important;color:#222!important;font-weight:700!important;box-shadow:0 1px 4px #00000014}
+
+body[data-step="uncertainty"] .sceneLegend{width:min(265px,25vw)}
+.sceneLegend .elementList .epochRow{display:block}
+.sceneLegend .elementList .epochRow dd{display:block;text-align:right;line-height:1.35}
+.sceneLegend .elementList div.epochRow dd{text-align:right}
+.sceneTools .cameraBtn{width:38px;height:38px;border-color:#d2d2d2;background:#fff;color:#555;box-shadow:none;transition:background .18s,color .18s}
+.sceneTools .cameraBtn:hover{background:#f7f7f7;color:#8c6e20;transform:none}
+.sceneTools #frameToggle svg{width:21px;height:21px;stroke-width:1.6}
+.projectVisit button{display:grid;place-items:center;padding:0;font-size:23px;line-height:1}
+@media(max-width:750px){body[data-step="statements-focus"] .quoteCards{grid-template-columns:1fr;max-width:100%}body[data-step="statements-focus"] .quoteCard{min-height:230px}body[data-step="statements-shadow"] .slide{overflow:auto}body[data-step="statements-shadow"] .quoteCards{grid-template-columns:1fr;grid-template-rows:none;height:auto}body[data-step="statements-shadow"] .quoteCard:last-child{height:auto}}

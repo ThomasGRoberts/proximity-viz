@@ -939,3 +939,31 @@ html.embedded-table .toolbar{border-radius:12px 12px 0 0}
 .mobile-model-notice{width:min(420px,calc(100vw - 28px));padding:20px;border:1px solid #d9d0b7;border-radius:12px;background:#fff;color:#333;box-shadow:0 18px 45px #0003}
 .mobile-model-notice::backdrop{background:#1f1f1f70}.mobile-model-notice h2{margin:0 0 8px;font-size:18px}.mobile-model-notice p{margin:0 0 18px;color:#555;font-size:13px;line-height:1.5}
 .mobile-model-actions{display:flex;justify-content:flex-end;align-items:center;gap:12px}.mobile-model-actions button,.mobile-model-actions a{padding:8px 11px;border:1px solid #d8d8d8;border-radius:6px;background:#fff;color:#333;font-size:12px;text-decoration:none}.mobile-model-actions a{border-color:#d5ad39;background:#fff6dc;font-weight:700}
+/* Review notes, 2026-11-22: keep row geometry stable under the mouse. */
+@media(min-width:901px){
+  .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:30px!important;transition:background-color .18s ease}
+  .episode-row .row-discovery{display:none!important}
+  .episode-row:not(.selected):is(:hover,:focus-visible) .row-open-cue{transition-delay:0s}
+  .table-wrap .expanded-row .expanded-inner.has-visual{max-height:none!important;overflow:visible!important}
+}
+/* Real 390px review viewport, with the same saved comment service. */
+.mobile-review-stage[hidden]{display:none!important}
+.mobile-review-stage{position:fixed;z-index:1050;inset:var(--table-review-bar-height,130px) 0 0;display:grid;justify-items:center;overflow:auto;padding:13px;background:#ecebe8}
+.mobile-review-preview{display:flex;flex-direction:column;gap:6px;width:390px;max-width:100%;height:100%;min-height:400px}
+.mobile-review-preview>span{color:#6b655b;font-size:11px;text-align:center}
+.mobile-review-preview iframe{display:block;width:100%;height:calc(100% - 24px);min-height:360px;border:1px solid #d6d0c4;border-radius:8px;background:#fff;box-shadow:0 7px 25px #0002}
+html.mobile-review-frame .review-switcher,html.mobile-review-frame #tableReviewBar .table-review-line:not(.mobile-review-comments-line),html.mobile-review-frame #tableReviewBar .table-review-status{display:none!important}
+html.mobile-review-frame #tableReviewBar .mobile-review-comments-line>:not(#tableSpotMode):not(#tableCommentsToggle){display:none!important}
+html.mobile-review-frame #tableReviewBar{padding:7px 10px;gap:0}
+html.mobile-review-frame #tableReviewBar .mobile-review-comments-line{justify-content:flex-end}
+html.mobile-review-frame .table-comment-drawer{top:54px}
+/* Explicit mobile grid rows avoid auto-placement of metrics beside the object list. */
+@media(max-width:760px){
+  .table-wrap tr.episode-row .episode-cell{grid-column:1/-1!important;grid-row:1!important}
+  .table-wrap tr.episode-row .orbit-cell{grid-column:1!important;grid-row:2!important;text-align:left}
+  .table-wrap tr.episode-row .period-cell{grid-column:2!important;grid-row:2!important;text-align:right}
+  .table-wrap tr.episode-row .object-cell{grid-column:1/-1!important;grid-row:3!important}
+  .table-wrap tr.episode-row .separation-column{grid-column:1!important;grid-row:4!important}
+  .table-wrap tr.episode-row .speed-column{grid-column:2!important;grid-row:4!important}
+  .table-wrap tr.episode-row .news-column{grid-column:1/-1!important;grid-row:5!important}
+}

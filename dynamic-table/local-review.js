@@ -19,6 +19,17 @@ async function jsonRequest(path, payload) {
 
 export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEpisode, getPublicEpisode }) {
   const bar = $("tableReviewBar"), status = $("tableReviewStatus"), pins = $("tableSpotPins");
+  if (!document.documentElement.classList.contains("mobile-review-frame")) {
+    const button = $("tableMobilePreview"), stage = $("mobileReviewStage"), frame = $("mobileReviewFrame");
+    button.addEventListener("click", () => {
+      const open = stage.hidden;
+      stage.hidden = !open;
+      button.textContent = open ? "Desktop preview" : "Mobile preview";
+      button.setAttribute("aria-pressed", String(open));
+      if (open && !frame.getAttribute("src")) frame.src = "./?mobileFrame=1";
+    });
+  }
+
   const controls = ["miniEditToggle", "miniChapter", "miniPlay", "miniTime", "miniSpeed", "miniFrame", "miniOrigin", "miniZoomOut", "miniZoomIn", "miniReset", "miniMoveLeft", "miniMoveRight", "miniMoveUp", "miniMoveDown", "miniPlaceLeft", "miniPlaceRight", "miniPlaceUp", "miniPlaceDown", "miniMarkStart", "miniMarkEnd", "miniSaveLoop"].map($);
   let activeFrame = null, editing = false, spotMode = false, comments = [], savedConfigs = {}, draft = null;
   let loopStart = null, loopEnd = null, scrub = false;
