@@ -7,6 +7,10 @@ button{cursor:pointer}
 button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid #967116;outline-offset:2px}
 [hidden]{display:none!important}
 .review-bar{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:54px;padding:8px clamp(12px,2vw,28px);border-bottom:1px solid #d9d5ca;background:#fffdf9f5;box-shadow:0 2px 12px #0000000d;backdrop-filter:blur(12px)}
+.review-switch{display:inline-flex;align-items:center;gap:2px;padding:3px;border:1px solid #d9d2c3;border-radius:7px;background:#f2f0eb}
+.review-switch button{min-height:28px;padding:5px 9px;border:1px solid transparent;border-radius:5px;background:transparent;color:#716959;font-size:11px;font-weight:700;white-space:nowrap}
+.review-switch button:hover{background:#fffaf0;color:#493e29}
+.review-switch button[aria-pressed="true"]{border-color:#d8cba9;background:#fff;color:#624915;box-shadow:0 1px 3px #00000012}
 .review-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-left:auto}
 .review-actions button{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:6px 10px;border:1px solid transparent;border-radius:6px;background:transparent;color:#6a6151;font-size:11px;font-weight:700;white-space:nowrap}
 .review-actions button:hover{border-color:#e7d8ae;background:#fff8e6;color:#4c3e1a}
@@ -19,6 +23,7 @@ button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid #9
 .page-host{position:relative;min-height:420px}
 .page-host>.espl-episodes-page{background:#fff}
 .page-host .espl-episodes-page iframe{background:#fff}
+.page-host>.project-frame{display:block;width:100%;height:max(680px,calc(100dvh - var(--bar-height,54px) - 85px));border:1px solid #e7e2d9;border-radius:3px;background:#fff}
 .pin-layer{position:absolute;z-index:25;inset:0;pointer-events:none}
 .spot-pin{position:absolute;display:grid;place-items:center;width:24px;height:24px;padding:0;border:2px solid #fff;border-radius:50%;background:#a57a0a;box-shadow:0 2px 8px #0004;color:#fff;font-size:10px;font-weight:800;transform:translate(-50%,-50%);pointer-events:auto}
 .spot-pin:hover,.spot-pin:focus-visible{background:#70510a;transform:translate(-50%,-50%) scale(1.12)}
@@ -47,4 +52,4 @@ button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid #9
 .comment-item small{display:block;margin-bottom:8px;color:#8a8376;font-size:10px}
 .comment-item-actions{display:flex;gap:5px}
 .export-comments{margin-top:auto;align-self:flex-start}
-@media(max-width:700px){.review-bar{align-items:flex-start;flex-direction:column;gap:4px}.review-actions{width:100%}.review-status{margin-top:7px}.preview-area{padding:0 6px}.comment-drawer{right:6px;bottom:6px;width:min(360px,calc(100vw - 12px))}}
+@media(max-width:700px){.review-bar{align-items:flex-start;flex-direction:column;gap:4px}.review-switch{max-width:100%;overflow-x:auto}.review-actions{width:100%}.review-status{margin-top:7px}.preview-area{padding:0 6px}.comment-drawer{right:6px;bottom:6px;width:min(360px,calc(100vw - 12px))}}

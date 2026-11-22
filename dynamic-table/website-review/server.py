@@ -5,6 +5,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import tempfile
+from urllib.parse import urlsplit
+from urllib.request import Request, urlopen
 from uuid import uuid4
 
 
@@ -12,7 +14,12 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 COMMENTS = HERE / "comments.json"
 PORT = 8771
-SPOTS = {"page", "intro", "repository", "title", "language", "contributors", "portraits", "table", "full-link", "about-link", "repo-meta"}
+SPOTS = {"page", "intro", "repository", "title", "language", "contributors", "portraits", "table", "full-link", "about-link", "repo-meta", "project-page", "project-banner", "research-updates", "special-model", "special-data", "hero-table-link"}
+SURFACES = {"Website Page", "SBI Project", "Proximity Project"}
+PROJECT_URLS = {
+    "sbi": "https://espl.ae.gatech.edu/research/projects/sbi/",
+    "proximity": "https://espl.ae.gatech.edu/research/projects/proximity/",
+}
 
 
 def read_comments():
@@ -49,6 +56,28 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/api/website-comments":
             return self.respond(200, {"schema": "espl-website-review-v1", "comments": read_comments()})
+        path = urlsplit(self.path).path
+        if path.startswith("/api/project-preview/"):
+            slug = path.rsplit("/", 1)[-1]
+            if slug not in PROJECT_URLS:
+                return self.send_error(404, "Unknown project preview")
+            try:
+                request = Request(PROJECT_URLS[slug], headers={"User-Agent": "Mozilla/5.0 (ESPL local design review)"})
+                with urlopen(request, timeout=20) as source:
+                    html = source.read().decode("utf-8", "replace")
+                html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
+                local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=1'
+                addon = f'<script src="{local_script}" data-espl-project="{slug}"></script>'
+                html = html.replace("</body>", addon + "</body>", 1)
+                encoded = html.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+            except Exception as error:
+                self.send_error(502, f"Could not load live project page: {error}")
+            return
         return super().do_GET()
 
     def do_POST(self):
@@ -63,13 +92,14 @@ class Handler(SimpleHTTPRequestHandler):
             action = request.get("action")
             if action == "add":
                 spot = str(request.get("spot", ""))
+                surface = str(request.get("surface", "Website Page"))
                 text = str(request.get("text", "")).strip()
                 x, y = float(request.get("x", -1)), float(request.get("y", -1))
-                if spot not in SPOTS or not text or len(text) > 4000 or not (0 <= x <= 1 and 0 <= y <= 1):
+                if spot not in SPOTS or surface not in SURFACES or not text or len(text) > 4000 or not (0 <= x <= 1 and 0 <= y <= 1):
                     raise ValueError("Invalid comment or location")
                 comments.append({
                     "id": uuid4().hex,
-                    "surface": "Website Page",
+                    "surface": surface,
                     "spot": spot,
                     "x": x,
                     "y": y,

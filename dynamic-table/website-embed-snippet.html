@@ -6,8 +6,8 @@
   .espl-episodes-page .intro-inner{width:calc(100vw - 24px);max-width:1220px;margin:0 auto;padding:clamp(22px,4vw,48px) 0}
   @supports(width:100cqw){.espl-episodes-page .intro-inner{width:100cqw}}
   .espl-episodes-page .about-link{display:inline-flex;align-items:center;gap:.45em;color:#5f6265;font:700 12px/1.2 Roboto,Arial,sans-serif;letter-spacing:.07em;text-decoration:none;text-transform:uppercase;transition:opacity .18s ease}
-  .espl-episodes-page .about-link:hover,.espl-episodes-page .about-link:focus-visible{color:#5f6265;opacity:.65}
-  .espl-episodes-page .about-link svg{width:31px;height:31px;padding:7px;border:1px solid #e8dec4;border-radius:50%;background:#fff8e7;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform 220ms cubic-bezier(.22,1,.36,1),background-color 220ms ease}
+  .espl-episodes-page .about-link:hover,.espl-episodes-page .about-link:focus-visible{color:#5f6265;opacity:.65;text-decoration:none}
+  .espl-episodes-page .about-link svg{display:block;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform 220ms cubic-bezier(.22,1,.36,1)}
   .espl-episodes-page .about-link:hover svg,.espl-episodes-page .about-link:focus-visible svg{transform:translateX(-4px)}
   .espl-episodes-page .about-link{margin:0 0 15px}
   .espl-episodes-page .repo-kicker{display:flex;align-items:center;gap:9px;margin:0 0 12px;color:#79601f;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
@@ -18,14 +18,15 @@
   .espl-episodes-page .description{max-width:72ch;margin:0;color:#514d45;font-size:15px;line-height:1.55}
   .espl-episodes-page .description p{margin:0 0 10px}
   .espl-episodes-page .description p:last-child{margin-bottom:0}
-  .espl-episodes-page .contributors{display:block;padding:22px 0 25px;background:#fff}
+  .espl-episodes-page .contributors{display:block;padding:22px 0 52px;background:#fff}
   .espl-episodes-page .contributors-label{display:block;margin-bottom:10px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
   .espl-episodes-page .people{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
   .espl-episodes-page .people li{margin:0;padding:0}
   .espl-episodes-page .people a{display:block;width:76px;height:76px;border-radius:50%;background:#fff;transition:transform 260ms cubic-bezier(.34,1.56,.64,1)}
   .espl-episodes-page .people a:hover,.espl-episodes-page .people a:focus-visible{transform:translateY(-2px) scale(1.055)}
   .espl-episodes-page .people img,.espl-episodes-page .espl-contributor-initials{display:grid;place-items:center;width:76px;height:76px;object-fit:cover;border:0;border-radius:50%;background:#fff;color:#735b21;font-size:20px;font-weight:700;box-shadow:none}
-  .espl-episodes-page .repo-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin-top:17px;color:#70695c;font-size:11px}
+  .espl-episodes-page .repo-meta{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:17px;color:#70695c;font-size:11px}
+  .espl-episodes-page .repo-meta-divider{color:#a9a08e;font-size:10px}
   .espl-episodes-page .repo-link{display:inline-flex;align-items:center;gap:4px;color:#686868;text-decoration:none;font-size:11px}
   .espl-episodes-page .repo-link:hover,.espl-episodes-page .repo-link:focus-visible{color:#454545}
   .espl-episodes-page .repo-link svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}
@@ -51,7 +52,7 @@
     </div>
     <h1 id="episodes-library-title">Episodes of Concerning Satellite Proximity</h1>
     <div class="description" data-espl-introduction><p>Explore documented satellite proximity episodes through illustrative orbital reconstructions, modeled separation and relative speed, and linked source records.</p></div>
-    <div class="repo-meta"><a class="repo-link" href="https://github.com/ThomasGRoberts/proximity-viz" target="_blank" rel="noopener noreferrer">GitHub <svg viewBox="0 0 18 18" aria-hidden="true"><path class="external-box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><g class="external-arrow"><path d="M9.25 2.75h6v6"/><path d="m8 10 7.25-7.25"/></g></svg></a><span>repository last updated <span data-espl-last-updated>checking date…</span></span></div>
+    <div class="repo-meta"><span>Last updated on <span data-espl-last-updated>checking date…</span></span><span class="repo-meta-divider" aria-hidden="true">•</span><a class="repo-link" href="https://github.com/ThomasGRoberts/proximity-viz" target="_blank" rel="noopener noreferrer">GitHub repository <svg viewBox="0 0 18 18" aria-hidden="true"><path class="external-box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><g class="external-arrow"><path d="M9.25 2.75h6v6"/><path d="m8 10 7.25-7.25"/></g></svg></a></div>
     </div>
   </header>
   <div class="contributors" aria-label="ESPL contributors">
