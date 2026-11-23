@@ -235,13 +235,41 @@ const timeline = document.getElementById('timelineSlider');
 if (dwellKey && timeline) {
   const refreshDwellCopy = () => {
     const hours = (Number(timeline.max) - Number(timeline.min)) / 3600000;
-    if (!(hours >= .25) || !dwellKey.firstChild || dwellKey.firstChild.nodeType !== Node.TEXT_NODE) return;
+    if (!(hours >= .25)) return;
     const rounded = Math.round(hours * 10) / 10;
-    const duration = Number.isInteger(rounded / 24) && rounded >= 48 ? `${rounded / 24}-day` : `${rounded}-hour`;
-    const prefix = `The dwell time cannot exceed the ${duration} duration of this chapter, and is a function of the selected separation distance and relative speed thresholds. These thresholds can be adjusted on the charts above. `;
-    if (dwellKey.firstChild.textContent !== prefix) dwellKey.firstChild.textContent = prefix;
+    const duration = Number.isInteger(rounded / 168) && rounded >= 168 ? `${rounded / 168}-week`
+      : Number.isInteger(rounded / 24) && rounded >= 48 ? `${rounded / 24}-day` : `${rounded}-hour`;
+    const copy = `The dwell time cannot exceed the ${duration} duration of this chapter, and is a function of the selected separation distance and relative speed thresholds. These thresholds can be adjusted on the charts above.`;
+    // Compare the full text: glossary wrappers may split it into several nodes.
+    if (dwellKey.textContent !== copy) dwellKey.replaceChildren(copy);
   };
   new MutationObserver(refreshDwellCopy).observe(dwellKey, { childList: true });
   new MutationObserver(refreshDwellCopy).observe(timeline, { attributes: true, attributeFilter: ['min', 'max'] });
   refreshDwellCopy();
+}
+
+// Mobile episodes keep the selected pair visible above the full-width globe.
+if (!document.documentElement.classList.contains('mini-scene')) {
+  const header = document.createElement('div');
+  header.id = 'mobileEpisodeHeader';
+  header.setAttribute('aria-label', 'Current episode and spacecraft');
+  header.innerHTML = '<span class="mobile-episode-id"></span><span class="mobile-episode-pair"><i class="mobile-dot chaser"></i><b class="mobile-chaser"></b><span>+</span><i class="mobile-dot target"></i><b class="mobile-target"></b></span>';
+  document.body.append(header);
+  const identity = document.getElementById('identity');
+  const refreshMobileHeader = () => {
+    const episode = new URLSearchParams(location.search).get('episode') || 'Episode';
+    const names = [...(identity?.querySelectorAll('.satCard .satName') || [])].map(node => node.textContent.trim()).filter(Boolean);
+    header.querySelector('.mobile-episode-id').textContent = episode;
+    header.querySelector('.mobile-chaser').textContent = names[0] || document.getElementById('nameA')?.textContent || 'Chaser';
+    header.querySelector('.mobile-target').textContent = names[1] || document.getElementById('nameB')?.textContent || 'Target';
+  };
+  refreshMobileHeader();
+  if (identity) {
+    const loadingNames = new MutationObserver(() => {
+      refreshMobileHeader();
+      if (identity.querySelector('.satCard .satName')) loadingNames.disconnect();
+    });
+    loadingNames.observe(identity, {childList:true, subtree:true});
+    identity.addEventListener('click', () => setTimeout(refreshMobileHeader, 0));
+  }
 }

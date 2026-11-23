@@ -1278,11 +1278,27 @@
   <!-- Tell the browser where to find the 3D and map libraries, then load our code -->
   <script
     type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/","topojson-client":"./vendor/topojson/topojson-client.js"}}</script>
+  <style>
+    /* On phones, reserve the browser pane for the globe and playback. */
+    #mobileEpisodeHeader{display:none}
+    @media(max-width:760px){
+      html:not(.mini-scene) body #ui{display:none!important}
+      html:not(.mini-scene) body #playbackDock{position:fixed!important;inset:auto 0 0 0!important;z-index:40!important;width:100vw!important;max-width:none!important;max-height:40vh;margin:0!important;padding-bottom:max(8px,env(safe-area-inset-bottom))!important;border-radius:12px 12px 0 0!important;overflow:auto!important}
+      html:not(.mini-scene) body #episodePanelToggle{display:none!important}
+      html:not(.mini-scene) body #mobileEpisodeHeader{position:fixed;z-index:41;inset:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:7px 12px;border-bottom:1px solid #dedbd3;background:#fff;box-shadow:0 2px 9px #00000018;color:#4d4a43;font:700 11px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      #mobileEpisodeHeader .mobile-episode-id{flex:none;color:#8d6b1d;font-size:10px;letter-spacing:.05em}
+      #mobileEpisodeHeader .mobile-episode-pair{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0}
+      #mobileEpisodeHeader b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+      #mobileEpisodeHeader .mobile-dot{width:9px;height:9px;flex:none;border:1px solid #4e4b45;border-radius:50%}
+      #mobileEpisodeHeader .mobile-dot.chaser{background:#eaaa00}
+      #mobileEpisodeHeader .mobile-dot.target{background:#a9a9a9}
+    }
+  </style>
   <script type="module" src="project-flourish.js"></script>
   <script type="module" src="satellite-metadata.js?v=11"></script>
   <script type="module" src="episode-entry.js?v=33"></script>
   <script type="module" src="episode-ui.js?v=13"></script>
-  <script type="module" src="panel-enhancements.js?v=8"></script>
+  <script type="module" src="panel-enhancements.js?v=10"></script>
   <script type="module" src="../../shared/episode-loading.js?v=3"></script>
 </body>
 

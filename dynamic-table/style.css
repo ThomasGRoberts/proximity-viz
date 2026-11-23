@@ -1011,3 +1011,25 @@ html.mobile-review-frame .table-comment-drawer{top:54px}
   .table-wrap tr.expanded-row .orbital-preview iframe{position:relative!important;left:auto!important;width:100%!important;transform:none!important}
   .table-wrap tr.expanded-row .evidence-section{border-top:0!important}
 }
+
+/* Mobile review: keep every collapsed-row section full width and balanced. */
+@media(max-width:760px){
+  .table-wrap tr.episode-row{column-gap:0!important}
+  .table-wrap tr.episode-row .episode-cell{border-bottom:1px solid #e7e2d8!important}
+  .table-wrap tr.episode-row .object-cell,.table-wrap tr.episode-row .period-cell{border-bottom:1px solid #e7e2d8!important}
+  .table-wrap tr.episode-row .object-cell{grid-column:1/3!important;padding-right:8px!important}
+  .table-wrap tr.episode-row .period-cell{grid-column:3!important;padding-left:8px!important;text-align:center!important}
+  .table-wrap tr.episode-row .object-cell::before,.table-wrap tr.episode-row .period-cell::before{display:block;margin:0 0 5px;color:#777;font-size:9px;font-weight:700;letter-spacing:.045em;text-align:center;text-transform:uppercase}
+  .table-wrap tr.episode-row .period-cell::before{content:"Period"}
+  .table-wrap tr.episode-row .object-cell .objects{width:100%;margin:0;text-align:left}
+  .table-wrap tr.episode-row .period-cell .period-label{text-align:center}
+  .table-wrap tr.episode-row .separation-column::before,.table-wrap tr.episode-row .speed-column::before,.table-wrap tr.episode-row .news-column::before{height:30px!important;margin:0 0 5px!important;padding:0!important;display:flex!important;align-items:flex-end;justify-content:center;float:none!important;text-align:center!important;line-height:1.12}
+  .table-wrap tr.episode-row .news-column::before{content:"Records"!important}
+  .table-wrap tr.episode-row .news-column .news-indicator{display:flex;justify-content:center;padding:0!important}
+  .table-wrap tr.episode-row .news-column{border-top:0!important}
+  .table-wrap tr.expanded-row>td,.table-wrap tr.expanded-row .expanded-inner,.table-wrap tr.expanded-row .evidence-section,.table-wrap tr.expanded-row .source-grid,.table-wrap tr.expanded-row .visual-block{background:#fffcf6!important}
+}
+.mobile-model-notice[open]{position:fixed!important;top:50%!important;left:50%!important;max-height:calc(100dvh - 24px);margin:0!important;transform:translate(-50%,-50%);overflow:auto}
+@media(max-width:760px){
+  html body .table-wrap .expanded-row .expanded-inner.has-visual{background:#fffcf6!important}
+}
