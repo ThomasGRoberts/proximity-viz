@@ -1033,3 +1033,32 @@ html.mobile-review-frame .table-comment-drawer{top:54px}
 @media(max-width:760px){
   html body .table-wrap .expanded-row .expanded-inner.has-visual{background:#fffcf6!important}
 }
+
+/* Review round: the disclosure sits at the row centre, with a continuous gold edge. */
+@media(min-width:901px){
+  .table-wrap tr.episode-row .row-open-cue{left:50%;bottom:8px}
+  .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:42px!important}
+}
+.table-wrap tr.episode-row.selected::before{bottom:-2px!important}
+.table-wrap tr.expanded-row .expanded-inner::after{top:-2px!important}
+.table-wrap tr.expanded-row:has(.expanded-inner.has-visual)>td,
+.table-wrap tr.expanded-row .expanded-inner.has-visual,
+.table-wrap tr.expanded-row .expanded-inner.has-visual .context-block,
+.table-wrap tr.expanded-row .expanded-inner.has-visual .evidence-section,
+.table-wrap tr.expanded-row .expanded-inner.has-visual .source-grid,
+.table-wrap tr.expanded-row .expanded-inner.has-visual .visual-block{background:#fffcf6!important}
+.table-wrap tr.expanded-row .expanded-inner.has-visual .context-block::before{display:none!important}
+.source-carousel-controls[hidden]{display:none!important}
+@media(max-width:760px){
+  .table-wrap tr.episode-row .episode-cell{border-bottom:1px solid #e7e2d8!important}
+  .table-wrap tr.episode-row .object-cell,.table-wrap tr.episode-row .period-cell{border-bottom:1px solid #e7e2d8!important}
+  .table-wrap tr.episode-row .separation-column,.table-wrap tr.episode-row .speed-column,.table-wrap tr.episode-row .news-column{border:0!important}
+  .table-wrap tr.episode-row .period-cell{display:flex!important;flex-direction:column;align-items:center;justify-content:center;align-self:stretch;text-align:center!important}
+  .table-wrap tr.episode-row .period-cell::before{align-self:center}
+  .table-wrap tr.episode-row .news-column::before{transform:translateY(-3px)}
+  .table-wrap tr.expanded-row .expanded-inner.has-visual{padding:14px 0!important}
+  .table-wrap tr.expanded-row .context-block,.table-wrap tr.expanded-row .evidence-section{padding-inline:14px!important}
+  .table-wrap tr.expanded-row .visual-block{box-sizing:border-box;width:100%!important;margin:10px 0 0!important;padding:0!important;border:0!important}
+  .table-wrap tr.expanded-row .visual-link.model-link,.table-wrap tr.expanded-row .orbital-preview{width:100%!important;margin:0!important;border-radius:0!important}
+  .table-wrap tr.expanded-row .source-grid .source-stack[hidden]{display:none!important}
+}

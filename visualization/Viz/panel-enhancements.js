@@ -253,22 +253,22 @@ if (!document.documentElement.classList.contains('mini-scene')) {
   const header = document.createElement('div');
   header.id = 'mobileEpisodeHeader';
   header.setAttribute('aria-label', 'Current episode and spacecraft');
-  header.innerHTML = '<span class="mobile-episode-id"></span><span class="mobile-episode-pair"><i class="mobile-dot chaser"></i><b class="mobile-chaser"></b><span>+</span><i class="mobile-dot target"></i><b class="mobile-target"></b></span>';
+  header.innerHTML = '<button type="button" class="mobile-episode-toggle" aria-expanded="false" aria-controls="nowModeling"><span class="mobile-episode-intro">Current Episode:</span><span class="mobile-episode-pair"><i class="mobile-dot chaser"></i><b class="mobile-chaser"></b><span>+</span><i class="mobile-dot target"></i><b class="mobile-target"></b></span><span class="mobile-episode-chevron" aria-hidden="true">⌄</span></button>';
   document.body.append(header);
   const identity = document.getElementById('identity');
+  const mobileToggle = header.querySelector('.mobile-episode-toggle');
+  mobileToggle.addEventListener('click', () => {
+    const expanded = document.body.classList.toggle('mobile-sat-open');
+    mobileToggle.setAttribute('aria-expanded', String(expanded));
+  });
   const refreshMobileHeader = () => {
-    const episode = new URLSearchParams(location.search).get('episode') || 'Episode';
     const names = [...(identity?.querySelectorAll('.satCard .satName') || [])].map(node => node.textContent.trim()).filter(Boolean);
-    header.querySelector('.mobile-episode-id').textContent = episode;
-    header.querySelector('.mobile-chaser').textContent = names[0] || document.getElementById('nameA')?.textContent || 'Chaser';
-    header.querySelector('.mobile-target').textContent = names[1] || document.getElementById('nameB')?.textContent || 'Target';
+    header.querySelector('.mobile-chaser').textContent = document.getElementById('nameA')?.textContent?.trim() || names[0] || 'Chaser';
+    header.querySelector('.mobile-target').textContent = document.getElementById('nameB')?.textContent?.trim() || names[1] || 'Target';
   };
   refreshMobileHeader();
   if (identity) {
-    const loadingNames = new MutationObserver(() => {
-      refreshMobileHeader();
-      if (identity.querySelector('.satCard .satName')) loadingNames.disconnect();
-    });
+    const loadingNames = new MutationObserver(refreshMobileHeader);
     loadingNames.observe(identity, {childList:true, subtree:true});
     identity.addEventListener('click', () => setTimeout(refreshMobileHeader, 0));
   }

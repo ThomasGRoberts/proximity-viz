@@ -648,7 +648,7 @@ function expandedContent(row, data) {
   if (unresolved.length) evidence.append(el("p", "caution", `${unresolved.length} referenced description ID(s) could not be resolved.`));
   if (!found.length) evidence.append(el("p", "muted", "No linked sources are available."));
   else {
-    const carousel = sources.length >= 4;
+    const carousel = sources.length > 1;
     const grid = el("div", `source-grid${carousel ? " source-carousel-grid" : ""}`); let index = 0;
     const appendCard = (group, targetGrid) => {
       const sheet = el("div", "source-stack"); sheet.style.setProperty("--card-angle", ["-1.2deg", "1.1deg", "-.7deg", ".8deg"][index++ % 4]);
@@ -686,6 +686,7 @@ function expandedContent(row, data) {
         const oldPage = page, size = pageSize(), total = pageCount();
         page = Math.max(0, Math.min(requestedPage, total - 1));
         const start = page * size, visible = cards.slice(start, start + size); currentStart = start;
+        nav.hidden = total <= 1;
         cards.forEach((card, position) => { card.hidden = position < start || position >= start + size; card.style.order = String(position - start); });
         blanks.forEach((slot, position) => { slot.hidden = position >= size - visible.length; slot.style.order = String(visible.length + position); });
         if (animate && oldPage !== page && !reducedMotion.matches) {
@@ -748,31 +749,8 @@ async function toggleRow(row) {
   const headerOffset = stickyHeader?.getBoundingClientRect().height || 0;
   const reviewBar = document.getElementById("tableReviewBar");
   const reviewOffset = reviewBar?.hidden ? 0 : reviewBar?.getBoundingClientRect().height || 0;
-  const destination = Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - reviewOffset - 1);
-  if (reducedMotion.matches) window.scrollTo(0, destination);
-  else await new Promise(resolve => {
-    scrollResolve = resolve;
-    const origin = scrollY, distance = destination - origin, started = performance.now();
-    const duration = Math.min(1050, Math.max(380, Math.abs(distance) * .55));
-    const step = now => {
-      if (token !== selectionToken) { scrollResolve = null; resolve(); return; }
-      const fraction = Math.min(1, (now - started) / duration);
-      window.scrollTo(0, origin + distance * (1 - (1 - fraction) ** 3));
-      if (fraction < 1) scrollFrame = requestAnimationFrame(step); else { scrollResolve = null; resolve(); }
-    };
-    scrollFrame = requestAnimationFrame(step);
-  });
-  if (token !== selectionToken) return;
-  requestAnimationFrame(() => {
-    if (token !== selectionToken) return;
-    const heading = document.querySelector(`.episode-row.selected`);
-    if (!heading) return;
-    const sticky = document.querySelector(".table-wrap thead th")?.getBoundingClientRect().height || 0;
-    const review = document.getElementById("tableReviewBar");
-    const reviewHeight = review?.hidden ? 0 : review?.getBoundingClientRect().height || 0;
-    const difference = heading.getBoundingClientRect().top - sticky - reviewHeight - 1;
-    if (Math.abs(difference) > 2) scrollBy({ top: difference, behavior: reducedMotion.matches ? "instant" : "smooth" });
-  });
+  const destination = Math.max(0, scrollY + selected.getBoundingClientRect().top - headerOffset - reviewOffset - 8);
+  window.scrollTo({ top: destination, behavior: reducedMotion.matches ? "instant" : "smooth" });
 }
 function periodNode(row) { const node = el("span", "period-label", periodInfo(row).label); const chapters = episodeChapters(row); node.title = chapters.length ? chapters.map(item => `${item.center} · ${item.widthHours} hours`).join("\n") : [fullDate(field(row, "Start Date", "Date")), fullDate(field(row, "End Date"))].filter(Boolean).join(" to "); return node; }
 function proximityNode(row, key) {
@@ -1311,14 +1289,14 @@ function render() {
     const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
     const cue = el("span", "row-open-cue"); cue.setAttribute("aria-hidden", "true");
     cue.append(el("span", "", "Learn more"), el("span", "row-open-chevron"));
-    heading.append(name, badge, cue);
+    heading.append(name, badge);
     episode.append(heading); tr.append(episode);
     const orbitCell = el("td", "orbit-cell"); tr.append(orbitCell);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
     const periodCell = el("td", "period-cell"); periodCell.append(periodNode(row)); tr.append(periodCell);
     const separation = el("td", "separation-column"); separation.append(proximityNode(row, "distance")); tr.append(separation);
     const speed = el("td", "speed-column"); speed.append(proximityNode(row, "speed")); tr.append(speed);
-    const newsCell = el("td", "news-column"); newsCell.append(newsIndicator(row, linkedDescriptions(row, data).length)); tr.append(newsCell);
+    const newsCell = el("td", "news-column"); newsCell.append(newsIndicator(row, linkedDescriptions(row, data).length)); tr.append(newsCell, cue);
     tr.addEventListener("click", event => { if (!event.target.closest("button, a, input, select, .gterm")) toggleRow(row); });
     let recedeTimer;
     tr.addEventListener("pointerenter", () => { clearTimeout(recedeTimer); tr.classList.remove("is-receding"); });

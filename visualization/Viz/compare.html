@@ -1283,22 +1283,31 @@
     #mobileEpisodeHeader{display:none}
     @media(max-width:760px){
       html:not(.mini-scene) body #ui{display:none!important}
+      html:not(.mini-scene) body.mobile-sat-open #ui{display:block!important;position:fixed!important;z-index:42!important;inset:49px 0 auto!important;width:100vw!important;max-height:50dvh!important;margin:0!important;padding:10px 12px!important;overflow:auto!important;border-radius:0 0 9px 9px!important;background:#fffcf6!important}
+      html:not(.mini-scene) body.mobile-sat-open #ui>*:not(#nowModeling){display:none!important}
+      html:not(.mini-scene) body.mobile-sat-open #ui #nowModeling{display:block!important;margin:0!important}
       html:not(.mini-scene) body #playbackDock{position:fixed!important;inset:auto 0 0 0!important;z-index:40!important;width:100vw!important;max-width:none!important;max-height:40vh;margin:0!important;padding-bottom:max(8px,env(safe-area-inset-bottom))!important;border-radius:12px 12px 0 0!important;overflow:auto!important}
       html:not(.mini-scene) body #episodePanelToggle{display:none!important}
-      html:not(.mini-scene) body #mobileEpisodeHeader{position:fixed;z-index:41;inset:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:7px 12px;border-bottom:1px solid #dedbd3;background:#fff;box-shadow:0 2px 9px #00000018;color:#4d4a43;font:700 11px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-      #mobileEpisodeHeader .mobile-episode-id{flex:none;color:#8d6b1d;font-size:10px;letter-spacing:.05em}
+      html:not(.mini-scene) body #gtLogo{display:none!important}
+      html:not(.mini-scene) body #mobileEpisodeHeader{position:fixed;z-index:43;inset:0 0 auto;display:block;min-height:48px;border-bottom:1px solid #dfd3b3;border-left:4px solid #bd9638;background:#fff8e5;box-shadow:0 2px 9px #00000018;color:#4d4a43;font:700 11px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      #mobileEpisodeHeader .mobile-episode-toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:48px;padding:7px 12px;border:0;background:transparent;color:inherit;text-align:left}
+      #mobileEpisodeHeader .mobile-episode-intro{flex:none;color:#8d6b1d;font-size:9px;letter-spacing:.05em;text-transform:uppercase}
       #mobileEpisodeHeader .mobile-episode-pair{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0}
       #mobileEpisodeHeader b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
       #mobileEpisodeHeader .mobile-dot{width:9px;height:9px;flex:none;border:1px solid #4e4b45;border-radius:50%}
       #mobileEpisodeHeader .mobile-dot.chaser{background:#eaaa00}
       #mobileEpisodeHeader .mobile-dot.target{background:#a9a9a9}
+      #mobileEpisodeHeader .mobile-episode-chevron{margin-left:auto;font-size:17px}
+      #mobileEpisodeHeader [aria-expanded=true] .mobile-episode-chevron{transform:rotate(180deg)}
     }
+    body.e001-shared #ui .episode-focus .episode-focus-link{padding-bottom:16px}
+    body.e008-shared #ui .episode-focus .episodeDescription.story-expanded{box-sizing:border-box;width:calc(100% - 16px);max-width:none;margin-right:8px}
   </style>
   <script type="module" src="project-flourish.js"></script>
   <script type="module" src="satellite-metadata.js?v=11"></script>
   <script type="module" src="episode-entry.js?v=33"></script>
-  <script type="module" src="episode-ui.js?v=13"></script>
-  <script type="module" src="panel-enhancements.js?v=10"></script>
+  <script type="module" src="episode-ui.js?v=14"></script>
+  <script type="module" src="panel-enhancements.js?v=11"></script>
   <script type="module" src="../../shared/episode-loading.js?v=3"></script>
 </body>
 
