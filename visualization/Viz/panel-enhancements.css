@@ -76,3 +76,7 @@ body #ui .episode-focus .episodeDescription.story-expanded{max-width:none!import
 body.e001-shared #ui .episode-focus-link{padding-bottom:16px}
 
 #ui .episode-focus:has(.episode-info-toggle) .episode-focus-link{padding-right:25%!important}
+/* Long published episode titles must wrap inside their own card. */
+body[class*="-shared"] #ui .episode-focus{height:auto!important;max-height:none!important}
+body[class*="-shared"] #ui .episode-focus-link{min-width:0;overflow-wrap:anywhere}
+body[class*="-shared"] #ui .episode-focus .titleEpisode{display:block;max-width:100%;height:auto!important;max-height:none!important;white-space:normal!important;overflow:visible!important;overflow-wrap:anywhere;line-height:1.34}

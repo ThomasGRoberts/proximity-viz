@@ -8,7 +8,7 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
   doc().body.dataset.calendarIcon = "off";
   const e002Styles = doc().createElement("link");
   e002Styles.rel = "stylesheet";
-  e002Styles.href = "../dev/e002-control-panel-preview/preview.css";
+  e002Styles.href = "../dev/e002-control-panel-preview/preview.css?v=2";
   doc().head.append(e002Styles);
   const ui = doc().getElementById("ui");
   const sticky = doc().createElement("div"); sticky.id = "pairSticky"; sticky.className = "pair-sticky"; sticky.hidden = true;
@@ -127,6 +127,9 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     body.e002-shared #ui .thresholdControl input[type=number]{width:62px!important;max-width:62px!important}
     body.e002-shared .playbackRow{grid-template-columns:26px 30px 26px minmax(0,1fr) max-content!important;grid-template-rows:24px!important;gap:0 5px!important}
     body.e002-shared .playbackRow .sliderNow{grid-column:5!important;grid-row:1!important;justify-self:end!important;width:auto!important;white-space:nowrap!important;font-size:9px!important}
+    body.e002-shared .playbackRow{min-width:0!important;grid-template-columns:26px 30px 26px minmax(0,1fr)!important;grid-template-rows:auto auto!important}
+    body.e002-shared .playbackRow .sliderWrap{grid-column:4!important;grid-row:1!important;min-width:0!important}
+    body.e002-shared .playbackRow .sliderNow{grid-column:1/-1!important;grid-row:2!important;justify-self:end!important;position:static!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important}
     body.e002-shared .playbackDock{position:fixed!important;z-index:10!important;left:18px!important;bottom:18px!important;width:342px!important;max-width:calc(100vw - 36px)!important;margin:0!important;border-radius:12px!important;background:#fff!important;box-shadow:0 12px 35px rgba(0,0,0,.10)!important}
     .e001-chapters{display:grid;grid-template-columns:repeat(var(--chapter-count),minmax(0,1fr));gap:3px;margin:0 8px 5px;padding:2px;border:1px solid #d2d2d2;border-radius:7px;background:#f1f1f1}
     body.e002-shared #ui .episodeHeader h1{position:static!important;top:auto!important;margin:0 0 7px!important;padding:0!important;border:0!important;box-shadow:none!important;background:none!important}

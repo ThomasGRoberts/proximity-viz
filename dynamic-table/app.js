@@ -281,9 +281,13 @@ function objectNode(info, row) {
   if (info.cospar) line.append(el("span", "object-id", info.cospar));
   button.addEventListener("pointerenter", () => { if (matchMedia("(hover:hover)").matches) { clearTimeout(hideTimer); clearTimeout(showTimer); showTimer = setTimeout(() => showObject(button, info, false, row), 90); } });
   button.addEventListener("pointerleave", scheduleObjectClose);
-  button.addEventListener("focus", () => showObject(button, info, false, row));
+  button.addEventListener("focus", () => { if (!matchMedia("(max-width:760px)").matches) showObject(button, info, false, row); });
   button.addEventListener("blur", () => { if (!popover.contains(document.activeElement)) scheduleObjectClose(); });
-  button.addEventListener("click", event => { event.stopPropagation(); if (activeObject === button && pinnedObject) closeObject(); else showObject(button, info, true, row); });
+  button.addEventListener("click", event => {
+    if (matchMedia("(max-width:760px)").matches) return;
+    event.stopPropagation();
+    if (activeObject === button && pinnedObject) closeObject(); else showObject(button, info, true, row);
+  });
   return line;
 }
 function objects(row, data) {
@@ -741,18 +745,24 @@ async function toggleRow(row) {
   if (sameRow || token !== selectionToken) return;
   state.selected = row; render();
   const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
+  if (matchMedia("(max-width:760px)").matches) {
+    const reviewBar = document.getElementById("tableReviewBar");
+    const offset = reviewBar && !reviewBar.hidden ? reviewBar.getBoundingClientRect().height : 0;
+    const align = () => {
+      if (token !== selectionToken) return;
+      const current = document.querySelector(`.episode-row.selected[data-episode-id="${field(row, "ID")}"]`);
+      if (!current) return;
+      window.scrollTo({ top: Math.max(0, scrollY + current.getBoundingClientRect().top - offset - 8), behavior: "instant" });
+    };
+    align();
+    requestAnimationFrame(align);
+    setTimeout(align, 280);
+    return;
+  }
   await new Promise(resolve => requestAnimationFrame(resolve));
   if (token !== selectionToken) return;
   const selected = [...document.querySelectorAll(".episode-row")].find(item => item.dataset.episodeId === field(row, "ID"));
   if (!selected) return;
-  if (matchMedia("(max-width:760px)").matches) {
-    const model = document.querySelector(".expanded-row .visual-block");
-    if (model) {
-      const y = scrollY + model.getBoundingClientRect().top - 12;
-      window.scrollTo({ top: Math.max(0, y), behavior: reducedMotion.matches ? "instant" : "smooth" });
-      return;
-    }
-  }
   const stickyHeader = document.querySelector(".table-wrap thead th");
   const headerOffset = stickyHeader?.getBoundingClientRect().height || 0;
   const reviewBar = document.getElementById("tableReviewBar");
@@ -1296,7 +1306,7 @@ function render() {
     const badge = el("span", "orbit-tag", regimeShort(row)); badge.title = regime(row);
     const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
     const cue = el("span", "row-open-cue"); cue.setAttribute("aria-hidden", "true");
-    cue.append(el("span", "", "Learn more"), el("span", "row-open-chevron"));
+    cue.append(el("span", "row-open-chevron"));
     heading.append(name, badge);
     episode.append(heading); tr.append(episode);
     const orbitCell = el("td", "orbit-cell"); tr.append(orbitCell);

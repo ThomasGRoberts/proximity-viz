@@ -1,5 +1,5 @@
 import { loadCurrentEpisodes, episodeChapters } from "../../shared/episode-feed.js?v=7";
-import { installChapterButtons } from "../dev/e001-review/panel-layout.js?v=8";
+import { installChapterButtons } from "../dev/e001-review/panel-layout.js?v=9";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 
 const $ = id => document.getElementById(id);

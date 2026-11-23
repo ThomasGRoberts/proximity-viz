@@ -1,0 +1,113 @@
+{
+  "schema": "espl-shared-review-v1",
+  "comments": [
+    {
+      "id": "92960b4c593f4f2092f379eaa289c4bb",
+      "createdAt": "2026-11-23T14:05:58+00:00",
+      "surface": "E-008",
+      "root": "panel",
+      "key": "episodeFocus",
+      "label": "episodeFocus",
+      "x": 0.8026315789473685,
+      "y": 0.5595449172576832,
+      "text": "Please fix text wrapping on this episode name card.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "4d92e1d9d8b74841a7de81227fc5495f",
+      "createdAt": "2026-11-23T14:06:24+00:00",
+      "surface": "E-001",
+      "root": "panel",
+      "key": "ui",
+      "label": "ui",
+      "x": 0.7251461988304093,
+      "y": 0.2622309197651663,
+      "text": "Please fix wrapping on this episode card.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "41450e9f0c39423aa504b98b8d7fd4f1",
+      "createdAt": "2026-11-23T14:10:36+00:00",
+      "surface": "E-001",
+      "root": "panel",
+      "key": "playbackDock",
+      "label": "playback Dock",
+      "x": 0.9590643274853801,
+      "y": 0.42168674698795183,
+      "text": "On the public-on-Git version of this tool, this playback doc does not have two chapters. It just has one. Please make sure it loads both. And the time stamp is overlapping the playbar. Fix that, too.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "a62f0c4254fa4569b725342dae472fb4",
+      "createdAt": "2026-11-23T14:10:54+00:00",
+      "surface": "E-001",
+      "root": "panel",
+      "key": "identity",
+      "label": "identity",
+      "x": 0.6118421052631579,
+      "y": 0.14780618686868688,
+      "text": "On the public-on-git version of this tool, these two satellite panes have not been updated to the latest stylings. Please ensure that they are.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "723174d542e54e2b93134c221da3b2da",
+      "createdAt": "2026-11-23T14:11:36+00:00",
+      "surface": "E-001",
+      "root": "panel",
+      "key": "dwellMetric",
+      "label": "dwell Metric",
+      "x": 0.5493421052631579,
+      "y": 0.5334159438248658,
+      "text": "On the public version of this tool, this \"1-week\" duration is written \"995-hour\". Please fix that.\n\nIn general, it's clear that this episode in particular is not inheriting all of the same stylings. Please do that.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "3c013a96f737438ba5d29c5727b93d17",
+      "createdAt": "2026-11-23T14:12:14+00:00",
+      "surface": "Library",
+      "root": "table",
+      "key": "E-006-cell-2",
+      "label": "E-005 \u00b7 Space objects",
+      "x": 0.9662224180342915,
+      "y": 0.5034642032332564,
+      "text": "Please cut the \"Learn more\" part of the hover sequence. Just do the wide chevron; it looks great on its own.",
+      "appliesToAllEpisodes": true
+    },
+    {
+      "id": "aa5e083c5fbb4f62969197bf11e33889",
+      "createdAt": "2026-11-23T14:12:44+00:00",
+      "surface": "Library",
+      "root": "table",
+      "key": "E-001-visual-block",
+      "label": "E-001 \u00b7 visual block",
+      "x": 0.3792919349994995,
+      "y": 1,
+      "text": "Most of the expanded row assets aren't loading here. Please fix that.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "e90449c64e434e80a6a9cf6ff006b6f0",
+      "createdAt": "2026-11-23T14:13:15+00:00",
+      "surface": "Library",
+      "root": "table",
+      "key": "E-002-context-block",
+      "label": "E-002 \u00b7 context block",
+      "x": 0.7763226301586909,
+      "y": 0.5546452311021797,
+      "text": "Most of the expanded row contents are missing here. Please add them back.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "a1465aeafa5c46ab9e2a0ac8e8697120",
+      "createdAt": "2026-11-23T14:15:33+00:00",
+      "surface": "Library",
+      "root": "table",
+      "key": "E-006-context-block",
+      "label": "E-005 \u00b7 context block",
+      "x": 0.903077265862897,
+      "y": 0.4278305381558564,
+      "text": "In all expanded episode rows, the background of the episode descriptions is no longer gradient / feathered. We used to have this feature nailed. Please bring it back.",
+      "appliesToAllEpisodes": true
+    }
+  ]
+}

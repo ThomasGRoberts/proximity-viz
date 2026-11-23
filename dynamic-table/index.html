@@ -6,8 +6,8 @@
   <script>{const params=new URLSearchParams(location.search);if(params.get("embed")==="1")document.documentElement.classList.add("embedded-table");if(params.get("mobileFrame")==="1")document.documentElement.classList.add("mobile-review-frame")}</script>
   <title>Episodes of Concern · ESPL</title>
   <link rel="icon" type="image/png" href="./assets/polyhedron-icon.png">
-  <link rel="stylesheet" href="./style.css?v=49">
-  <script type="module" src="./app.js?v=61"></script>
+  <link rel="stylesheet" href="./style.css?v=50">
+  <script type="module" src="./app.js?v=62"></script>
   <script type="module" src="./embed-resize.js?v=1"></script>
   <script type="module" src="../visualization/dev/review-shell.js?v=4"></script>
 <link rel="stylesheet" href="../shared/episode-loading.css?v=3">
@@ -36,9 +36,9 @@
   </main>
   <aside id="mobileReviewStage" class="mobile-review-stage" hidden aria-label="Mobile Dynamic Table review"><div class="mobile-review-preview"><span>390 px mobile preview · use the spot comment button inside the preview</span><iframe id="mobileReviewFrame" title="Interactive mobile Dynamic Table with spot comments"></iframe></div></aside>
   <dialog id="mobile-model-notice" class="mobile-model-notice" aria-labelledby="mobile-model-title">
-    <h2 id="mobile-model-title">Open the orbital model?</h2>
+    <div class="mobile-model-card"><h2 id="mobile-model-title">Open the orbital model?</h2>
     <p>This full visualization was optimized for desktop screens. You can still open it here, though some controls may be easier to use on a computer.</p>
-    <div class="mobile-model-actions"><button type="button" id="mobile-model-cancel">Stay here</button><a id="mobile-model-open" href="#" target="_blank" rel="noopener noreferrer">Open model ↗</a></div>
+    <div class="mobile-model-actions"><button type="button" id="mobile-model-cancel">Stay here</button><a id="mobile-model-open" href="#" target="_blank" rel="noopener noreferrer">Open model ↗</a></div></div>
   </dialog>
 </body>
 </html>

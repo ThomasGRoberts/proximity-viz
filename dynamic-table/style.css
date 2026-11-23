@@ -1090,3 +1090,8 @@ html.mobile-review-frame .table-comment-drawer{top:54px}
 }
 @keyframes episode-detail-reveal{from{opacity:.55;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.table-wrap tr.expanded-row .expanded-inner{animation:none!important}}
+/* Keep the model confirmation visible within short mobile viewports, including iPhone mini. */
+.mobile-model-notice[open]{position:fixed!important;inset:0!important;display:grid!important;place-items:center!important;box-sizing:border-box;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)!important;border:0!important;border-radius:0!important;background:transparent!important;transform:none!important;overflow:hidden!important}
+.mobile-model-notice .mobile-model-card{box-sizing:border-box;width:min(420px,100%);max-height:calc(100dvh - 28px);overflow:auto;padding:20px;border:1px solid #d9d0b7;border-radius:12px;background:#fff;box-shadow:0 18px 45px #0003}
+@media(max-width:760px){.table-wrap tr.expanded-row .expanded-inner.has-visual .context-block{background:linear-gradient(180deg,#fffcf6 0%,#fffcf6f2 76%,#fffcf600 100%)!important}}
+@media(min-width:761px){.table-wrap tr.expanded-row .expanded-inner.has-visual .context-block::before{display:block!important;background:linear-gradient(90deg,#fffcf6 0%,#fffcf6f8 38%,#fffcf6de 62%,#fffcf600 100%)!important}}
