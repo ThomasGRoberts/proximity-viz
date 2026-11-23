@@ -734,7 +734,7 @@ async function toggleRow(row) {
   const current = document.querySelector(".expanded-row .expanded-inner");
   if (current && !reducedMotion.matches) {
     collapseAnimation = current.animate([{ maxHeight: `${current.getBoundingClientRect().height}px`, opacity: 1 }, { maxHeight: "0px", opacity: 0 }], { duration: 220, easing: "ease-in", fill: "forwards" });
-    try { await collapseAnimation.finished; } catch { return; }
+    try { await collapseAnimation.finished; } catch { if (token !== selectionToken) return; }
     if (token !== selectionToken) return;
   }
   state.selected = null; render();
