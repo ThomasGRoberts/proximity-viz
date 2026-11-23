@@ -1311,9 +1311,9 @@ function render() {
     const name = el("span", "episode-title"); name.append(safeEpisodeName(titleMarkup(row)));
     const cue = el("span", "row-open-cue"); cue.setAttribute("aria-hidden", "true");
     cue.append(el("span", "", "Learn more"), el("span", "row-open-chevron"));
-    heading.append(name, cue);
+    heading.append(name, badge, cue);
     episode.append(heading); tr.append(episode);
-    const orbitCell = el("td", "orbit-cell"); orbitCell.append(badge); tr.append(orbitCell);
+    const orbitCell = el("td", "orbit-cell"); tr.append(orbitCell);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
     const periodCell = el("td", "period-cell"); periodCell.append(periodNode(row)); tr.append(periodCell);
     const separation = el("td", "separation-column"); separation.append(proximityNode(row, "distance")); tr.append(separation);

@@ -208,7 +208,8 @@ if (!document.body.classList.contains("e002-shared") && !document.getElementById
   const panel = document.getElementById("ui");
   const placeButton = () => {
     if (!panel) return;
-    button.style.top = `${panel.offsetTop + 32}px`;
+    const sticky = panel.querySelector('#e001PairSticky');
+    button.style.top = `${panel.offsetTop + (sticky && !sticky.hidden ? sticky.offsetHeight - 1 : 32)}px`;
     button.style.left = document.body.classList.contains("episode-panel-collapsed") ? "0px" : `${panel.offsetLeft + panel.offsetWidth - 1}px`;
   };
   button.addEventListener("click", () => {
@@ -225,4 +226,22 @@ if (!document.body.classList.contains("e002-shared") && !document.getElementById
   window.addEventListener("resize", placeButton);
   new ResizeObserver(placeButton).observe(panel);
   new MutationObserver(placeButton).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+}
+
+// Keep the chapter-length explanation current when a chapter changes. Each
+// episode renderer owns its thresholds; this layer only updates the prose.
+const dwellKey = document.querySelector('#dwellMetric .dwellKey');
+const timeline = document.getElementById('timelineSlider');
+if (dwellKey && timeline) {
+  const refreshDwellCopy = () => {
+    const hours = (Number(timeline.max) - Number(timeline.min)) / 3600000;
+    if (!(hours >= .25) || !dwellKey.firstChild || dwellKey.firstChild.nodeType !== Node.TEXT_NODE) return;
+    const rounded = Math.round(hours * 10) / 10;
+    const duration = Number.isInteger(rounded / 24) && rounded >= 48 ? `${rounded / 24}-day` : `${rounded}-hour`;
+    const prefix = `The dwell time cannot exceed the ${duration} duration of this chapter, and is a function of the selected separation distance and relative speed thresholds. These thresholds can be adjusted on the charts above. `;
+    if (dwellKey.firstChild.textContent !== prefix) dwellKey.firstChild.textContent = prefix;
+  };
+  new MutationObserver(refreshDwellCopy).observe(dwellKey, { childList: true });
+  new MutationObserver(refreshDwellCopy).observe(timeline, { attributes: true, attributeFilter: ['min', 'max'] });
+  refreshDwellCopy();
 }

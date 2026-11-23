@@ -204,7 +204,10 @@
       for(const card of [...container.children]){
         if(card.classList.contains('espl-special-card')) continue;
         const link=card.querySelector('.knowledge-slide__title-link'),url=link?.href?.replace(/\/$/,'')||'',title=card.querySelector('.knowledge-slide__title')?.textContent?.trim().toLowerCase()||'';
-        if(urls.has(url)||titles.has(title)) card.remove();
+        const category=card.querySelector('.knowledge-slide__category,.knowledge-output-category,.knowledge-slide__eyebrow')?.textContent?.trim().toLowerCase()||'';
+        // Older page blocks contain a hand-written model card. Once the live
+        // archive supplies that card, keep only the archive-driven version.
+        if(urls.has(url)||titles.has(title)||/^(interactive )?model$|^data repository$/.test(category)) card.remove();
       }
       if(cards.some((card,index)=>container.children[index]!==card)) container.prepend(...cards);
       alignIcons();

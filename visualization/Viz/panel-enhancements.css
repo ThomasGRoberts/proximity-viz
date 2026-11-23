@@ -71,3 +71,6 @@ body.e001-shared #ui .episode-hover-action svg{width:13px;height:13px;fill:none;
 body.e001-shared #ui .episode-focus:is(:hover,:focus-within) .episode-eyebrow{opacity:0}
 body.e001-shared #ui .episode-focus:is(:hover,:focus-within) .episode-hover-action{opacity:1}
 body.e001-shared #ui .episode-focus .titleEpisode{display:block;margin:6px 0 0;padding:0 0 0 17px;border:0;background:none;color:#414141;font-size:12.5px;font-weight:650;line-height:1.34;white-space:normal;-webkit-text-fill-color:#414141}
+/* The expanded account uses the entire width of its episode card. */
+body #ui .episode-focus .episodeDescription.story-expanded{max-width:none!important;margin-right:10px!important}
+body.e001-shared #ui .episode-focus-link{padding-bottom:16px}
