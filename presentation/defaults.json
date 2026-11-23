@@ -66,13 +66,6 @@
       "body": "Object B relocates while Object A anchors the rotating view. Separation distance, relative speed, and range rate answer different questions."
     },
     {
-      "id": "conjunction",
-      "kind": "chapter",
-      "title": "Conjunction versus close approach",
-      "subtitle": "06 · Different questions",
-      "body": "Compare a brief, faster encounter with sustained slower proximity. Collision screening and descriptions of behavior have different purposes."
-    },
-    {
       "id": "library",
       "kind": "slide",
       "title": "Episodes of Concerning Satellite Proximity",
@@ -99,13 +92,6 @@
       "title": "Future research",
       "subtitle": "From episodes to baselines",
       "body": "Congestion, statistical baselines, and proximity between energy-related space systems."
-    },
-    {
-      "id": "future-examples",
-      "kind": "chapter",
-      "title": "Further behavioral questions",
-      "subtitle": "Future research",
-      "body": "Energy-space proximity and sustained line of sight are distinct from separation distance alone."
     },
     {
       "id": "discussion",

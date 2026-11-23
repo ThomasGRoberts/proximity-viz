@@ -36,7 +36,7 @@ export function mountOpeningArt(host, initialOptions = {}) {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = .08; controls.enablePan = true;
   controls.minDistance = .2; controls.maxDistance = options.sectionMode ? 40 : 18;
-  if(options.sectionMode){camera.position.set(7,3,14);controls.target.set(0,0,-2.5);controls.update();}
+  if(options.sectionMode){camera.position.set(6,2,24);controls.target.set(0,0,-3.7);controls.update();}
   if(options.cameraView){camera.position.fromArray(options.cameraView.position);controls.target.fromArray(options.cameraView.target);camera.up.fromArray(options.cameraView.up);camera.zoom=options.cameraView.zoom||1;camera.updateProjectionMatrix();controls.update();}
   const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_RADIUS_KM / 1000, 160, 160), new THREE.MeshBasicMaterial({ color: options.earthColor }));
   artGroup.add(earth);
@@ -82,13 +82,14 @@ export function mountOpeningArt(host, initialOptions = {}) {
     trail.material.uniforms.uHalfWidthPx.value=Number(options.trailThickness)/2;
   }
   setOptions(options);
-  let lastTick = -Infinity, lastCameraDistance = 0, chaserStartSeconds = null;
+  let lastTick = -Infinity, lastCameraDistance = 0, chaserStartSeconds = null, sceneStartSeconds = null;
   function render(now) {
     controls.update();
     const cameraDistance=camera.position.distanceTo(controls.target);
     if (now - lastTick < 28 && Math.abs(cameraDistance-lastCameraDistance)<.02) return;
     lastTick = now; lastCameraDistance=cameraDistance;
     const simulatedSeconds=now / 1000 * Number(options.animationRate);
+    sceneStartSeconds ??= simulatedSeconds;
     chaserStartSeconds ??= simulatedSeconds;
     let seconds=simulatedSeconds-chaserStartSeconds;
     let state=relativeAt(orbits,seconds);
@@ -105,7 +106,7 @@ export function mountOpeningArt(host, initialOptions = {}) {
     earth.position.set(0, 0, -radius / 1000);
     const {T,N,R}=state.frame;
     const basis=new THREE.Matrix4().makeBasis(new THREE.Vector3(T[0],N[0],R[0]),new THREE.Vector3(T[2],N[2],R[2]),new THREE.Vector3(-T[1],-N[1],-R[1]));
-    earth.quaternion.setFromRotationMatrix(basis).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),seconds*7.2921159e-5+THREE.MathUtils.degToRad(Number(options.earthSwivelDeg))));
+    earth.quaternion.setFromRotationMatrix(basis).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),(simulatedSeconds-sceneStartSeconds)*7.2921159e-5+THREE.MathUtils.degToRad(Number(options.earthSwivelDeg))));
     target.position.set(0, 0, 0);
     chaser.position.copy(chaserPoint);
     const diameter=Number(options.markerSizePx)*worldPerPixel();

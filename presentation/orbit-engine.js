@@ -60,7 +60,7 @@ function stumpff(z) {
 }
 
 // Universal-variable f/g solution keeps position continuous through a burn.
-function coast(initial, seconds) {
+export function coast(initial, seconds) {
   if (!seconds) return initial;
   const r0 = norm(initial.r), v02 = dot(initial.v, initial.v);
   const vr0 = dot(initial.r, initial.v) / r0;
@@ -131,12 +131,19 @@ export function createEngine(config) {
   const teaching = config.teachingApogeeKick;
   const preManeuverA = hour => sgp(satA, hour);
   let apogeeKick = null, tleAfterA = null;
-  if (teaching && Number.isFinite(teaching.hour) && Number.isFinite(teaching.dvMs)) {
+  if (teaching && Number.isFinite(teaching.hour) && Number.isFinite(teaching.inclinationChangeDeg)) {
     const before = preManeuverA(teaching.hour);
-    // The teaching beat is a normal impulse: it rotates the orbital plane.
-    // The dotted pre-impulse orbit remains available for comparison.
-    const normal = unit(cross(before.r, before.v));
-    apogeeKick = { hour: teaching.hour, state: { r: before.r, v: add(before.v, scale(normal, teaching.dvMs / 1000)) } };
+    // Rotate velocity about the radius vector at the node. This keeps position,
+    // speed, and orbital energy continuous while changing the plane by 20°.
+    const radial = unit(before.r);
+    const initialInclination = elementsFromState(before).inclinationDeg;
+    const desired = Math.min(179.9, initialInclination + teaching.inclinationChangeDeg);
+    const rotated = angle => add(scale(before.v, Math.cos(angle)), add(scale(cross(radial, before.v), Math.sin(angle)), scale(radial, dot(radial, before.v) * (1 - Math.cos(angle)))));
+    const error = angle => elementsFromState({r:before.r,v:rotated(angle)}).inclinationDeg - desired;
+    const direction = Math.abs(error(.35)) < Math.abs(error(-.35)) ? 1 : -1;
+    let low = 0, high = Math.PI / 2;
+    for (let i = 0; i < 44; i++) { const mid = (low + high) / 2; if (error(direction * mid) < 0) low = mid; else high = mid; }
+    apogeeKick = { hour: teaching.hour, state: { r: before.r, v: rotated(direction * (low + high) / 2) } };
     tleAfterA = syntheticTle(elementsFromState(apogeeKick.state), "99901", "A", EPOCH_MS + teaching.hour * HOUR);
   }
   const stateA = hour => apogeeKick && hour >= apogeeKick.hour ? coast(apogeeKick.state, (hour - apogeeKick.hour) * 3600) : preManeuverA(hour);

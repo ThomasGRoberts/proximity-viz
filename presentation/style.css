@@ -538,3 +538,24 @@ body.chapterActive .episodeSegmented button{transition:background .15s ease,colo
 body.chapterActive .episodeSegmented button.active{border:1px solid #aaa!important;box-shadow:0 1px 3px #00000012}
 @media(max-width:760px){body[data-step="relative"] #ui.carouselSourcePanel,body[data-step="relative"] #ui #metricArea{width:min(342px,calc(100vw - 36px))}body[data-step="relative"] #ui #metricArea{max-height:calc(100vh - 365px)}}
 @media(max-width:760px){body.chapterActive .sceneLegend,body.chapterActive #panel,body.chapterActive #playback{width:min(265px,calc(100vw - 36px))}}
+
+/* Proximity carousel review: keep the orbital teaching art physically scaled. */
+body[data-step="lab"] .labIntroCopy{transform:translateY(-8vh)}
+body[data-step="statements-shadow"] .quoteCards{height:72%;margin-top:clamp(20px,5vh,55px);align-self:flex-start}
+body[data-step="statements-shadow"] .quoteCard:last-child{height:100%}
+body[data-step="statements-close"] .sectionArt,body[data-step="library"] .sectionArt,body[data-step="limitations"] .sectionArt,body[data-step="future"] .sectionArt{right:0;top:0;bottom:0;width:68vw;height:100%;overflow:visible}
+body[data-step="discussion-questions"] #slideBody mark{padding:0 .09em;border-radius:2px;background:#f4d882;color:inherit;font-weight:750;box-decoration-break:clone}
+body[data-step="relative"] #ui.carouselSourcePanel{overflow-y:auto;max-height:calc(100vh - 180px);padding:0 2px 3px;background:transparent;scrollbar-width:thin}
+body.presentation[data-step="relative"] #ui.carouselSourcePanel{max-height:calc(100vh - 115px)}
+body[data-step="relative"] #ui .satCard{position:relative;padding-right:30px}
+body[data-step="relative"] #ui .satCard::after{content:"⌄";position:absolute;right:12px;top:50%;color:#777;font-size:19px;line-height:1;transform:translateY(-60%)}
+body[data-step="relative"] #ui #metricArea,body.presentation[data-step="relative"] #ui #metricArea{position:static;left:auto;top:auto;width:100%;max-height:none;overflow:visible;margin-top:9px;padding:9px 10px 7px;border:1px solid #d8d8d8;border-radius:10px;background:#fff}
+body[data-step="relative"][data-beat="0"] #ui.carouselSourcePanel #speedMetric{display:grid}
+body[data-step="relative"][data-beat="0"] #ui.carouselSourcePanel #speedChartGroup,body[data-step="relative"][data-beat="0"] #ui.carouselSourcePanel #dwellMetric{display:block}
+body[data-step="relative"] #ui .chartGroup canvas{height:125px}
+@media(max-width:760px){body[data-step="relative"] #ui.carouselSourcePanel{max-height:calc(65vh - 80px)}body[data-step="relative"] #ui #metricArea{max-height:none}}
+body.chapterActive #scene{bottom:0}
+body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.earthScale"]),body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.sectionEarthScale"]),body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.earthSwivelDeg"]){display:none}
+body[data-step="statements-close"] .sectionArt{transform:none}
+body.review.chapterActive.inspectorCollapsed #inspector{left:auto!important;right:72px!important;top:70px!important;bottom:auto!important}
+body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.artScale"]),body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.sectionOffsetX"]),body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.sectionOffsetY"]),body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.sectionRotationDeg"]){display:none}
