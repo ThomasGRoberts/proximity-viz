@@ -80,14 +80,9 @@ async function init() {
   const first = chapters[0];
   api().setWindow(first.start, first.end);
   api().setTime(first.start);
+  api().setMode("relative");
+  api().setReference("B");
   api().setPublishedCameraViews(savedCameraViews, first.id);
-  const openingView = savedCameraViews.filter(view => view.chapterId === first.id && view.cameraMode === "relative" && view.referenceSatellite === "B" && Date.parse(view.simulationTimeUtc) <= first.centerMs)
-    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
-  if (openingView) {
-    api().setMode("relative");
-    api().setReference("B");
-    api().applyFraming(openingView, true);
-  }
   selected = 0;
   lastTime = api().state.time;
   syncClock();
