@@ -622,7 +622,7 @@ function expandedContent(row, data) {
   if (hasEpisodeVisual(episodeId)) {
     const publicId = publicEpisodeId(row);
     const viz = el("section", "visual-block");
-    const target = new URLSearchParams(location.search).get("embed") === "1"
+    const target = new URLSearchParams(location.search).get("embed") === "1" || location.hostname === "thomasgroberts.github.io"
       ? `https://espl.ae.gatech.edu/research/models/proximity/?episode=${encodeURIComponent(publicId)}`
       : new URL(episodeId === "E-001" ? "../visualization/e001/?v=8" : episodeId === "E-002" ? "../visualization/e002/?build=4" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=4`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);

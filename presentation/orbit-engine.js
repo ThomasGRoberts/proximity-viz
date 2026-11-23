@@ -144,7 +144,11 @@ export function createEngine(config) {
     let low = 0, high = Math.PI / 2;
     for (let i = 0; i < 44; i++) { const mid = (low + high) / 2; if (error(direction * mid) < 0) low = mid; else high = mid; }
     apogeeKick = { hour: teaching.hour, state: { r: before.r, v: rotated(direction * (low + high) / 2) } };
-    tleAfterA = syntheticTle(elementsFromState(apogeeKick.state), "99901", "A", EPOCH_MS + teaching.hour * HOUR);
+    // The disclosure teaches a single planned inclination change. The scene
+    // coasts continuously from the rotated state; its mean-element summary
+    // retains the other planned elements rather than exposing osculating
+    // differences introduced by converting the SGP4 state at the burn.
+    tleAfterA = syntheticTle({ ...a, inclinationDeg: desired }, "99901", "A", EPOCH_MS + teaching.hour * HOUR);
   }
   const stateA = hour => apogeeKick && hour >= apogeeKick.hour ? coast(apogeeKick.state, (hour - apogeeKick.hour) * 3600) : preManeuverA(hour);
   const stateB = hour => {

@@ -11,7 +11,7 @@ const $ = id => document.getElementById(id);
 const clone = value => structuredClone(value);
 // E-008 saved relative camera 2d907c76 (chapter 1), in the same local axes.
 const relativeCameraEye = new THREE.Vector3(6.74123789747407, 2.0576834251987783, 6.422160892668574).normalize();
-const removedSteps = new Set(["time-series", "thresholds", "shadowing", "covariance-examples", "conjunction", "future-examples"]);
+const removedSteps = new Set(["time-series", "thresholds", "shadowing", "covariance-examples", "conjunction", "future-examples", "limitations", "future"]);
 const chapterIds = ["tle", "uncertainty", "neighbors", "relative"];
 const initialVisibility = {
   tle: { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
@@ -104,7 +104,7 @@ function fillElementList(host, values, epoch) {
   host.replaceChildren();
   for(const [name,value] of [["Semi-major axis",`${(EARTH_KM+values.altitudeKm).toFixed(1)} km`],["Eccentricity",Number(values.eccentricity).toFixed(5)],["Inclination",`${Number(values.inclinationDeg).toFixed(2)}°`],["RAAN",`${Number(values.raanDeg).toFixed(2)}°`],["Argument of perigee",`${Number(values.argPerigeeDeg).toFixed(2)}°`],["Mean anomaly",`${Number(values.meanAnomalyDeg).toFixed(2)}°`],["Epoch",fmtEpoch(epoch)]]){
     const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=name;
-    if(name==="Epoch") { row.classList.add("epochRow");const parts=value.split(" · ");dd.append(document.createTextNode(parts[0]),document.createElement("br"),document.createTextNode(parts[1]||"")); }
+    if(name==="Epoch") { row.classList.add("epochRow");dd.textContent=value; }
     else dd.textContent=value;
     row.append(dt,dd);host.append(row);
   }
@@ -115,7 +115,7 @@ function elementsFromTle(tle) {
     inclinationDeg:Number(line.slice(8,16)),raanDeg:Number(line.slice(17,25)),eccentricity:Number(`0.${line.slice(26,33)}`),
     argPerigeeDeg:Number(line.slice(34,42)),meanAnomalyDeg:Number(line.slice(43,51))};
 }
-const beatCounts = {lab:4,"statements-shadow":6,"statements-focus":2,tle:3,uncertainty:1,neighbors:3,relative:2,conjunction:3,"covariance-examples":3,"future-examples":2,"discussion-questions":4};
+const beatCounts = {lab:4,"statements-shadow":6,"statements-focus":2,tle:3,uncertainty:1,neighbors:3,relative:3,conjunction:3,"covariance-examples":3,"future-examples":2,"discussion-questions":4};
 const beatLabels = {
   lab:["All research areas","Space Coordination","Space Sustainability","Space Security"],
   "statements-shadow":["United Kingdom","China","Australia","European Union","Netherlands","United States"],
@@ -123,7 +123,7 @@ const beatLabels = {
   tle:["Orbit elements","Orbit in motion","Updated elements"],
   uncertainty:["Uncertainty region"],
   neighbors:["Object A","Introduce Object B","Relative view"],
-  relative:["Separation distance","Relative speed"],
+  relative:["Separation distance","Relative speed","Dwell time"],
   conjunction:["Conjunction","Close approach","Shadowing"],
   "covariance-examples":["Conjunction · uncertainty","Close approach · uncertainty","Shadowing · uncertainty"],
   "future-examples":["Nearby orbital energy","Sustained line of sight"]
@@ -143,7 +143,7 @@ const statementCards = {
     { flag:"🇺🇸", country:"United States", date:"February 2020", quote:"This is <strong class=\"unusualWord\">unusual</strong> and <strong class=\"disturbingWord\">disturbing</strong> behavior and has the potential to create a dangerous situation in space.", source:"General John W. Raymond, CBS News, 12 February 2020 (in reference to USA-245, in LEO)", url:"https://www.cbsnews.com/news/russian-satellites-fly-near-us-government-satellite-activity-unusual-disturbing-space-command/" }
   ],
 };
-let doc, stepIndex = 0, beatIndex = 0, config, engine, series, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], showArchived = false, activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt, sectionArt, saveStyleTimer, saveWordingTimer, saveTeachingTimer, cameraTransition;
+let doc, stepIndex = 0, beatIndex = 0, config, engine, series, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], showArchived = false, activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt, sectionArt, saveStyleTimer, saveWordingTimer, saveTeachingTimer, cameraTransition, orbitRaise;
 const modelChartScales = new Map();
 let commentRefresh = null, commentRevision = 0;
 
@@ -203,13 +203,14 @@ function setup() {
   doc.chapterLabels.tle={...doc.chapterLabels.tle,A:"Object A"};
   for (const [after,item] of [
     ["library",{id:"project-page",kind:"project",title:"How Close Is Too Close?",subtitle:"Project page",body:""}],
-    ["discussion",{id:"discussion-questions",kind:"slide",title:"Questions for discussion",subtitle:"OEWG on PAROS",body:""}],
+    ["discussion",{id:"discussion-questions",kind:"slide",title:"Questions",subtitle:"Discussion",body:""}],
     ["discussion-questions",{id:"closing",kind:"slide",title:"How Close Is Too Close?",subtitle:"Side event",tagline:"Building Shared Understanding of Satellite Behavior",body:"OEWG on PAROS, Fourth Session · November 23, 2026"}]
   ]) if(!doc.steps.some(step=>step.id===item.id)){const index=doc.steps.findIndex(step=>step.id===after);if(index>=0)doc.steps.splice(index+1,0,item);}
   doc.steps = doc.steps.filter(item => !removedSteps.has(item.id));
   doc.chapterOverrides ||= {}; doc.chapterPresets ||= {}; doc.cameraViews ||= {};
   if (!doc.cameraViews["uncertainty-0"] && doc.cameraViews["uncertainty-2"]) doc.cameraViews["uncertainty-0"] = clone(doc.cameraViews["uncertainty-2"]);
   for(const item of doc.steps){if(item.id==="opening"||item.id==="closing")item.tagline="Building Shared Understanding of Satellite Behavior";
+    if(item.id==="discussion-questions"){item.title="Questions";item.subtitle="Discussion";}
     if(item.id==="statements-close"){
       item.title="Proximity operations,\nclose approaches,\nand shadowing";
       item.body="In different contexts, States describe these activities as concerning.";
@@ -319,13 +320,17 @@ function updateProgress() {
 }
 function go(index, lastBeat = false) {
   if (index < 0 || index >= doc.steps.length) return;
-  const wasTle = step().id === "tle";
-  const previous = wasTle && doc.steps[index]?.id === "uncertainty" && scene3d
+  const fromId=step().id,toId=doc.steps[index]?.id;
+  if(fromId==="uncertainty"&&toId==="neighbors"&&config){
+    orbitRaise={start:performance.now(),duration:2200,from:(EARTH_KM+config.objectA.altitudeKm)/(EARTH_KM+doc.presets.neighbors.objectA.altitudeKm)};
+    $("orbitRaiseNote").hidden=false;
+  }
+  const previous = [["tle","uncertainty"],["uncertainty","neighbors"],["neighbors","relative"]].some(([a,b])=>fromId===a&&toId===b) && scene3d
     ? {position:scene3d.camera.position.clone(),target:scene3d.controls.target.clone(),up:scene3d.camera.up.clone(),zoom:scene3d.camera.zoom} : null;
   stepIndex = index; beatIndex = lastBeat ? (beatCounts[step().id] || 1) - 1 : 0;
   history.replaceState(null, "", `#${step().id}`); showStep();
   if (previous && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    cameraTransition = {start:performance.now(),duration:950,from:previous,to:{position:scene3d.camera.position.clone(),target:scene3d.controls.target.clone(),up:scene3d.camera.up.clone(),zoom:scene3d.camera.zoom}};
+    cameraTransition = {start:performance.now(),duration:orbitRaise&&toId==="neighbors"?2200:950,from:previous,to:{position:scene3d.camera.position.clone(),target:scene3d.controls.target.clone(),up:scene3d.camera.up.clone(),zoom:scene3d.camera.zoom}};
     customCamera = true;
     scene3d.camera.position.copy(previous.position);scene3d.controls.target.copy(previous.target);scene3d.camera.up.copy(previous.up);scene3d.camera.zoom=previous.zoom;scene3d.camera.updateProjectionMatrix();scene3d.controls.update();
   }
@@ -378,13 +383,19 @@ function renderQuoteCards(id) {
 }
 function showStep() {
   const item = step();
+  if(item.id!=="neighbors")$("orbitRaiseNote").hidden=true;
   if (item.id === "closing") openingArt?.resetPlayback();
   [...$("steps").children].forEach((node, index) => index === stepIndex ? node.setAttribute("aria-current", "step") : node.removeAttribute("aria-current"));
   $("steps").children[stepIndex]?.scrollIntoView({block:"nearest",inline:"nearest"});
   document.body.dataset.step = item.id;
   document.body.classList.toggle("chapterActive", chapter());
   $("slide").hidden = chapter() || item.kind==="project"; $("episode").hidden = !chapter(); $("projectVisit").hidden=item.kind!=="project";
-  if(item.kind==="project"&&["127.0.0.1","localhost"].includes(location.hostname))$("projectVisit").querySelector("iframe").src="/api/proximity-project";
+  if(item.kind==="project"){
+    const local=["127.0.0.1","localhost"].includes(location.hostname);
+    $("projectVisit").querySelector("iframe").hidden=!local;
+    $("projectVisitFallback").hidden=local;
+    if(local)$("projectVisit").querySelector("iframe").src="/api/proximity-project";
+  }
   $("inspector").hidden = presentMode || (!chapter() && !["opening","closing","statements-close"].includes(item.id));
   if(doc.inspectorPosition){$("inspector").style.left=`${doc.inspectorPosition.x}%`;$("inspector").style.top=`${Math.max(8,doc.inspectorPosition.y)}%`;$("inspector").style.right="auto";$("inspector").style.bottom="auto";}
   $("openingControlsSection").hidden = !["opening","closing","statements-close","library","limitations","future"].includes(item.id);
@@ -398,12 +409,16 @@ function showStep() {
     }
     $("slideTitle").textContent = item.title; $("slideEyebrow").textContent = item.subtitle||"";
     if(item.id==="discussion-questions"){
-      const phrases=["satellite behavior","operational context","information could states","shared physical descriptions"];
+      const phrases=["activities that may warrant concern, clarification, or consultation","operational context","information","shared physical descriptions"];
       $("slideBody").replaceChildren(...(item.body||"").split(/\n\s*\n/).filter(Boolean).map((question,index)=>{
         const span=document.createElement("span"),needle=phrases[index],start=question.toLowerCase().indexOf(needle);
         if(start<0){span.textContent=question;return span;}
         span.append(document.createTextNode(question.slice(0,start)));
-        const mark=document.createElement("mark");mark.textContent=question.slice(start,start+needle.length);span.append(mark,document.createTextNode(question.slice(start+needle.length)));
+        const mark=document.createElement("mark");mark.textContent=question.slice(start,start+needle.length);span.append(mark);
+        const remainder=question.slice(start+needle.length);
+        const second=index===2?remainder.toLowerCase().indexOf("substantiate their concerns"):-1;
+        if(second<0)span.append(document.createTextNode(remainder));
+        else {span.append(document.createTextNode(remainder.slice(0,second)));const other=document.createElement("mark");other.textContent=remainder.slice(second,second+"substantiate their concerns".length);span.append(other,document.createTextNode(remainder.slice(second+"substantiate their concerns".length)));}
         return span;
       }));
     }
@@ -420,9 +435,14 @@ function showStep() {
   }
   activePreset = doc.chapterPresets[item.id] || "neighbors";
   config = clone(doc.chapterOverrides[cameraKey()] || doc.chapterOverrides[item.id] || exampleConfig(item.id,beatIndex) || (item.id==="uncertainty" ? doc.chapterOverrides.tle : null) || doc.presets[activePreset]);
+  if(item.id==="relative" && !doc.chapterOverrides[cameraKey()] && !doc.chapterOverrides[item.id]) {
+    config=clone(doc.presets.neighbors);
+    config.objectB.relativeLongitudeDeg=.15;
+    config.maneuver.enabled=false;
+  }
   if(item.id==="uncertainty"&&!doc.chapterOverrides[item.id])delete config.teachingApogeeKick;
   config.display={trailThickness:1.8,referenceThickness:1.2,borderThickness:1.1,borderOpacity:.7,borderColor:"#707070",...config.display};
-  const teaching = ["uncertainty","neighbors","relative"].includes(item.id);
+  const teaching = ["uncertainty","neighbors"].includes(item.id);
   document.body.classList.toggle("inspectorCollapsed", teaching && !presentMode);
   $("inspectorToggle").textContent = teaching && !presentMode ? "Show controls" : "Hide controls";
   $("inspectorToggle").setAttribute("aria-expanded",String(!teaching || presentMode));
@@ -509,8 +529,8 @@ function applyBeat(rebuild = true) {
     button.classList.toggle("active",index===beatIndex);button.setAttribute("aria-pressed",String(index===beatIndex));
     button.onclick=()=>{if(index!==beatIndex){beatIndex=index;applyBeat();}};return button;
   }));
-  $("chartBlock").dataset.chart=id==="relative"?(beatIndex===0?"distance":"both"):"both";
-  if (rebuild && doc.cameraViews[cameraKey()]?.mode === config.display.mode) restoreCamera();
+  $("chartBlock").dataset.chart=id==="relative"?(beatIndex===0?"distance":beatIndex===1?"both":"dwell"):"both";
+  if (rebuild && id!=="relative" && doc.cameraViews[cameraKey()]?.mode === config.display.mode) restoreCamera();
   updateVisibility(); resizeScene(); updateScene();
   if(id === "relative") drawCharts(true);
   if (rebuild) { const node = $("episode"); node.classList.remove("beat-change"); void node.offsetWidth; node.classList.add("beat-change"); }
@@ -579,12 +599,16 @@ function change(path, value) {
     return;
   }
   setPath(config, path, value);
+  const raisedInclination=path==="objectA.raanDeg" && config.objectA.inclinationDeg < 1;
+  if(raisedInclination){
+    config.objectA.inclinationDeg=5;
+  }
   if(path==="display.borderThickness")redrawSceneBorders();
   if (config.display.endHour <= config.display.startHour) config.display.endHour = config.display.startHour + 1;
   currentHour = THREE.MathUtils.clamp(currentHour, config.display.startHour, config.display.endHour);
   syncControls();
   if (path === "display.mode") { customCamera = false; restoreCamera(); }
-  try { recalc(); $("saveStatus").textContent = "Unsaved chapter changes"; } catch (error) { $("saveStatus").textContent = error.message; }
+  try { recalc(); $("saveStatus").textContent = raisedInclination ? "Inclination set to 5° so RAAN changes the orbital plane. Orbit settings saved locally." : "Unsaved chapter changes"; } catch (error) { $("saveStatus").textContent = error.message; }
   if(step().id==="tle"){
     doc.chapterOverrides.tle=clone(config);clearTimeout(saveTeachingTimer);
     saveTeachingTimer=setTimeout(()=>saveDoc("Orbit settings saved locally").catch(error=>{$("saveStatus").textContent=error.message}),450);
@@ -616,7 +640,10 @@ function recalc() {
   series = engine.sample(config.display.startHour, config.display.endHour, 260);
   const displayedA = step().id === "tle" && beatIndex >= 2 && engine.tleAfterA ? engine.tleAfterA : engine.tleA;
   $("tleText").textContent = `${displayedA.line1}\n${displayedA.line2}`;
+  $("tleBlock").querySelector("h2").textContent=step().id==="tle"&&beatIndex>=2?"Illustrative post-burn elements":"Synthetic TLE · Object A";
+  $("tleBlock").querySelector("p").lastChild.textContent=step().id==="tle"&&beatIndex>=2?" · Plane-change summary; path coasts continuously":" · Propagated with SGP4";
   fillElementList($("legendTleA"),elementsFromTle(displayedA),displayedA.epochUtc);
+  $("legendTleA").querySelectorAll("div").forEach(row=>row.classList.toggle("changedElement",step().id==="tle"&&beatIndex>=2&&["Inclination","Epoch"].includes(row.querySelector("dt")?.textContent)));
   fillElementList($("legendTleB"),elementsFromTle(engine.tleB),engine.tleB.epochUtc);
   $("epochText").textContent = fmtEpoch(displayedA.epochUtc);
   $("aElements").textContent = `${engine.tleAfterA && step().id === "tle" && beatIndex >= 2 ? "Updated synthetic TLE" : "Synthetic TLE"} · ${(EARTH_KM + config.objectA.altitudeKm).toFixed(0)} km semi-major axis`;
@@ -746,7 +773,15 @@ function linePoints(line, points, thickness=1) {
 function cameraKey() { return beatCounts[step().id] ? `${step().id}-${beatIndex}` : step().id; }
 function restoreCamera() {
   if (!scene3d || !chapter()) return;
-  const {camera,controls} = scene3d, saved = doc.cameraViews[cameraKey()] || (step().id === "tle" ? doc.cameraViews["tle-0"] : null) || doc.cameraViews[step().id];
+  const {camera,controls} = scene3d, saved = step().id === "relative" ? (doc.cameraViews["neighbors-2"] || doc.cameraViews["neighbors-1"] || doc.cameraViews["relative-0"]) : doc.cameraViews[cameraKey()] || (step().id === "uncertainty" ? doc.cameraViews["neighbors-2"] : null) || (step().id === "tle" ? doc.cameraViews["tle-0"] : null) || doc.cameraViews[step().id];
+  if(step().id==="neighbors"&&beatIndex===0&&config.display.mode==="relative"){
+    // A wide first GEO beat reveals the far arc behind Earth. Later beats
+    // retain the saved close camera for the two-spacecraft comparison.
+    const direction=saved?.position?new THREE.Vector3(...saved.position).sub(new THREE.Vector3(...(saved.target||[0,0,0]))).normalize():relativeCameraEye;
+    controls.target.copy(scene3d.earth.position);
+    camera.position.copy(controls.target).addScaledVector(direction,175);
+    camera.up.set(0,1,0);camera.zoom=1;camera.updateProjectionMatrix();controls.update();customCamera=true;return;
+  }
   if (doc.teachingCameraDirection && ["tle","uncertainty","neighbors"].includes(step().id)) {
     const direction=new THREE.Vector3(...doc.teachingCameraDirection).normalize();
     const distance=config.display.mode==="eci"?Math.max(5.8,3.4*(EARTH_KM+config.objectA.altitudeKm)/EARTH_KM):step().id==="uncertainty"?1.65:2.8;
@@ -807,6 +842,13 @@ function updateScene() {
   };
   const referenceState = sceneOrigin === "B" ? engine.stateB : engine.stateA;
   const orbitPoints=osculatingOrbit(referenceState(currentHour));
+  if(orbitRaise&&step().id==="neighbors"){
+    const fraction=THREE.MathUtils.clamp((performance.now()-orbitRaise.start)/orbitRaise.duration,0,1);
+    const scale=THREE.MathUtils.lerp(orbitRaise.from,1,fraction*fraction*(3-2*fraction));
+    const resize=point=>point.sub(earth.position).multiplyScalar(scale).add(earth.position);
+    resize(markerA.position);resize(markerB.position);orbitPoints.points.forEach(resize);
+    if(fraction>=1){orbitRaise=null;$("orbitRaiseNote").hidden=true;}
+  }
   const covarianceFocus = step().id === "uncertainty";
   orbit.userData.closed=true;
   linePoints(orbit,orbitPoints.points,config.display.referenceThickness); orbit.visible=config.display.showOrbit;
@@ -914,16 +956,16 @@ function drawCharts(force=false) {
   const window={id:`${step().id}-${beatIndex}`,start:new Date(EPOCH_MS+config.display.startHour*3600000).toISOString(),end:new Date(EPOCH_MS+config.display.endHour*3600000).toISOString()};
   const qualifications=thresholdIntervals(samples,config.display.distanceThresholdKm,config.display.speedThresholdMs);
   if(step().id==="relative"){
-    modelChartScales.set("distance",drawOrbitalChart($("modelDistanceChart"),samples,"distanceKm",{window,currentMs,threshold:config.display.distanceThresholdKm,title:"Separation distance (km)",maximum:50000,qualifications,fixedWindow:true,timeOnly:false}));
-    modelChartScales.set("speed",drawOrbitalChart($("modelSpeedChart"),samples,"speedMs",{window,currentMs,threshold:config.display.speedThresholdMs,title:"Relative speed (m/s)",maximum:1000,qualifications,fixedWindow:true,timeOnly:false,speedUnit:"m/s"}));
+    modelChartScales.set("distance",drawOrbitalChart($("modelDistanceChart"),samples,"distanceKm",{window,currentMs,threshold:config.display.distanceThresholdKm,title:"Separation distance (km)",maximum:50000,qualifications,fixedWindow:false,timeOnly:false}));
+    modelChartScales.set("speed",drawOrbitalChart($("modelSpeedChart"),samples,"speedMs",{window,currentMs,threshold:config.display.speedThresholdMs,title:"Relative speed (m/s)",maximum:1000,qualifications,fixedWindow:false,timeOnly:false,speedUnit:"m/s"}));
     $("modelRangeStat").textContent=Number.isFinite(state.distanceKm)?`${fmtNum(state.distanceKm)} km`:"—";
     $("modelSpeedStat").textContent=Number.isFinite(state.relativeSpeedMs)?`${fmtNum(state.relativeSpeedMs)} m/s`:"—";
     const dwellMs=qualifications.both.intervals.reduce((sum,interval)=>sum+interval.end-interval.start,0);
-    $("modelDwellStat").textContent=fmtNum(dwellMs/3600000);
-    $("modelDwellUnit").textContent="h";
+    $("modelDwellStat").textContent=`${Math.floor(dwellMs/3600000)} h ${String(Math.round(dwellMs/60000)%60).padStart(2,"0")} min`;
+    $("modelDwellUnit").textContent="";
   }else{
-    drawOrbitalChart($("distanceChart"),samples,"distanceKm",{window,currentMs,threshold:config.display.distanceThresholdKm,title:"Separation distance (km)",maximum:50000,qualifications,fixedWindow:true,timeOnly:false});
-    drawOrbitalChart($("speedChart"),samples,"speedMs",{window,currentMs,threshold:config.display.speedThresholdMs,title:"Relative speed (m/s)",maximum:1000,qualifications,fixedWindow:true,timeOnly:false,speedUnit:"m/s"});
+    drawOrbitalChart($("distanceChart"),samples,"distanceKm",{window,currentMs,threshold:config.display.distanceThresholdKm,title:"Separation distance (km)",maximum:50000,qualifications,fixedWindow:false,timeOnly:false});
+    drawOrbitalChart($("speedChart"),samples,"speedMs",{window,currentMs,threshold:config.display.speedThresholdMs,title:"Relative speed (m/s)",maximum:1000,qualifications,fixedWindow:false,timeOnly:false,speedUnit:"m/s"});
   }
   $("dwellLabel").textContent=`Both thresholds: ${fmtNum(dwellHours(series,config.display.distanceThresholdKm,config.display.speedThresholdMs))} h cumulative dwell`;
 }

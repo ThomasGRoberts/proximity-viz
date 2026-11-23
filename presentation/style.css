@@ -559,3 +559,39 @@ body[data-step="statements-close"] #inspector label:has([data-path="openingStyle
 body[data-step="statements-close"] .sectionArt{transform:none}
 body.review.chapterActive.inspectorCollapsed #inspector{left:auto!important;right:72px!important;top:70px!important;bottom:auto!important}
 body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.artScale"]),body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.sectionOffsetX"]),body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.sectionOffsetY"]),body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.sectionRotationDeg"]){display:none}
+/* Current presentation review: one coherent teaching-panel width and beat sequence. */
+body[data-step="lab"] .labAddress{display:none!important}
+body[data-step="lab"] .labIntroCopy{transform:none!important}
+body[data-step="relative"] #ui.carouselSourcePanel,
+body[data-step="relative"] #ui #metricArea,
+body[data-step="relative"] #playback,
+body.chapterActive .sceneLegend,
+body.chapterActive #panel,
+body.chapterActive #playback{width:min(350px,33vw)!important}
+body[data-step="relative"] #ui #metricArea{box-sizing:border-box;border:1px solid #d8d8d8;border-radius:10px;overflow:hidden}
+body[data-step="relative"][data-beat="0"] #ui.carouselSourcePanel #speedMetric,
+body[data-step="relative"][data-beat="0"] #ui.carouselSourcePanel #speedChartGroup,
+body[data-step="relative"][data-beat="0"] #ui.carouselSourcePanel #dwellMetric{display:none!important}
+body[data-step="relative"][data-beat="1"] #ui.carouselSourcePanel #dwellMetric{display:none!important}
+body[data-step="relative"][data-beat="2"] #ui.carouselSourcePanel #dwellMetric{display:block!important}
+body[data-step="relative"] #ui .satCard::after{content:"⌄"!important;right:12px!important;font-size:19px!important}
+.sceneLegend .elementList .epochRow{display:flex!important;align-items:baseline;justify-content:space-between}
+.sceneLegend .elementList .epochRow dd{display:block;text-align:right;white-space:nowrap}
+body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.sectionOffsetX"]),
+body[data-step="statements-close"] #inspector label:has([data-path="openingStyle.sectionOffsetY"]){display:block!important}
+body[data-step="statements-close"] .sectionArt{transform:translate(var(--section-x,0vw),var(--section-y,0vh))!important}
+body[data-step="closing"] .slideCopy{align-items:stretch;width:min(58vw,800px);margin-left:clamp(22px,3.5vw,58px)}
+body[data-step="closing"] #slideHeadline{padding:8px 0 10px clamp(22px,2.3vw,36px)}
+body[data-step="closing"] #openingSubtitle{margin-top:16px;line-height:1.24}
+body[data-step="closing"] #slideBody{left:0;bottom:58px}
+@media(max-width:760px){body[data-step="relative"] #ui.carouselSourcePanel,body[data-step="relative"] #ui #metricArea,body[data-step="relative"] #playback,body.chapterActive .sceneLegend,body.chapterActive #panel,body.chapterActive #playback{width:min(350px,calc(100vw - 36px))!important}}
+.sceneLegend .elementList .changedElement{margin-inline:-5px;padding:2px 5px;border-radius:4px;background:#fff0bd;color:#5d4300}
+.sceneLegend .elementList .changedElement dt,.sceneLegend .elementList .changedElement dd{color:#5d4300;font-weight:800}
+.projectVisit iframe[hidden],.projectVisitFallback[hidden]{display:none!important}
+.projectVisitFallback{display:flex;min-height:100%;flex-direction:column;justify-content:center;align-items:center;gap:18px;background:#fff;color:#252525;text-align:center}
+.projectVisitFallback .eyebrow{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#9a741b}
+.projectVisitFallback h1{font-size:clamp(48px,6vw,90px);letter-spacing:-.05em;margin:0}
+.projectVisitFallback a{padding:12px 18px;border:1px solid #d5c8a9;border-radius:8px;color:#493816;text-decoration:none;font-weight:700}
+.projectVisitFallback a:hover{background:#fff4d7}
+.orbitRaiseNote{position:absolute;z-index:6;left:50%;bottom:96px;transform:translateX(-50%);padding:8px 12px;border:1px solid #ded5c0;border-radius:7px;background:#fffffff0;color:#5a4b2d;font-size:12px;font-weight:700;white-space:nowrap;pointer-events:none}
+.orbitRaiseNote[hidden]{display:none!important}
