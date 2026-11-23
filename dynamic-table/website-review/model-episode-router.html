@@ -6,9 +6,11 @@
   const frame = [...document.querySelectorAll('iframe')]
     .find(node => node.src.includes('thomasgroberts.github.io/proximity-viz/visualization/'));
   if (!frame) return;
-  const url = new URL('https://thomasgroberts.github.io/proximity-viz/visualization/Viz/compare.html');
-  url.searchParams.set('published', '1');
+  const url = episode === 'E-001'
+    ? new URL('https://thomasgroberts.github.io/proximity-viz/visualization/e001/')
+    : new URL('https://thomasgroberts.github.io/proximity-viz/visualization/Viz/compare.html');
   url.searchParams.set('episode', episode);
+  if (episode !== 'E-001') url.searchParams.set('published', '1');
   frame.src = url.href;
 })();
 </script>
