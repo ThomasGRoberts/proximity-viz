@@ -253,19 +253,61 @@ if (!document.documentElement.classList.contains('mini-scene')) {
   const header = document.createElement('div');
   header.id = 'mobileEpisodeHeader';
   header.setAttribute('aria-label', 'Current episode and spacecraft');
-  header.innerHTML = '<button type="button" class="mobile-episode-toggle" aria-expanded="false" aria-controls="nowModeling"><span class="mobile-episode-intro">Current Episode:</span><span class="mobile-episode-pair"><i class="mobile-dot chaser"></i><b class="mobile-chaser"></b><span>+</span><i class="mobile-dot target"></i><b class="mobile-target"></b></span><span class="mobile-episode-chevron" aria-hidden="true">⌄</span></button>';
+  header.innerHTML = '<span class="mobile-episode-intro">Current Episode:</span><span class="mobile-episode-pair"><span class="mobile-episode-name mobile-chaser-choice"><i class="mobile-dot chaser"></i><b class="mobile-chaser"></b></span><span>+</span><span class="mobile-episode-name mobile-target-choice"><i class="mobile-dot target"></i><b class="mobile-target"></b></span></span><div class="mobile-episode-menu" hidden></div>';
   document.body.append(header);
   const identity = document.getElementById('identity');
-  const mobileToggle = header.querySelector('.mobile-episode-toggle');
-  mobileToggle.addEventListener('click', () => {
-    const expanded = document.body.classList.toggle('mobile-sat-open');
-    mobileToggle.setAttribute('aria-expanded', String(expanded));
-  });
+  const menu = header.querySelector('.mobile-episode-menu');
+  const chaserChoice = header.querySelector('.mobile-chaser-choice');
+  const targetChoice = header.querySelector('.mobile-target-choice');
+  let selectedMobileSlot = 'A';
+  const closeMenu = () => { menu.hidden = true; header.querySelector('[aria-expanded]')?.setAttribute('aria-expanded', 'false'); };
+  document.addEventListener('click', event => { if (!header.contains(event.target)) closeMenu(); });
   const refreshMobileHeader = () => {
-    const names = [...(identity?.querySelectorAll('.satCard .satName') || [])].map(node => node.textContent.trim()).filter(Boolean);
-    header.querySelector('.mobile-chaser').textContent = document.getElementById('nameA')?.textContent?.trim() || names[0] || 'Chaser';
-    header.querySelector('.mobile-target').textContent = document.getElementById('nameB')?.textContent?.trim() || names[1] || 'Target';
+    const cards = [...(identity?.querySelectorAll('.satCard[data-slot]') || [])];
+    const names = Object.fromEntries(cards.map(card => [card.dataset.slot, card.querySelector('.satName')?.textContent?.trim()]).filter(([, name]) => name));
+    const threeObjects = cards.length > 2;
+    const alternateTargets = document.body.classList.contains('e005-shared');
+    const switchable = alternateTargets ? targetChoice : chaserChoice;
+    const fixed = alternateTargets ? chaserChoice : targetChoice;
+    const choices = alternateTargets ? ['B', 'C'] : ['A', 'C'];
+    const activeButton = identity?.querySelector('.e005-chaser-options button.active');
+    if (threeObjects) {
+      if (alternateTargets) selectedMobileSlot = activeButton?.dataset.slot || (selectedMobileSlot === 'A' ? 'B' : selectedMobileSlot);
+      else selectedMobileSlot = window.__e002EpisodeModel?.activeChaser || selectedMobileSlot;
+    }
+    const chaser = alternateTargets ? names.A : threeObjects ? names[selectedMobileSlot] : names.A;
+    const target = alternateTargets ? names[selectedMobileSlot] : names.B;
+    header.querySelector('.mobile-chaser').textContent = chaser || document.getElementById('nameA')?.textContent?.trim() || 'Chaser';
+    header.querySelector('.mobile-target').textContent = target || document.getElementById('nameB')?.textContent?.trim() || 'Target';
+    fixed.classList.remove('is-switchable'); fixed.removeAttribute('role'); fixed.removeAttribute('tabindex'); fixed.removeAttribute('aria-expanded');
+    switchable.classList.toggle('is-switchable', threeObjects);
+    if (threeObjects) { switchable.setAttribute('role', 'button'); switchable.tabIndex = 0; switchable.setAttribute('aria-expanded', String(!menu.hidden)); }
+    else { switchable.removeAttribute('role'); switchable.removeAttribute('tabindex'); switchable.removeAttribute('aria-expanded'); closeMenu(); }
+    const key = `${alternateTargets ? 'target' : 'chaser'}:${choices.map(slot => `${slot}:${names[slot]}`).join('|')}`;
+    if (threeObjects && menu.dataset.key !== key) {
+      menu.dataset.key = key; menu.replaceChildren();
+      for (const slot of choices) {
+        const button = document.createElement('button'); button.type = 'button'; button.dataset.slot = slot; button.textContent = names[slot] || `Object ${slot}`;
+        button.addEventListener('click', () => {
+          selectedMobileSlot = slot; closeMenu();
+          if (alternateTargets) identity?.querySelector(`.e005-chaser-options button[data-slot="${slot}"]`)?.click();
+          else window.__e002EpisodeModel?.setActiveChaser(slot);
+          refreshMobileHeader();
+        });
+        menu.append(button);
+      }
+    }
+    [...menu.children].forEach(button => button.setAttribute('aria-pressed', String(button.dataset.slot === selectedMobileSlot)));
   };
+  header.addEventListener('click', event => {
+    const choice = event.target.closest('.mobile-episode-name.is-switchable');
+    if (!choice || event.target.closest('.mobile-episode-menu')) return;
+    menu.hidden = !menu.hidden; choice.setAttribute('aria-expanded', String(!menu.hidden));
+  });
+  header.addEventListener('keydown', event => {
+    if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.mobile-episode-name.is-switchable')) { event.preventDefault(); event.target.click(); }
+    if (event.key === 'Escape') closeMenu();
+  });
   refreshMobileHeader();
   if (identity) {
     const loadingNames = new MutationObserver(refreshMobileHeader);

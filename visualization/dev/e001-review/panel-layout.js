@@ -131,7 +131,7 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     .e001-chapters{display:grid;grid-template-columns:repeat(var(--chapter-count),minmax(0,1fr));gap:3px;margin:0 8px 5px;padding:2px;border:1px solid #d2d2d2;border-radius:7px;background:#f1f1f1}
     body.e002-shared #ui .episodeHeader h1{position:static!important;top:auto!important;margin:0 0 7px!important;padding:0!important;border:0!important;box-shadow:none!important;background:none!important}
     body.e002-shared #ui .episode-focus{border:1px solid #e3d4ab!important;border-left:3px solid #d6a527!important;background:#fff4cf!important}
-    body.e002-shared #ui .episode-focus-link{padding:8px 10px 3px!important}
+    body.e002-shared #ui .episode-focus-link{padding:7px 8px 10px!important}
     body.e002-shared #ui .episode-focus .episodeDescription.story-collapsed{margin:0!important}
     body.e002-shared #ui .episode-focus .titleEpisode{margin:5px 0 0!important;padding:0!important;border:0!important;background:none!important;color:#3d382b!important;-webkit-text-fill-color:#3d382b!important;font-weight:700!important}
     body.e002-shared #ui .episode-focus-period{display:block;margin:4px 0 0;color:#857454;font-size:10px;line-height:1.25;font-weight:400}
@@ -152,7 +152,7 @@ export function installChapterButtons({ doc, api, syncClock, selectChapter, chap
     #gtLogo::after{content:"";position:absolute;inset:-35% -45%;pointer-events:none;background:linear-gradient(115deg,transparent 36%,#ffffff2e 43%,#fffffff9 49%,#ffffff47 56%,transparent 64%);transform:translateX(-125%)}
     #gtLogo:hover::after,#gtLogo:focus-visible::after{animation:e001LogoGlint 1.25s ease-out forwards}
     @keyframes e001LogoGlint{to{transform:translateX(125%)}}
-    @media(max-width:760px){body.e002-shared #ui{width:calc(100vw - 36px)!important;height:auto!important;max-height:calc(52vh - 54px)!important}body.e002-shared .playbackDock{width:calc(100vw - 36px)!important}#panelToggleBtn{left:calc(100vw - 19px)!important}body.ui-collapsed #panelToggleBtn{left:0!important}#gtLogo{width:160px!important}}
+    @media(max-width:760px){body.e002-shared #ui{width:calc(100vw - 36px)!important;height:auto!important;max-height:calc(52vh - 54px)!important}body.e002-shared .playbackDock{left:0!important;right:0!important;bottom:0!important;width:100vw!important;max-width:none!important;border-radius:12px 12px 0 0!important}body.e002-shared #cameraControls{top:68px!important}#panelToggleBtn{left:calc(100vw - 19px)!important}body.ui-collapsed #panelToggleBtn{left:0!important}#gtLogo{display:none!important}}
   `;
   doc().head.append(style);
   doc().getElementById("speed").value = "21600";

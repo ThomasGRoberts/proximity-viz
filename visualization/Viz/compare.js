@@ -580,9 +580,12 @@ function updateScreenLabels() {
     const point = dot.position.clone().project(camera);
     const x = rect.left + (point.x + 1) * rect.width / 2;
     const y = rect.top + (1 - point.y) * rect.height / 2;
-    node.hidden = point.z < -1 || point.z > 1 || x < rect.left || x > rect.right || y < 0 || y > innerHeight;
+    node.hidden = point.z < -1 || point.z > 1 || x < rect.left - radius || x > rect.right + radius || y < -radius || y > innerHeight + radius;
     if (node.hidden) { labelMotion[slot].x = null; continue; }
-    positions[slot] = { markerX: x, markerY: y, left: x + radius + 10, y, width: node.offsetWidth, height: node.offsetHeight };
+    const rightLeft = x + radius + 10;
+    const left = innerWidth <= 760 && rightLeft + node.offsetWidth > innerWidth - 5
+      ? Math.max(5, x - radius - 10 - node.offsetWidth) : Math.max(5, rightLeft);
+    positions[slot] = { markerX: x, markerY: y, left, y: Math.max(54, Math.min(innerHeight - 15, y)), width: node.offsetWidth, height: node.offsetHeight };
   }
   const a = positions.A, b = positions.B;
   if (a && b) {
