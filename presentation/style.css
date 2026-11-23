@@ -595,3 +595,9 @@ body[data-step="closing"] #slideBody{left:0;bottom:58px}
 .projectVisitFallback a:hover{background:#fff4d7}
 .orbitRaiseNote{position:absolute;z-index:6;left:50%;bottom:96px;transform:translateX(-50%);padding:8px 12px;border:1px solid #ded5c0;border-radius:7px;background:#fffffff0;color:#5a4b2d;font-size:12px;font-weight:700;white-space:nowrap;pointer-events:none}
 .orbitRaiseNote[hidden]{display:none!important}
+/* Keep the full diplomatic excerpts inside their cards at presentation sizes. */
+body[data-step="statements-focus"] .slide{overflow-y:auto;align-items:flex-start}
+body[data-step="statements-focus"] .quoteCards{align-self:flex-start;flex:none;height:auto;max-width:min(1100px,88vw);margin:18px 0 32px;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+body[data-step="statements-focus"] .quoteCard{box-sizing:border-box;height:auto;min-height:0;max-height:none;overflow:visible;padding:clamp(18px,2vw,30px)}
+body[data-step="statements-focus"] .quoteCard blockquote{margin:18px 0 20px;font-size:clamp(19px,2.1vw,31px);line-height:1.24;overflow-wrap:break-word}
+@media(max-width:900px){body[data-step="statements-focus"] .quoteCards{grid-template-columns:1fr;max-width:min(700px,88vw)}body[data-step="statements-focus"] .quoteCard blockquote{font-size:clamp(18px,3vw,26px)}}
