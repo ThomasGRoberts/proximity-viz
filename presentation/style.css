@@ -601,3 +601,11 @@ body[data-step="statements-focus"] .quoteCards{align-self:flex-start;flex:none;h
 body[data-step="statements-focus"] .quoteCard{box-sizing:border-box;height:auto;min-height:0;max-height:none;overflow:visible;padding:clamp(18px,2vw,30px)}
 body[data-step="statements-focus"] .quoteCard blockquote{margin:18px 0 20px;font-size:clamp(19px,2.1vw,31px);line-height:1.24;overflow-wrap:break-word}
 @media(max-width:900px){body[data-step="statements-focus"] .quoteCards{grid-template-columns:1fr;max-width:min(700px,88vw)}body[data-step="statements-focus"] .quoteCard blockquote{font-size:clamp(18px,3vw,26px)}}
+/* Let both quotations grow with their text; compact them only when the screen is short. */
+body[data-step="statements-focus"] .slide{justify-content:flex-start;padding:clamp(20px,4vh,54px) 5vw 42px;overflow-y:auto}
+body[data-step="statements-focus"] .slideCopy{padding-top:0}
+body[data-step="statements-focus"] .quoteCards{width:100%;max-width:100%;margin:12px 0 24px;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+body[data-step="statements-focus"] .quoteCard{height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}
+body[data-step="statements-focus"] #labSignature{display:none}
+@media(max-width:1100px){body[data-step="statements-focus"] .quoteCards{grid-template-columns:1fr}}
+@media(max-height:700px){body[data-step="statements-focus"] .slide h1{font-size:clamp(28px,4vw,48px)}body[data-step="statements-focus"] .quoteCards{gap:9px;margin:8px 0 12px}body[data-step="statements-focus"] .quoteCard{padding:12px 16px}body[data-step="statements-focus"] .quoteCard blockquote{margin:8px 0;font-size:clamp(16px,1.9vw,23px);line-height:1.2}body[data-step="statements-focus"] .quoteCard p{margin:6px 0;font-size:clamp(11px,1vw,14px)}}

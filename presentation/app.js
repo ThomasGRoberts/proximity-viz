@@ -428,7 +428,7 @@ function showStep() {
     $("slideBody").hidden=Boolean(statementCards[item.id]);
     if(["opening","closing"].includes(item.id))$("slideTitle").innerHTML="How Close Is<br>Too Close?";
     $("openingArt").hidden = !["opening","closing"].includes(item.id); $("labIntro").hidden = item.id !== "lab"; $("slideCopy").hidden = item.id === "lab" || item.kind==="project";
-    $("sectionArt").hidden = !["statements-close","library","limitations","future"].includes(item.id);
+    $("sectionArt").hidden = true;
     $("slidePrompt").hidden = item.id!=="statements-focus";
     $("slidePrompt").textContent = item.body || "";
     renderQuoteCards(item.id); applyBeat(); enterStep(); updateProgress();requestAnimationFrame(()=>{alignOpeningMetadata();clampInspector();}); placePins(); return;
