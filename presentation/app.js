@@ -5,14 +5,14 @@ import { loadGlobeGeography, adjustableCountryBorders } from "./globe-style.js";
 import { createEngine, EPOCH_MS, EARTH_KM, orbitalFrame, relativeCoordinates, dwellHours } from "./orbit-engine.js";
 import { mountOpeningArt } from "./opening-art.js";
 import { drawOrbitalChart } from "../visualization/dev/e002-control-panel-preview/orbital-preview.js";
-import { loadGeoChart } from "./geo-chart.js";
 import "../visualization/Viz/project-flourish.js";
 
 const $ = id => document.getElementById(id);
 const clone = value => structuredClone(value);
 // E-008 saved relative camera 2d907c76 (chapter 1), in the same local axes.
 const relativeCameraEye = new THREE.Vector3(6.74123789747407, 2.0576834251987783, 6.422160892668574).normalize();
-const chapterIds = ["tle", "uncertainty", "neighbors", "relative", "time-series", "conjunction", "thresholds", "shadowing", "covariance-examples", "future-examples"];
+const removedSteps = new Set(["time-series", "thresholds", "shadowing", "covariance-examples"]);
+const chapterIds = ["tle", "uncertainty", "neighbors", "relative", "conjunction", "future-examples"];
 const initialVisibility = {
   tle: { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
   uncertainty: { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
@@ -40,8 +40,8 @@ const controlGroups = {
     ["openingStyle.artScale", "Artwork scale", .4, 1.6, .01, "×"],
     ["openingStyle.sectionEarthScale", "Section Earth size", .2, 1.4, .01, "×"],
     ["openingStyle.sectionArtScale", "Section scene scale", .3, 1.4, .01, "×"],
-    ["openingStyle.sectionOffsetX", "Section artwork horizontal offset", -60, 60, 1, "%"],
-    ["openingStyle.sectionOffsetY", "Section artwork vertical offset", -60, 60, 1, "%"],
+    ["openingStyle.sectionOffsetX", "Section Earth center X", -60, 60, 1, "%"],
+    ["openingStyle.sectionOffsetY", "Section Earth center Y", -60, 60, 1, "%"],
     ["openingStyle.sectionRotationDeg", "Section artwork rotation", -90, 90, 1, "°"],
     ["openingStyle.extraChasers", "Additional chasers", 0, 3, 1, ""],
     ["openingStyle.animationRate", "Animation speed", 10, 1000, 10, "×"],
@@ -143,7 +143,7 @@ const statementCards = {
     { flag:"🇺🇸", country:"United States", date:"February 2020", quote:"This is <strong class=\"unusualWord\">unusual</strong> and <strong class=\"disturbingWord\">disturbing</strong> behavior and has the potential to create a dangerous situation in space.", source:"General John W. Raymond, CBS News, 12 February 2020 (in reference to USA-245, in LEO)", url:"https://www.cbsnews.com/news/russian-satellites-fly-near-us-government-satellite-activity-unusual-disturbing-space-command/" }
   ],
 };
-let doc, stepIndex = 0, beatIndex = 0, config, engine, series, geoChart = null, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], showArchived = false, activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt, sectionArt, saveStyleTimer, saveWordingTimer, saveTeachingTimer;
+let doc, stepIndex = 0, beatIndex = 0, config, engine, series, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], showArchived = false, activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt, sectionArt, saveStyleTimer, saveWordingTimer, saveTeachingTimer;
 const modelChartScales = new Map();
 let commentRefresh = null, commentRevision = 0;
 
@@ -203,22 +203,24 @@ function setup() {
   doc.chapterLabels.tle={...doc.chapterLabels.tle,A:"Object A"};
   for (const [after,item] of [
     ["library",{id:"project-page",kind:"project",title:"How Close Is Too Close?",subtitle:"Project page",body:""}],
-    ["limitations",{id:"covariance-examples",kind:"chapter",title:"Uncertainty in three scenarios",subtitle:"Illustrative covariance",body:"The ellipsoids are illustrative, not measured covariance from a TLE."}],
     ["future",{id:"future-examples",kind:"chapter",title:"Further behavioral questions",subtitle:"Future research",body:"Energy-space proximity and sustained line of sight are distinct from separation distance alone."}],
     ["discussion",{id:"discussion-questions",kind:"slide",title:"Questions for discussion",subtitle:"OEWG on PAROS",body:""}],
     ["discussion-questions",{id:"closing",kind:"slide",title:"How Close Is Too Close?",subtitle:"Side event",tagline:"Building Shared Understanding of Satellite Behavior",body:"OEWG on PAROS, Fourth Session · November 23, 2026"}]
   ]) if(!doc.steps.some(step=>step.id===item.id)){const index=doc.steps.findIndex(step=>step.id===after);if(index>=0)doc.steps.splice(index+1,0,item);}
+  doc.steps = doc.steps.filter(item => !removedSteps.has(item.id));
   doc.chapterOverrides ||= {}; doc.chapterPresets ||= {}; doc.cameraViews ||= {};
   for(const item of doc.steps){if(item.id==="opening"||item.id==="closing")item.tagline="Building Shared Understanding of Satellite Behavior";
-    if(item.id==="statements-close")item.body="States describe these activities, in certain contexts, as concerning. Although each of these terms can be defined with physical conditions, states do not share their understanding of those conditions in public fora.";
+    if(item.id==="statements-close"){
+      item.title="Proximity operations,\nclose approaches,\nand shadowing";
+      item.body="In different contexts, States describe these activities as concerning.";
+    }
     if(item.id==="discussion")item.body="";}
   stepIndex = Math.max(0, doc.steps.findIndex(step => step.id === location.hash.slice(1)));
-  buildStepNav(); buildControls(); buildWordingControls(); buildVisibility(); buildPresets(); setupScene();
+  buildStepNav(); buildControls(); buildVisibility(); buildPresets(); setupScene();
   openingArt = mountOpeningArt($("openingArt"),doc.openingStyle);
   sectionArt = mountOpeningArt($("sectionArt"),{...doc.openingStyle,cameraView:doc.openingStyle.sectionCameraView||null,sectionMode:true,markerSizePx:Math.max(10,doc.openingStyle.markerSizePx*.6),animationRate:85,earthScale:doc.openingStyle.sectionEarthScale??.55,artScale:doc.openingStyle.sectionArtScale??.8});
   applySectionArtLayout();
   bind(); bindLayoutDrag(); showStep(); animate(0); renderComments();
-  loadGeoChart().then(value=>{geoChart=value;updateModelSceneNote();drawCharts(true);}).catch(error=>{console.warn("GEO chart unavailable",error);$("geoChartLabel").textContent="GEO example unavailable";$("modelChartStatus").textContent="Historical GEO measurements unavailable";});
   if(doc.inspectorPosition){Object.assign($("inspector").style,{left:`${doc.inspectorPosition.x}%`,top:`${Math.max(8,doc.inspectorPosition.y)}%`,right:"auto",bottom:"auto"});}
   requestAnimationFrame(clampInspector);
 }
@@ -239,7 +241,7 @@ function clampInspector(){
 function step() { return doc.steps[stepIndex]; }
 function chapter() { return step().kind === "chapter"; }
 function updateModelSceneNote() {
-  if(step()?.id === "relative" && geoChart) $("modelChartStatus").textContent=`E-003 TLE charts · synthetic ${config.display.mode === "relative" ? "relative" : "Earth"} view`;
+  if(step()?.id === "relative") $("modelChartStatus").textContent="Synthetic Object A / Object B measurements";
 }
 function visibility() {
   const show = { ...initialVisibility[step().id], ...doc.chapterVisibility[step().id] };
@@ -406,13 +408,8 @@ function showStep() {
   setTimeout(resizeScene, 30);
   if (item.id === "conjunction") config.display.mode = "relative";
   if (item.id === "tle") config.display.mode = "eci";
-  if (item.id === "relative" && !doc.chapterOverrides[cameraKey()] && !doc.chapterOverrides[item.id]) {
-    // An Earth-centred overview keeps the globe and the close pair in frame.
-    // The frame button still lets the presenter switch to relative motion.
-    config.display.mode = "eci";
-    config.display.markerSizePx = Math.max(18,config.display.markerSizePx);
-  }
-  if (item.id === "tle" && beatIndex >= 2) config.teachingApogeeKick = { hour:apogeeKickHour(), dvMs:180 };
+  if (item.id === "relative") config.display.mode = "relative";
+  if (item.id === "tle" && beatIndex >= 2) config.teachingApogeeKick = { hour:apogeeKickHour(), dvMs:3500 };
   if (item.id === "tle" && beatIndex < 2) delete config.teachingApogeeKick;
   if (item.id === "neighbors") config.display.mode = "relative";
   if (item.id === "neighbors" && !doc.chapterOverrides[item.id]) {
@@ -421,7 +418,7 @@ function showStep() {
   }
   if (item.id === "uncertainty") config.display.mode = beatIndex ? "relative" : "eci";
   if (item.id === "uncertainty" && !doc.chapterOverrides[item.id]) config.display.uncertaintyKm = 150;
-  currentHour = config.display.startHour; customCamera = false;
+  currentHour = item.id === "relative" ? config.display.startHour+(config.display.endHour-config.display.startHour)*.25 : config.display.startHour; customCamera = false;
   if (["tle","uncertainty","neighbors"].includes(item.id)) { playing = true; $("playButton").textContent = "Ⅱ";$("playButton").setAttribute("aria-label","Pause playback"); }
   sceneOrigin = "A";
   syncWordingControls();
@@ -441,7 +438,7 @@ function applyBeat(rebuild = true) {
   }
   if (id === "tle") {
     const changed = (beatIndex >= 2) !== Boolean(config.teachingApogeeKick);
-    if (beatIndex >= 2) { config.teachingApogeeKick = { hour:apogeeKickHour(), dvMs:180 }; if (changed) currentHour = config.teachingApogeeKick.hour; }
+    if (beatIndex >= 2) { config.teachingApogeeKick = { hour:apogeeKickHour(), dvMs:3500 }; if (changed) currentHour = config.teachingApogeeKick.hour; }
     else delete config.teachingApogeeKick;
     if (changed && rebuild) recalc();
     $("legendA").open = beatIndex >= 1;
@@ -462,9 +459,8 @@ function applyBeat(rebuild = true) {
     if(rebuild&&config.display.mode!==mode){config.display.mode=mode;customCamera=false;syncControls();recalc();restoreCamera();}
     $("legendB").open = beatIndex >= 1;
   }
-  if(id === "relative" && rebuild && !doc.chapterOverrides[cameraKey()]) {
-    const mode=beatIndex ? "relative" : "eci";
-    if(config.display.mode!==mode){config.display.mode=mode;customCamera=false;syncControls();recalc();restoreCamera();}
+  if(id === "relative" && config.display.mode!=="relative") {
+    config.display.mode="relative";customCamera=false;syncControls();recalc();restoreCamera();
   }
   if(id === "relative") updateModelSceneNote();
   if (["conjunction","covariance-examples","future-examples"].includes(id) && rebuild) {
@@ -473,13 +469,13 @@ function applyBeat(rebuild = true) {
     currentHour=config.display.startHour;syncControls();recalc();restoreCamera();
   }
   $("sceneLegend").hidden = false;
-  $("panel").hidden = ["tle", "uncertainty", "neighbors"].includes(id);
+  $("panel").hidden = ["tle", "uncertainty", "neighbors", "relative"].includes(id);
   $("ui").hidden = id !== "relative";
   if(id === "relative") $("nowModeling").open = true;
   $("teachingIntro").hidden=true;
   $("playback").hidden = false;
   $("sceneMetrics").hidden = true;
-  $("frameTools").hidden = false;
+  $("frameTools").hidden = id === "tle";
   $("frameToggle").title = `Switch to ${config.display.mode === "eci" ? "relative motion" : "ECI"}`;
   $("frameToggle").setAttribute("aria-label",$("frameToggle").title);
   $("frameToggle").hidden=id==="tle";
@@ -621,7 +617,8 @@ function setupScene() {
   scene.add(new THREE.HemisphereLight(0xffffff, 0xeeeeee, 2.1));
   const earth = new THREE.Group(); scene.add(earth);
   const surface = new THREE.Mesh(new THREE.SphereGeometry(1, 160, 160), new THREE.MeshBasicMaterial({color:0xf7f7f7})); earth.add(surface);
-  loadGlobeGeography({radius:1.00035}).then(({geometry}) => {
+  loadGlobeGeography({land:true,radius:1.00035}).then(({geometry,landTexture}) => {
+    if(landTexture){surface.material.map=landTexture;surface.material.needsUpdate=true;}
     const borders=adjustableCountryBorders(Array.from(geometry.attributes.position.array),"#626262",.85,1.1,host.clientWidth,host.clientHeight);
     borders.material.polygonOffset=true;borders.material.polygonOffsetFactor=-1;borders.material.polygonOffsetUnits=-1;
     earth.add(borders);scene3d.borders=borders;geometry.dispose();redrawSceneBorders();
@@ -634,10 +631,10 @@ function setupScene() {
       :new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color,transparent:opacity<1,opacity,depthWrite:false}));
     object.userData.thick=thick;return object;
   };
-  const orbit = line(0x555555,.72,true), trailA = new THREE.Mesh(new THREE.BufferGeometry(),fadingTrailMaterial("A")), trailB = new THREE.Mesh(new THREE.BufferGeometry(),fadingTrailMaterial("B")), vector = line(0x8d6d11,.78), velocityVector = line(0x7890a5,.86);
+  const orbit = line(0x555555,.72,true), oldOrbit = new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:0x888888,dashSize:.045,gapSize:.03,transparent:true,opacity:.72,depthWrite:false})), trailA = new THREE.Mesh(new THREE.BufferGeometry(),fadingTrailMaterial("A")), trailB = new THREE.Mesh(new THREE.BufferGeometry(),fadingTrailMaterial("B")), vector = line(0x8d6d11,.78), velocityVector = line(0x7890a5,.86);
   trailA.material.uniforms.uColor.value.set("#777777");trailB.material.uniforms.uColor.value.set("#eaaa00");
   for(const trail of [trailA,trailB]){trail.userData.fade=true;trail.frustumCulled=false;}
-  for (const item of [orbit,trailA,trailB,vector,velocityVector]) scene.add(item);
+  for (const item of [orbit,oldOrbit,trailA,trailB,vector,velocityVector]) scene.add(item);
   const ringPoints=Array.from({length:241},(_,i)=>{const a=i*2*Math.PI/240;return new THREE.Vector3(1.34*Math.cos(a),0,1.34*Math.sin(a));});
   const equator=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ringPoints),new THREE.LineBasicMaterial({color:0xd3b968,transparent:true,opacity:.56,depthWrite:false}));
   const ecliptic=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ringPoints),new THREE.LineBasicMaterial({color:0x8f9da6,transparent:true,opacity:.6,depthWrite:false}));
@@ -650,7 +647,7 @@ function setupScene() {
   for (const [direction,color] of [[new THREE.Vector3(1,0,0),0xb58820],[new THREE.Vector3(0,-1,0),0x727b82],[new THREE.Vector3(0,0,-1),0x9d8672]]) axes.add(new THREE.ArrowHelper(direction,new THREE.Vector3(),1.7,color,.25,.12));
   axes.visible=false;
   scene.add(axes);
-  scene3d = {host,scene,camera,renderer,controls,earth,markerA,markerB,orbit,trailA,trailB,vector,velocityVector,ellipsoid,ellipsoidGrid,ellipsoidB,ellipsoidGridB,axes,equator,ecliptic};
+  scene3d = {host,scene,camera,renderer,controls,earth,markerA,markerB,orbit,oldOrbit,trailA,trailB,vector,velocityVector,ellipsoid,ellipsoidGrid,ellipsoidB,ellipsoidGridB,axes,equator,ecliptic};
   new ResizeObserver(resizeScene).observe(host);
 }
 function resizeScene() {
@@ -728,7 +725,7 @@ function linePoints(line, points, thickness=1) {
 function cameraKey() { return beatCounts[step().id] ? `${step().id}-${beatIndex}` : step().id; }
 function restoreCamera() {
   if (!scene3d || !chapter()) return;
-  const {camera,controls} = scene3d, saved = doc.cameraViews[cameraKey()] || doc.cameraViews[step().id];
+  const {camera,controls} = scene3d, saved = doc.cameraViews[cameraKey()] || (step().id === "tle" ? doc.cameraViews["tle-0"] : null) || doc.cameraViews[step().id];
   if (saved && saved.mode === config.display.mode) {
     camera.position.set(...saved.position); camera.up.set(...saved.up); controls.target.set(...saved.target);
     camera.zoom = saved.zoom || 1; camera.updateProjectionMatrix(); controls.update(); customCamera = true; return;
@@ -750,7 +747,7 @@ function restoreCamera() {
 }
 function updateScene() {
   if (!engine || !scene3d || !chapter()) return;
-  const {earth,markerA,markerB,trailA,trailB,orbit,vector,velocityVector,ellipsoid,ellipsoidGrid,ellipsoidB,ellipsoidGridB,axes,camera,controls} = scene3d;
+  const {earth,markerA,markerB,trailA,trailB,orbit,oldOrbit,vector,velocityVector,ellipsoid,ellipsoidGrid,ellipsoidB,ellipsoidGridB,axes,camera,controls} = scene3d;
   scene3d.equator.visible=false;
   scene3d.ecliptic.visible=false;
   const state=engine.at(currentHour), originState=sceneOrigin === "B" ? state.B : state.A, frame=orbitalFrame(originState), relative=config.display.mode === "relative";
@@ -775,22 +772,36 @@ function updateScene() {
   const diameter=config.display.markerSizePx * 128/89 * 2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/(Math.max(1,scene3d.host.clientHeight)*camera.zoom);
   markerA.scale.setScalar(diameter); markerB.scale.setScalar(diameter); markerB.visible=visibility().objectB;
   const orbitHours=engine.periodHours;
-  const referenceState = sceneOrigin === "B" ? engine.stateB : step().id === "tle" && beatIndex >= 2 ? engine.preManeuverA : engine.stateA;
+  const referenceState = sceneOrigin === "B" ? engine.stateB : engine.stateA;
   const orbitPoints=Array.from({length:240},(_,i)=>transform(referenceState(currentHour+orbitHours*i/239).r));
   const covarianceFocus = step().id === "uncertainty" && beatIndex >= 2;
   linePoints(orbit,orbitPoints,config.display.referenceThickness); orbit.visible=config.display.showOrbit;
+  oldOrbit.visible=step().id==="tle"&&beatIndex>=2&&config.display.showOrbit;
+  if(oldOrbit.visible){
+    oldOrbit.geometry.dispose();
+    oldOrbit.geometry=new THREE.BufferGeometry().setFromPoints(Array.from({length:240},(_,i)=>transform(engine.preManeuverA(currentHour+orbitHours*i/239).r)));
+    oldOrbit.computeLineDistances();
+  }
   const trailStart=Math.max(config.display.startHour,currentHour-config.display.trailHours);
   const trailHours=Array.from({length:90},(_,i)=>trailStart+(currentHour-trailStart)*i/89);
-  linePoints(trailA,trailHours.map(t=>transform(engine.stateA(t).r)),config.display.trailThickness);
-  linePoints(trailB,trailHours.map(t=>transform(engine.stateB(t).r)),config.display.trailThickness);
-  trailA.visible=config.display.showTrail; trailB.visible=config.display.showTrail&&visibility().objectB;
+  const pastPoint=(satellite,t)=>{
+    const body=satellite==="A"?engine.stateA(t):engine.stateB(t);
+    if(!relative)return toScene(body.r,scale);
+    const pastOrigin=sceneOrigin==="B"?engine.stateB(t):engine.stateA(t);
+    const ric=relativeCoordinates(body.r,pastOrigin.r,orbitalFrame(pastOrigin));
+    return new THREE.Vector3(-ric.z/scale,ric.y/scale,ric.x/scale);
+  };
+  linePoints(trailA,trailHours.map(t=>pastPoint("A",t)),config.display.trailThickness);
+  linePoints(trailB,trailHours.map(t=>pastPoint("B",t)),config.display.trailThickness);
+  trailA.visible=config.display.showTrail&&step().id!=="uncertainty"&&(!relative||sceneOrigin!=="A");
+  trailB.visible=config.display.showTrail&&visibility().objectB&&(!relative||sceneOrigin!=="B");
   const separationVector=new THREE.Vector3(state.B.r.x-state.A.r.x,state.B.r.y-state.A.r.y,state.B.r.z-state.A.r.z);
   const aVector=new THREE.Vector3(state.A.r.x,state.A.r.y,state.A.r.z);
   const closestFraction=THREE.MathUtils.clamp(-aVector.dot(separationVector)/Math.max(1e-9,separationVector.lengthSq()),0,1);
   const clearLineOfSight=aVector.addScaledVector(separationVector,closestFraction).length()>EARTH_KM;
-  linePoints(vector,[markerA.position.clone(),markerB.position.clone()]); vector.visible=config.display.showVectors&&visibility().objectB && !covarianceFocus && (step().id!=="future-examples"||beatIndex!==1||clearLineOfSight);
+  linePoints(vector,[markerA.position.clone(),markerB.position.clone()]); vector.visible=config.display.showVectors&&visibility().objectB && !covarianceFocus && step().id!=="relative" && (step().id!=="future-examples"||beatIndex!==1||clearLineOfSight);
   const velocityTip={x:state.B.r.x+state.dv.x*3600,y:state.B.r.y+state.dv.y*3600,z:state.B.r.z+state.dv.z*3600};
-  linePoints(velocityVector,[markerB.position.clone(),transform(velocityTip)]); velocityVector.visible=config.display.showVectors&&visibility().objectB && !covarianceFocus && !(step().id==="future-examples"&&beatIndex===1);
+  linePoints(velocityVector,[markerB.position.clone(),transform(velocityTip)]); velocityVector.visible=config.display.showVectors&&visibility().objectB && !covarianceFocus && step().id!=="relative" && !(step().id==="future-examples"&&beatIndex===1);
   const projectedDirection=(satelliteState,direction)=>transform({x:satelliteState.r.x+direction.x*1000,y:satelliteState.r.y+direction.y*1000,z:satelliteState.r.z+direction.z*1000}).sub(transform(satelliteState.r)).normalize();
   // Illustrative TLE refreshes every six hours: uncertainty grows between
   // updates, then contracts when a new simulated element is issued.
@@ -869,18 +880,11 @@ function drawCharts(force=false) {
   const window={id:`${step().id}-${beatIndex}`,start:new Date(EPOCH_MS+config.display.startHour*3600000).toISOString(),end:new Date(EPOCH_MS+config.display.endHour*3600000).toISOString()};
   const qualifications=thresholdIntervals(samples,config.display.distanceThresholdKm,config.display.speedThresholdMs);
   if(step().id==="relative"){
-    if(!geoChart)return;
-    const fraction=Math.max(0,Math.min(1,(currentHour-config.display.startHour)/(config.display.endHour-config.display.startHour)));
-    const index=Math.round(fraction*(geoChart.samples.length-1));
-    const realSample=geoChart.samples[index],realMs=realSample.ms;
-    const realQualifications=thresholdIntervals(geoChart.samples,config.display.distanceThresholdKm,config.display.speedThresholdMs);
-    // These are the published model's chart renderer and the archived E-003
-    // GEO pair, rather than measurements from the synthetic teaching scene.
-    modelChartScales.set("distance",drawOrbitalChart($("modelDistanceChart"),geoChart.samples,"distanceKm",{window:geoChart.window,currentMs:realMs,threshold:config.display.distanceThresholdKm,title:"Separation distance (km)",maximum:50000,qualifications:realQualifications,fixedWindow:true,timeOnly:false}));
-    modelChartScales.set("speed",drawOrbitalChart($("modelSpeedChart"),geoChart.samples,"speedMs",{window:geoChart.window,currentMs:realMs,threshold:config.display.speedThresholdMs,title:"Relative speed (m/s)",maximum:1000,qualifications:realQualifications,fixedWindow:true,timeOnly:false,speedUnit:"m/s"}));
-    $("modelRangeStat").textContent=Number.isFinite(realSample.distanceKm)?`${fmtNum(realSample.distanceKm)} km`:"—";
-    $("modelSpeedStat").textContent=Number.isFinite(realSample.speedMs)?`${fmtNum(realSample.speedMs)} m/s`:"—";
-    const dwellMs=realQualifications.both.intervals.reduce((sum,interval)=>sum+interval.end-interval.start,0);
+    modelChartScales.set("distance",drawOrbitalChart($("modelDistanceChart"),samples,"distanceKm",{window,currentMs,threshold:config.display.distanceThresholdKm,title:"Separation distance (km)",maximum:50000,qualifications,fixedWindow:true,timeOnly:false}));
+    modelChartScales.set("speed",drawOrbitalChart($("modelSpeedChart"),samples,"speedMs",{window,currentMs,threshold:config.display.speedThresholdMs,title:"Relative speed (m/s)",maximum:1000,qualifications,fixedWindow:true,timeOnly:false,speedUnit:"m/s"}));
+    $("modelRangeStat").textContent=Number.isFinite(state.distanceKm)?`${fmtNum(state.distanceKm)} km`:"—";
+    $("modelSpeedStat").textContent=Number.isFinite(state.relativeSpeedMs)?`${fmtNum(state.relativeSpeedMs)} m/s`:"—";
+    const dwellMs=qualifications.both.intervals.reduce((sum,interval)=>sum+interval.end-interval.start,0);
     $("modelDwellStat").textContent=fmtNum(dwellMs/3600000);
     $("modelDwellUnit").textContent="h";
   }else{

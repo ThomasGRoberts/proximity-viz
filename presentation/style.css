@@ -497,3 +497,44 @@ body[data-step="closing"] #slideTitle{max-width:none;margin:0;color:#252525;font
 body[data-step="closing"] .slide .eyebrow{color:#9a741b;font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
 body[data-step="closing"] #openingSubtitle{display:block;max-width:650px;margin:25px 0 0;color:#514d44;font-size:clamp(19px,2vw,28px);font-weight:450;line-height:1.35}
 body[data-step="closing"] #slideBody{position:absolute;bottom:58px;max-width:640px;margin:0;color:#77716a;font-size:clamp(14px,1.2vw,17px);font-weight:400}
+
+/* Review refinements: preserve clear space beneath the quote cards. */
+body[data-step="lab"] .labIntroCopy{transform:translateY(-4vh)}
+body[data-step="statements-close"] #slideTitle{white-space:pre-line;max-width:630px}
+body[data-step="statements-close"] #slideBody{max-width:560px}
+body[data-step="statements-shadow"] .quoteCards{height:82%;align-self:flex-start}
+body[data-step="statements-shadow"] .quoteCard:last-child{height:100%}
+body[data-step="statements-focus"] .quoteCards{align-self:flex-start;margin-top:3vh}
+body[data-step="statements-focus"] .quoteCard{min-height:0;height:310px}
+body[data-step="statements-focus"] .quoteCard blockquote{font-size:clamp(23px,2.2vw,35px)}
+body[data-step="project-page"] #labSignature{display:none}
+.projectVisit button{right:13px;top:13px;width:31px;height:31px;border-color:#eee;color:#999;font-size:18px}
+.projectVisit button:hover{color:#555}
+body[data-step="discussion-questions"] #slideBody{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(20px,3vw,45px);max-width:1100px}
+body[data-step="discussion-questions"] #slideBody span{font-size:clamp(18px,1.65vw,24px);line-height:1.35}
+body[data-step="conjunction"] #metricBlock{display:none!important}
+body[data-step="relative"] #ui.carouselSourcePanel{width:342px;padding:0;border:0;box-shadow:none;background:transparent;overflow:visible}
+body[data-step="relative"] #ui .episodeHeader,body[data-step="relative"] #ui #modelChartStatus,body[data-step="relative"] #nowModeling>summary,body[data-step="relative"] #ui .tleCompact{display:none!important}
+body[data-step="relative"] #ui .nowModeling{margin:0;padding:0}
+body[data-step="relative"] #ui .satCardGrid{display:flex;flex-direction:column;gap:7px;margin:0}
+body[data-step="relative"] #ui .satCard{padding:10px 12px;background:#f2f2f2;border:1px solid #d8d8d8}
+body[data-step="relative"] #ui .satCardName{font-size:13px}
+body[data-step="relative"] #ui .sourceDot.slotA{background:#a9a9a9}
+body[data-step="relative"] #ui .sourceDot.slotB{background:#eaaa00}
+body[data-step="relative"] #ui #metricArea{position:fixed;left:18px;top:210px;width:342px;max-height:calc(100vh - 315px);overflow:auto;padding:0 6px;background:#fff;scrollbar-width:thin}
+body.presentation[data-step="relative"] #ui #metricArea{top:153px;max-height:calc(100vh - 250px)}
+body[data-step="relative"] #ui .metricBlock{grid-template-columns:1fr;gap:3px;padding-top:7px;border-bottom:0}
+body[data-step="relative"] #ui .metricBlock .statNumber{font-size:25px}
+body[data-step="relative"] #ui .chartGroup{margin:0 0 9px;padding-bottom:6px;border-bottom:1px solid #e0e0e0}
+body[data-step="relative"] #ui #dwellMetric .statNumber{color:#b77f00}
+body[data-step="relative"] #ui #dwellMetric .statLabel{font-size:11px}
+body[data-step="relative"] #ui .dwellKey{display:none}
+body[data-step="relative"] #playback{left:28px;right:auto;bottom:16px;width:min(350px,calc(100vw - 56px));border-radius:8px;background:#ffffffef;box-shadow:none;backdrop-filter:none}
+body.chapterActive .sceneLegend,body.chapterActive #panel{width:min(265px,25vw)}
+body.chapterActive #playback,body[data-step="relative"] #playback{width:min(265px,calc(100vw - 56px))}
+body[data-step="relative"] #ui.carouselSourcePanel,body[data-step="relative"] #ui #metricArea{width:min(265px,25vw)}
+body.chapterActive #examplePicker{min-width:0}
+body.chapterActive .episodeSegmented button{transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+body.chapterActive .episodeSegmented button.active{border:1px solid #aaa!important;box-shadow:0 1px 3px #00000012}
+@media(max-width:760px){body[data-step="relative"] #ui.carouselSourcePanel,body[data-step="relative"] #ui #metricArea{width:min(342px,calc(100vw - 36px))}body[data-step="relative"] #ui #metricArea{max-height:calc(100vh - 365px)}}
+@media(max-width:760px){body.chapterActive .sceneLegend,body.chapterActive #panel,body.chapterActive #playback{width:min(265px,calc(100vw - 36px))}}

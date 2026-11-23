@@ -19,9 +19,9 @@
     {
       "id": "statements-close",
       "kind": "slide",
-      "title": "Proximity operations, close approaches, and shadowing",
+      "title": "Proximity operations,\nclose approaches,\nand shadowing",
       "subtitle": "Official statements",
-      "body": "States describe these activities, in certain contexts, as concerning. Although each of these terms can be defined with physical conditions, states do not share their understanding of those conditions in public fora."
+      "body": "In different contexts, States describe these activities as concerning."
     },
     {
       "id": "statements-shadow",
@@ -66,32 +66,11 @@
       "body": "Object B relocates while Object A anchors the rotating view. Separation distance, relative speed, and range rate answer different questions."
     },
     {
-      "id": "time-series",
-      "kind": "chapter",
-      "title": "Measurements through time",
-      "subtitle": "05 · Geometry and charts",
-      "body": "Separation distance and relative speed change over time. Dwell is the cumulative time spent inside both selected thresholds."
-    },
-    {
       "id": "conjunction",
       "kind": "chapter",
       "title": "Conjunction versus close approach",
       "subtitle": "06 · Different questions",
       "body": "Compare a brief, faster encounter with sustained slower proximity. Collision screening and descriptions of behavior have different purposes."
-    },
-    {
-      "id": "thresholds",
-      "kind": "chapter",
-      "title": "Thresholds and dwell time",
-      "subtitle": "07 · An explicit convention",
-      "body": "Set distance and speed thresholds. Gold intervals satisfy both; the cumulative duration is a descriptive measure, not a universal legal definition."
-    },
-    {
-      "id": "shadowing",
-      "kind": "chapter",
-      "title": "Shadowing",
-      "subtitle": "08 · Repeated proximity",
-      "body": "A synthetic sequence of orbital burns produces repeated approaches. The motion alone does not establish intent."
     },
     {
       "id": "library",
@@ -113,13 +92,6 @@
       "title": "Limits of public reconstructions",
       "subtitle": "What the model cannot establish",
       "body": "Sparse observations, dated TLEs, unknown covariance, and unobserved maneuvers limit what a public reconstruction can claim."
-    },
-    {
-      "id": "covariance-examples",
-      "kind": "chapter",
-      "title": "Uncertainty in three scenarios",
-      "subtitle": "Illustrative covariance",
-      "body": "The ellipsoids are illustrative, not measured covariance from a TLE."
     },
     {
       "id": "future",
@@ -374,9 +346,9 @@
     "tle": {
       "label": "Ordinary neighboring GEO",
       "objectA": {
-        "altitudeKm": 700,
-        "eccentricity": 0.001,
-        "inclinationDeg": 51.6,
+        "altitudeKm": 2000,
+        "eccentricity": 0,
+        "inclinationDeg": 51.4,
         "raanDeg": 35,
         "argPerigeeDeg": 0,
         "meanAnomalyDeg": 0
@@ -396,16 +368,16 @@
         "deltaVms": 0
       },
       "display": {
-        "trailThickness": 1.8,
-        "referenceThickness": 1.2,
-        "borderThickness": 1.1,
+        "trailThickness": 4,
+        "referenceThickness": 0.5,
+        "borderThickness": 0,
         "borderOpacity": 0.7,
         "borderColor": "#707070",
         "mode": "eci",
         "startHour": 0,
         "endHour": 18,
-        "rateHoursPerSecond": 0.35,
-        "trailHours": 0.5,
+        "rateHoursPerSecond": 0.15,
+        "trailHours": 0.35,
         "markerSizePx": 12,
         "showOrbit": true,
         "showTrail": true,
@@ -418,37 +390,95 @@
     }
   },
   "chapterVisibility": {},
-  "cameraViews": {},
+  "cameraViews": {
+    "tle-0": {
+      "mode": "eci",
+      "position": [
+        2.1058610225654055,
+        2.9609047182362533,
+        3.055228156976582
+      ],
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        1,
+        0
+      ],
+      "zoom": 1
+    },
+    "uncertainty-2": {
+      "mode": "relative",
+      "position": [
+        0.8626852616306877,
+        0.3090215862557687,
+        0.9013129599126594
+      ],
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        1,
+        0
+      ],
+      "zoom": 1
+    }
+  },
   "openingStyle": {
-    "markerSizePx": 31,
-    "trailHours": 2.4,
-    "trailThickness": 3.2,
+    "markerSizePx": 39,
+    "trailHours": 2.6,
+    "trailThickness": 4.8,
     "referenceThickness": 1.3,
     "borderThickness": 1.1,
     "borderOpacity": 0.68,
     "borderColor": "#685f53",
     "earthColor": "#e5e5e5",
-    "animationRate": 240,
+    "animationRate": 20,
     "extraChasers": 0,
     "earthScale": 1,
-    "artScale": 1,
-    "sectionEarthScale": 0.55,
+    "artScale": 0.74,
+    "sectionEarthScale": 0.67,
     "sectionArtScale": 0.8,
-    "chaserDaKm": 0,
-    "chaserDlambdaKm": -25,
-    "chaserDexKm": 35,
-    "chaserDeyKm": 0,
-    "chaserDixKm": 35,
-    "chaserDiyKm": 0,
-    "sectionOffsetX": 0,
-    "sectionOffsetY": 0,
-    "sectionRotationDeg": -16,
-    "targetAltitudeKm": 550,
-    "targetInclinationDeg": 53,
-    "targetEccentricity": 0.001,
+    "chaserDaKm": 27.5,
+    "chaserDlambdaKm": -167,
+    "chaserDexKm": -79,
+    "chaserDeyKm": 128,
+    "chaserDixKm": 18,
+    "chaserDiyKm": -20,
+    "sectionOffsetX": -6,
+    "sectionOffsetY": 6,
+    "sectionRotationDeg": 2,
+    "targetAltitudeKm": 451,
+    "targetInclinationDeg": 30.9,
+    "targetEccentricity": 0,
     "targetRaanDeg": 93,
     "targetArgPerigeeDeg": 35,
-    "targetMeanAnomalyDeg": 358
+    "targetMeanAnomalyDeg": 358,
+    "cameraView": {
+      "position": [
+        1.234197729053534,
+        0.3913807317945052,
+        0.3886863624814884
+      ],
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        1,
+        0
+      ],
+      "zoom": 1
+    },
+    "earthSwivelDeg": 0
   },
   "chapterLayout": {},
   "chapterLabels": {

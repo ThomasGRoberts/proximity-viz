@@ -110,8 +110,8 @@ export function mountOpeningArt(host, initialOptions = {}) {
     chaser.position.copy(chaserPoint);
     const diameter=Number(options.markerSizePx)*worldPerPixel();
     target.scale.setScalar(diameter);chaser.scale.setScalar(diameter);
-    const edgeFade=THREE.MathUtils.clamp((1.35-screenEdge)/.2,0,1)*THREE.MathUtils.clamp(seconds/(orbits.periodSeconds*.05),0,1);
-    chaser.material.opacity=edgeFade;
+    const edgeFade=THREE.MathUtils.clamp((1.35-screenEdge)/.2,0,1);
+    chaser.material.opacity=1;
     extraMarkers.forEach((marker,index) => {
       marker.visible=index<Number(options.extraChasers);
       if(marker.visible){const sample=relativeAt(extraOrbits[index],seconds);marker.position.copy(point(sample.chaserState.r,state.targetState.r,state.frame));marker.scale.setScalar(diameter*.85);}

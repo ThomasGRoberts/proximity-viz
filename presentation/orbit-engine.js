@@ -133,7 +133,10 @@ export function createEngine(config) {
   let apogeeKick = null, tleAfterA = null;
   if (teaching && Number.isFinite(teaching.hour) && Number.isFinite(teaching.dvMs)) {
     const before = preManeuverA(teaching.hour);
-    apogeeKick = { hour: teaching.hour, state: { r: before.r, v: add(before.v, scale(unit(before.v), teaching.dvMs / 1000)) } };
+    // The teaching beat is a normal impulse: it rotates the orbital plane.
+    // The dotted pre-impulse orbit remains available for comparison.
+    const normal = unit(cross(before.r, before.v));
+    apogeeKick = { hour: teaching.hour, state: { r: before.r, v: add(before.v, scale(normal, teaching.dvMs / 1000)) } };
     tleAfterA = syntheticTle(elementsFromState(apogeeKick.state), "99901", "A", EPOCH_MS + teaching.hour * HOUR);
   }
   const stateA = hour => apogeeKick && hour >= apogeeKick.hour ? coast(apogeeKick.state, (hour - apogeeKick.hour) * 3600) : preManeuverA(hour);
