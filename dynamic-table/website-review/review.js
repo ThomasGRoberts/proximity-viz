@@ -55,11 +55,12 @@ const panes = {
   library: { surface: "Website Page", snippet: "../website-embed-snippet.html", copyLabel: "Copy table HTML" },
   sbi: { surface: "SBI Project", snippet: "./sbi-complete-block.html", copyLabel: "Copy SBI HTML" },
   proximity: { surface: "Proximity Project", snippet: "./proximity-complete-block.html", copyLabel: "Copy proximity HTML" },
+  lunar: { surface: "Lunar Project", snippet: "./lunar-complete-block.html", copyLabel: "Copy Lunar HTML" },
   research: { surface: "Research", snippet: "./research-complete-block.html", copyLabel: "Copy Research page" },
   people: { surface: "People", snippet: "./people-complete-block.html", copyLabel: "Copy People HTML" },
 };
-const paneSelectors = { library: selectors, sbi: projectSelectors, proximity: projectSelectors, research: researchSelectors, people: peopleSelectors };
-const paneName = { sbi: "SBI project", proximity: "proximity project", research: "research", people: "People" };
+const paneSelectors = { library: selectors, sbi: projectSelectors, proximity: projectSelectors, lunar: projectSelectors, research: researchSelectors, people: peopleSelectors };
+const paneName = { sbi: "SBI project", proximity: "proximity project", lunar: "Lunar project", research: "research", people: "People" };
 
 let comments = [], draft = null, spotMode = false, activePane = "library";
 const visibleComments = () => comments.filter(item => (item.surface || "Website Page") === panes[activePane].surface);
@@ -208,6 +209,14 @@ async function loadPreview() {
   } catch (error) { status(`Could not load website page preview: ${error.message}`); }
 }
 
+function updateCopyIndicators() {
+  document.querySelectorAll(".review-switch [data-update-version]").forEach(button => {
+    let copied = false;
+    try { copied = localStorage.getItem(`espl-copied-${button.dataset.preview}`) === button.dataset.updateVersion; } catch { /* Private browser storage can be unavailable. */ }
+    button.classList.toggle("needs-update", !copied);
+  });
+}
+
 function selectPane(pane) {
   if (!panes[pane]) return;
   setSpotMode(false);
@@ -295,6 +304,8 @@ $("copyHtml").addEventListener("click", async () => {
       if (!copied) throw new Error("Clipboard access is unavailable");
     }
     button.textContent = "Copied HTML";
+    const paneButton = document.querySelector(`.review-switch [data-preview="${pane}"]`);
+    if (paneButton?.dataset.updateVersion) { try { localStorage.setItem(`espl-copied-${pane}`, paneButton.dataset.updateVersion); } catch {} updateCopyIndicators(); }
     status(pane === "library" ? "The complete table page Custom HTML block is on your clipboard." : pane === "research" ? "The complete Research page Code Editor content is on your clipboard." : `The complete ${paneName[pane]} Custom HTML block is on your clipboard. Replace the existing block with it.`);
     setTimeout(() => { if (activePane === pane) button.textContent = panes[pane].copyLabel; }, 1800);
   } catch (error) { status(`Could not copy HTML: ${error.message}`); }
@@ -310,4 +321,5 @@ window.addEventListener("keydown", event => { if (event.key === "Escape") { setS
 
 try { comments = await requestComments(); renderComments(); }
 catch (error) { status(`Could not load website comments: ${error.message}`); }
+updateCopyIndicators();
 selectPane(panes[new URLSearchParams(location.search).get("pane")] ? new URLSearchParams(location.search).get("pane") : "library");

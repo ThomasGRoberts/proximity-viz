@@ -16,10 +16,11 @@ PEOPLE_BLOCK = REPO.parents[2] / "Web Content/WordPress Code Blocks/People/peopl
 COMMENTS = HERE / "comments.json"
 PORT = 8771
 SPOTS = {"page", "intro", "repository", "title", "language", "contributors", "portraits", "table", "full-link", "about-link", "repo-meta", "project-page", "project-banner", "research-updates", "special-model", "special-data", "hero-table-link", "research-page", "publication-table", "people-page", "student-biocards", "student-research-updates"}
-SURFACES = {"Website Page", "SBI Project", "Proximity Project", "Research", "People"}
+SURFACES = {"Website Page", "SBI Project", "Proximity Project", "Research", "People", "Lunar Project"}
 PROJECT_URLS = {
     "sbi": "https://espl.ae.gatech.edu/research/projects/sbi/",
     "proximity": "https://espl.ae.gatech.edu/research/projects/proximity/",
+    "lunar": "https://espl.ae.gatech.edu/research/projects/lunar/",
     "research": "https://espl.ae.gatech.edu/research/",
     "people": "https://espl.ae.gatech.edu/people/",
 }
@@ -79,8 +80,12 @@ class Handler(SimpleHTTPRequestHandler):
                     html = source.read().decode("utf-8", "replace")
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
                 script_name = "project-page-updates.js" if slug in {"sbi", "proximity"} else f"{slug}-page-updates.js"
-                local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=4'
-                addon = f'<script src="{local_script}" data-espl-project="{slug}"></script>'
+                addon = ""
+                if slug != "lunar":
+                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=6'
+                    addon += f'<script src="{local_script}" data-espl-project="{slug}"></script>'
+                if slug in {"proximity", "lunar"}:
+                    addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/project-news-controls.js?v=1"></script>'
                 html = html.replace("</body>", addon + "</body>", 1)
                 encoded = html.encode("utf-8")
                 self.send_response(200)
