@@ -638,7 +638,7 @@ function expandedContent(row, data) {
     const viz = el("section", "visual-block");
     const target = new URLSearchParams(location.search).get("embed") === "1" || location.hostname === "thomasgroberts.github.io"
       ? `https://espl.ae.gatech.edu/research/models/proximity/?episode=${encodeURIComponent(publicId)}`
-      : new URL(episodeId === "E-001" ? "../visualization/e001/?v=8" : episodeId === "E-002" ? "../visualization/e002/?build=4" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=4`, location.href).href;
+      : new URL(episodeId === "E-001" ? "../visualization/e001/?v=9" : episodeId === "E-002" ? "../visualization/e002/?build=5" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=5`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -962,11 +962,11 @@ function stageEpisodeAssets() {
     "../visualization/dev/e002-control-panel-preview/table-mini.html",
     ...orbitalAssets.map(([name, version]) => `../visualization/Viz/episode-${name}.js?v=${version}`),
     ...orbitalAssets.map(([name]) => `../visualization/dev/${name}/data/provenance.json`),
-    "../visualization/Viz/compare.html?build=4",
-    "../visualization/e001/?v=8",
-    "../visualization/e002/?build=4",
-    "../visualization/e001/public.js?v=10",
-    "../visualization/dev/e002-control-panel-preview/app.js?v=15",
+    "../visualization/Viz/compare.html?build=5",
+    "../visualization/e001/?v=9",
+    "../visualization/e002/?build=5",
+    "../visualization/e001/public.js?v=16",
+    "../visualization/dev/e002-control-panel-preview/app.js?v=20",
   ];
   let index = 0, queued = false;
   const scheduleNext = () => {

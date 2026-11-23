@@ -170,23 +170,24 @@ export function installEpisodeDescriptionToggle(description) {
   description.before(toggle);
   description.classList.add("story-collapsed");
   const header = description.closest(".episodeHeader");
-  const bindFocusClick = focus => {
-    if (focus.dataset.descriptionQuarterBound) return;
-    focus.dataset.descriptionQuarterBound = '1';
-    focus.addEventListener('click', event => {
-      if (event.target.closest('button')) return;
+  // E-001 replaces its card after the description is installed. Delegate from
+  // the stable header so the wider disclosure target survives that replacement.
+  if (header && !header.dataset.descriptionQuarterBound) {
+    header.dataset.descriptionQuarterBound = "1";
+    header.addEventListener("click", event => {
+      const focus = event.target.closest(".episode-focus");
+      if (!focus || event.target.closest('button,[role="button"]')) return;
       const rect = focus.getBoundingClientRect();
       if (event.clientX < rect.left + rect.width * .75) return;
       event.preventDefault();
       event.stopPropagation();
       toggle.click();
     }, true);
-  };
+  }
   const placeInFocus = () => {
     const focus = header?.querySelector('.episode-focus');
     if (!focus) return false;
     focus.append(description, toggle);
-    bindFocusClick(focus);
     return true;
   };
   if (!placeInFocus() && header) {

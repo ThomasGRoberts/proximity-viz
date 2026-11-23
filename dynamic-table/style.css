@@ -1107,3 +1107,7 @@ html.mobile-review-frame .table-comment-drawer{top:54px}
 @media(min-width:761px){.table-wrap tr.expanded-row .expanded-inner.has-visual .context-block::before{display:block!important;background:linear-gradient(90deg,#fffcf6 0%,#fffcf6f8 38%,#fffcf6de 62%,#fffcf600 100%)!important}}
 /* Embedded rows grow with the hosting page, so the page owns vertical scrolling. */
 html.embedded-table .table-wrap .expanded-row .expanded-inner{max-height:none!important;overflow:visible!important;overscroll-behavior:auto!important}
+
+/* The detached E-001/E-002 mini canvases sit behind the table. Keep the table
+   above them so the expanded description, model link, and records remain visible. */
+.table-wrap > table{position:relative;z-index:5}

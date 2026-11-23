@@ -8,7 +8,7 @@ import { installGlossary } from "./glossary.js?v=2";
 import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
 import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=5";
-import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=13";
+import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=15";
 import { supportedUsa245Chapters } from "../e002/chapter-support.js";
 
 const $ = id => document.getElementById(id);
