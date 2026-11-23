@@ -10,6 +10,8 @@ import "../visualization/Viz/project-flourish.js";
 
 const $ = id => document.getElementById(id);
 const clone = value => structuredClone(value);
+// E-008 saved relative camera 2d907c76 (chapter 1), in the same local axes.
+const relativeCameraEye = new THREE.Vector3(6.74123789747407, 2.0576834251987783, 6.422160892668574).normalize();
 const chapterIds = ["tle", "uncertainty", "neighbors", "relative", "time-series", "conjunction", "thresholds", "shadowing", "covariance-examples", "future-examples"];
 const initialVisibility = {
   tle: { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
@@ -143,12 +145,38 @@ const statementCards = {
 };
 let doc, stepIndex = 0, beatIndex = 0, config, engine, series, geoChart = null, currentHour = 0, playing = true, lastFrame = 0, spotMode = false, draft = null, comments = [], showArchived = false, activePreset = "neighbors", customCamera = false, scene3d, sceneOrigin = "A", openingArt, sectionArt, saveStyleTimer, saveWordingTimer, saveTeachingTimer;
 const modelChartScales = new Map();
+let commentRefresh = null, commentRevision = 0;
 
 async function request(path, payload) {
   const res = await fetch(path, payload ? { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) } : { cache:"no-store" });
   const value = await res.json();
   if (!res.ok) throw new Error(value.error || `Save failed (${res.status})`);
   return value;
+}
+function commentsChanged(next) {
+  return next.length !== comments.length || next.some((item, index) => {
+    const previous = comments[index];
+    return item.id !== previous.id || item.status !== previous.status || item.text !== previous.text;
+  });
+}
+async function refreshComments() {
+  if (commentRefresh) return commentRefresh;
+  const startedRevision = commentRevision;
+  commentRefresh = (async () => {
+    const result = await request("/api/presentation-comments");
+    if (!Array.isArray(result.comments)) throw new Error("Comment refresh returned invalid data");
+    // An add or archive completed while the read was in flight. Let the write's
+    // canonical response win; the next read will pick up later server changes.
+    if (startedRevision !== commentRevision) return false;
+    const changed = commentsChanged(result.comments);
+    comments = result.comments;
+    if (changed) renderComments();
+    return true;
+  })().finally(() => { commentRefresh = null; });
+  return commentRefresh;
+}
+function refreshCommentsQuietly() {
+  if (!presentMode) refreshComments().catch(error => console.warn("Comment refresh failed", error));
 }
 const presentMode = new URLSearchParams(location.search).get("mode") === "present";
 document.body.classList.toggle("presentation", presentMode);
@@ -683,8 +711,8 @@ function bindLayoutDrag() {
 function linePoints(line, points, thickness=1) {
   if(points.length<2){line.visible=false;return;}
   if(line.userData.fade){
-    if(performance.now()-(line.userData.lastBuild||0)<28&&line.geometry.attributes.position)return;
-    line.userData.lastBuild=performance.now();line.geometry.dispose();line.geometry=fadingTrailGeometry(points);
+    // The marker advances every frame, so its trail tip must advance with it.
+    line.geometry.dispose();line.geometry=fadingTrailGeometry(points);
     line.material.uniforms.uResolution.value.set(scene3d.host.clientWidth,scene3d.host.clientHeight);
     line.material.uniforms.uHalfWidthPx.value=Math.max(.05,thickness/2);
   } else if(line.userData.thick){
@@ -712,9 +740,10 @@ function restoreCamera() {
     camera.up.copy(Math.abs(camera.position.clone().normalize().y)>.9?toScene(frame.along,1):new THREE.Vector3(0,1,0));
     controls.target.set(0,0,0);
   } else if (["tle","uncertainty","neighbors"].includes(step().id)) {
-    const distance=step().id==="uncertainty"&&beatIndex>=2?1.65:step().id==="uncertainty"?3.2:2.8;
-    camera.position.set(distance*.67,distance*.24,distance*.70);
-    controls.target.set(0,0,0);
+    const distance=step().id==="uncertainty"&&beatIndex>=2?1.65:step().id==="uncertainty"?25:2.8;
+    const target=step().id==="uncertainty"&&beatIndex===1?scene3d.markerA.position.clone().lerp(scene3d.earth.position,.42):new THREE.Vector3();
+    camera.position.copy(target).addScaledVector(relativeCameraEye,distance);
+    controls.target.copy(target);
   }
   else { camera.position.set(2.8,.7,2.5); controls.target.set(0,0,0); }
   if (config.display.mode !== "eci") camera.up.set(0,1,0); camera.zoom=1; camera.updateProjectionMatrix(); controls.update(); customCamera=false;
@@ -785,9 +814,9 @@ function updateScene() {
   if(scene3d.borders){scene3d.borders.material.uniforms.uColor.value.set(config.display.borderColor);scene3d.borders.material.uniforms.uOpacity.value=config.display.borderOpacity;}
   if (relative&&!customCamera) {
     if (["uncertainty","neighbors"].includes(step().id)) {
-      const distance=step().id==="uncertainty"&&beatIndex>=2?1.65:step().id==="uncertainty"?3.2:2.8;
-      const anchor=sceneOrigin==="B"?markerB.position:markerA.position;
-      const desired=anchor.clone().add(new THREE.Vector3(distance*.67,distance*.24,distance*.70));
+      const distance=step().id==="uncertainty"&&beatIndex>=2?1.65:step().id==="uncertainty"?25:2.8;
+      const anchor=step().id==="uncertainty"&&beatIndex===1?markerA.position.clone().lerp(earth.position,.42):sceneOrigin==="B"?markerB.position:markerA.position;
+      const desired=anchor.clone().addScaledVector(relativeCameraEye,distance);
       controls.target.lerp(anchor,.18);camera.position.lerp(desired,.18);
     }
     else {
@@ -932,13 +961,24 @@ function bind() {
   $("resetCamera").onclick=async()=>{delete doc.cameraViews[cameraKey()];customCamera=false;restoreCamera();await saveDoc("Camera reset saved locally");};
   $("inspectorToggle").onclick=()=>{document.body.classList.toggle("inspectorCollapsed");const collapsed=document.body.classList.contains("inspectorCollapsed");$("inspectorToggle").textContent=collapsed?"Show controls":"Hide controls";$("inspectorToggle").setAttribute("aria-expanded",String(!collapsed));setTimeout(resizeScene,20);};
   $("spotButton").onclick=()=>{spotMode=!spotMode;document.body.classList.toggle("spotMode",spotMode);$("spotButton").setAttribute("aria-pressed",spotMode);};
-  $("commentsButton").onclick=()=>{$("commentsDrawer").hidden=!$("commentsDrawer").hidden;};$("closeComments").onclick=()=>{$("commentsDrawer").hidden=true;};
+  $("commentsButton").onclick=()=>{$("commentsDrawer").hidden=!$("commentsDrawer").hidden;if(!$("commentsDrawer").hidden)refreshCommentsQuietly();};$("closeComments").onclick=()=>{$("commentsDrawer").hidden=true;};
   $("archivedToggle").onclick=()=>{showArchived=!showArchived;$("archivedToggle").setAttribute("aria-pressed",String(showArchived));renderComments();};
   $("cancelComment").onclick=()=>{$("commentForm").hidden=true;};
-  $("commentForm").onsubmit=async event=>{event.preventDefault();try{const result=await request("/api/presentation-comments",{action:"add",comment:{...draft,text:$("commentText").value.trim()}});comments=result.comments;$("commentForm").hidden=true;$("commentText").value="";spotMode=false;document.body.classList.remove("spotMode");$("spotButton").setAttribute("aria-pressed","false");renderComments();}catch(error){alert(error.message);}};
-  $("downloadComments").onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({schema:"presentation-comments-v1",comments},null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download="presentation-comments.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+  $("commentForm").onsubmit=async event=>{event.preventDefault();try{const result=await request("/api/presentation-comments",{action:"add",comment:{...draft,text:$("commentText").value.trim()}});comments=result.comments;commentRevision++;$("commentForm").hidden=true;$("commentText").value="";spotMode=false;document.body.classList.remove("spotMode");$("spotButton").setAttribute("aria-pressed","false");renderComments();}catch(error){alert(error.message);}};
+  $("downloadComments").onclick=async()=>{
+    try {
+      let current = false;
+      for (let attempt = 0; attempt < 3 && !current; attempt++) current = await refreshComments();
+      if (!current) throw new Error("Comments changed during refresh. Try again.");
+    }
+    catch (error) { alert(`Could not refresh comments. Export was stopped so it cannot contain stale statuses. ${error.message}`); return; }
+    const url=URL.createObjectURL(new Blob([JSON.stringify({schema:"presentation-comments-v1",comments},null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download="presentation-comments.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
   document.addEventListener("click",event=>{if(!spotMode||presentMode)return;const target=event.target.closest("[data-spot]")||event.target.closest("#slide")||event.target.closest("#playback");if(!target||event.target.closest("#commentsDrawer,#reviewBar"))return;event.preventDefault();event.stopPropagation();const rect=target.getBoundingClientRect();draft={stepId:step().id,stepTitle:step().title,element:target.dataset.spot||target.id||"Slide",x:(event.clientX-rect.left)/rect.width,y:(event.clientY-rect.top)/rect.height,atHour:chapter()?currentHour:null};$("commentLocation").textContent=`${step().title} · ${draft.element}`;$("commentsDrawer").hidden=false;$("commentForm").hidden=false;$("commentText").focus();},true);
   window.addEventListener("resize",()=>{resizeScene();openingArt?.resize();drawCharts();alignOpeningMetadata();clampInspector();placePins();}); window.addEventListener("hashchange",()=>{const index=doc.steps.findIndex(item=>item.id===location.hash.slice(1));if(index>=0){stepIndex=index;beatIndex=0;showStep();}});
+  window.addEventListener("focus",refreshCommentsQuietly);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshCommentsQuietly();});
+  window.setInterval(()=>{if(!document.hidden)refreshCommentsQuietly();},25000);
 }
 function togglePlay(){playing=!playing;$("playButton").textContent=playing?"Ⅱ":"▶";$("playButton").setAttribute("aria-label",playing?"Pause playback":"Play playback");}
 function renderComments() {
@@ -950,7 +990,7 @@ function renderComments() {
     const article=document.createElement("article");
     const jump=document.createElement("button");jump.textContent=`${item.stepTitle} · ${item.element}${item.status==="archived"?" · Archived":""}`;jump.onclick=()=>{const index=doc.steps.findIndex(step=>step.id===item.stepId);if(index>=0)go(index);if(Number.isFinite(item.atHour)&&chapter()){currentHour=item.atHour;updateScene();drawCharts();}};
     const p=document.createElement("p");p.textContent=item.text;article.append(jump,p);
-    if(item.status!=="archived"){const archive=document.createElement("button");archive.textContent="Archive";archive.onclick=async()=>{comments=(await request("/api/presentation-comments",{action:"archive",id:item.id})).comments;renderComments();};article.append(archive);}
+    if(item.status!=="archived"){const archive=document.createElement("button");archive.textContent="Archive";archive.onclick=async()=>{comments=(await request("/api/presentation-comments",{action:"archive",id:item.id})).comments;commentRevision++;renderComments();};article.append(archive);}
     host.append(article);
   }
   placePins();
