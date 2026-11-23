@@ -15,4 +15,44 @@
     @media(prefers-reduced-motion:reduce){#espl-project-page .project-news-controls .project-news-arrow{transition:none!important}}
   `;
   (document.getElementById('espl-project-page') || document.head).append(style);
+  const assetBase = document.currentScript?.src || location.href;
+  const root = document.getElementById('espl-project-page');
+  if (!root) return;
+  const arrow = (direction, label, path) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `project-news-arrow project-news-arrow--${direction}`;
+    button.setAttribute('aria-label', label);
+    button.innerHTML = `<svg viewBox="0 0 20 20" aria-hidden="true"><path d="${path}"/></svg>`;
+    return button;
+  };
+  const repair = () => {
+    const dots = root.querySelector('.project-news-dots');
+    if (dots && !dots.closest('.project-news-controls')) {
+      const controls = document.createElement('nav');
+      controls.className = 'project-news-controls';
+      controls.setAttribute('aria-label', 'News Updates carousel');
+      const previous = arrow('previous', 'Previous news update', 'M13 4 7 10 13 16');
+      const next = arrow('next', 'Next news update', 'M7 4 13 10 7 16');
+      const move = delta => {
+        const buttons = [...dots.querySelectorAll('button')];
+        const active = Math.max(0, buttons.findIndex(button => button.classList.contains('is-active') || button.getAttribute('aria-pressed') === 'true'));
+        buttons[(active + delta + buttons.length) % buttons.length]?.click();
+      };
+      previous.addEventListener('click', () => move(-1));
+      next.addEventListener('click', () => move(1));
+      dots.before(controls);
+      controls.append(previous, dots, next);
+    }
+    for (const portrait of root.querySelectorAll('img.knowledge-person__photo, .project-person img')) {
+      if (!/Thomas|GonzalezRoberts/i.test(`${portrait.alt} ${portrait.src}`) || portrait.dataset.fallbackInstalled) continue;
+      portrait.dataset.fallbackInstalled = '1';
+      portrait.addEventListener('error', () => {
+        portrait.src = new URL('./assets/people/ThomasGonzalezRoberts_yellow-300x300.jpg', assetBase).href;
+      }, { once: true });
+      if (portrait.complete && !portrait.naturalWidth) portrait.dispatchEvent(new Event('error'));
+    }
+  };
+  repair();
+  new MutationObserver(repair).observe(root, { childList: true, subtree: true });
 })();

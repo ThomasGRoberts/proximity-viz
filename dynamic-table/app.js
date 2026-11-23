@@ -745,6 +745,14 @@ async function toggleRow(row) {
   if (token !== selectionToken) return;
   const selected = [...document.querySelectorAll(".episode-row")].find(item => item.dataset.episodeId === field(row, "ID"));
   if (!selected) return;
+  if (matchMedia("(max-width:760px)").matches) {
+    const model = document.querySelector(".expanded-row .visual-block");
+    if (model) {
+      const y = scrollY + model.getBoundingClientRect().top - 12;
+      window.scrollTo({ top: Math.max(0, y), behavior: reducedMotion.matches ? "instant" : "smooth" });
+      return;
+    }
+  }
   const stickyHeader = document.querySelector(".table-wrap thead th");
   const headerOffset = stickyHeader?.getBoundingClientRect().height || 0;
   const reviewBar = document.getElementById("tableReviewBar");
@@ -1257,7 +1265,7 @@ function startPreview(row) {
 }
 function newsIndicator(row, count) {
   const wrap = el(count ? "button" : "span", "news-indicator");
-  if (count) { wrap.type = "button"; wrap.setAttribute("aria-label", `Show ${count} linked ${count === 1 ? "record" : "records"} for ${title(row)}`); wrap.addEventListener("click", event => { event.stopPropagation(); toggleRow(row); }); }
+  if (count) { wrap.type = "button"; wrap.setAttribute("aria-label", `Show ${count} linked ${count === 1 ? "record" : "records"} for ${title(row)}`); wrap.addEventListener("click", event => { if (matchMedia("(max-width:760px)").matches) return; event.stopPropagation(); toggleRow(row); }); }
   else wrap.setAttribute("aria-label", "0 linked records");
   const icon = el("span", "news-record-icon"); icon.setAttribute("aria-hidden", "true");
   icon.style.setProperty("--record-tilt", Number.parseInt(field(row, "ID").slice(2), 10) % 2 ? "-4deg" : "4deg");
@@ -1297,7 +1305,7 @@ function render() {
     const separation = el("td", "separation-column"); separation.append(proximityNode(row, "distance")); tr.append(separation);
     const speed = el("td", "speed-column"); speed.append(proximityNode(row, "speed")); tr.append(speed);
     const newsCell = el("td", "news-column"); newsCell.append(newsIndicator(row, linkedDescriptions(row, data).length)); tr.append(newsCell, cue);
-    tr.addEventListener("click", event => { if (!event.target.closest("button, a, input, select, .gterm")) toggleRow(row); });
+    tr.addEventListener("click", event => { if (matchMedia("(max-width:760px)").matches || !event.target.closest("button, a, input, select, .gterm")) toggleRow(row); });
     let recedeTimer;
     tr.addEventListener("pointerenter", () => { clearTimeout(recedeTimer); tr.classList.remove("is-receding"); });
     tr.addEventListener("pointerleave", () => {
@@ -1314,7 +1322,7 @@ function render() {
       if (data.source === "local-verification-candidates") td.append(expandedContent(row, { source: data.source, descriptions: [], sourceMetadata: {} }));
       else if (cached) { td.append(expandedContent(cached.row, cached)); startPreview(cached.row); }
       else {
-        td.append(loadingDetail(row, data));
+        td.append(expandedContent(row, data)); startPreview(row);
         ensureDetail(row).then(detail => {
           if (state.selected !== row || !td.isConnected) return;
           td.replaceChildren(expandedContent(detail.row, detail)); startPreview(detail.row);

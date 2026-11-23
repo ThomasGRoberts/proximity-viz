@@ -74,3 +74,5 @@ body.e001-shared #ui .episode-focus .titleEpisode{display:block;margin:6px 0 0;p
 /* The expanded account uses the entire width of its episode card. */
 body #ui .episode-focus .episodeDescription.story-expanded{max-width:none!important;margin-right:10px!important}
 body.e001-shared #ui .episode-focus-link{padding-bottom:16px}
+
+#ui .episode-focus:has(.episode-info-toggle) .episode-focus-link{padding-right:25%!important}

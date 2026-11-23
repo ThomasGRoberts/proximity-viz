@@ -1078,3 +1078,15 @@ html.mobile-review-frame .table-comment-drawer{top:54px}
   .table-wrap tr.episode-row .news-column::before{content:"Records"!important;height:42px!important;align-items:center!important;transform:none!important}
   .table-wrap tr.episode-row .news-column .news-indicator{display:flex;flex:1;align-items:center;justify-content:center;width:100%;min-height:26px}
 }
+/* Review: stable disclosure cue and the same open-row content on first tap. */
+@media(min-width:761px){
+  .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:17px!important}
+  .episode-row .row-open-cue{pointer-events:none;transition:opacity .18s ease,transform .18s ease!important}
+}
+@media(max-width:760px){
+  .table-wrap tr.episode-row{touch-action:manipulation}
+  .table-wrap tr.episode-row .news-column::before{content:"Tagged Records"!important;min-height:30px;height:auto!important;margin:0 0 5px!important;transform:none!important;line-height:1.12;text-align:center}
+  .table-wrap tr.expanded-row .expanded-inner{animation:episode-detail-reveal .24s cubic-bezier(.22,1,.36,1) both}
+}
+@keyframes episode-detail-reveal{from{opacity:.55;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.table-wrap tr.expanded-row .expanded-inner{animation:none!important}}

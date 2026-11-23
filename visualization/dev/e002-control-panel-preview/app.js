@@ -8,7 +8,7 @@ import { installGlossary } from "./glossary.js?v=2";
 import { createCameraWorkshop } from "./camera-workshop.js";
 import { formatDwellDuration } from "../../../shared/format-duration.js";
 import { installEpisodeNavigation } from "../../../shared/episode-navigation.js?v=5";
-import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=7";
+import { installPanelEnhancements, installEpisodeDescriptionToggle } from "../../Viz/panel-enhancements.js?v=13";
 import { supportedUsa245Chapters } from "../e002/chapter-support.js";
 
 const $ = id => document.getElementById(id);
@@ -622,6 +622,12 @@ async function buildPanel() {
   focusTop.append(eyebrow, action); focusLink.append(focusTop, episodeTitle); focus.append(focusLink);
   ui.querySelector(".episodeHeader h1").after(focus);
   installEpisodeNavigation(focus, sheet.episodes, "E-002", { review: !publishedMode, period: true });
+  const mobileNavigation = document.querySelector('.mobile-episode-navigation');
+  if (mobileNavigation) mobileNavigation.replaceChildren(...[...ui.querySelectorAll('.episode-neighbors a')].map(link => {
+    const clone = link.cloneNode(true);
+    clone.textContent = `${link.textContent === 'Previous' ? '‹ ' : ''}${link.textContent}${link.textContent === 'Next' ? ' ›' : ''}`;
+    return clone;
+  }));
   ui.querySelector("#metricArea").closest(".panelSection").classList.add("results-section");
   const description = ui.querySelector("#episodeDescription");
   const paragraph = document.createElement("p");

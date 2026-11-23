@@ -170,10 +170,23 @@ export function installEpisodeDescriptionToggle(description) {
   description.before(toggle);
   description.classList.add("story-collapsed");
   const header = description.closest(".episodeHeader");
+  const bindFocusClick = focus => {
+    if (focus.dataset.descriptionQuarterBound) return;
+    focus.dataset.descriptionQuarterBound = '1';
+    focus.addEventListener('click', event => {
+      if (event.target.closest('button')) return;
+      const rect = focus.getBoundingClientRect();
+      if (event.clientX < rect.left + rect.width * .75) return;
+      event.preventDefault();
+      event.stopPropagation();
+      toggle.click();
+    }, true);
+  };
   const placeInFocus = () => {
-    const focus = header?.querySelector(".episode-focus");
+    const focus = header?.querySelector('.episode-focus');
     if (!focus) return false;
     focus.append(description, toggle);
+    bindFocusClick(focus);
     return true;
   };
   if (!placeInFocus() && header) {
@@ -255,6 +268,24 @@ if (!document.documentElement.classList.contains('mini-scene')) {
   header.setAttribute('aria-label', 'Current episode and spacecraft');
   header.innerHTML = '<span class="mobile-episode-intro">Current Episode:</span><span class="mobile-episode-pair"><span class="mobile-episode-name mobile-chaser-choice"><i class="mobile-dot chaser"></i><b class="mobile-chaser"></b></span><span>+</span><span class="mobile-episode-name mobile-target-choice"><i class="mobile-dot target"></i><b class="mobile-target"></b></span></span><div class="mobile-episode-menu" hidden></div>';
   document.body.append(header);
+  const episodeNavigation = document.createElement('nav');
+  episodeNavigation.className = 'mobile-episode-navigation';
+  episodeNavigation.setAttribute('aria-label', 'Adjacent episodes');
+  header.after(episodeNavigation);
+  const syncEpisodeNavigation = () => {
+    const source = document.querySelector('#ui .episode-neighbors');
+    if (!source?.querySelector('a')) return false;
+    episodeNavigation.replaceChildren(...[...source.querySelectorAll('a')].map(link => {
+      const clone = link.cloneNode(true);
+      clone.textContent = `${link.textContent === 'Previous' ? '‹ ' : ''}${link.textContent}${link.textContent === 'Next' ? ' ›' : ''}`;
+      return clone;
+    }));
+    return true;
+  };
+  if (!syncEpisodeNavigation()) {
+    const observer = new MutationObserver(() => { if (syncEpisodeNavigation()) observer.disconnect(); });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
   const identity = document.getElementById('identity');
   const menu = header.querySelector('.mobile-episode-menu');
   const chaserChoice = header.querySelector('.mobile-chaser-choice');
