@@ -1080,7 +1080,7 @@ html.mobile-review-frame .table-comment-drawer{top:54px}
 }
 /* Review: stable disclosure cue and the same open-row content on first tap. */
 @media(min-width:761px){
-  .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:17px!important}
+  .table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:30px!important;transition:background-color .18s ease!important}
   .episode-row .row-open-cue{pointer-events:none;transition:opacity .18s ease,transform .18s ease!important}
 }
 @media(max-width:760px){

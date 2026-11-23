@@ -11,7 +11,7 @@ const $ = id => document.getElementById(id);
 const clone = value => structuredClone(value);
 // E-008 saved relative camera 2d907c76 (chapter 1), in the same local axes.
 const relativeCameraEye = new THREE.Vector3(6.74123789747407, 2.0576834251987783, 6.422160892668574).normalize();
-const removedSteps = new Set(["time-series", "thresholds", "shadowing", "covariance-examples", "conjunction", "future-examples", "limitations", "future"]);
+const removedSteps = new Set(["neighbors", "relative", "library", "project-page", "discussion", "discussion-questions", "closing", "time-series", "thresholds", "shadowing", "covariance-examples", "conjunction", "future-examples", "limitations", "future"]);
 const chapterIds = ["tle", "uncertainty", "neighbors", "relative"];
 const initialVisibility = {
   tle: { objectB:false, tle:false, uncertainty:false, metrics:false, charts:false, thresholds:false, maneuvers:false },
