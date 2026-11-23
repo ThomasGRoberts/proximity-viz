@@ -1,0 +1,53 @@
+{
+  "schema": "espl-shared-review-v1",
+  "comments": [
+    {
+      "id": "f41868ba8d0844a0a2b3fdedb6cbd338",
+      "createdAt": "2026-11-23T15:16:33+00:00",
+      "surface": "E-001",
+      "root": "panel",
+      "key": "ui",
+      "label": "ui",
+      "x": 0.8128654970760234,
+      "y": 0.2876712328767123,
+      "text": "This episode name card is still line-breaking early. Let's it enjoy it's full width!",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "d11642e42f3149999ec098e81124495b",
+      "createdAt": "2026-11-23T15:20:03+00:00",
+      "surface": "E-001",
+      "root": "panel",
+      "key": "playbackDock",
+      "label": "playback Dock",
+      "x": 0.9736842105263158,
+      "y": 0.420915260135723,
+      "text": "the timestamp should be to the right of the playbar; the playbar should be sized down to accommodate that without overlap.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "f895a97cf00b4830bc3d9306d233cb65",
+      "createdAt": "2026-11-23T15:20:49+00:00",
+      "surface": "E-001",
+      "root": "panel",
+      "key": "modeBtn",
+      "label": "mode Btn",
+      "x": 0.6304347826086957,
+      "y": 0.6086956521739131,
+      "text": "On mobile, this button doesn't swap to the relative motion icon when episodes are viewed in ECI mode; please make that so.",
+      "appliesToAllEpisodes": true
+    },
+    {
+      "id": "b295de19e5564067864fb20669f2f700",
+      "createdAt": "2026-11-23T15:24:08+00:00",
+      "surface": "E-001",
+      "root": "panel",
+      "key": "globe",
+      "label": "3D globe",
+      "x": 0.427689594356261,
+      "y": 0.6733436055469953,
+      "text": "This episode is not inheriting my preferred camera views when I view it on the Github page. Please address that.",
+      "appliesToAllEpisodes": false
+    }
+  ]
+}

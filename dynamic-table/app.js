@@ -199,6 +199,16 @@ function visualizationActionLink(url, label = "Open orbital visualization") {
 function warnMobileModel(link) {
   link.addEventListener("click", event => {
     if (!matchMedia("(max-width:760px)").matches) return;
+    if (window.__esplTableEmbedded && window.__esplTableScrollBridge) {
+      event.preventDefault();
+      window.parent.postMessage({ type: "espl-table-model-warning", url: link.href }, "*");
+      return;
+    }
+    if (window.__esplTableEmbedded) {
+      event.preventDefault();
+      if (window.confirm("The interactive model works best on a larger screen. Open it here?")) window.open(link.href, "_blank", "noopener");
+      return;
+    }
     const notice = document.getElementById("mobile-model-notice");
     if (!notice?.showModal) return;
     event.preventDefault();
@@ -752,7 +762,11 @@ async function toggleRow(row) {
       if (token !== selectionToken) return;
       const current = document.querySelector(`.episode-row.selected[data-episode-id="${field(row, "ID")}"]`);
       if (!current) return;
-      window.scrollTo({ top: Math.max(0, scrollY + current.getBoundingClientRect().top - offset - 8), behavior: "instant" });
+      if (window.__esplTableEmbedded && window.__esplTableScrollBridge) {
+        window.parent.postMessage({ type: "espl-table-row", top: current.getBoundingClientRect().top }, "*");
+        return;
+      }
+      window.scrollTo(0, Math.max(0, scrollY + current.getBoundingClientRect().top - offset - 8));
     };
     align();
     requestAnimationFrame(align);

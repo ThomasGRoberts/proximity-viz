@@ -1093,5 +1093,17 @@ html.mobile-review-frame .table-comment-drawer{top:54px}
 /* Keep the model confirmation visible within short mobile viewports, including iPhone mini. */
 .mobile-model-notice[open]{position:fixed!important;inset:0!important;display:grid!important;place-items:center!important;box-sizing:border-box;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)!important;border:0!important;border-radius:0!important;background:transparent!important;transform:none!important;overflow:hidden!important}
 .mobile-model-notice .mobile-model-card{box-sizing:border-box;width:min(420px,100%);max-height:calc(100dvh - 28px);overflow:auto;padding:20px;border:1px solid #d9d0b7;border-radius:12px;background:#fff;box-shadow:0 18px 45px #0003}
-@media(max-width:760px){.table-wrap tr.expanded-row .expanded-inner.has-visual .context-block{background:linear-gradient(180deg,#fffcf6 0%,#fffcf6f2 76%,#fffcf600 100%)!important}}
+@media(max-width:760px){
+  .table-wrap tr.expanded-row,
+  html body .table-wrap tr.expanded-row:has(.expanded-inner.has-visual)>td,
+  html body .table-wrap tr.expanded-row[data-episode-id] .expanded-inner.has-visual,
+  .table-wrap tr.expanded-row .detail-overview,
+  .table-wrap tr.expanded-row .expanded-inner.has-visual .context-block,
+  .table-wrap tr.expanded-row .evidence-section,
+  .table-wrap tr.expanded-row .source-grid,
+  .table-wrap tr.expanded-row .visual-block{background:#fffcf6!important}
+  .table-wrap tr.expanded-row .expanded-inner.has-visual .context-block::before{display:none!important}
+}
 @media(min-width:761px){.table-wrap tr.expanded-row .expanded-inner.has-visual .context-block::before{display:block!important;background:linear-gradient(90deg,#fffcf6 0%,#fffcf6f8 38%,#fffcf6de 62%,#fffcf600 100%)!important}}
+/* Embedded rows grow with the hosting page, so the page owns vertical scrolling. */
+html.embedded-table .table-wrap .expanded-row .expanded-inner{max-height:none!important;overflow:visible!important;overscroll-behavior:auto!important}

@@ -12,7 +12,7 @@
   <script src="../../Viz/vendor/satellite/satellite.min.js"></script>
   <link rel="stylesheet" href="../../../shared/episode-loading.css?v=3">
   <link rel="stylesheet" href="../../../shared/episode-panel.css?v=5">
-  <link rel="stylesheet" href="../../Viz/panel-enhancements.css?v=10">
+  <link rel="stylesheet" href="../../Viz/panel-enhancements.css?v=11">
   <style>#episodeLoading{background:#fff}.mobile-episode-navigation{display:none}</style>
   <link rel="stylesheet" href="../../../shared/episode-description.css">
   <style>
@@ -26,8 +26,9 @@
       body.e002-published .playbackDock{position:fixed!important;z-index:25!important;inset:auto 0 0!important;width:100vw!important;max-width:none!important;margin:0!important;border-radius:12px 12px 0 0!important;pointer-events:auto!important}
       body.e002-published #cameraControls{top:100px!important}
       body.e002-published #zoomInBtn,body.e002-published #zoomOutBtn{display:none!important}
-      body.e002-published .mobile-episode-navigation{position:fixed;z-index:40;top:48px;left:0;right:0;display:flex;justify-content:center;gap:8px;min-height:35px;padding:5px 10px;background:#fffaf0e8;border-bottom:1px solid #e2d8bd}
-      body.e002-published .mobile-episode-navigation a{display:inline-flex;align-items:center;justify-content:center;min-width:82px;padding:4px 8px;border:1px solid #d8c99f;border-radius:5px;color:#604a1d;background:#fffdf7;text-decoration:none;font-size:10px;font-weight:700}
+      body.e002-published .mobile-episode-navigation{position:fixed;z-index:40;top:48px;left:0;right:0;display:flex;justify-content:space-between;gap:8px;min-height:30px;padding:5px 12px;background:transparent;border:0;pointer-events:none}
+      body.e002-published .mobile-episode-navigation a{display:inline-flex;align-items:center;min-width:0;padding:3px 0;border:0;border-radius:0;color:#604a1d;background:transparent;text-decoration:none;font-size:10px;font-weight:700;pointer-events:auto}
+      body.e002-published .mobile-episode-navigation a:last-child{margin-left:auto;text-align:right}
       html:not(.mini-scene) body.e002-published #mobileEpisodeHeader{display:none!important}
       body.e002-published #gtLogo,body.e002-published .panel-toggle{display:none!important}
       body.e002-published #satelliteScreenLabels{z-index:15!important}
@@ -90,6 +91,7 @@
   </main>
   <a id="gtLogo" data-spot-key="gtLogo" href="https://espl.ae.gatech.edu/" target="_top" aria-label="Engineering Space Policy Laboratory home"><img src="../../Viz/assets/ESPL.png" alt=""></a>
   <script type="module" src="app.js?v=18"></script>
+  <script type="module" src="../../Viz/mode-button-icon.js?v=1"></script>
   <script type="module" src="../../Viz/project-flourish.js"></script>
   <script type="module" src="../../../shared/episode-loading.js?v=3"></script>
 </body>

@@ -22,7 +22,7 @@
   <script type="module" src="../dev/review-shell.js?v=4"></script>
   <link rel="stylesheet" href="../../shared/episode-loading.css?v=3">
   <link rel="stylesheet" href="../../shared/episode-panel.css?v=5">
-  <link rel="stylesheet" href="panel-enhancements.css?v=10">
+  <link rel="stylesheet" href="panel-enhancements.css?v=11">
   <style>.mini-scene body{background:#fffcf6}.mini-scene #ui,.mini-scene #playbackDock,.mini-scene #cameraControls,.mini-scene #geoBeltLabel,.mini-scene #gtLogo,.mini-scene #cameraDevTools,.mini-scene #satelliteScreenLabels{display:none!important}.mini-scene .sceneCanvas{pointer-events:none}.mini-scene.mini-editing .sceneCanvas{pointer-events:auto}.embedded-episode #episodeBoot{display:none!important}</style>
   <style>
     .episode-initializing body>:not(#episodeBoot){visibility:hidden!important}
@@ -1284,7 +1284,7 @@
     #mobileEpisodeHeader,.mobile-episode-navigation{display:none}
     @media(max-width:760px){
       html:not(.mini-scene) body #ui{display:none!important}
-      html:not(.mini-scene) body #playbackDock{position:fixed!important;inset:auto 0 0 0!important;z-index:40!important;width:100vw!important;max-width:none!important;max-height:40vh;margin:0!important;padding-bottom:max(8px,env(safe-area-inset-bottom))!important;border-radius:12px 12px 0 0!important;overflow:auto!important}
+      html:not(.mini-scene) body #playbackDock{position:fixed!important;inset:auto 0 0 0!important;z-index:40!important;width:100vw!important;max-width:none!important;max-height:40dvh;margin:0!important;padding-bottom:max(8px,env(safe-area-inset-bottom))!important;border-radius:12px 12px 0 0!important;overflow:auto!important}
       html:not(.mini-scene) body #episodePanelToggle{display:none!important}
       html:not(.mini-scene) body #gtLogo{display:none!important}
       html:not(.mini-scene) body #mobileEpisodeHeader{position:fixed;z-index:43;inset:0 0 auto;display:flex;align-items:center;gap:8px;min-height:48px;padding:7px 11px;border-bottom:1px solid #dfd3b3;border-left:4px solid #bd9638;background:#fff4cf;box-shadow:0 2px 9px #00000018;color:#4d4a43;font:700 11px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -1304,9 +1304,10 @@
       #mobileEpisodeHeader .mobile-episode-menu button:hover,#mobileEpisodeHeader .mobile-episode-menu button[aria-pressed=true]{background:#fff1c7}
       html:not(.mini-scene) body #cameraControls{top:100px!important}
       html:not(.mini-scene) body #zoomInBtn,html:not(.mini-scene) body #zoomOutBtn{display:none!important}
-      html:not(.mini-scene) body .mobile-episode-navigation{position:fixed;z-index:42;top:48px;left:0;right:0;display:flex;justify-content:center;gap:8px;min-height:35px;padding:5px 10px;background:#fffaf0e8;border-bottom:1px solid #e2d8bd}
-      html:not(.mini-scene) body .mobile-episode-navigation a{display:inline-flex;align-items:center;justify-content:center;min-width:82px;padding:4px 8px;border:1px solid #d8c99f;border-radius:5px;color:#604a1d;background:#fffdf7;text-decoration:none;font-size:10px;font-weight:700}
-      html:not(.mini-scene) body .mobile-episode-navigation a:hover{background:#f7e7b7}
+      html:not(.mini-scene) body .mobile-episode-navigation{position:fixed;z-index:42;top:48px;left:0;right:0;display:flex;justify-content:space-between;gap:8px;min-height:30px;padding:5px 12px;background:transparent;border:0;pointer-events:none}
+      html:not(.mini-scene) body .mobile-episode-navigation a{display:inline-flex;align-items:center;min-width:0;padding:3px 0;border:0;border-radius:0;color:#604a1d;background:transparent;text-decoration:none;font-size:10px;font-weight:700;pointer-events:auto}
+      html:not(.mini-scene) body .mobile-episode-navigation a:last-child{margin-left:auto;text-align:right}
+      html:not(.mini-scene) body .mobile-episode-navigation a:hover{text-decoration:underline;background:transparent}
       html:not(.mini-scene) body #satelliteScreenLabels{z-index:15!important}
       html:not(.mini-scene) body .satelliteScreenLabel{display:block!important;font-size:11px}
       html:not(.mini-scene) body .satelliteScreenLabel[hidden]{display:none!important}
@@ -1316,9 +1317,10 @@
   </style>
   <script type="module" src="project-flourish.js"></script>
   <script type="module" src="satellite-metadata.js?v=11"></script>
-  <script type="module" src="episode-entry.js?v=35"></script>
+  <script type="module" src="episode-entry.js?v=36"></script>
   <script type="module" src="episode-ui.js?v=16"></script>
   <script type="module" src="panel-enhancements.js?v=13"></script>
+  <script type="module" src="mode-button-icon.js?v=1"></script>
   <script type="module" src="../../shared/episode-loading.js?v=3"></script>
 </body>
 

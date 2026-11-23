@@ -604,7 +604,7 @@ function updateScreenLabels() {
     if (!position) continue;
     const state = labelMotion[slot], node = screenLabelNodes[slot];
     const sign = slot === upperLabel ? -1 : 1;
-    const targetOffset = labelsSeparated ? sign * Math.max(radius + 9, position.height / 2 + 10) : 0;
+    const targetOffset = labelsSeparated ? sign * Math.max(radius + 5, position.height / 2 + 5) : 0;
     // Marker and label use the same projected position on every render path.
     state.x = position.left;
     state.y = position.y;

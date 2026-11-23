@@ -1,5 +1,5 @@
 import { loadCurrentEpisodes, episodeChapters } from "../../shared/episode-feed.js?v=7";
-import { installChapterButtons } from "../dev/e001-review/panel-layout.js?v=9";
+import { installChapterButtons } from "../dev/e001-review/panel-layout.js?v=10";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js";
 
 const $ = id => document.getElementById(id);
@@ -81,6 +81,13 @@ async function init() {
   api().setWindow(first.start, first.end);
   api().setTime(first.start);
   api().setPublishedCameraViews(savedCameraViews, first.id);
+  const openingView = savedCameraViews.filter(view => view.chapterId === first.id && view.cameraMode === "relative" && view.referenceSatellite === "B" && Date.parse(view.simulationTimeUtc) <= first.centerMs)
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
+  if (openingView) {
+    api().setMode("relative");
+    api().setReference("B");
+    api().applyFraming(openingView, true);
+  }
   selected = 0;
   lastTime = api().state.time;
   syncClock();

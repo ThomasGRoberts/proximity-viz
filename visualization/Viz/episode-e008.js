@@ -1,4 +1,4 @@
-import { placeEpisodeScreenLabels } from "./screen-label-layout.js";
+import { placeEpisodeScreenLabels } from "./screen-label-layout.js?v=2";
 import { installReferenceOrbitHover } from "./reference-orbit-hover.js";
 import { orientEarth } from "./earth-frame.js";
 import { eciRateForState } from "./orbital-playback.js";

@@ -29,20 +29,52 @@ if (requestedEpisode && /^E-\d{3}$/.test(requestedEpisode)) {
   for (const frame of document.querySelectorAll("[data-espl-episodes-page] iframe")) {
     const url = new URL(frame.src);
     url.searchParams.set("review", requestedEpisode);
-    frame.addEventListener("load", () => frame.scrollIntoView({ block: "start" }), { once: true });
     if (frame.src !== url.href) frame.src = url.href;
   }
 }
 
-if (!window.__esplTableFrameHeightListener) {
-  window.__esplTableFrameHeightListener = true;
+function showModelWarning(url) {
+  let dialog = document.getElementById("espl-table-model-warning");
+  if (!dialog) {
+    dialog = document.createElement("dialog");
+    dialog.id = "espl-table-model-warning";
+    dialog.style.cssText = "position:fixed;inset:0;box-sizing:border-box;width:min(420px,calc(100vw - 28px));max-height:calc(100dvh - 28px);margin:auto;padding:20px;border:1px solid #d9d0b7;border-radius:12px;background:#fff;color:#333;box-shadow:0 18px 45px #0003;font:13px/1.5 system-ui,sans-serif";
+    dialog.innerHTML = '<h2 style="margin:0 0 8px;font-size:18px">Open the orbital model?</h2><p style="margin:0 0 18px;color:#555">The interactive model works best on a larger screen. You can still open it here.</p><div style="display:flex;justify-content:flex-end;gap:12px"><button type="button" style="padding:8px 11px;border:1px solid #d8d8d8;border-radius:6px;background:#fff">Stay here</button><a style="padding:8px 11px;border:1px solid #d5ad39;border-radius:6px;background:#fff6dc;color:#333;font-weight:700;text-decoration:none">Open model</a></div>';
+    dialog.querySelector("button").addEventListener("click", () => dialog.close());
+    dialog.querySelector("a").addEventListener("click", () => dialog.close());
+    document.body.append(dialog);
+  }
+  dialog.querySelector("a").href = url;
+  if (!dialog.open) dialog.showModal();
+}
+
+if (!window.__esplTableFrameMessageListener) {
+  window.__esplTableFrameMessageListener = true;
   window.addEventListener("message", event => {
-    if (event.data?.type !== "espl-table-height" || !Number.isFinite(event.data.height)) return;
     for (const frame of document.querySelectorAll("[data-espl-episodes-page] iframe")) {
       if (frame.contentWindow !== event.source || new URL(frame.src).origin !== event.origin) continue;
-      frame.style.height = `${Math.max(300, Math.ceil(event.data.height))}px`;
+      if (event.data?.type === "espl-table-height" && Number.isFinite(event.data.height)) {
+        frame.style.height = `${Math.max(300, Math.ceil(event.data.height))}px`;
+        frame.contentWindow.postMessage({ type: "espl-table-scroll-bridge" }, event.origin);
+      } else if (event.data?.type === "espl-table-wheel" && Number.isFinite(event.data.deltaY)) {
+        window.scrollBy(0, event.data.deltaY);
+      } else if (event.data?.type === "espl-table-row" && Number.isFinite(event.data.top)) {
+        const top = window.scrollY + frame.getBoundingClientRect().top + event.data.top - 8;
+        window.scrollTo(0, Math.max(0, top));
+      } else if (event.data?.type === "espl-table-model-warning") {
+        try {
+          const destination = new URL(event.data.url);
+          if (destination.protocol === "https:" && ["espl.ae.gatech.edu", "thomasgroberts.github.io"].includes(destination.hostname)) showModelWarning(destination.href);
+        } catch { /* Ignore invalid model links. */ }
+      }
+      break;
     }
   });
+}
+for (const frame of document.querySelectorAll("[data-espl-episodes-page] iframe")) {
+  const ready = () => frame.contentWindow?.postMessage({ type: "espl-table-scroll-bridge" }, new URL(frame.src).origin);
+  frame.addEventListener("load", ready);
+  ready();
 }
 
 void fetch("https://api.github.com/repos/ThomasGRoberts/proximity-viz/commits/main", { cache: "no-store" })

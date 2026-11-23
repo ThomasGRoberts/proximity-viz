@@ -27,12 +27,12 @@ export function placeEpisodeScreenLabels({ camera, sceneHost, participants, mark
     if (!dot) continue;
     const labelWidth = label.offsetWidth || 90, labelHeight = label.offsetHeight || 12;
     const last = previous.get(label), candidates = [];
-    for (const side of ["right", "left"]) for (const dy of [0, -18, 18, -36, 36]) {
+    for (const side of ["right", "left"]) for (const dy of [0, -12, 12]) {
       const left = side === "right" ? dot.x + 10 : dot.x - labelWidth - 10;
       const top = dot.y + dy - labelHeight / 2;
       const box = { left, right: left + labelWidth, top, bottom: top + labelHeight };
-      let score = Math.abs(dy) * .15;
-      if (last) { if (side !== last.side) score += 80; if (dy !== last.dy) score += 18; }
+      let score = Math.abs(dy) * 2;
+      if (last) { if (side !== last.side) score += 10; if (dy !== last.dy) score += 4; }
       if (box.left < 8 || box.right > width - 8 || box.top < 8 || box.bottom > height - 8) score += 1000;
       if (panel && box.left < panel.right - stage.left + 8 && box.right > panel.left - stage.left && box.bottom > panel.top - stage.top && box.top < panel.bottom - stage.top) score += 400;
       for (const other of occupied) if (box.left < other.right + 5 && box.right > other.left - 5 && box.top < other.bottom + 5 && box.bottom > other.top - 5) score += 200;
