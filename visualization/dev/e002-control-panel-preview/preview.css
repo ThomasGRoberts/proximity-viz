@@ -10,11 +10,11 @@ button:focus-visible,textarea:focus-visible{outline:2px solid #9a7413;outline-of
 .review-header p{margin:0;color:#73706a;font-size:12px;line-height:1.4}
 #commentMode{flex:0 0 auto;padding:9px 12px;border:1px solid #c8b98f;border-radius:8px;background:#fffdf7;color:#5d4a21;font-size:11px;font-weight:700;cursor:pointer}
 #commentMode:hover,#commentMode[aria-pressed="true"]{background:#f2e9cf;border-color:#b69a53}
-.review-workspace{display:grid;grid-template-columns:342px minmax(300px,420px);align-items:start;gap:24px;max-width:830px;margin:auto}
-.panel-column{position:relative;width:342px;min-width:0}
+.review-workspace{display:grid;grid-template-columns:325px minmax(300px,420px);align-items:start;gap:24px;max-width:830px;margin:auto}
+.panel-column{position:relative;width:325px;min-width:0}
 #panelMount{display:grid;gap:12px}
 .loading{margin:0;padding:18px;border:1px solid #ddd;border-radius:12px;background:#fff;color:#777;font-size:12px}
-body.e002-shared #ui{position:relative;z-index:auto;top:auto;left:auto;width:342px;max-height:none;overflow:visible;margin:0;padding:18px 18px 16px;border-radius:16px;backdrop-filter:none}
+body.e002-shared #ui{position:relative;z-index:auto;top:auto;left:auto;width:325px;max-height:none;overflow:visible;margin:0;padding:16px;border:1px solid #ddd;border-radius:16px;backdrop-filter:blur(10px)}
 body.e002-shared #ui .episodeHeader h1{max-width:275px;margin:0;color:#282828;font-size:24px;font-weight:800;line-height:1.08;letter-spacing:-.035em;white-space:normal}
 body.e002-shared #ui .episode-focus{margin-top:13px;padding:10px 11px 11px;border:1px solid #e2d7bd;border-left:3px solid #bd9638;border-radius:8px;background:#fffbf3}
 .episode-focus-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -39,7 +39,7 @@ body[data-heading-style="navigation"] .episode-navigation{display:flex}
 .episode-navigation a:hover,.episode-navigation button:hover{border-color:#bca76e;background:#fffaf0}
 .episode-navigation button:disabled{opacity:.48;cursor:default}
 body.e002-shared #ui .results-section{margin-top:16px;padding-top:14px;border-top:1px solid #e4e1da}
-body.e002-shared .playbackDock{position:relative;z-index:auto;left:auto;right:auto;bottom:auto;width:342px;margin:0;padding:7px 8px;border:1px solid #d2d2d2;border-radius:12px;background:#fff;box-shadow:0 5px 16px #0000000d}
+body.e002-shared .playbackDock{position:relative;z-index:auto;left:auto;right:auto;bottom:auto;width:325px;margin:0;padding:7px 8px;border:1px solid #d2d2d2;border-radius:12px;background:#fff;box-shadow:0 5px 16px #0000000d}
 body.e002-shared .playbackRow{grid-template-columns:26px 30px 26px minmax(0,1fr) max-content;grid-template-rows:34px;column-gap:2px}
 body.e002-shared .playbackRow .sliderNow{width:auto;margin-left:3px;margin-right:8px;font-size:9px;line-height:1.2;text-align:right;white-space:nowrap;cursor:default}
 body.e002-shared .playbackRow .sliderNow:is(:hover,:focus-visible)::after{content:none!important}
@@ -101,7 +101,7 @@ body.spot-mode #panelColumn::after{content:"Click a spot to comment";position:st
 .delete-comment{padding:3px 6px;border:0;color:#8a8171;font-size:9px}
 .export-actions{padding-top:13px;border-top:1px solid #ece9e3}
 .export-actions button{flex:1}
-@media(max-width:760px){body{padding:16px 12px 40px}.review-header,.review-workspace{max-width:420px}.review-header{align-items:start}.review-workspace{grid-template-columns:1fr;gap:16px}.panel-column{width:min(342px,100%);margin:auto}.feedback-rail{position:static;max-height:none}body.e002-shared #ui,body.e002-shared .playbackDock{width:100%}}
+@media(max-width:760px){body{padding:16px 12px 40px}.review-header,.review-workspace{max-width:420px}.review-header{align-items:start}.review-workspace{grid-template-columns:1fr;gap:16px}.panel-column{width:min(325px,100%);margin:auto}.feedback-rail{position:static;max-height:none}body.e002-shared #ui,body.e002-shared .playbackDock{width:100%}}
 @media(max-width:420px){.review-header{display:grid;gap:11px}#commentMode{justify-self:start}}
 
 /* The full episode review places the workshopped panel over its local 3D scene. */
@@ -137,7 +137,7 @@ body{padding:0;background:#f4f3f0}
 .orbit-tooltip{position:absolute;z-index:6;max-width:235px;padding:7px 9px;border:1px solid #d6d0c4;border-radius:6px;background:#fffefbf2;box-shadow:0 3px 12px #0002;color:#45413a;font-size:10px;line-height:1.4;pointer-events:none}
 .orbit-tooltip[hidden]{display:none}
 .globe-stage .scene-status:empty{display:none}
-.panel-column{position:relative;z-index:3;width:342px;margin:16px 0 18px 16px}
+.panel-column{position:relative;z-index:3;width:325px;margin:16px 0 18px 16px}
 .pin-layer{position:absolute;z-index:9;inset:0}
 .pin-layer{visibility:hidden}
 body.spot-mode .pin-layer,body.review-open .pin-layer{visibility:visible}
@@ -166,7 +166,7 @@ body.e002-shared .chartGroup .thresholdEdge[hidden],body.e002-shared .chartGroup
 body.e002-shared .chartGroup .thresholdEdge:is(:hover,:active,:focus){color:#606060;background:transparent}
 body.e002-shared .chartGroup .thresholdEdge:focus-visible{outline:1px solid #777}
 @media(max-width:780px){.panel-column{margin-left:10px}.feedback-rail{top:10px;right:10px;width:min(340px,calc(100% - 20px))}.model-caveat,.globe-stage .scene-status{max-width:min(290px,calc(100% - 30px))}}
-@media(max-width:430px){.review-header{padding:9px 11px;gap:8px}.review-header h1{font-size:14px}.review-actions{gap:4px}.review-actions button{padding:7px 6px;font-size:9px}.review-workspace{width:calc(100% - 12px);margin:6px}.panel-column{width:min(342px,calc(100% - 12px));margin:12px 6px}.globe-stage .satelliteScreenLabel{font-size:9px}}
+@media(max-width:430px){.review-header{padding:9px 11px;gap:8px}.review-header h1{font-size:14px}.review-actions{gap:4px}.review-actions button{padding:7px 6px;font-size:9px}.review-workspace{width:calc(100% - 12px);margin:6px}.panel-column{width:min(325px,calc(100% - 12px));margin:12px 6px}.globe-stage .satelliteScreenLabel{font-size:9px}}
 .review-workspace{height:calc(100vh - 92px);min-height:620px}
 .panel-column{height:calc(100% - 32px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#c7c2b7 transparent}
 body.e002-shared .playbackDock{position:sticky;bottom:0;z-index:4}
@@ -235,7 +235,7 @@ body.e002-shared .playbackDock{position:relative;bottom:auto;flex:0 0 auto;box-s
 .globe-stage[data-camera-transition="switching"] #scene,.globe-stage[data-camera-transition="switching"] #satelliteScreenLabels{opacity:.4;transition:opacity .2s ease}
 .globe-stage[data-camera-transition="idle"] #scene,.globe-stage[data-camera-transition="idle"] #satelliteScreenLabels{opacity:1;transition:opacity .35s ease}
 /* The pair reminder enters only after the selector leaves the scroll view. */
-body.e002-shared #ui .pair-sticky{position:sticky;z-index:8;top:-18px;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-start;gap:5px;height:34px;margin:-18px -18px -16px;padding:5px 8px;border-bottom:1px solid #ddd;background:#fffffff2;box-shadow:0 2px 7px #0000000c;font-size:10px;line-height:1.2}
+body.e002-shared #ui .pair-sticky{position:sticky;z-index:8;top:-16px;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-start;gap:5px;height:34px;margin:-16px -16px -16px;padding:5px 8px;border-bottom:1px solid #ddd;background:#fffffff2;box-shadow:0 2px 7px #0000000c;font-size:10px;line-height:1.2}
 body.e002-shared #ui .pair-sticky[hidden]{display:none}
 .pair-sticky span{display:inline-flex;align-items:center;gap:5px;min-width:0}.pair-sticky b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
 .pair-sticky i{display:block;flex:0 0 9px;width:9px;height:9px;border:1.5px solid #3d3d3d;border-radius:50%;background:#eaaa00}
@@ -375,7 +375,7 @@ body.e002-shared #ui #thresholdControls[open] #thresholdSummary{display:none}
 body.e002-published .review-header,body.e002-published .feedback-rail,body.e002-published .camera-workshop,body.e002-published .pin-layer{display:none!important}
 body.e002-published .review-workspace{width:100%;height:100vh;min-height:620px;margin:0;border:0;border-radius:0}
 body.e002-published .panel-column{margin:16px 0 16px 16px}
-@media(max-width:430px){body.e002-published .panel-column{margin:10px 0 10px 6px;width:min(342px,calc(100% - 12px))}}
+@media(max-width:430px){body.e002-published .panel-column{margin:10px 0 10px 6px;width:min(325px,calc(100% - 12px))}}
 
 /* Match the SBI lab-home logo, including its quiet resting state and glint. */
 body.e002-shared #gtLogo{position:fixed;z-index:9;right:26px;bottom:24px;display:block;width:320px;overflow:hidden;border-radius:2px;opacity:.23;filter:grayscale(1);line-height:0}
@@ -396,7 +396,7 @@ body.e002-shared #ui{transition:transform .28s ease,opacity .28s ease}
 body.e002-shared.ui-collapsed #ui{transform:translateX(calc(-100% - 18px));opacity:.2;pointer-events:none}
 body.e002-shared .panel-toggle{position:absolute;z-index:15;top:32px;left:calc(100% - 1px);display:grid;place-items:center;width:16px;height:40px;padding:0;border:1px solid #d8d8d8;border-left:0;border-radius:0 7px 7px 0;background:rgba(255,255,255,.84);color:#999;font:400 17px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer;transition:transform .28s ease,background .15s ease,color .15s ease}
 body.e002-shared .panel-toggle:hover,body.e002-shared .panel-toggle:focus-visible{background:#f5f5f5;color:#555}
-body.e002-shared.ui-collapsed .panel-toggle{transform:translateX(calc(-342px - 18px))}
+body.e002-shared.ui-collapsed .panel-toggle{transform:translateX(calc(-325px - 18px))}
 @media(max-width:430px){body.e002-shared .panel-column{margin-top:12px;height:calc(100% - 24px)}body.e002-shared.ui-collapsed .panel-toggle{transform:translateX(calc(-100vw + 30px))}}
 @media(prefers-reduced-motion:reduce){body.e002-shared #ui,body.e002-shared .panel-toggle{transition:none}}
 .chapter-switch{grid-auto-flow:column;grid-template-rows:1fr;white-space:nowrap}

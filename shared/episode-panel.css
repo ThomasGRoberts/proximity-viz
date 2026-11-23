@@ -16,15 +16,22 @@ body[class*="-shared"] :is(.e003-chapter-arrow,.e005-chapter-arrow,.e006-chapter
   body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared)[class*="-review"]:not([class*="-multi-chapter"]) #ui{max-height:calc(100vh - 182px)}
 }
 body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared):not([class*="-multi-chapter"]) .playbackDock{padding-top:5px;padding-bottom:2px}
-/* Match the SBI model's 342 px left panel, outer edge, and disclosure tab. */
-body:not(.e002-shared) #ui{box-sizing:border-box;width:342px;top:18px;left:18px;padding:18px 18px 16px;border:1px solid #ddd;border-radius:16px;background:rgba(255,255,255,.94);box-shadow:0 12px 35px rgba(0,0,0,.10);backdrop-filter:blur(10px);transition:transform .28s ease}
+/* The SBI model's panel face is 325 px wide with a soft 12/35 shadow. */
+body:not(.e002-shared) #ui{box-sizing:border-box;width:325px!important;top:18px;left:18px;padding:16px;border:1px solid #ddd;border-radius:16px;background:rgba(255,255,255,.94);box-shadow:0 12px 35px rgba(0,0,0,.10)!important;backdrop-filter:blur(10px);transition:transform .28s ease}
 body:not(.e002-shared).episode-panel-collapsed #ui{transform:translateX(calc(-100% - 18px));pointer-events:none}
-#episodePanelToggle{position:fixed;z-index:15;top:50px;left:359px;display:grid;place-items:center;width:16px;height:40px;padding:0;border:1px solid #d8d8d8;border-left:0;border-radius:0 7px 7px 0;background:rgba(255,255,255,.84);color:#999;font:400 17px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer;transition:left .28s ease,background .15s ease,color .15s ease}
+#episodePanelToggle{position:fixed;z-index:15;top:50px;left:342px;display:grid;place-items:center;width:16px;height:40px;padding:0;border:1px solid #d8d8d8;border-left:0;border-radius:0 7px 7px 0;background:rgba(255,255,255,.84);color:#999;font:400 17px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer;transition:left .28s ease,background .15s ease,color .15s ease}
 #episodePanelToggle:is(:hover,:focus-visible){background:#f5f5f5;color:#555}
 html.mini-scene #episodePanelToggle{display:none}
 body.episode-panel-collapsed #episodePanelToggle{left:0}
-@media(max-width:760px){body:not(.e002-shared) #ui{width:calc(100vw - 36px)}#episodePanelToggle{left:calc(100vw - 18px)}}
+@media(max-width:760px){body:not(.e002-shared) #ui{width:calc(100vw - 36px)!important}#episodePanelToggle{left:calc(100vw - 18px)}}
 @media(prefers-reduced-motion:reduce){body:not(.e002-shared) #ui,#episodePanelToggle{transition:none}}
+/* The scene owns the unobscured area while the panel is open. */
+@media(min-width:761px){
+  body[class*="-shared"].episode-panel-collapsed #scene,
+  body[class*="-shared"].episode-panel-collapsed [id$="ScreenLabels"]{left:0!important}
+  body[class*="-shared"] #scene,
+  body[class*="-shared"] [id$="ScreenLabels"]{transition:left .28s ease}
+}
 .episode-neighbors{display:flex;align-items:center;justify-content:space-between;margin:5px 2px 0;font:600 9px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .episode-neighbors a{padding:4px 5px;border-radius:4px;color:#8a7b5d;text-decoration:none;transition:background .16s,color .16s}
 .episode-neighbors a:hover,.episode-neighbors a:focus-visible{background:#fff3d2;color:#654a0c}

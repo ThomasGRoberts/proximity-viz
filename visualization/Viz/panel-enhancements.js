@@ -209,7 +209,8 @@ installPanelEnhancements();
 
 // SBI's disclosure tab remains outside the scrolling panel so it is usable
 // after the panel is hidden. E-002 has the same tab in its own panel shell.
-if (!document.body.classList.contains("e002-shared") && !document.getElementById("episodePanelToggle")) {
+const panelEpisode = new URLSearchParams(location.search).get("asset") || new URLSearchParams(location.search).get("episode");
+if (panelEpisode !== "E-001" && !document.body.classList.contains("e002-shared") && !document.getElementById("episodePanelToggle")) {
   const button = document.createElement("button");
   button.id = "episodePanelToggle";
   button.type = "button";

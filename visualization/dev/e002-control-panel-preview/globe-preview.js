@@ -188,7 +188,8 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   function resize() {
     const width = Math.max(1, mount.clientWidth), height = Math.max(1, mount.clientHeight);
     camera.aspect = width / height;
-    if (width > 620 || options.tableMini) camera.setViewOffset(width, height, width > 620 ? -Math.min(165, width * .14) : 0,
+    const panelVisible = !document.body.classList.contains("ui-collapsed");
+    if (options.tableMini || (width > 620 && panelVisible)) camera.setViewOffset(width, height, width > 620 && panelVisible ? -Math.min(165, width * .14) : 0,
       options.tableMini ? Math.max(0, height / 2 - Math.min(240, height * .36)) : 0, width, height);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();
@@ -200,6 +201,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     for (const marker of Object.values(markers)) marker.scale.set(markerScale, markerScale, 1);
   }
   new ResizeObserver(resize).observe(mount);
+  new MutationObserver(resize).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   resize();
 
   const eciVector = point => new THREE.Vector3(point.x, point.y, point.z);

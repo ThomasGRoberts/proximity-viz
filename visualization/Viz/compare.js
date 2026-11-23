@@ -2437,7 +2437,8 @@ $("captureViewBtn").addEventListener("click", async () => {
 // Keep the 3D view beside the panel and the right size when the window is resized.
 function updateRendererLayout() {
   const desktop = innerWidth > 760;
-  const panelEdge = chapterMode.get("mini") === "1" ? 0 : desktop ? Math.ceil($("ui").getBoundingClientRect().right + 18) : 0;
+  const panelHidden = document.body.classList.contains("ui-collapsed") || document.body.classList.contains("episode-panel-collapsed");
+  const panelEdge = chapterMode.get("mini") === "1" || panelHidden ? 0 : desktop ? Math.ceil($("ui").offsetLeft + $("ui").offsetWidth + 18) : 0;
   // Render underneath the panel instead of ending the orbit at the canvas edge.
   // Offset the optical center so the visible scene keeps its previous framing.
   renderer.domElement.style.left = "0px";
@@ -2450,6 +2451,7 @@ function updateRendererLayout() {
   chartDirty = true; drawEpisodeCharts();
 }
 addEventListener("resize", updateRendererLayout);
+new MutationObserver(updateRendererLayout).observe(document.body, { attributes: true, attributeFilter: ["class"] });
 updateRendererLayout();
 
 
