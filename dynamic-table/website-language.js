@@ -154,6 +154,19 @@ function renderContributors(host, cell) {
     item.append(link); list.append(item);
   }
   host.replaceChildren(list);
+  const namesLine = host.closest(".contributors")?.querySelector("[data-espl-contributor-names]");
+  if (namesLine) {
+    const parts = document.createDocumentFragment();
+    names.forEach((name, index) => {
+      if (index) parts.append(document.createTextNode(index === names.length - 1 ? (names.length > 2 ? ", and " : " and ") : ", "));
+      if (key(name) === key(THOMAS)) { parts.append(document.createTextNode(THOMAS)); return; }
+      const link = document.createElement("a");
+      link.href = `https://espl.ae.gatech.edu/people/#${profileAnchors[key(name)] || key(name).replace(/[^a-z0-9]+/g, "-")}`;
+      link.textContent = name;
+      parts.append(link);
+    });
+    namesLine.replaceChildren(parts);
+  }
 }
 
 try {

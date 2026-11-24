@@ -42,9 +42,11 @@
   style.textContent = `
     #espl-people-page #studentOverlay .profile-head .profile-photo{flex:0 0 var(--espl-student-photo-size,218px)!important;width:var(--espl-student-photo-size,218px)!important;height:var(--espl-student-photo-size,218px)!important}
     #espl-people-page #studentOverlay .profile-head{align-items:stretch}
-    #espl-people-page #studentOverlay .profile-head-copy{display:flex;flex-direction:column;align-items:flex-start;min-height:var(--espl-student-photo-size,218px)}
+    #espl-people-page #studentOverlay .profile-head-copy{display:flex;flex-direction:column;align-items:flex-start;min-height:var(--espl-student-photo-size,218px);padding-top:36px}
     #espl-people-page #studentOverlay .espl-student-socials{display:flex;gap:9px;margin:auto 0 0;padding:14px 0 0;list-style:none}
     #espl-people-page #studentOverlay .espl-student-socials li{margin:0;padding:0;list-style:none}
+    #espl-people-page #studentOverlay .student-bio a,#espl-people-page #studentOverlay .student-bio a:visited,#espl-people-page #studentOverlay .student-bio a:hover,#espl-people-page #studentOverlay .student-bio a:focus-visible{color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px}
+    @media(max-width:700px){#espl-people-page #studentOverlay .profile-head-copy{padding-top:6px}}
   `;
   root.prepend(style);
 

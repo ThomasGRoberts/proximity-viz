@@ -2,9 +2,10 @@
    Special cards are reconciled after the page's own archive renderer runs. */
 (() => {
   const slug = document.currentScript?.dataset.esplProject;
-  if (!['sbi', 'proximity'].includes(slug)) return;
+  if (!['sbi', 'proximity', 'lunar'].includes(slug)) return;
   const projectRoot = document.getElementById('espl-project-page');
-  if (!projectRoot) return;
+  if (!projectRoot || projectRoot.dataset.esplProjectUpdates === 'ready') return;
+  projectRoot.dataset.esplProjectUpdates = 'ready';
 
   const styles = document.createElement('style');
   styles.textContent = `
@@ -22,6 +23,7 @@
     #espl-project-page .project-person:hover strong,#espl-project-page .project-person:focus-visible strong{text-decoration:none!important}
     #espl-project-page .project-person span{margin-top:10px!important;color:#333!important;font-size:12px!important;line-height:1.4!important;white-space:pre-line!important}
     ` : ''}
+    #espl-project-page .project-publications:not([data-espl-publications-ready="true"]){visibility:hidden}
     #espl-project-page .espl-special-card{grid-template-columns:minmax(0,1fr) minmax(400px,41%)}
     #espl-project-page .espl-special-card .model-output-media{display:flex;align-items:center;justify-content:flex-start;gap:0;min-height:90px;padding:16px 12px}
     #espl-project-page .espl-special-card .model-polyhedron-link,
@@ -55,8 +57,8 @@
   const rowField = (row, name) => String(row?.[name] || '').trim();
   const typeOf = row => rowField(row, 'Type').toLowerCase();
   const special = row => /^(model|data repository)$/.test(typeOf(row));
-  const archiveURL = 'https://docs.google.com/spreadsheets/d/1eW3y9Rsp1vj4Jop-LcUEFNGY-7c2FZzXHDOzUpAGl-o/gviz/tq?tqx=out:json&gid=1886090417';
-  const projectName = slug === 'sbi' ? 'Space-based Interceptors and Strategic Stability' : 'How Close is Too Close';
+  const publicationsCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN6Pc85vfaqu_XEU4MQC9HTGckmU9k5AXtSXuy8iOp5uPUcOrbJdI1Lmklqtqp4IpAdQoO3TtrEZuR/pub?output=csv';
+  const projectName = {sbi:'Space-based Interceptors and Strategic Stability',proximity:'How Close is Too Close',lunar:'Lunar Surface Coordination'}[slug];
   const tableIcon = () => `
     <svg class="espl-table-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
       <rect x="8" y="9" width="32" height="8" rx="2" fill="#edcc73"/>
@@ -127,156 +129,194 @@
     draw();
   }
 
-  function makeSpecialCard(row) {
-    const model = typeOf(row) === 'model', href = rowField(row,'URL'), title = rowField(row,'Title');
-    const detail = model
-      ? slug === 'sbi' ? 'Explore how different missile threats shape the interceptor constellations needed for boost-phase defense.' : 'See and understand the inter-spacecraft dynamics of satellite proximity episodes that have concerned state actors in recent history'
-      : 'Browse documented satellite proximity episodes, orbital reconstructions, and linked source records.';
-    const card = document.createElement('article');
-    card.className = `knowledge-output-card model-card espl-special-card ${model?'archive-model-card':'data-repository-card'} is-clickable`;
-    card.dataset.archiveType = model ? 'model' : 'data-repository';
-    const main=document.createElement('div');main.className='knowledge-output-main';
+  const authorPhoto = {
+    'dayana alagirova':['dayana-alagirova','https://sites.gatech.edu/thomas-test-website/files/2026/10/DayanaAlagirova_yellow.jpg'],
+    'kate futrowsky':['kate-futrowsky','https://sites.gatech.edu/thomas-test-website/files/2026/01/KateFutrowsky_yellow.jpg'],
+    'willa madsen':['willa-madsen','https://sites.gatech.edu/thomas-test-website/files/2026/09/WillaMadsen_yellow.jpg'],
+    'pradosh sivaramkumar':['pradosh-sivaramkumar','https://sites.gatech.edu/thomas-test-website/files/2026/09/PradoshSivaramkumar_yellow.jpg'],
+    'thomas g. roberts':['biography','https://sites.gatech.edu/thomas-test-website/files/2026/01/ThomasGonzalezRoberts_yellow.jpg'],
+    'thomas gonzález roberts':['biography','https://sites.gatech.edu/thomas-test-website/files/2026/01/ThomasGonzalezRoberts_yellow.jpg'],
+    'fernando miranda españa':['fernando-miranda-espana','https://sites.gatech.edu/thomas-test-website/files/2026/09/FernandoMirandaEspana_yellow.jpg'],
+    "nathan o'brien":['nathan-obrien','https://sites.gatech.edu/thomas-test-website/files/2026/07/NathanOBrien_yellow.png'],
+    'john jozsa':['john-jozsa','https://sites.gatech.edu/thomas-test-website/files/2026/09/JohnJozsa_yellow.jpg'],
+  };
+  const safeURL = raw => { try { const url = new URL(String(raw || '').trim()); return /^https?:$/.test(url.protocol) ? url.href : ''; } catch { return ''; } };
+  const projectKey = value => String(value || '').normalize('NFKD').replace(/\p{M}/gu,'').trim().toLowerCase();
+  const projectMatch = row => rowField(row,'Project(s)').split(/[,;\n]/).some(name => projectKey(name) === projectKey(projectName));
+  const dateNumber = raw => {
+    const value = String(raw || '').trim();
+    const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value);
+    if (m) return Date.UTC(Number(m[3]), Number(m[1])-1, Number(m[2]));
+    const n = Date.parse(value);
+    return Number.isFinite(n) ? n : -Infinity;
+  };
+  const formattedDate = raw => {
+    const time = dateNumber(raw);
+    return Number.isFinite(time) ? new Intl.DateTimeFormat('en-US',{timeZone:'UTC',year:'numeric',month:'long',day:'numeric'}).format(time) : String(raw || '').trim();
+  };
+  const externalIcon = () => '<span class="external-link-icon" aria-hidden="true"><svg viewBox="0 0 18 18"><path class="external-link-icon__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><g class="external-link-icon__arrow"><path d="M9.25 2.75h6v6"/><path d="m8 10 7.25-7.25"/></g></svg></span>';
+  const documentIcon = '<svg viewBox="0 0 24 24"><path d="M6.5 3.5h8l3 3v14h-11z"/><path d="M14.5 3.5v3h3"/><path d="M9.5 11h5M9.5 14h5M9.5 17h3.5"/></svg>';
+  function parseCSV(text) {
+    const rows=[]; let row=[],cell='',quoted=false;
+    for(let i=0;i<text.length;i++){
+      const ch=text[i];
+      if(ch==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++}else quoted=!quoted}
+      else if(!quoted&&ch===','){row.push(cell);cell=''}
+      else if(!quoted&&(ch==='\n'||ch==='\r')){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(value=>value.trim()))rows.push(row);row=[];cell=''}
+      else cell+=ch;
+    }
+    row.push(cell);if(row.some(value=>value.trim()))rows.push(row);
+    const [headers,...values]=rows;
+    if (!headers || !['Title','Authors','Date','Type','URL','Project(s)','Featured'].every(name=>headers.includes(name))) throw new Error('Publications sheet headers changed');
+    return values.map((cells,index)=>({...Object.fromEntries(headers.map((name,i)=>[name.trim(),cells[i]||''])),_sheetOrder:index}));
+  }
+  function categoryNode(row) {
     const category=document.createElement('p');category.className='knowledge-slide__category';
-    const categoryIcon=document.createElement('span');categoryIcon.className='knowledge-slide__category-icon';categoryIcon.setAttribute('aria-hidden','true');
-    categoryIcon.innerHTML=model?'<svg viewBox="0 0 24 24"><path d="M4 3.5 19 12l-7 1.2-2.5 6.3z"/><path d="m12 13.2 3.4 6"/></svg>':'<svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M3.5 14h17M9 9v11M15 9v11"/></svg>';
-    category.append(categoryIcon,document.createTextNode(model?'Interactive model':'Data repository'));
-    const heading=document.createElement('h3');heading.className='knowledge-slide__title';
-    const headingLink=document.createElement('a');headingLink.className='knowledge-slide__title-link';headingLink.href=href;headingLink.textContent=title;heading.append(headingLink);
+    const icon=document.createElement('span');icon.className='knowledge-slide__category-icon';icon.setAttribute('aria-hidden','true');
+    icon.innerHTML=typeOf(row)==='model'?'<svg viewBox="0 0 24 24"><path d="M4 3.5 19 12l-7 1.2-2.5 6.3z"/><path d="m12 13.2 3.4 6"/></svg>':typeOf(row)==='data repository'?'<svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M3.5 14h17M9 9v11M15 9v11"/></svg>':documentIcon;
+    const label=typeOf(row)==='model'?'Interactive model':rowField(row,'Type');
+    category.append(icon,document.createTextNode(label));return category;
+  }
+  function summaryNode(row,href) {
     const summary=document.createElement('div');summary.className='knowledge-slide__summary';
-    const description=document.createElement('p');description.textContent=detail;summary.append(description);
-    main.append(category,heading,summary);card.append(main);
-    const media=document.createElement('div');media.className='knowledge-output-media model-output-media';
-    const iconLink=document.createElement('a');iconLink.href=href;iconLink.className=model?'model-polyhedron-link':'espl-table-icon-link';
-    iconLink.setAttribute('aria-label',model?'Explore the interactive model':'Explore the data');
-    if(model){const canvas=document.createElement('canvas');canvas.className='model-polyhedron-canvas';canvas.setAttribute('aria-hidden','true');iconLink.append(canvas);mountPolyhedron(canvas)}
-    else iconLink.innerHTML=tableIcon();
-    const action=document.createElement('a');action.href=href;action.className='model-text-link';
-    const label=document.createElement('span');label.className='model-link-label-text';label.textContent=model?'Explore the interactive model':'Explore the data';
-    const arrow=document.createElement('span');arrow.className='model-link-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='→';
-    action.append(label,arrow);media.append(iconLink,action);card.append(media);
+    const meta=[rowField(row,'Publication or Venue'),rowField(row,'Authors')].filter(Boolean);
+    if(meta.length){const p=document.createElement('p');p.textContent=meta.join(' · ');summary.append(p)}
+    const date=rowField(row,'Date');
+    if(date){const link=document.createElement('a');link.className='external-metadata-link';link.href=href;link.textContent=formattedDate(date);link.insertAdjacentHTML('beforeend',externalIcon());summary.append(link)}
+    return summary;
+  }
+  function portraitsNode(row) {
+    const names=rowField(row,'Authors').replace(/,?\s+and\s+/gi,',').split(',').map(name=>name.trim()).filter(Boolean);
+    const people=document.createElement('div');people.className='knowledge-slide__people';people.dataset.authorCount=String(names.length);
+    const holder=document.createElement('div');holder.className='knowledge-person-row';
+    for(const name of names){
+      const info=authorPhoto[name.toLowerCase()];
+      if(!info)continue;
+      const a=document.createElement('a');a.className='knowledge-person';a.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;a.title=name;
+      const img=document.createElement('img');img.className='knowledge-person__photo';img.src=info[1];img.alt=name;img.loading='lazy';a.append(img);holder.append(a);
+    }
+    if(!holder.childElementCount)return null;
+    people.append(holder);return people;
+  }
+  function makeCard(row) {
+    const href=safeURL(rowField(row,'URL')),isSpecial=special(row),model=typeOf(row)==='model';
+    if(!href)return null;
+    const card=document.createElement('article');
+    card.className=`knowledge-output-card ${isSpecial?'model-card espl-special-card '+(model?'archive-model-card':'data-repository-card'):'publication-card'} is-clickable`;
+    card.dataset.publicationSource='published-sheet';
+    if(isSpecial)card.dataset.archiveType=model?'model':'data-repository';
+    const main=document.createElement('div');main.className='knowledge-output-main';
+    const title=document.createElement('h3');title.className='knowledge-slide__title';
+    const titleLink=document.createElement('a');titleLink.className='knowledge-slide__title-link';titleLink.href=href;titleLink.textContent=rowField(row,'Title');title.append(titleLink);
+    main.append(categoryNode(row),title,summaryNode(row,href));card.append(main);
+    if(isSpecial){
+      const media=document.createElement('div');media.className='knowledge-output-media model-output-media';
+      const iconLink=document.createElement('a');iconLink.href=href;iconLink.className=model?'model-polyhedron-link':'espl-table-icon-link';
+      iconLink.setAttribute('aria-label',model?'Explore the interactive model':'Explore the data');
+      if(model){const canvas=document.createElement('canvas');canvas.className='model-polyhedron-canvas';canvas.setAttribute('aria-hidden','true');iconLink.append(canvas);mountPolyhedron(canvas)}
+      else iconLink.innerHTML=tableIcon();
+      const action=document.createElement('a');action.href=href;action.className='model-text-link';
+      const label=document.createElement('span');label.className='model-link-label-text';label.textContent=model?'Explore the interactive model':'Explore the data';
+      const arrow=document.createElement('span');arrow.className='model-link-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='→';
+      action.append(label,arrow);media.append(iconLink,action);card.append(media);
+    } else {
+      const portraits=portraitsNode(row);
+      if(portraits){const media=document.createElement('div');media.className='knowledge-output-media';media.append(portraits);card.dataset.portraits=portraits.querySelectorAll('img').length;card.append(media)}
+      else card.classList.add('no-portraits');
+    }
     card.addEventListener('click',event=>{if(event.target.closest('a,button')||String(getSelection()||''))return;location.href=href});
     return card;
   }
-
-  function installHeroAction() {
-    const frame=projectRoot.querySelector('.espl-proximity-banner-embed iframe');
-    if(!frame) return;
-    const apply=()=>{
-      let doc;try{doc=frame.contentDocument}catch{return}
-      const banner=doc?.querySelector('main.banner');if(!banner)return;
-      const placeLink=link=>{
-        // The published WordPress block may still load an earlier copy first.
-        // Position its existing link against the visible portion of the banner.
-        frame._esplHeroPositionCleanup?.();
-        const parentView=frame.ownerDocument.defaultView;
-        const position=()=>{
-          const frameRect=frame.getBoundingClientRect();
-          let visibleBottom=parentView.visualViewport?.height||parentView.innerHeight;
-          if(parentView.frameElement){
-            const hostRect=parentView.frameElement.getBoundingClientRect();
-            visibleBottom=Math.min(visibleBottom,parentView.parent.innerHeight-hostRect.top);
-          }
-          const top=Math.max(10,Math.min(frameRect.height-56,visibleBottom-frameRect.top-56));
-          link.style.setProperty('left','var(--title-left,max(28px,calc((100% - 1080px)/2 + 28px)))','important');
-          link.style.setProperty('top',`${top}px`,'important');
-          link.style.setProperty('bottom','auto','important');
-          link.style.setProperty('display','flex','important');
-        };
-        parentView.addEventListener('scroll',position,{passive:true});
-        parentView.addEventListener('resize',position);
-        parentView.visualViewport?.addEventListener('resize',position);
-        if(parentView.frameElement){parentView.parent.addEventListener('scroll',position,{passive:true});parentView.parent.addEventListener('resize',position)}
-        frame._esplHeroPositionCleanup=()=>{
-          parentView.removeEventListener('scroll',position);
-          parentView.removeEventListener('resize',position);
-          parentView.visualViewport?.removeEventListener('resize',position);
-          if(parentView.frameElement){parentView.parent.removeEventListener('scroll',position);parentView.parent.removeEventListener('resize',position)}
-        };
-        position();
-      };
-      const existing=doc.getElementById('espl-proximity-table-link');
-      if(existing){placeLink(existing);return}
-      const style=doc.createElement('style');style.textContent=`
-        .espl-table-hero-link{position:absolute;left:var(--title-left,max(28px,calc((100% - 1080px)/2 + 28px)));bottom:10px;z-index:3;display:flex;align-items:center;width:46px;height:46px;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);pointer-events:none;transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
-        .espl-table-hero-link.is-arrived{visibility:visible;opacity:1;transform:translateY(0);pointer-events:auto}
-        .espl-table-hero-icon{position:relative;z-index:2;width:46px;height:46px;flex:0 0 46px}
-        .espl-table-hero-icon svg{position:absolute;top:-6px;left:-6px;display:block;width:58px;height:58px;opacity:.9;transition:opacity .24s ease}
-        .espl-table-hero-icon .table-scan{opacity:.25;transform:translateY(0)}
-        .espl-table-hero-link.is-open .table-scan{opacity:.8;animation:espl-table-scan-bounce 1.15s ease-in-out 1}
-        .espl-table-hero-label{position:absolute;top:0;left:46px;height:46px;display:flex;align-items:center;white-space:nowrap;padding-left:10px;opacity:0;clip-path:inset(0 100% 0 0);color:#666;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(11px,1.05vw,15px);font-weight:400;line-height:normal;transition:clip-path .5s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
-        .espl-table-hero-link:is(.is-open,:hover,:focus-visible) .espl-table-hero-label{opacity:1;clip-path:inset(0)}
-        .espl-table-hero-link:focus-visible{outline:2px solid rgba(180,145,35,.9);outline-offset:4px}
-        .espl-table-hero-link.is-nudging .espl-table-hero-label{animation:espl-data-link-nudge .7s ease}
-        @keyframes espl-data-link-nudge{0%,100%{transform:translateX(0)}45%{transform:translateX(4px)}70%{transform:translateX(-1px)}}
-        @keyframes espl-table-scan-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(25px)}}
-        @media(max-aspect-ratio:1.2/1){.espl-table-hero-label{font-size:13px}}
-        @media(max-width:767px){.espl-table-hero-link{display:none}}
-        @media(prefers-reduced-motion:reduce){.espl-table-hero-link,.espl-table-hero-label,.espl-table-hero-icon .table-scan{animation:none!important;transition:none!important}}
+  let featuredRow=null;
+  const frames=()=>[...projectRoot.querySelectorAll('.espl-sbi-banner-embed iframe,.espl-sbi-mobile-cta iframe,.espl-proximity-banner-embed iframe,.moon-banner-embed iframe')];
+  function updateHeroFrame(frame) {
+    let doc;try{doc=frame.contentDocument}catch{return}
+    if(!doc?.body)return;
+    for(const old of doc.querySelectorAll('.model-link,#espl-proximity-table-link')) old.remove();
+    doc.getElementById('espl-featured-hero-link')?.remove();
+    if(!featuredRow)return;
+    const href=safeURL(rowField(featuredRow,'URL'));if(!href)return;
+    const model=typeOf(featuredRow)==='model',repository=typeOf(featuredRow)==='data repository';
+    const label=model?'Explore the interactive model':repository?'Explore the data':'Read the publication';
+    const banner=doc.querySelector('main.banner,.banner')||doc.body;
+    if(!doc.getElementById('espl-featured-hero-style')){
+      const style=doc.createElement('style');style.id='espl-featured-hero-style';style.textContent=`
+        #espl-featured-hero-link{position:absolute;left:var(--title-left,28px);bottom:10px;z-index:9;display:flex;align-items:center;min-width:46px;height:46px;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
+        #espl-featured-hero-link.is-arrived{visibility:visible;opacity:1;transform:translateY(0)}
+        #espl-featured-hero-link .featured-icon{display:grid;place-items:center;width:46px;height:46px;flex:none}
+        #espl-featured-hero-link .featured-icon :is(svg,canvas){display:block;width:46px;height:46px}
+        #espl-featured-hero-link .featured-icon .table-scan{opacity:.25}
+        #espl-featured-hero-link:is(:hover,:focus-visible) .table-scan{opacity:.8;animation:espl-featured-scan 1.15s ease-in-out 1}
+        #espl-featured-hero-link .featured-label{max-width:350px;margin-left:10px;white-space:nowrap;opacity:0;clip-path:inset(0 100% 0 0);color:#666;font:400 clamp(11px,1.05vw,15px)/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;transition:clip-path .5s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
+        #espl-featured-hero-link:is(:hover,:focus-visible,.is-open) .featured-label{opacity:1;clip-path:inset(0)}
+        #espl-featured-hero-link:focus-visible{outline:2px solid rgba(180,145,35,.9);outline-offset:4px}
+        @keyframes espl-featured-scan{0%,100%{transform:translateY(0)}50%{transform:translateY(25px)}}
+        @media(max-width:767px){#espl-featured-hero-link:not(.is-mobile-cta){display:none}}
+        @media(prefers-reduced-motion:reduce){#espl-featured-hero-link,#espl-featured-hero-link .featured-label,#espl-featured-hero-link .table-scan{animation:none!important;transition:none!important}}
       `;doc.head.append(style);
-      const link=doc.createElement('a');link.id='espl-proximity-table-link';link.className='espl-table-hero-link';
-      link.href='https://espl.ae.gatech.edu/research/tables/proximity';link.target='_top';
-      link.setAttribute('aria-label','Explore the data');
-      link.innerHTML=`<span class="espl-table-hero-icon" aria-hidden="true">${tableIcon()}</span><span class="espl-table-hero-label">Explore the data&nbsp; →</span>`;
-      banner.append(link);
-      placeLink(link);
-      const reduced=doc.defaultView.matchMedia('(prefers-reduced-motion: reduce)');let open=false;
-      const reveal=()=>{if(!open){open=true;link.classList.add('is-open')}};
-      const retract=()=>{if(open&&!link.matches(':hover')&&doc.activeElement!==link){open=false;link.classList.remove('is-open')}};
-      link.addEventListener('mouseenter',reveal);link.addEventListener('focusin',reveal);
-      link.addEventListener('mouseleave',retract);link.addEventListener('focusout',retract);
-      doc.defaultView.setTimeout(()=>{link.classList.add('is-arrived');if(reduced.matches)return;doc.defaultView.setTimeout(()=>{reveal();doc.defaultView.setTimeout(retract,2600)},700)},1100);
-      doc.defaultView.setInterval(()=>{if(open||reduced.matches||doc.hidden)return;link.classList.add('is-nudging');reveal();doc.defaultView.setTimeout(()=>{link.classList.remove('is-nudging');retract()},2200)},18000);
+    }
+    const link=doc.createElement('a');link.id='espl-featured-hero-link';link.href=href;link.target='_top';link.setAttribute('aria-label',label);
+    if(frame.closest('.espl-sbi-mobile-cta')){link.classList.add('is-mobile-cta');link.style.top='10px';link.style.bottom='auto';link.style.left='6px'}
+    const icon=doc.createElement('span');icon.className='featured-icon';icon.setAttribute('aria-hidden','true');
+    if(model){const canvas=doc.createElement('canvas');canvas.className='model-polyhedron-canvas';icon.append(canvas);mountPolyhedron(canvas)}
+    else if(repository)icon.innerHTML=tableIcon();
+    else icon.innerHTML=documentIcon;
+    const text=doc.createElement('span');text.className='featured-label';text.textContent=`${label}  →`;
+    link.append(icon,text);banner.append(link);
+    const position=()=>{
+      if(frame.closest('.espl-sbi-mobile-cta'))return;
+      const rect=frame.getBoundingClientRect();
+      let bottom=window.visualViewport?.height||window.innerHeight;
+      if(window.frameElement){const outer=window.frameElement.getBoundingClientRect();bottom=Math.min(bottom,window.parent.innerHeight-outer.top)}
+      link.style.top=`${Math.max(10,Math.min(rect.height-56,bottom-rect.top-56))}px`;
+      link.style.bottom='auto';
     };
-    frame.addEventListener('load',apply);
-    if(frame.contentDocument?.readyState==='complete') apply();
+    position();
+    frame._esplHeroCleanup?.();
+    window.addEventListener('scroll',position,{passive:true});window.addEventListener('resize',position);
+    frame._esplHeroCleanup=()=>{window.removeEventListener('scroll',position);window.removeEventListener('resize',position)};
+    link.classList.add('is-arrived');
   }
-
+  function installHeroAction(row) {
+    featuredRow=row;
+    for(const frame of frames()){
+      if(!frame.dataset.esplFeaturedBound){frame.dataset.esplFeaturedBound='true';frame.addEventListener('load',()=>updateHeroFrame(frame))}
+      updateHeroFrame(frame);
+    }
+  }
   async function installResearchCards() {
-    let records;
-    try {
-      const response=await fetch(archiveURL,{cache:'no-store'});
-      if(!response.ok) throw new Error(`Archive returned ${response.status}`);
-      const text=await response.text(),payload=JSON.parse(text.slice(text.indexOf('{'),text.lastIndexOf('}')+1));
-      if(payload.status!=='ok') throw new Error('Archive query failed');
-      records=payload.table.rows.map(row=>Object.fromEntries(payload.table.cols.map((column,i)=>[column.label,row.c?.[i]?.f??row.c?.[i]?.v??''])));
-    } catch(error){console.warn('Special project cards could not load from the publications archive.',error);return}
-    const rows=records.filter(row=>special(row)&&rowField(row,'Project(s)').split(/[,;]/).some(name=>name.trim().toLowerCase()===projectName.toLowerCase()))
-      .sort((a,b)=>(typeOf(a)==='data repository'?0:1)-(typeOf(b)==='data repository'?0:1));
-    if(!rows.length) return;
-    const cards=rows.map(makeSpecialCard),urls=new Set(rows.map(row=>rowField(row,'URL').replace(/\/$/,''))),titles=new Set(rows.map(row=>rowField(row,'Title').toLowerCase()));
-    const container=projectRoot.querySelector('.project-publications');if(!container)return;
+    const container=projectRoot.querySelector('.project-publications');
+    if(!container)return;
+    let desired=[];
     let queued=false;
     const reconcile=()=>{
-      queued=false;
-      for(const card of [...container.children]){
-        if(card.classList.contains('espl-special-card')) continue;
-        const link=card.querySelector('.knowledge-slide__title-link'),url=link?.href?.replace(/\/$/,'')||'',title=card.querySelector('.knowledge-slide__title')?.textContent?.trim().toLowerCase()||'';
-        const category=card.querySelector('.knowledge-slide__category,.knowledge-output-category,.knowledge-slide__eyebrow')?.textContent?.trim().toLowerCase()||'';
-        // Older page blocks contain a hand-written model card. Once the live
-        // archive supplies that card, keep only the archive-driven version.
-        if(urls.has(url)||titles.has(title)||/^(interactive )?model$|^data repository$/.test(category)) card.remove();
-      }
-      if(cards.some((card,index)=>container.children[index]!==card)) container.prepend(...cards);
-      alignIcons();
+      if(desired.length!==container.children.length||desired.some((node,index)=>container.children[index]!==node))container.replaceChildren(...desired);
+      const group=container.closest('.project-publications-group');if(group)group.hidden=!desired.length;
     };
-    const alignIcons=()=>{
-      const portrait=container.querySelector('.publication-card .knowledge-person__photo');
-      if(!portrait)return;
-      const targetLeft=portrait.getBoundingClientRect().left;
-      for(const media of container.querySelectorAll('.espl-special-card .model-output-media')){
-        media.style.translate='';
-        const icon=media.querySelector('.model-polyhedron-link, .espl-table-icon-link');
-        if(!icon)continue;
-        const delta=targetLeft-icon.getBoundingClientRect().left;
-        media.style.translate=`${Math.round(delta)}px 0`;
-      }
-    };
-    window.addEventListener('resize',alignIcons,{passive:true});
-    new MutationObserver(()=>{if(!queued){queued=true;requestAnimationFrame(reconcile)}}).observe(container,{childList:true});
+    new MutationObserver(()=>{if(!queued){queued=true;queueMicrotask(()=>{queued=false;reconcile()})}}).observe(container,{childList:true});
+    container.removeAttribute('data-espl-publications-ready');
+    container.replaceChildren();
+    installHeroAction(null);
+    let records;
+    try{
+      const response=await fetch(`${publicationsCSV}&refresh=${Date.now()}`,{cache:'no-store',credentials:'omit'});
+      if(!response.ok)throw new Error(`Publications sheet returned ${response.status}`);
+      records=parseCSV(await response.text());
+    }catch(error){
+      console.warn('Project research updates could not load from the published Publications sheet.',error);
+      const notice=document.createElement('p');notice.textContent='Research updates are temporarily unavailable.';desired=[notice];reconcile();
+      container.dataset.esplPublicationsReady='true';
+      return;
+    }
+    const relevant=records.filter(row=>projectMatch(row)&&safeURL(rowField(row,'URL'))&&rowField(row,'Title'));
+    const byDate=(a,b)=>dateNumber(rowField(b,'Date'))-dateNumber(rowField(a,'Date'))||a._sheetOrder-b._sheetOrder;
+    const featured=relevant.filter(row=>/^(true|yes|1)$/i.test(rowField(row,'Featured'))).sort(byDate)[0]||null;
+    const ordered=[...(featured?[featured]:[]),...relevant.filter(row=>row!==featured).sort(byDate)];
+    desired=ordered.map(makeCard).filter(Boolean);
     reconcile();
+    container.dataset.esplPublicationsReady='true';
+    installHeroAction(featured);
   }
-
-  if(slug==='proximity') installHeroAction();
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>installResearchCards(),{once:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installResearchCards,{once:true});
   else installResearchCards();
 })();

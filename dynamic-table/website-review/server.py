@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
+import re
 from pathlib import Path
 import tempfile
 from urllib.parse import urlsplit
@@ -109,10 +110,16 @@ class Handler(SimpleHTTPRequestHandler):
                     html = source.read().decode("utf-8", "replace")
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
                 addon = ""
-                if slug in {"sbi", "proximity", "research"}:
-                    script_name = "project-page-updates.js" if slug in {"sbi", "proximity"} else "research-page-updates.js"
-                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=9'
-                    addon += f'<script src="{local_script}" data-espl-project="{slug}"></script>'
+                if slug in {"sbi", "proximity", "lunar"}:
+                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=10'
+                    html, replaced = re.subn(
+                        r'https://thomasgroberts\.github\.io/proximity-viz/dynamic-table/website-review/project-page-updates\.js(?:\?v=\d+)?',
+                        local_script, html,
+                    )
+                    if not replaced:
+                        addon += f'<script src="{local_script}" data-espl-project="{slug}"></script>'
+                if slug == "research":
+                    addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/research-page-updates.js?v=9"></script>'
                 if slug == "lunar":
                     local_block = (HERE / "lunar-project-embed-snippet.html").read_text(encoding="utf-8")
                     addon += "<style>" + local_block.split("<style>", 1)[1].split("</style>", 1)[0] + "</style>"
