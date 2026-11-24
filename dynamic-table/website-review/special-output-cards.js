@@ -10,7 +10,8 @@
     #espl-area-page .project-publications .publication-card .knowledge-slide__people{width:100%!important;max-width:none!important}
     #espl-area-page .project-publications .publication-card .knowledge-person-row{display:flex!important;flex-wrap:nowrap!important;justify-content:flex-start!important;gap:8px!important;width:100%!important}
     #espl-area-page .project-publications .publication-card .knowledge-person__photo{width:70px!important;height:70px!important;flex:0 0 70px!important}
-    #espl-area-page .espl-author-overflow{display:grid;place-items:center;flex:0 0 70px;width:70px;height:70px;border-radius:50%;background:#e8e5df;color:#555;font-weight:700}
+    #espl-area-page .project-publications .knowledge-slide__category{margin-bottom:.88rem!important}
+    #espl-area-page .espl-author-overflow{display:grid!important;place-items:center!important;flex:0 0 70px!important;width:70px!important;height:70px!important;box-sizing:border-box!important;margin:0!important;padding:0!important;border:5px solid #fff!important;border-radius:50%!important;background:#c7c7c7!important;color:#353535!important;font-weight:700!important;line-height:1!important;text-align:center!important}
     #studentOverlay .espl-special-card .model-output-media, #espl-area-page .espl-special-card .model-output-media{display:flex;align-items:center!important;align-self:stretch;height:100%;box-sizing:border-box;justify-content:flex-start;gap:14px;min-height:90px;padding:16px}
     #studentOverlay .espl-special-card .model-polyhedron-link, #studentOverlay .espl-special-card .espl-table-icon-link,
     #espl-area-page .espl-special-card .model-polyhedron-link, #espl-area-page .espl-special-card .espl-table-icon-link{display:block;flex:0 0 76px;width:76px;height:76px;border-radius:8px;text-decoration:none!important}
@@ -33,6 +34,28 @@
     @media(prefers-reduced-motion:reduce){#studentOverlay .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan),#espl-area-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
   root.prepend(style);
+  if(root.id==='espl-area-page'){
+    const artVideo=root.querySelector('.area-intro__art video[crossorigin]');
+    if(artVideo){
+      artVideo.removeAttribute('crossorigin');artVideo.load();
+      const art=artVideo.closest('.area-intro__art');
+      let queued=false;
+      const syncArt=()=>{
+        queued=false;
+        if(!art||artVideo.readyState<1||!Number.isFinite(artVideo.duration)||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+        const rect=art.getBoundingClientRect(),top=rect.top+scrollY,vh=innerHeight||document.documentElement.clientHeight;
+        if(rect.bottom<0||rect.top>vh)return;
+        const start=Math.max(0,top-vh*.42),end=Math.max(start+1,top+rect.height*.85);
+        const target=Math.max(0,Math.min(1,(scrollY-start)/(end-start)))*Math.min(artVideo.duration*.92,12);
+        if(Math.abs(artVideo.currentTime-target)>.05&&!artVideo.seeking)artVideo.currentTime=target;
+      };
+      const scheduleArt=()=>{if(!queued){queued=true;requestAnimationFrame(syncArt)}};
+      artVideo.addEventListener('loadedmetadata',scheduleArt);
+      window.addEventListener('scroll',scheduleArt,{passive:true});
+      window.addEventListener('resize',scheduleArt);
+      scheduleArt();
+    }
+  }
   const tableIcon = () => `<svg class="espl-table-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="8" y="9" width="32" height="8" rx="2" fill="#edcc73"/><rect class="table-scan" x="8" y="19" width="32" height="8" rx="1" fill="#eaaa00" opacity=".34"/><path d="M8 17h32M8 28h32M8 39h32M20 17v22M30 17v22M8 17v22h32V17" fill="none" stroke="#76664b" stroke-width="1.3"/></svg>`;
   function mountPolyhedron(canvas) {
     if (typeof window.mountModelPolyhedron === 'function') {
@@ -154,7 +177,20 @@
     people.replaceChildren(row);media.replaceChildren(people);card.dataset.esplAuthorsAligned='true';
   }
   function update() {
-    if(root.id==='studentOverlay')return;
+    if(root.id==='studentOverlay'){
+      for(const card of root.querySelectorAll('.project-publications .knowledge-output-card')){
+        const category=card.querySelector('.knowledge-slide__category');
+        if(!category||category.dataset.esplSpecialEyebrow==='true')continue;
+        const kind=category.textContent.trim().toLowerCase();
+        if(!/^(interactive )?model$|^data repository$/.test(kind))continue;
+        const model=kind!=='data repository';
+        category.textContent=model?'Interactive model':'Data repository';
+        const icon=document.createElement('span');icon.className='knowledge-slide__category-icon';icon.setAttribute('aria-hidden','true');
+        icon.innerHTML=model?'<svg viewBox="0 0 24 24"><path d="M4 3.5 19 12l-7 1.2-2.5 6.3z"/><path d="m12 13.2 3.4 6"/></svg>':'<svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M3.5 14h17M9 9v11M15 9v11"/></svg>';
+        category.prepend(icon);category.dataset.esplSpecialEyebrow='true';
+      }
+      return;
+    }
     for (const card of root.querySelectorAll('.project-publications .publication-card')) {
       updateAreaAuthors(card);
       if (card.dataset.esplSpecialReady) continue;

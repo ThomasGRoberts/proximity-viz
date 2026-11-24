@@ -272,18 +272,19 @@
     const banner=doc.querySelector('main.banner,.banner')||doc.body;
     if(!doc.getElementById('espl-featured-hero-style')){
       const style=doc.createElement('style');style.id='espl-featured-hero-style';style.textContent=`
-        #espl-featured-hero-link{position:absolute;left:var(--title-left,28px);bottom:10px;z-index:9;display:flex;align-items:center;width:46px;height:46px;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
+        #espl-featured-hero-link{position:absolute;left:max(6%,calc((100% - 1080px)/2 + 28px));bottom:10px;z-index:9;display:flex;align-items:center;width:max-content;max-width:calc(100% - 12%);height:46px;pointer-events:auto;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
         #espl-featured-hero-link.is-arrived{visibility:visible;opacity:1;transform:translateY(0)}
         #espl-featured-hero-link .featured-icon{display:grid;place-items:center;width:46px;height:46px;flex:none}
         #espl-featured-hero-link .featured-icon :is(svg,canvas){display:block;width:46px;height:46px}
         #espl-featured-hero-link .featured-icon .table-scan{opacity:.25}
         #espl-featured-hero-link:is(:hover,:focus-visible,.is-open) .table-scan{opacity:.8;animation:espl-featured-scan 1.15s ease-in-out 1}
-        #espl-featured-hero-link .featured-label{position:absolute;top:0;left:46px;display:flex;align-items:center;height:46px;max-width:350px;padding-left:10px;white-space:nowrap;opacity:0;clip-path:inset(0 100% 0 0);color:#666;font:400 clamp(11px,1.05vw,15px)/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;transition:clip-path .5s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
+        #espl-featured-hero-link .featured-label{display:flex;align-items:center;min-width:0;height:46px;padding-left:10px;white-space:nowrap;opacity:0;clip-path:inset(0 100% 0 0);color:#666;font:400 clamp(11px,1.05vw,15px)/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;transition:clip-path .5s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
         #espl-featured-hero-link:is(:hover,:focus-visible,.is-open) .featured-label{opacity:1;clip-path:inset(0)}
         #espl-featured-hero-link .featured-arrow{display:inline-block;margin-left:7px;transition:transform .25s ease}
-        #espl-featured-hero-link:is(:hover,:focus-visible).is-open .featured-arrow{transform:translateX(4px)}
+        #espl-featured-hero-link:is(:hover,:focus-visible) .featured-arrow{animation:espl-featured-arrow-nudge .7s ease}
         #espl-featured-hero-link:focus-visible{outline:2px solid rgba(180,145,35,.9);outline-offset:4px}
         @keyframes espl-featured-scan{0%,100%{transform:translateY(0)}50%{transform:translateY(25px)}}
+        @keyframes espl-featured-arrow-nudge{0%,100%{transform:translateX(0)}45%{transform:translateX(4px)}70%{transform:translateX(-1px)}}
         @media(max-width:767px){#espl-featured-hero-link:not(.is-mobile-cta){display:none}}
         @media(prefers-reduced-motion:reduce){#espl-featured-hero-link,#espl-featured-hero-link .featured-label,#espl-featured-hero-link .table-scan{animation:none!important;transition:none!important}}
       `;doc.head.append(style);
@@ -323,6 +324,28 @@
       updateHeroFrame(frame);
     }
   }
+  function installProjectNavigation(){
+    if(projectRoot.querySelector('.espl-project-nav'))return;
+    const projects=[
+      {slug:'sbi',title:'Space-based Interceptors and Strategic Stability'},
+      {slug:'proximity',title:'How Close is Too Close'},
+      {slug:'lunar',title:'Lunar Surface Coordination'}
+    ];
+    const index=projects.findIndex(project=>project.slug===slug);
+    const previous=projects[(index+projects.length-1)%projects.length];
+    const next=projects[(index+1)%projects.length];
+    const nav=document.createElement('nav');nav.className='espl-project-nav theme-nav';nav.setAttribute('aria-label','Other projects');
+    const link=(project,direction)=>{const a=document.createElement('a');a.className=`theme-${direction}`;a.href=`https://espl.ae.gatech.edu/research/projects/${project.slug}/`;a.innerHTML=direction==='prev'?`← <span>${project.title}</span>`:`<span>${project.title}</span> →`;return a};
+    nav.append(link(previous,'prev'),link(next,'next'));
+    const style=document.createElement('style');style.textContent=`
+      #espl-project-page .espl-project-nav{display:flex;justify-content:space-between;max-width:1080px;margin:0 auto 56px;padding:24px 28px 0;border-top:1px solid #e6e6e6;font-family:Roboto,system-ui,-apple-system,Segoe UI,'Helvetica Neue',Arial,sans-serif;flex-wrap:wrap;gap:1rem}
+      #espl-project-page .espl-project-nav a{display:inline-flex;align-items:center;gap:.35em;text-decoration:none!important;font-size:16px;color:#a4925a!important;padding:.5rem 1rem;transition:background-color .2s ease,color .2s ease;border-radius:999px;white-space:nowrap}
+      #espl-project-page .espl-project-nav a:hover,#espl-project-page .espl-project-nav a:focus-visible{background-color:#f0f0f0;color:#000!important;text-decoration:none!important}
+      #espl-project-page .espl-project-nav .theme-next{margin-left:auto}
+      @media(max-width:767px){#espl-project-page .espl-project-nav{padding:20px 24px 0;gap:.5rem}#espl-project-page .espl-project-nav a{font-size:13px;white-space:normal;max-width:48%}}
+    `;
+    projectRoot.append(style,nav);
+  }
   async function installResearchCards() {
     const container=projectRoot.querySelector('.project-publications');
     if(!container)return;
@@ -357,6 +380,6 @@
     container.dataset.esplPublicationsReady='true';
     installHeroAction(featured);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installResearchCards,{once:true});
-  else installResearchCards();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{installProjectNavigation();installResearchCards()},{once:true});
+  else {installProjectNavigation();installResearchCards()}
 })();
