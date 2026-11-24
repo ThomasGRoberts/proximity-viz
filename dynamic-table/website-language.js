@@ -1,6 +1,6 @@
 // Hydrate the lab website's table introduction from the published editorial tab.
 const LANGUAGE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera/pub?output=csv&gid=253374416";
-const THOMAS = "Thomas González Roberts";
+const THOMAS = "Thomas G. Roberts";
 const PAGE_TITLE = "Episodes of Concerning Satellite Proximity";
 const portraits = {
   "dayana alagirova": "dayana-alagirova.jpg",
@@ -8,6 +8,7 @@ const portraits = {
   "willa madsen": "willa-madsen.jpg",
   "pradosh sivaramkumar": "pradosh-sivaramkumar.jpg",
   "thomas gonzalez roberts": "thomas-gonzalez-roberts.jpg",
+  "thomas g. roberts": "thomas-gonzalez-roberts.jpg",
 };
 const profileAnchors = {
   "dayana alagirova": "dayana-alagirova",
@@ -15,6 +16,7 @@ const profileAnchors = {
   "willa madsen": "willa-madsen",
   "pradosh sivaramkumar": "pradosh-sivaramkumar",
   "thomas gonzalez roberts": "biography",
+  "thomas g. roberts": "biography",
 };
 const key = name => name.normalize("NFKD").replace(/\p{M}/gu, "").trim().toLowerCase();
 
@@ -132,7 +134,7 @@ function safeIntroduction(markup) {
 }
 
 function renderContributors(host, cell) {
-  const names = [...new Set(cell.split(/[,;\n]/).map(name => name.trim()).filter(Boolean))]
+  const names = [...new Set(cell.replace(/,?\s+and\s+/gi, ",").split(/[,;\n]/).map(name => name.trim()).filter(Boolean))]
     .filter(name => key(name) !== key(THOMAS));
   names.push(THOMAS);
   const list = document.createDocumentFragment();
@@ -159,7 +161,7 @@ function renderContributors(host, cell) {
     const parts = document.createDocumentFragment();
     names.forEach((name, index) => {
       if (index) parts.append(document.createTextNode(index === names.length - 1 ? (names.length > 2 ? ", and " : " and ") : ", "));
-      if (key(name) === key(THOMAS)) { parts.append(document.createTextNode(THOMAS)); return; }
+      if (key(name) === key(THOMAS)) { const link = document.createElement("a"); link.href = "https://espl.ae.gatech.edu/people/#biography"; link.textContent = THOMAS; parts.append(link); return; }
       const link = document.createElement("a");
       link.href = `https://espl.ae.gatech.edu/people/#${profileAnchors[key(name)] || key(name).replace(/[^a-z0-9]+/g, "-")}`;
       link.textContent = name;
@@ -180,10 +182,24 @@ try {
   for (const page of document.querySelectorAll("[data-espl-episodes-page]")) {
     page.querySelector("[data-espl-title]")?.replaceChildren(PAGE_TITLE);
     page.querySelector("[data-espl-introduction]")?.replaceChildren(safeIntroduction(introduction));
-    const people = page.querySelector("[data-espl-contributors]");
-    if (people) renderContributors(people, contributors);
     page.dataset.languageSource = "live";
   }
 } catch (error) {
   console.warn("Website language unavailable; the introductory panel is awaiting live text.", error);
 }
+
+// The table's publication record is the authority for its contributor roster.
+try {
+  const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRN6Pc85vfaqu_XEU4MQC9HTGckmU9k5AXtSXuy8iOp5uPUcOrbJdI1Lmklqtqp4IpAdQoO3TtrEZuR/pub?output=csv";
+  const response = await fetch(`${url}&refresh=${Date.now()}`, {cache: "no-store", credentials: "omit"});
+  if (!response.ok) throw new Error(`Publications sheet returned ${response.status}`);
+  const [headers, ...rows] = csvRows(await response.text());
+  const titleIndex = headers.indexOf("Title"), authorsIndex = headers.indexOf("Authors");
+  if (titleIndex < 0 || authorsIndex < 0) throw new Error("Publications headers changed");
+  const record = rows.find(row => row[titleIndex]?.trim() === PAGE_TITLE);
+  if (!record?.[authorsIndex]) throw new Error("Table publication record unavailable");
+  for (const page of document.querySelectorAll("[data-espl-episodes-page]")) {
+    const people = page.querySelector("[data-espl-contributors]");
+    if (people) renderContributors(people, record[authorsIndex]);
+  }
+} catch (error) { console.warn("Table publication contributors unavailable.", error); }

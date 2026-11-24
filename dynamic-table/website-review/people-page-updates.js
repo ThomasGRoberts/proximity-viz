@@ -92,11 +92,14 @@
   }
   new MutationObserver(sync).observe(nameNode,{childList:true,characterData:true,subtree:true});
   addEventListener('resize',sync);
-  fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vREf4bo6ZknVw_ITND5Rtfe8RJufodwkihs9GZBf5p_7tlE5wwgDPcPd9jFjFa2wF4WJP296jhPuApz/pub?output=csv',{cache:'no-store'})
-    .then(response=>{if(!response.ok)throw new Error(`Student sheet returned ${response.status}`);return response.text()})
-    .then(text=>{
-      const [header,...rows]=parseCSV(text);
-      for(const values of rows){const row=Object.fromEntries(header.map((key,i)=>[key.trim(),values[i]||'']));const name=String(row.Name||'').trim().toLowerCase();if(name)records.set(name,row)}
-      sync();
-    }).catch(error=>console.warn('Student contact links unavailable.',error));
+  const roster='https://docs.google.com/spreadsheets/d/e/2PACX-1vREf4bo6ZknVw_ITND5Rtfe8RJufodwkihs9GZBf5p_7tlE5wwgDPcPd9jFjFa2wF4WJP296jhPuApz/pub?output=csv';
+  for(const suffix of ['', '&gid=466308581&single=true']){
+    fetch(`${roster}${suffix}&refresh=${Date.now()}`,{cache:'no-store'})
+      .then(response=>{if(!response.ok)throw new Error(`Student sheet returned ${response.status}`);return response.text()})
+      .then(text=>{
+        const [header,...rows]=parseCSV(text);
+        for(const values of rows){const row=Object.fromEntries(header.map((key,i)=>[key.trim(),values[i]||'']));const name=String(row.Name||'').trim().toLowerCase();if(name)records.set(name,row)}
+        sync();
+      }).catch(error=>console.warn('Student contact links unavailable.',error));
+  }
 })();

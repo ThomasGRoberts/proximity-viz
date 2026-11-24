@@ -14,7 +14,7 @@
     #espl-project-page .espl-project-back--banner{top:9px!important}
     @media(max-width:767px){#espl-project-page .espl-project-back--mobile{top:-25px!important}}
     #espl-project-page .project-people{gap:10px 2px}
-    #espl-project-page .project-person{box-sizing:border-box;align-self:start;gap:0!important;min-width:0;padding:4px 2px 8px;border:1px solid transparent;border-radius:12px;background:transparent;color:inherit;text-decoration:none!important;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background-color .2s ease}
+    #espl-project-page .project-person{box-sizing:border-box;align-self:start;gap:0!important;min-width:0;padding:4px 10px 8px;border:1px solid transparent;border-radius:12px;background:transparent;color:inherit;text-decoration:none!important;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background-color .2s ease}
     #espl-project-page .project-person:hover,#espl-project-page .project-person:focus-visible{transform:translateY(-3px);background:#fff;border-color:#e4e0d7;box-shadow:0 10px 27px #00000012;text-decoration:none!important}
     #espl-project-page .project-person:focus-visible{outline:2px solid #a4925a;outline-offset:3px}
     #espl-project-page .project-person img{width:min(100%,112px);border-radius:8px;margin-bottom:10px;transition:none!important}
@@ -23,9 +23,10 @@
     #espl-project-page .project-person:hover strong,#espl-project-page .project-person:focus-visible strong{text-decoration:none!important}
     #espl-project-page .project-person span{margin-top:10px!important;color:#333!important;font-size:12px!important;line-height:1.4!important;white-space:pre-line!important}
     ` : ''}
+    #espl-project-page .project-person{padding-right:10px!important;padding-left:10px!important}
     #espl-project-page .project-publications:not([data-espl-publications-ready="true"]){visibility:hidden}
-    #espl-project-page .espl-special-card{grid-template-columns:minmax(0,1fr) minmax(400px,41%)}
-    #espl-project-page .espl-special-card .model-output-media{display:flex;align-items:center;justify-content:flex-start;gap:0;min-height:90px;padding:16px 12px}
+    #espl-project-page .espl-special-card{grid-template-columns:minmax(0,1fr) minmax(340px,34%)}
+    #espl-project-page .espl-special-card .model-output-media{display:flex;align-items:center;justify-content:flex-start;gap:14px;min-height:90px;padding:16px 16px}
     #espl-project-page .espl-special-card .model-polyhedron-link,
     #espl-project-page .espl-special-card .espl-table-icon-link{display:block;flex:0 0 76px;width:76px;height:76px;border-radius:8px;text-decoration:none!important}
     #espl-project-page .espl-special-card .model-polyhedron-canvas,
@@ -37,18 +38,19 @@
     #espl-project-page .espl-special-card:is(:hover,:focus-within) .model-link-arrow{animation:espl-data-link-nudge .7s ease}
     #espl-project-page .espl-special-card .knowledge-slide__summary{max-width:60ch}
     /* SBI's Research Updates card geometry, applied to both project pages. */
-    #espl-project-page .project-outputs .publication-card{grid-template-columns:minmax(0,1fr) minmax(350px,34%)}
+    #espl-project-page .project-outputs .publication-card{grid-template-columns:minmax(0,1fr) minmax(340px,34%)}
     #espl-project-page .project-outputs .publication-card.no-portraits{grid-template-columns:1fr}
-    #espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;padding:16px 12px}
-    #espl-project-page .project-outputs .publication-card .knowledge-slide__people{flex-direction:column;align-items:flex-start;justify-content:flex-start;flex-wrap:nowrap;gap:7px;width:max-content;max-width:100%}
-    #espl-project-page .project-outputs .publication-card .knowledge-person-row{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%}
-    #espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:70px;height:70px}
+    #espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;padding:16px}
+    #espl-project-page .publication-card .espl-author-name,#espl-project-page .publication-card .espl-author-name:visited,#espl-project-page .publication-card .espl-author-name:hover{color:#252525;text-decoration:underline;text-decoration-color:#252525;text-underline-offset:2px}
+    #espl-project-page .project-outputs .publication-card .knowledge-slide__people{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;flex-wrap:nowrap;gap:7px;width:100%;max-width:100%}
+    #espl-project-page .project-outputs .publication-card .knowledge-person-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%}
+    #espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:#efebe1;color:#615b50;font-weight:700}
     #espl-project-page .espl-table-icon .table-scan{opacity:.25;transform:translateY(0)}
     #espl-project-page .data-repository-card:is(:hover,:focus-within) .table-scan{opacity:.8;animation:espl-table-scan-bounce 1.15s ease-in-out 1}
     @keyframes espl-data-link-nudge{0%,100%{transform:translateX(0)}45%{transform:translateX(4px)}70%{transform:translateX(-1px)}}
     @keyframes espl-table-scan-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(25px)}}
     @media(max-width:999px){#espl-project-page .project-outputs .publication-card{grid-template-columns:1fr}#espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;min-height:0;padding:0 1.65rem 1.25rem}}
-    @media(max-width:767px){#espl-project-page .espl-special-card{grid-template-columns:1fr}#espl-project-page .espl-special-card .model-output-media{min-height:0;padding:0 1.2rem 1.2rem;gap:8px}#espl-project-page .espl-special-card .model-text-link{gap:5px;white-space:nowrap;font-size:10.5px}#espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem}#espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:56px;height:56px}}
+    @media(max-width:767px){#espl-project-page .espl-special-card{grid-template-columns:1fr}#espl-project-page .espl-special-card .model-output-media{min-height:0;padding:0 1.2rem 1.2rem;gap:8px}#espl-project-page .espl-special-card .model-text-link{gap:5px;white-space:nowrap;font-size:10.5px}#espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem}#espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:46px;height:46px}}
     @media(max-width:380px){#espl-project-page .espl-special-card .model-output-media{flex-wrap:wrap}#espl-project-page .espl-special-card .model-text-link{width:100%;font-size:11px}}
     @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
@@ -135,11 +137,26 @@
     'willa madsen':['willa-madsen','https://sites.gatech.edu/thomas-test-website/files/2026/09/WillaMadsen_yellow.jpg'],
     'pradosh sivaramkumar':['pradosh-sivaramkumar','https://sites.gatech.edu/thomas-test-website/files/2026/09/PradoshSivaramkumar_yellow.jpg'],
     'thomas g. roberts':['biography','https://sites.gatech.edu/thomas-test-website/files/2026/01/ThomasGonzalezRoberts_yellow.jpg'],
+    'lauren v. paulson':['vic-paulson','https://sites.gatech.edu/thomas-test-website/files/2026/01/VicPaulson_yellow.jpg'],
+    'tommy smith':['tommy-smith','https://sites.gatech.edu/thomas-test-website/files/2026/03/TommySmith_yellow.jpg'],
     'thomas gonzález roberts':['biography','https://sites.gatech.edu/thomas-test-website/files/2026/01/ThomasGonzalezRoberts_yellow.jpg'],
     'fernando miranda españa':['fernando-miranda-espana','https://sites.gatech.edu/thomas-test-website/files/2026/09/FernandoMirandaEspana_yellow.jpg'],
     "nathan o'brien":['nathan-obrien','https://sites.gatech.edu/thomas-test-website/files/2026/07/NathanOBrien_yellow.png'],
     'john jozsa':['john-jozsa','https://sites.gatech.edu/thomas-test-website/files/2026/09/JohnJozsa_yellow.jpg'],
   };
+  const rosterBase='https://docs.google.com/spreadsheets/d/e/2PACX-1vREf4bo6ZknVw_ITND5Rtfe8RJufodwkihs9GZBf5p_7tlE5wwgDPcPd9jFjFa2wF4WJP296jhPuApz/pub?output=csv';
+  async function loadAuthorRoster(){
+    await Promise.all(['','&gid=466308581&single=true'].map(async suffix=>{
+      const response=await fetch(`${rosterBase}${suffix}&refresh=${Date.now()}`,{cache:'no-store'});
+      if(!response.ok)throw new Error(`Student roster returned ${response.status}`);
+      for(const row of parseCSV(await response.text(),['Name','Anchor Name','Photo File'])){
+        const anchor=rowField(row,'Anchor Name'),photo=rowField(row,'Photo File');
+        if(!anchor||!photo)continue;
+        const record=[anchor,new URL(photo.replace(/^\//,''),'https://sites.gatech.edu/thomas-test-website/').href];
+        for(const name of [rowField(row,'Name'),...rowField(row,'Alternate Name(s)').split(/[,;]+/).map(x=>x.trim())])if(name)authorPhoto[name.toLowerCase()]=record;
+      }
+    }));
+  }
   const safeURL = raw => { try { const url = new URL(String(raw || '').trim()); return /^https?:$/.test(url.protocol) ? url.href : ''; } catch { return ''; } };
   const projectKey = value => String(value || '').normalize('NFKD').replace(/\p{M}/gu,'').trim().toLowerCase();
   const projectMatch = row => rowField(row,'Project(s)').split(/[,;\n]/).some(name => projectKey(name) === projectKey(projectName));
@@ -156,7 +173,7 @@
   };
   const externalIcon = () => '<span class="external-link-icon" aria-hidden="true"><svg viewBox="0 0 18 18"><path class="external-link-icon__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><g class="external-link-icon__arrow"><path d="M9.25 2.75h6v6"/><path d="m8 10 7.25-7.25"/></g></svg></span>';
   const documentIcon = '<svg viewBox="0 0 24 24"><path d="M6.5 3.5h8l3 3v14h-11z"/><path d="M14.5 3.5v3h3"/><path d="M9.5 11h5M9.5 14h5M9.5 17h3.5"/></svg>';
-  function parseCSV(text) {
+  function parseCSV(text,required=['Title','Authors','Date','Type','URL','Project(s)','Featured']) {
     const rows=[]; let row=[],cell='',quoted=false;
     for(let i=0;i<text.length;i++){
       const ch=text[i];
@@ -167,7 +184,7 @@
     }
     row.push(cell);if(row.some(value=>value.trim()))rows.push(row);
     const [headers,...values]=rows;
-    if (!headers || !['Title','Authors','Date','Type','URL','Project(s)','Featured'].every(name=>headers.includes(name))) throw new Error('Publications sheet headers changed');
+    if (!headers || !required.every(name=>headers.includes(name))) throw new Error('Published sheet headers changed');
     return values.map((cells,index)=>({...Object.fromEntries(headers.map((name,i)=>[name.trim(),cells[i]||''])),_sheetOrder:index}));
   }
   function categoryNode(row) {
@@ -179,8 +196,19 @@
   }
   function summaryNode(row,href) {
     const summary=document.createElement('div');summary.className='knowledge-slide__summary';
-    const meta=[rowField(row,'Publication or Venue'),rowField(row,'Authors')].filter(Boolean);
-    if(meta.length){const p=document.createElement('p');p.textContent=meta.join(' · ');summary.append(p)}
+    const venue=rowField(row,'Publication or Venue');
+    const authors=rowField(row,'Authors').replace(/,?\s+and\s+/gi,',').split(',').map(name=>name.trim()).filter(Boolean);
+    if(venue||authors.length){
+      const p=document.createElement('p');if(venue)p.append(document.createTextNode(venue));
+      if(venue&&authors.length)p.append(document.createTextNode(' · '));
+      authors.forEach((name,index)=>{
+        if(index)p.append(document.createTextNode(index===authors.length-1?(authors.length>2?', and ':' and '):', '));
+        const info=authorPhoto[name.toLowerCase()];
+        if(info){const a=document.createElement('a');a.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;a.textContent=name;a.className='espl-author-name';p.append(a)}
+        else p.append(document.createTextNode(name));
+      });
+      summary.append(p);
+    }
     const date=rowField(row,'Date');
     if(date){const link=document.createElement('a');link.className='external-metadata-link';link.href=href;link.textContent=formattedDate(date);link.insertAdjacentHTML('beforeend',externalIcon());summary.append(link)}
     return summary;
@@ -191,9 +219,10 @@
     const holder=document.createElement('div');holder.className='knowledge-person-row';
     for(const name of names){
       const info=authorPhoto[name.toLowerCase()];
-      if(!info)continue;
-      const a=document.createElement('a');a.className='knowledge-person';a.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;a.title=name;
-      const img=document.createElement('img');img.className='knowledge-person__photo';img.src=info[1];img.alt=name;img.loading='lazy';a.append(img);holder.append(a);
+      const a=document.createElement(info?'a':'span');a.className='knowledge-person';if(info)a.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;a.title=name;
+      if(info){const img=document.createElement('img');img.className='knowledge-person__photo';img.src=info[1];img.alt=name;img.loading='lazy';a.append(img)}
+      else{const initials=document.createElement('span');initials.className='knowledge-person__photo';initials.textContent=name.split(/\s+/).map(part=>part[0]).slice(0,2).join('');initials.setAttribute('aria-label',name);a.append(initials)}
+      holder.append(a);
     }
     if(!holder.childElementCount)return null;
     people.append(holder);return people;
@@ -302,6 +331,7 @@
       const response=await fetch(`${publicationsCSV}&refresh=${Date.now()}`,{cache:'no-store',credentials:'omit'});
       if(!response.ok)throw new Error(`Publications sheet returned ${response.status}`);
       records=parseCSV(await response.text());
+      try{await loadAuthorRoster()}catch(error){console.warn('Student author photos unavailable.',error)}
     }catch(error){
       console.warn('Project research updates could not load from the published Publications sheet.',error);
       const notice=document.createElement('p');notice.textContent='Research updates are temporarily unavailable.';desired=[notice];reconcile();

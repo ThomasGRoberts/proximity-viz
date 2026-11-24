@@ -5,8 +5,8 @@
   const style = document.createElement('style');
   style.id = 'espl-special-output-style';
   style.textContent = `
-    #studentOverlay .espl-special-card, #espl-area-page .espl-special-card{grid-template-columns:minmax(0,1fr) minmax(260px,35%)!important}
-    #studentOverlay .espl-special-card .model-output-media, #espl-area-page .espl-special-card .model-output-media{display:flex;align-items:center;justify-content:flex-start;gap:0;min-height:90px;padding:16px 12px}
+    #espl-area-page .espl-special-card{grid-template-columns:minmax(0,1fr) minmax(340px,34%)!important}
+    #studentOverlay .espl-special-card .model-output-media, #espl-area-page .espl-special-card .model-output-media{display:flex;align-items:center;justify-content:flex-start;gap:14px;min-height:90px;padding:16px 16px}
     #studentOverlay .espl-special-card .model-polyhedron-link, #studentOverlay .espl-special-card .espl-table-icon-link,
     #espl-area-page .espl-special-card .model-polyhedron-link, #espl-area-page .espl-special-card .espl-table-icon-link{display:block;flex:0 0 76px;width:76px;height:76px;border-radius:8px;text-decoration:none!important}
     #studentOverlay .espl-special-card .model-polyhedron-canvas, #studentOverlay .espl-special-card .espl-table-icon,
@@ -92,6 +92,7 @@
   }
 
   function update() {
+    if(root.id==='studentOverlay')return;
     for (const card of root.querySelectorAll('.project-publications .publication-card')) {
       if (card.dataset.esplSpecialReady) continue;
       const category = card.querySelector('.knowledge-slide__category');
