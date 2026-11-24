@@ -3,14 +3,16 @@
   .espl-episodes-page{--ink:#303030;--muted:#69645b;max-width:1220px;margin:0 auto;color:var(--ink);font-family:inherit;container-type:inline-size}
   .espl-episodes-page *{box-sizing:border-box}
   .espl-episodes-page .intro{position:relative;width:100vw;margin-left:calc(50% - 50vw);border-top:1px solid #e8dfc9;border-bottom:1px solid #e8dfc9;background:linear-gradient(120deg,#fff5d9,#fffcf6 68%)}
-  .espl-episodes-page .intro-inner,.espl-episodes-page .contributors-inner{width:100%;max-width:1080px;margin:0 auto;padding-right:28px;padding-left:28px}
-  .espl-episodes-page .intro-inner{padding-top:64px;padding-bottom:clamp(22px,4vw,48px)}
+  .espl-episodes-page .about-nav,.espl-episodes-page .contributors{position:relative;width:100vw;margin-left:calc(50% - 50vw);background:#fff}
+  .espl-episodes-page .about-nav{padding:18px 0 15px}
+  .espl-episodes-page .about-nav-inner,.espl-episodes-page .intro-inner,.espl-episodes-page .contributors-inner{width:100%;max-width:1080px;margin:0 auto;padding-right:28px;padding-left:28px}
+  .espl-episodes-page .intro-inner{padding-top:clamp(22px,4vw,48px);padding-bottom:clamp(22px,4vw,48px)}
   .espl-episodes-page:not([data-language-source="live"]) .intro-inner{visibility:hidden}
   .espl-episodes-page .about-link{display:inline-flex;align-items:center;gap:.45em;color:#5f6265;font:700 12px/1.2 Roboto,Arial,sans-serif;letter-spacing:.07em;text-decoration:none;text-transform:uppercase;transition:opacity .18s ease}
   .espl-episodes-page .about-link:hover,.espl-episodes-page .about-link:focus-visible{color:#5f6265;opacity:.65;text-decoration:none}
   .espl-episodes-page .about-link svg{display:block;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform 220ms cubic-bezier(.22,1,.36,1)}
   .espl-episodes-page .about-link:hover svg,.espl-episodes-page .about-link:focus-visible svg{transform:translateX(-4px)}
-  .espl-episodes-page .about-link{position:absolute;z-index:10;top:18px;left:max(28px,calc(50% - 512px));margin:0}
+  .espl-episodes-page .about-link{margin:0}
   .espl-episodes-page .repo-kicker{display:flex;align-items:center;gap:9px;margin:0 0 12px;color:#79601f;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
   .espl-episodes-page .repo-icon{width:42px;height:42px;flex:none}
   .espl-episodes-page .repo-scan{transition:transform .38s ease,opacity .38s ease}
@@ -19,7 +21,7 @@
   .espl-episodes-page .description{max-width:72ch;margin:0;color:#514d45;font-size:15px;line-height:1.55}
   .espl-episodes-page .description p{margin:0 0 10px}
   .espl-episodes-page .description p:last-child{margin-bottom:0}
-  .espl-episodes-page .contributors{position:relative;display:block;width:100vw;margin-left:calc(50% - 50vw);padding:22px 0 52px;background:#fff}
+  .espl-episodes-page .contributors{display:block;padding:22px 0 52px}
   .espl-episodes-page .contributors-label{display:block;margin-bottom:10px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
   .espl-episodes-page .people{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none}
   .espl-episodes-page .people li{margin:0;padding:0}
@@ -35,13 +37,15 @@
   .espl-episodes-page .repo-link:is(:hover,:focus-visible) .external-box{opacity:.58;transform:scale(.96)}
   .espl-episodes-page .repo-link:is(:hover,:focus-visible) .external-arrow{transform:translate(2.4px,-2.4px)}
   .espl-episodes-page iframe{display:block;width:100%;height:920px;margin:0;padding:0;border:0;background:#fff}
-  @media(max-width:700px){.espl-episodes-page .intro-inner{padding-top:58px;padding-bottom:22px}.espl-episodes-page .intro-inner,.espl-episodes-page .contributors-inner{padding-right:24px;padding-left:24px}.espl-episodes-page .about-link{top:14px;left:24px}.espl-episodes-page .people a,.espl-episodes-page .people img,.espl-episodes-page .espl-contributor-initials{width:54px;height:54px}.espl-episodes-page iframe{height:900px}}
+  @media(max-width:700px){.espl-episodes-page .about-nav{padding:14px 0 12px}.espl-episodes-page .intro-inner{padding-top:22px;padding-bottom:22px}.espl-episodes-page .about-nav-inner,.espl-episodes-page .intro-inner,.espl-episodes-page .contributors-inner{padding-right:24px;padding-left:24px}.espl-episodes-page .people a,.espl-episodes-page .people img,.espl-episodes-page .espl-contributor-initials{width:54px;height:54px}.espl-episodes-page iframe{height:900px}}
   @media(prefers-reduced-motion:reduce){.espl-episodes-page .repo-scan,.espl-episodes-page .people a,.espl-episodes-page .about-link svg{transition:none}}
 </style>
 
 <section class="espl-episodes-page" data-espl-episodes-page aria-labelledby="episodes-library-title">
-  <header class="intro">
+  <div class="about-nav"><div class="about-nav-inner">
     <a class="about-link" href="https://espl.ae.gatech.edu/research/projects/proximity/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>About this project</span></a>
+  </div></div>
+  <header class="intro">
     <div class="intro-inner">
     <div class="repo-kicker">
       <svg class="repo-icon" viewBox="0 0 48 48" aria-hidden="true">

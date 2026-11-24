@@ -74,6 +74,22 @@ class Handler(SimpleHTTPRequestHandler):
             slug = path.rsplit("/", 1)[-1]
             if slug not in PROJECT_URLS:
                 return self.send_error(404, "Unknown project preview")
+            if slug == "people":
+                # Show the current editable People block, including its location map,
+                # before that block has been copied into WordPress.
+                block = (HERE / "people-complete-block.html").read_text(encoding="utf-8")
+                block = block.replace(
+                    "https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/people-page-updates.js",
+                    f"http://127.0.0.1:{PORT}/dynamic-table/website-review/people-page-updates.js",
+                )
+                html = '<!doctype html><html><head><base href="https://espl.ae.gatech.edu/"></head><body>' + block + '</body></html>'
+                encoded = html.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+                return
             try:
                 request = Request(PROJECT_URLS[slug], headers={"User-Agent": "Mozilla/5.0 (ESPL local design review)"})
                 with urlopen(request, timeout=8) as source:
