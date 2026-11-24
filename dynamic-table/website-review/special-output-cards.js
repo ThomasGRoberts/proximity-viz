@@ -11,7 +11,7 @@
     #espl-area-page .project-publications .publication-card .knowledge-person-row{display:flex!important;flex-wrap:nowrap!important;justify-content:flex-start!important;gap:8px!important;width:100%!important}
     #espl-area-page .project-publications .publication-card .knowledge-person__photo{width:70px!important;height:70px!important;flex:0 0 70px!important}
     #espl-area-page .espl-author-overflow{display:grid;place-items:center;flex:0 0 70px;width:70px;height:70px;border-radius:50%;background:#e8e5df;color:#555;font-weight:700}
-    #studentOverlay .espl-special-card .model-output-media, #espl-area-page .espl-special-card .model-output-media{display:flex;align-items:center;justify-content:flex-start;gap:14px;min-height:90px;padding:16px}
+    #studentOverlay .espl-special-card .model-output-media, #espl-area-page .espl-special-card .model-output-media{display:flex;align-items:center!important;align-self:stretch;height:100%;box-sizing:border-box;justify-content:flex-start;gap:14px;min-height:90px;padding:16px}
     #studentOverlay .espl-special-card .model-polyhedron-link, #studentOverlay .espl-special-card .espl-table-icon-link,
     #espl-area-page .espl-special-card .model-polyhedron-link, #espl-area-page .espl-special-card .espl-table-icon-link{display:block;flex:0 0 76px;width:76px;height:76px;border-radius:8px;text-decoration:none!important}
     #studentOverlay .espl-special-card .model-polyhedron-canvas, #studentOverlay .espl-special-card .espl-table-icon,
