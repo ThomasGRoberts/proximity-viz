@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Episodes of Concern website page · local review</title>
+  <title>ESPL website · local review</title>
   <link rel="icon" type="image/png" href="../assets/polyhedron-icon.png">
   <link rel="stylesheet" href="./review.css">
   <script type="module" src="./review.js"></script>
@@ -11,12 +11,21 @@
 <body>
   <header class="review-bar" id="reviewBar">
     <nav class="review-switch" aria-label="Website page previews">
-      <button type="button" data-preview="library" data-update-version="20261124-table-nav" aria-pressed="true">Table page</button>
-      <button type="button" data-preview="sbi" aria-pressed="false">SBI project</button>
-      <button type="button" data-preview="proximity" data-update-version="20261124-back-link-members" aria-pressed="false">Proximity project</button>
-      <button type="button" data-preview="lunar" data-update-version="20261124-back-link-members" aria-pressed="false">Lunar project</button>
-      <button type="button" data-preview="research" aria-pressed="false">Research</button>
-      <button type="button" data-preview="people" data-update-version="20261124-student-contact-links" aria-pressed="false">People</button>
+      <details class="review-group"><summary>Top-level</summary><div class="review-group-menu">
+        <button type="button" data-preview="home">Home</button><button type="button" data-preview="research">Research</button><button type="button" data-preview="people" data-update-version="20261124-student-contact-links">People</button><button type="button" data-preview="opportunities">Opportunities</button><button type="button" data-preview="news">News</button>
+      </div></details>
+      <details class="review-group"><summary>Projects</summary><div class="review-group-menu">
+        <button type="button" data-preview="sbi">SBI</button><button type="button" data-preview="proximity" data-update-version="20261124-back-link-members">Proximity</button><button type="button" data-preview="lunar" data-update-version="20261124-back-link-members">Lunar</button>
+      </div></details>
+      <details class="review-group"><summary>Areas</summary><div class="review-group-menu">
+        <button type="button" data-preview="space-security">Space security</button><button type="button" data-preview="space-sustainability">Space sustainability</button><button type="button" data-preview="space-coordination">Space coordination</button>
+      </div></details>
+      <details class="review-group"><summary>Tables</summary><div class="review-group-menu">
+        <button type="button" data-preview="library" data-update-version="20261124-table-nav">Proximity table</button>
+      </div></details>
+      <details class="review-group"><summary>Models</summary><div class="review-group-menu">
+        <button type="button" data-preview="model-sbi">SBI model</button><button type="button" data-preview="model-proximity">Proximity model</button>
+      </div></details>
     </nav>
     <div class="review-actions">
       <button id="refreshPreview" type="button">Refresh page</button>
@@ -36,6 +45,7 @@
     <div class="drawer-head"><strong>Website page comments</strong><button id="closeDrawer" type="button" aria-label="Close comments">×</button></div>
     <form id="commentForm" hidden>
       <label for="commentText">Comment on <strong id="commentLocation">—</strong></label>
+      <label class="sister-scope" id="sisterScopeLabel" hidden><input id="sisterScope" type="checkbox"> Apply to all <span id="sisterScopeName">sister pages</span></label>
       <textarea id="commentText" rows="5" maxlength="4000" required></textarea>
       <div class="form-actions"><button class="primary" type="submit" id="saveComment">Save comment</button><button id="cancelComment" type="button">Cancel</button></div>
     </form>

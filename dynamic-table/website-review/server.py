@@ -15,12 +15,21 @@ REPO = HERE.parents[1]
 PEOPLE_BLOCK = REPO.parents[2] / "Web Content/WordPress Code Blocks/People/people-WORDPRESS-SAFE-V13-COMPLETE-PASTE.html"
 COMMENTS = HERE / "comments.json"
 PORT = 8771
-SPOTS = {"page", "intro", "repository", "title", "language", "contributors", "portraits", "table", "full-link", "about-link", "repo-meta", "project-page", "project-banner", "research-updates", "special-model", "special-data", "hero-table-link", "research-page", "publication-table", "people-page", "student-biocards", "student-research-updates"}
-SURFACES = {"Website Page", "SBI Project", "Proximity Project", "Research", "People", "Lunar Project"}
+SPOTS = {"page", "intro", "repository", "title", "language", "contributors", "portraits", "table", "full-link", "about-link", "repo-meta", "project-page", "project-banner", "research-updates", "special-model", "special-data", "hero-table-link", "research-page", "publication-table", "people-page", "student-biocards", "student-research-updates", "area-page"}
+SURFACES = {"Website Page", "SBI Project", "Proximity Project", "Research", "People", "Lunar Project", "Home", "Opportunities", "News", "Space Security Area", "Space Sustainability Area", "Space Coordination Area", "SBI Model", "Proximity Model"}
+SURFACE_GROUPS = {"SBI Project": "projects", "Proximity Project": "projects", "Lunar Project": "projects", "Space Security Area": "areas", "Space Sustainability Area": "areas", "Space Coordination Area": "areas"}
 PROJECT_URLS = {
+    "home": "https://espl.ae.gatech.edu/",
+    "opportunities": "https://espl.ae.gatech.edu/opportunities/",
+    "news": "https://espl.ae.gatech.edu/news/",
     "sbi": "https://espl.ae.gatech.edu/research/projects/sbi/",
     "proximity": "https://espl.ae.gatech.edu/research/projects/proximity/",
     "lunar": "https://espl.ae.gatech.edu/research/projects/lunar/",
+    "space-security": "https://espl.ae.gatech.edu/research/areas/space-security/",
+    "space-sustainability": "https://espl.ae.gatech.edu/research/areas/space-sustainability/",
+    "space-coordination": "https://espl.ae.gatech.edu/research/areas/space-coordination/",
+    "model-sbi": "https://espl.ae.gatech.edu/research/models/sbi/",
+    "model-proximity": "https://espl.ae.gatech.edu/research/models/proximity/",
     "research": "https://espl.ae.gatech.edu/research/",
     "people": "https://espl.ae.gatech.edu/people/",
 }
@@ -95,9 +104,9 @@ class Handler(SimpleHTTPRequestHandler):
                 with urlopen(request, timeout=8) as source:
                     html = source.read().decode("utf-8", "replace")
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
-                script_name = "project-page-updates.js" if slug in {"sbi", "proximity"} else f"{slug}-page-updates.js"
                 addon = ""
-                if slug != "lunar":
+                if slug in {"sbi", "proximity", "research"}:
+                    script_name = "project-page-updates.js" if slug in {"sbi", "proximity"} else "research-page-updates.js"
                     local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=9'
                     addon += f'<script src="{local_script}" data-espl-project="{slug}"></script>'
                 if slug == "lunar":
@@ -148,10 +157,13 @@ class Handler(SimpleHTTPRequestHandler):
             if action == "add":
                 spot = str(request.get("spot", ""))
                 surface = str(request.get("surface", "Website Page"))
+                sister_group = str(request.get("sisterGroup", ""))
                 text = str(request.get("text", "")).strip()
                 x, y = float(request.get("x", -1)), float(request.get("y", -1))
                 if spot not in SPOTS or surface not in SURFACES or not text or len(text) > 4000 or not (0 <= x <= 1 and 0 <= y <= 1):
                     raise ValueError("Invalid comment or location")
+                if sister_group and sister_group != SURFACE_GROUPS.get(surface):
+                    raise ValueError("Invalid sister page scope")
                 comments.append({
                     "id": uuid4().hex,
                     "surface": surface,
@@ -159,6 +171,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "x": x,
                     "y": y,
                     "text": text,
+                    **({"sisterGroup": sister_group} if sister_group else {}),
                     "createdAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 })
             elif action == "update":
@@ -169,6 +182,13 @@ class Handler(SimpleHTTPRequestHandler):
                 if item is None:
                     raise ValueError("Comment not found")
                 item["text"] = text
+                sister_group = str(request.get("sisterGroup", ""))
+                if sister_group and sister_group != SURFACE_GROUPS.get(item.get("surface")):
+                    raise ValueError("Invalid sister page scope")
+                if sister_group:
+                    item["sisterGroup"] = sister_group
+                else:
+                    item.pop("sisterGroup", None)
                 item["updatedAt"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
             elif action == "delete":
                 comments = [item for item in comments if item.get("id") != request.get("id")]

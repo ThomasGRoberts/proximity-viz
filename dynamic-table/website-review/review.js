@@ -21,6 +21,7 @@ const labels = {
   "people-page": "People page",
   "student-biocards": "Student biography cards",
   "student-research-updates": "Student research updates",
+  "area-page": "Research area page",
 };
 const selectors = {
   page: ".espl-episodes-page",
@@ -51,6 +52,8 @@ const peopleSelectors = {
   "student-biocards": "#espl-people-page .student-card, #espl-people-page .person-card",
   "student-research-updates": "#studentOverlay .project-outputs, #studentOverlay #publicationStage",
 };
+const genericSelectors = { page: "body" };
+const areaSelectors = { "area-page": "body" };
 const panes = {
   library: { surface: "Website Page", snippet: "../website-embed-snippet.html", copyLabel: "Copy table HTML" },
   sbi: { surface: "SBI Project", snippet: "./sbi-complete-block.html", copyLabel: "Copy SBI HTML" },
@@ -58,15 +61,30 @@ const panes = {
   lunar: { surface: "Lunar Project", snippet: "./lunar-complete-block.html", copyLabel: "Copy Lunar HTML" },
   research: { surface: "Research", snippet: "./research-complete-block.html", copyLabel: "Copy Research page" },
   people: { surface: "People", snippet: "./people-complete-block.html", copyLabel: "Copy People HTML" },
+  home: { surface: "Home" },
+  opportunities: { surface: "Opportunities" },
+  news: { surface: "News" },
+  "space-security": { surface: "Space Security Area", group: "areas" },
+  "space-sustainability": { surface: "Space Sustainability Area", group: "areas" },
+  "space-coordination": { surface: "Space Coordination Area", group: "areas" },
+  "model-sbi": { surface: "SBI Model" },
+  "model-proximity": { surface: "Proximity Model" },
 };
-const paneSelectors = { library: selectors, sbi: projectSelectors, proximity: projectSelectors, lunar: projectSelectors, research: researchSelectors, people: peopleSelectors };
-const paneName = { sbi: "SBI project", proximity: "proximity project", lunar: "Lunar project", research: "research", people: "People" };
+for (const key of ["sbi", "proximity", "lunar"]) panes[key].group = "projects";
+const paneSelectors = { library: selectors, sbi: projectSelectors, proximity: projectSelectors, lunar: projectSelectors, research: researchSelectors, people: peopleSelectors,
+  "space-security": areaSelectors, "space-sustainability": areaSelectors, "space-coordination": areaSelectors };
+for (const key of Object.keys(panes)) paneSelectors[key] ||= genericSelectors;
+const paneName = Object.fromEntries(Object.entries(panes).map(([key, pane]) => [key, pane.surface]));
 
 let comments = [], draft = null, spotMode = false, activePane = "library";
-const visibleComments = () => comments.filter(item => (item.surface || "Website Page") === panes[activePane].surface);
+const visibleComments = () => comments.filter(item => (item.surface || "Website Page") === panes[activePane].surface ||
+  (panes[activePane].group && item.sisterGroup === panes[activePane].group));
 const projectFrame = () => document.getElementById("projectFrame");
 const previewDocument = () => activePane === "library" ? document : projectFrame()?.contentDocument;
-const spotNode = spot => previewDocument()?.querySelector(paneSelectors[activePane][spot]);
+const spotNode = spot => {
+  const selector = paneSelectors[activePane]?.[spot];
+  return selector ? previewDocument()?.querySelector(selector) : null;
+};
 const spotRect = node => {
   const rect = node.getBoundingClientRect();
   if (activePane === "library") return rect;
@@ -87,7 +105,7 @@ async function requestComments(payload) {
 function drawPins() {
   const layer = $("pinLayer"), area = $("previewArea").getBoundingClientRect();
   layer.replaceChildren(...visibleComments().flatMap((item, index) => {
-    const node = spotNode(item.spot);
+    const node = spotNode(item.spot) || spotNode("project-page") || spotNode("area-page") || spotNode("page");
     if (!node) return [];
     const rect = spotRect(node);
     const pin = document.createElement("button");
@@ -121,6 +139,10 @@ function openForm(item) {
   $("commentLocation").textContent = labels[item.spot] || item.spot;
   $("commentText").value = item.text || "";
   $("saveComment").textContent = item.id ? "Save edit" : "Save comment";
+  const group = panes[activePane].group;
+  $("sisterScopeLabel").hidden = !group;
+  $("sisterScopeName").textContent = group === "projects" ? "project pages" : "research area pages";
+  $("sisterScope").checked = Boolean(group && item.sisterGroup === group);
   $("commentForm").hidden = false; showDrawer(true);
   $("commentText").focus();
 }
@@ -133,10 +155,13 @@ function renderComments() {
     const card = document.createElement("article"); card.className = "comment-item"; card.dataset.commentId = item.id;
     const heading = document.createElement("strong"); heading.textContent = `${index + 1}. ${labels[item.spot] || item.spot}`;
     const body = document.createElement("p"); body.textContent = item.text;
+    const scope = document.createElement("small");
+    scope.className = "comment-scope";
+    scope.textContent = item.sisterGroup ? `Applies to all ${item.sisterGroup === "projects" ? "project" : "research area"} pages` : "";
     const date = document.createElement("small"); date.textContent = new Date(item.updatedAt || item.createdAt).toLocaleString();
     const actions = document.createElement("div"); actions.className = "comment-item-actions";
     const jump = document.createElement("button"); jump.type = "button"; jump.textContent = "Show spot";
-    jump.addEventListener("click", () => { spotNode(item.spot)?.scrollIntoView({ behavior: "smooth", block: "center" }); showComment(item.id); });
+    jump.addEventListener("click", () => { (spotNode(item.spot) || spotNode("project-page") || spotNode("area-page") || spotNode("page"))?.scrollIntoView({ behavior: "smooth", block: "center" }); showComment(item.id); });
     const edit = document.createElement("button"); edit.type = "button"; edit.textContent = "Edit";
     edit.addEventListener("click", () => openForm(item));
     const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "Delete";
@@ -144,7 +169,7 @@ function renderComments() {
       try { comments = await requestComments({ action: "delete", id: item.id }); renderComments(); status("Website comment deleted."); }
       catch (error) { status(`Could not delete comment: ${error.message}`); }
     });
-    actions.append(jump, edit, remove); card.append(heading, body, date, actions); list.append(card);
+    actions.append(jump, edit, remove); card.append(heading, body, scope, date, actions); list.append(card);
   });
   drawPins();
 }
@@ -169,7 +194,8 @@ async function loadPreview() {
       frame.addEventListener("load", () => {
         if (activePane !== pane || frame !== projectFrame()) return;
         try {
-          if (!frame.contentDocument?.querySelector(pane === "people" ? "#espl-people-page" : pane === "research" ? "#espl-research-projects" : "#espl-project-page")) throw new Error("Page unavailable");
+          const required = pane === "people" ? "#espl-people-page" : pane === "research" ? "#espl-research-projects" : ["sbi", "proximity", "lunar"].includes(pane) ? "#espl-project-page" : "body";
+          if (!frame.contentDocument?.querySelector(required) || frame.contentDocument?.title === "Error response") throw new Error("Page unavailable");
           annotate(); drawPins();
           frame.contentWindow.addEventListener("scroll", drawPins, { passive: true });
           const publications = frame.contentDocument.querySelector(pane === "people" ? "#studentOverlay" : pane === "research" ? "#publications-overview" : ".project-publications");
@@ -181,8 +207,8 @@ async function loadPreview() {
               requestAnimationFrame(() => { scheduled = false; if (activePane === pane && frame === projectFrame()) { annotate(); drawPins(); } });
             }).observe(publications, { childList: true, subtree: pane === "people" });
           }
-          status(`Live ${paneName[pane]} page with local updates. Spot comments save in this pane only.`);
-        } catch (error) { status(`Could not display project page: ${error.message}`); }
+          status(`Live ${paneName[pane]} page. Spot comments save locally.`);
+        } catch (error) { status(`Could not display page: ${error.message}`); }
       });
       $("pageHost").replaceChildren(frame);
       renderComments();
@@ -215,14 +241,20 @@ function updateCopyIndicators() {
     try { copied = localStorage.getItem(`espl-copied-${button.dataset.preview}`) === button.dataset.updateVersion; } catch { /* Private browser storage can be unavailable. */ }
     button.classList.toggle("needs-update", !copied);
   });
+  document.querySelectorAll(".review-group").forEach(group => group.classList.toggle("group-needs-update", Boolean(group.querySelector("button.needs-update"))));
 }
 
 function selectPane(pane) {
   if (!panes[pane]) return;
   setSpotMode(false);
   activePane = pane;
-  document.querySelectorAll(".review-switch button").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.preview === pane)));
-  $("copyHtml").textContent = panes[pane].copyLabel;
+  const url = new URL(location.href);
+  url.searchParams.set("pane", pane);
+  history.replaceState(null, "", url);
+  document.querySelectorAll(".review-switch [data-preview]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.preview === pane)));
+  document.querySelectorAll(".review-group").forEach(group => { group.open = false; group.classList.toggle("is-active", Boolean(group.querySelector('[aria-pressed="true"]'))); });
+  $("copyHtml").textContent = panes[pane].copyLabel || "Live page preview";
+  $("copyHtml").disabled = !panes[pane].snippet;
   $("commentDrawer").setAttribute("aria-label", `${panes[pane].surface} comments`);
   $("commentDrawer").querySelector(".drawer-head strong").textContent = `${panes[pane].surface} comments`;
   $("commentForm").hidden = true; draft = null;
@@ -241,7 +273,7 @@ function underlyingSpot(clientX, clientY) {
     const frame = projectFrame(), rect = frame?.getBoundingClientRect();
     if (!frame || clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
     const inner = frame.contentDocument?.elementFromPoint(clientX - rect.left, clientY - rect.top);
-    return inner?.closest?.("[data-website-spot]") || spotNode("project-page");
+    return inner?.closest?.("[data-website-spot]") || spotNode("project-page") || spotNode("area-page") || spotNode("page");
   }
   const overlay = $("spotLayer"); overlay.style.pointerEvents = "none";
   const element = document.elementFromPoint(clientX, clientY);
@@ -266,15 +298,19 @@ $("spotLayer").addEventListener("click", event => {
   const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
   setSpotMode(false); openForm({ surface: panes[activePane].surface, spot: node.dataset.websiteSpot, x, y });
 });
-document.querySelectorAll(".review-switch button").forEach(button => button.addEventListener("click", () => selectPane(button.dataset.preview)));
+document.querySelectorAll(".review-switch [data-preview]").forEach(button => button.addEventListener("click", () => selectPane(button.dataset.preview)));
+document.querySelectorAll(".review-group").forEach(group => group.addEventListener("toggle", () => {
+  if (group.open) document.querySelectorAll(".review-group").forEach(other => { if (other !== group) other.open = false; });
+}));
 $("commentsToggle").addEventListener("click", () => showDrawer($("commentDrawer").hidden));
 $("closeDrawer").addEventListener("click", () => showDrawer(false));
 $("cancelComment").addEventListener("click", () => { $("commentForm").hidden = true; draft = null; });
 $("commentForm").addEventListener("submit", async event => {
   event.preventDefault(); if (!draft) return;
   try {
-    const payload = draft.id ? { action: "update", id: draft.id, text: $("commentText").value }
-      : { action: "add", surface: draft.surface || panes[activePane].surface, spot: draft.spot, x: draft.x, y: draft.y, text: $("commentText").value };
+    const sisterGroup = $("sisterScope").checked && panes[activePane].group ? panes[activePane].group : "";
+    const payload = draft.id ? { action: "update", id: draft.id, text: $("commentText").value, sisterGroup }
+      : { action: "add", surface: draft.surface || panes[activePane].surface, spot: draft.spot, x: draft.x, y: draft.y, text: $("commentText").value, sisterGroup };
     comments = await requestComments(payload); draft = null; $("commentForm").hidden = true;
     renderComments(); status("Website comment saved locally. The Dynamic Table comment pool is unchanged.");
   } catch (error) { status(`Could not save website comment: ${error.message}`); }
@@ -287,6 +323,7 @@ $("exportComments").addEventListener("click", () => {
 $("refreshPreview").addEventListener("click", loadPreview);
 $("copyHtml").addEventListener("click", async () => {
   const button = $("copyHtml"), pane = activePane;
+  if (!panes[pane].snippet) return;
   try {
     const response = await fetch(panes[pane].snippet, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTML draft returned ${response.status}`);
