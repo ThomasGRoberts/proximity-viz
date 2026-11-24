@@ -98,8 +98,11 @@ class Handler(SimpleHTTPRequestHandler):
                 script_name = "project-page-updates.js" if slug in {"sbi", "proximity"} else f"{slug}-page-updates.js"
                 addon = ""
                 if slug != "lunar":
-                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=8'
+                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=9'
                     addon += f'<script src="{local_script}" data-espl-project="{slug}"></script>'
+                if slug == "lunar":
+                    local_block = (HERE / "lunar-project-embed-snippet.html").read_text(encoding="utf-8")
+                    addon += "<style>" + local_block.split("<style>", 1)[1].split("</style>", 1)[0] + "</style>"
                 if slug in {"proximity", "lunar"}:
                     addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/project-news-controls.js?v=2"></script>'
                 html = html.replace("</body>", addon + "</body>", 1)

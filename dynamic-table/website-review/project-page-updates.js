@@ -8,6 +8,20 @@
 
   const styles = document.createElement('style');
   styles.textContent = `
+    ${slug === 'proximity' ? `
+    /* Match SBI's back-link placement and side-member hover cards. */
+    #espl-project-page .espl-project-back--banner{top:9px!important}
+    @media(max-width:767px){#espl-project-page .espl-project-back--mobile{top:-25px!important}}
+    #espl-project-page .project-people{gap:10px 2px}
+    #espl-project-page .project-person{box-sizing:border-box;align-self:start;gap:0!important;min-width:0;padding:4px 2px 8px;border:1px solid transparent;border-radius:12px;background:transparent;color:inherit;text-decoration:none!important;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background-color .2s ease}
+    #espl-project-page .project-person:hover,#espl-project-page .project-person:focus-visible{transform:translateY(-3px);background:#fff;border-color:#e4e0d7;box-shadow:0 10px 27px #00000012;text-decoration:none!important}
+    #espl-project-page .project-person:focus-visible{outline:2px solid #a4925a;outline-offset:3px}
+    #espl-project-page .project-person img{width:min(100%,112px);border-radius:8px;margin-bottom:10px;transition:none!important}
+    #espl-project-page .project-person:hover img,#espl-project-page .project-person:focus-visible img{transform:none!important}
+    #espl-project-page .project-person strong{color:#252525;font-family:Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px!important;font-weight:700!important;line-height:1.4!important;text-decoration:none!important}
+    #espl-project-page .project-person:hover strong,#espl-project-page .project-person:focus-visible strong{text-decoration:none!important}
+    #espl-project-page .project-person span{margin-top:10px!important;color:#333!important;font-size:12px!important;line-height:1.4!important;white-space:pre-line!important}
+    ` : ''}
     #espl-project-page .espl-special-card{grid-template-columns:minmax(0,1fr) minmax(400px,41%)}
     #espl-project-page .espl-special-card .model-output-media{display:flex;align-items:center;justify-content:flex-start;gap:0;min-height:90px;padding:16px 12px}
     #espl-project-page .espl-special-card .model-polyhedron-link,
