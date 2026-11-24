@@ -2,22 +2,8 @@
 const LANGUAGE_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSuS29xd8KpFPmyz5xJmUiH8jeQNUqaFvf_7dPf8DN6QfKQgNSuzJ5FGfcMkN1giCjOvXA_ZJ8slera/pub?output=csv&gid=253374416";
 const THOMAS = "Thomas G. Roberts";
 const PAGE_TITLE = "Episodes of Concerning Satellite Proximity";
-const portraits = {
-  "dayana alagirova": "dayana-alagirova.jpg",
-  "kate futrowsky": "kate-futrowsky.jpg",
-  "willa madsen": "willa-madsen.jpg",
-  "pradosh sivaramkumar": "pradosh-sivaramkumar.jpg",
-  "thomas gonzalez roberts": "thomas-gonzalez-roberts.jpg",
-  "thomas g. roberts": "thomas-gonzalez-roberts.jpg",
-};
-const profileAnchors = {
-  "dayana alagirova": "dayana-alagirova",
-  "kate futrowsky": "kate-futrowsky",
-  "willa madsen": "willa-madsen",
-  "pradosh sivaramkumar": "pradosh-sivaramkumar",
-  "thomas gonzalez roberts": "biography",
-  "thomas g. roberts": "biography",
-};
+const portraits = { "thomas g. roberts": "https://thomasgroberts.github.io/proximity-viz/dynamic-table/assets/contributors/thomas-gonzalez-roberts.jpg" };
+const profileAnchors = { "thomas g. roberts": "biography" };
 const key = name => name.normalize("NFKD").replace(/\p{M}/gu, "").trim().toLowerCase();
 
 // WordPress may retain an earlier full-page block when a replacement is pasted below it.
@@ -107,6 +93,24 @@ function csvRows(text) {
   return rows;
 }
 
+async function loadStudentContributors() {
+  const base = "https://docs.google.com/spreadsheets/d/e/2PACX-1vREf4bo6ZknVw_ITND5Rtfe8RJufodwkihs9GZBf5p_7tlE5wwgDPcPd9jFjFa2wF4WJP296jhPuApz/pub?output=csv";
+  await Promise.all(["", "&gid=466308581&single=true"].map(async suffix => {
+    const response = await fetch(`${base}${suffix}&refresh=${Date.now()}`, {cache: "no-store", credentials: "omit"});
+    if (!response.ok) throw new Error(`ESPL Students returned ${response.status}`);
+    const [headers, ...rows] = csvRows(await response.text());
+    const field = (row, name) => String(row[headers.indexOf(name)] || "").trim();
+    if (!["Name", "Anchor Name", "Photo File", "Alternate Name(s)"].every(name => headers.includes(name))) throw new Error("ESPL Students headers changed");
+    for (const row of rows) {
+      const anchor = field(row, "Anchor Name"), photo = field(row, "Photo File");
+      if (!anchor || !photo) continue;
+      const src = new URL(photo.replace(/^\//, ""), "https://sites.gatech.edu/thomas-test-website/").href;
+      const names = [field(row, "Name"), ...field(row, "Alternate Name(s)").split(/[,;]+/).map(name => name.trim())];
+      for (const name of names) if (name) { portraits[key(name)] = src; profileAnchors[key(name)] = anchor; }
+    }
+  }));
+}
+
 function safeIntroduction(markup) {
   const source = new DOMParser().parseFromString(markup, "text/html").body;
   const result = document.createDocumentFragment();
@@ -146,7 +150,7 @@ function renderContributors(host, cell) {
     const portrait = portraits[key(name)];
     if (portrait) {
       const image = document.createElement("img");
-      image.src = new URL(`./assets/contributors/${portrait}`, import.meta.url).href;
+      image.src = portrait;
       image.alt = name; image.loading = "lazy"; link.append(image);
     } else {
       const initials = document.createElement("span"); initials.className = "espl-contributor-initials";
@@ -198,6 +202,7 @@ try {
   if (titleIndex < 0 || authorsIndex < 0) throw new Error("Publications headers changed");
   const record = rows.find(row => row[titleIndex]?.trim() === PAGE_TITLE);
   if (!record?.[authorsIndex]) throw new Error("Table publication record unavailable");
+  await loadStudentContributors();
   for (const page of document.querySelectorAll("[data-espl-episodes-page]")) {
     const people = page.querySelector("[data-espl-contributors]");
     if (people) renderContributors(people, record[authorsIndex]);

@@ -131,18 +131,10 @@
     draw();
   }
 
+  // Names and aliases for students come only from the published ESPL Students tabs.
+  const authorKey = name => String(name || '').normalize('NFKD').replace(/\p{M}/gu,'').trim().toLowerCase();
   const authorPhoto = {
-    'dayana alagirova':['dayana-alagirova','https://sites.gatech.edu/thomas-test-website/files/2026/10/DayanaAlagirova_yellow.jpg'],
-    'kate futrowsky':['kate-futrowsky','https://sites.gatech.edu/thomas-test-website/files/2026/01/KateFutrowsky_yellow.jpg'],
-    'willa madsen':['willa-madsen','https://sites.gatech.edu/thomas-test-website/files/2026/09/WillaMadsen_yellow.jpg'],
-    'pradosh sivaramkumar':['pradosh-sivaramkumar','https://sites.gatech.edu/thomas-test-website/files/2026/09/PradoshSivaramkumar_yellow.jpg'],
-    'thomas g. roberts':['biography','https://sites.gatech.edu/thomas-test-website/files/2026/01/ThomasGonzalezRoberts_yellow.jpg'],
-    'lauren v. paulson':['vic-paulson','https://sites.gatech.edu/thomas-test-website/files/2026/01/VicPaulson_yellow.jpg'],
-    'tommy smith':['tommy-smith','https://sites.gatech.edu/thomas-test-website/files/2026/03/TommySmith_yellow.jpg'],
-    'thomas gonzález roberts':['biography','https://sites.gatech.edu/thomas-test-website/files/2026/01/ThomasGonzalezRoberts_yellow.jpg'],
-    'fernando miranda españa':['fernando-miranda-espana','https://sites.gatech.edu/thomas-test-website/files/2026/09/FernandoMirandaEspana_yellow.jpg'],
-    "nathan o'brien":['nathan-obrien','https://sites.gatech.edu/thomas-test-website/files/2026/07/NathanOBrien_yellow.png'],
-    'john jozsa':['john-jozsa','https://sites.gatech.edu/thomas-test-website/files/2026/09/JohnJozsa_yellow.jpg'],
+    [authorKey('Thomas G. Roberts')]:['biography','https://sites.gatech.edu/thomas-test-website/files/2026/01/ThomasGonzalezRoberts_yellow.jpg'],
   };
   const rosterBase='https://docs.google.com/spreadsheets/d/e/2PACX-1vREf4bo6ZknVw_ITND5Rtfe8RJufodwkihs9GZBf5p_7tlE5wwgDPcPd9jFjFa2wF4WJP296jhPuApz/pub?output=csv';
   async function loadAuthorRoster(){
@@ -153,7 +145,7 @@
         const anchor=rowField(row,'Anchor Name'),photo=rowField(row,'Photo File');
         if(!anchor||!photo)continue;
         const record=[anchor,new URL(photo.replace(/^\//,''),'https://sites.gatech.edu/thomas-test-website/').href];
-        for(const name of [rowField(row,'Name'),...rowField(row,'Alternate Name(s)').split(/[,;]+/).map(x=>x.trim())])if(name)authorPhoto[name.toLowerCase()]=record;
+        for(const name of [rowField(row,'Name'),...rowField(row,'Alternate Name(s)').split(/[,;]+/).map(x=>x.trim())])if(name)authorPhoto[authorKey(name)]=record;
       }
     }));
   }
@@ -203,7 +195,7 @@
       if(venue&&authors.length)p.append(document.createTextNode(' · '));
       authors.forEach((name,index)=>{
         if(index)p.append(document.createTextNode(index===authors.length-1?(authors.length>2?', and ':' and '):', '));
-        const info=authorPhoto[name.toLowerCase()];
+        const info=authorPhoto[authorKey(name)];
         if(info){const a=document.createElement('a');a.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;a.textContent=name;a.className='espl-author-name';p.append(a)}
         else p.append(document.createTextNode(name));
       });
@@ -218,7 +210,7 @@
     const people=document.createElement('div');people.className='knowledge-slide__people';people.dataset.authorCount=String(names.length);
     const holder=document.createElement('div');holder.className='knowledge-person-row';
     for(const name of names){
-      const info=authorPhoto[name.toLowerCase()];
+      const info=authorPhoto[authorKey(name)];
       const a=document.createElement(info?'a':'span');a.className='knowledge-person';if(info)a.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;a.title=name;
       if(info){const img=document.createElement('img');img.className='knowledge-person__photo';img.src=info[1];img.alt=name;img.loading='lazy';a.append(img)}
       else{const initials=document.createElement('span');initials.className='knowledge-person__photo';initials.textContent=name.split(/\s+/).map(part=>part[0]).slice(0,2).join('');initials.setAttribute('aria-label',name);a.append(initials)}

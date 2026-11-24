@@ -111,7 +111,7 @@ class Handler(SimpleHTTPRequestHandler):
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
                 addon = ""
                 if slug in {"sbi", "proximity", "lunar"}:
-                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=11'
+                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=12'
                     html, replaced = re.subn(
                         r'https://thomasgroberts\.github\.io/proximity-viz/dynamic-table/website-review/project-page-updates\.js(?:\?v=\d+)?',
                         local_script, html,
