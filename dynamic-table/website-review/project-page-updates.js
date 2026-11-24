@@ -37,11 +37,11 @@
     #espl-project-page .espl-special-card .espl-table-icon-link{display:block;flex:0 0 76px;width:76px;height:76px;border-radius:8px;text-decoration:none!important}
     #espl-project-page .espl-special-card .model-polyhedron-canvas,
     #espl-project-page .espl-special-card .espl-table-icon{display:block;width:76px;height:76px;opacity:.9;transition:transform 260ms cubic-bezier(.34,1.56,.64,1),opacity .2s ease}
-    #espl-project-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link):is(:hover,:focus-visible) :is(.model-polyhedron-canvas,.espl-table-icon){transform:translateY(-2px) scale(1.055);opacity:1}
+    #espl-project-page .espl-special-card:is(:hover,:focus-within) :is(.model-polyhedron-canvas,.espl-table-icon),#espl-project-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link):is(:hover,:focus-visible) :is(.model-polyhedron-canvas,.espl-table-icon){transform:translateY(-2px) scale(1.055);opacity:1}
     #espl-project-page .espl-special-card .model-text-link{display:inline-flex;align-items:center;gap:8px;min-width:0;color:#666;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(11px,1.05vw,15px);font-weight:400;line-height:normal;white-space:nowrap}
     #espl-project-page .espl-special-card .model-text-link:hover,#espl-project-page .espl-special-card .model-text-link:focus-visible{color:#666;text-decoration:none}
-    #espl-project-page .espl-special-card .model-link-arrow{display:inline-block}
-    #espl-project-page .espl-special-card:is(:hover,:focus-within) .model-link-arrow{animation:espl-data-link-nudge .7s ease}
+    #espl-project-page .espl-special-card .model-link-arrow{display:inline-block;transition:transform .22s ease}
+    #espl-project-page .espl-special-card:is(:hover,:focus-within) .model-link-arrow{transform:translateX(4px);animation:espl-data-link-nudge .7s ease}
     #espl-project-page .espl-special-card .knowledge-slide__summary{max-width:60ch}
     /* SBI's Research Updates card geometry, applied to both project pages. */
     #espl-project-page .project-outputs .publication-card{grid-template-columns:minmax(0,1fr) 414px!important}
@@ -253,6 +253,12 @@
       const label=document.createElement('span');label.className='model-link-label-text';label.textContent=model?'Explore the interactive model':'Explore the data';
       const arrow=document.createElement('span');arrow.className='model-link-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='→';
       action.append(label,arrow);media.append(iconLink,action);card.append(media);
+      if(model){
+        card.addEventListener('mouseenter',()=>iconLink.dispatchEvent(new Event('mouseenter')));
+        card.addEventListener('mouseleave',()=>iconLink.dispatchEvent(new Event('mouseleave')));
+        card.addEventListener('focusin',()=>iconLink.dispatchEvent(new Event('focusin')));
+        card.addEventListener('focusout',()=>iconLink.dispatchEvent(new Event('focusout')));
+      }
     } else {
       const portraits=portraitsNode(row);
       if(portraits){const media=document.createElement('div');media.className='knowledge-output-media';media.append(portraits);card.dataset.portraits=portraits.querySelectorAll('img').length;card.append(media)}
