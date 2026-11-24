@@ -152,16 +152,38 @@
       const banner=doc?.querySelector('main.banner');if(!banner)return;
       const placeLink=link=>{
         // The published WordPress block may still load an earlier copy first.
-        // Inline overrides keep the existing link in the same viewport position as SBI.
-        link.style.setProperty('left','6px','important');
-        link.style.setProperty('top','10px','important');
-        link.style.setProperty('bottom','auto','important');
-        link.style.setProperty('display','flex','important');
+        // Position its existing link against the visible portion of the banner.
+        frame._esplHeroPositionCleanup?.();
+        const parentView=frame.ownerDocument.defaultView;
+        const position=()=>{
+          const frameRect=frame.getBoundingClientRect();
+          let visibleBottom=parentView.visualViewport?.height||parentView.innerHeight;
+          if(parentView.frameElement){
+            const hostRect=parentView.frameElement.getBoundingClientRect();
+            visibleBottom=Math.min(visibleBottom,parentView.parent.innerHeight-hostRect.top);
+          }
+          const top=Math.max(10,Math.min(frameRect.height-56,visibleBottom-frameRect.top-56));
+          link.style.setProperty('left','var(--title-left,max(28px,calc((100% - 1080px)/2 + 28px)))','important');
+          link.style.setProperty('top',`${top}px`,'important');
+          link.style.setProperty('bottom','auto','important');
+          link.style.setProperty('display','flex','important');
+        };
+        parentView.addEventListener('scroll',position,{passive:true});
+        parentView.addEventListener('resize',position);
+        parentView.visualViewport?.addEventListener('resize',position);
+        if(parentView.frameElement){parentView.parent.addEventListener('scroll',position,{passive:true});parentView.parent.addEventListener('resize',position)}
+        frame._esplHeroPositionCleanup=()=>{
+          parentView.removeEventListener('scroll',position);
+          parentView.removeEventListener('resize',position);
+          parentView.visualViewport?.removeEventListener('resize',position);
+          if(parentView.frameElement){parentView.parent.removeEventListener('scroll',position);parentView.parent.removeEventListener('resize',position)}
+        };
+        position();
       };
       const existing=doc.getElementById('espl-proximity-table-link');
       if(existing){placeLink(existing);return}
       const style=doc.createElement('style');style.textContent=`
-        .espl-table-hero-link{position:absolute;left:6px;top:10px;bottom:auto;z-index:3;display:flex;align-items:center;width:46px;height:46px;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);pointer-events:none;transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
+        .espl-table-hero-link{position:absolute;left:var(--title-left,max(28px,calc((100% - 1080px)/2 + 28px)));bottom:10px;z-index:3;display:flex;align-items:center;width:46px;height:46px;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);pointer-events:none;transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
         .espl-table-hero-link.is-arrived{visibility:visible;opacity:1;transform:translateY(0);pointer-events:auto}
         .espl-table-hero-icon{position:relative;z-index:2;width:46px;height:46px;flex:0 0 46px}
         .espl-table-hero-icon svg{position:absolute;top:-6px;left:-6px;display:block;width:58px;height:58px;opacity:.9;transition:opacity .24s ease}
