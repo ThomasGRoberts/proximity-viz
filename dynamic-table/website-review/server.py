@@ -126,7 +126,7 @@ class Handler(SimpleHTTPRequestHandler):
                 if slug in {"proximity", "lunar"}:
                     addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/project-news-controls.js?v=2"></script>'
                 if slug in {"space-security", "space-sustainability", "space-coordination"}:
-                    addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js?v=4"></script>'
+                    addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js?v=5"></script>'
                 html = html.replace("</body>", addon + "</body>", 1)
                 encoded = html.encode("utf-8")
                 self.send_response(200)

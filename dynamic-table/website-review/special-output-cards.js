@@ -97,18 +97,61 @@
     draw();
   }
 
+  const authorRecords=new Map(),memberRecords=new Map();
+  const nameKey=value=>String(value||'').normalize('NFKD').replace(/\p{M}/gu,'').replace(/[.'’‘`]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+  const publicationKey=value=>nameKey(String(value||'').replace(/<[^>]*>/g,'')).replace(/[^\p{L}\p{N} ]/gu,'');
+  const authorList=value=>String(value||'').replace(/,?\s+and\s+/gi,',').split(',').map(name=>name.trim()).filter(Boolean);
+  const astronautPhoto='https://sites.gatech.edu/thomas-test-website/files/2026/09/Astronaut_gray.jpg';
+  memberRecords.set(nameKey('Thomas G. Roberts'),{anchor:'biography',photo:'https://sites.gatech.edu/thomas-test-website/files/2026/01/ThomasGonzalezRoberts_yellow.jpg'});
+  function rowsFromCSV(text){
+    const rows=[];let row=[],cell='',quoted=false;
+    for(let i=0;i<text.length;i++){
+      const ch=text[i];
+      if(ch==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++}else quoted=!quoted}
+      else if(!quoted&&ch===','){row.push(cell);cell=''}
+      else if(!quoted&&(ch==='\n'||ch==='\r')){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(value=>value.trim()))rows.push(row);row=[];cell=''}
+      else cell+=ch;
+    }
+    row.push(cell);if(row.some(value=>value.trim()))rows.push(row);
+    const [header,...values]=rows;if(!header)return [];
+    return values.map(cells=>Object.fromEntries(header.map((name,i)=>[name.trim(),cells[i]||''])));
+  }
+  async function loadAreaAuthorData(){
+    const publications='https://docs.google.com/spreadsheets/d/e/2PACX-1vRN6Pc85vfaqu_XEU4MQC9HTGckmU9k5AXtSXuy8iOp5uPUcOrbJdI1Lmklqtqp4IpAdQoO3TtrEZuR/pub?output=csv';
+    const students='https://docs.google.com/spreadsheets/d/e/2PACX-1vREf4bo6ZknVw_ITND5Rtfe8RJufodwkihs9GZBf5p_7tlE5wwgDPcPd9jFjFa2wF4WJP296jhPuApz/pub?output=csv';
+    const sources=[publications,students,students+'&gid=466308581&single=true'];
+    const results=await Promise.allSettled(sources.map(async url=>{const response=await fetch(`${url}&refresh=${Date.now()}`,{cache:'no-store'});if(!response.ok)throw new Error(`Published sheet ${response.status}`);return rowsFromCSV(await response.text())}));
+    for(const row of results[0].status==='fulfilled'?results[0].value:[])if(row.Title&&row.Authors)authorRecords.set(publicationKey(row.Title),authorList(row.Authors));
+    for(const result of results.slice(1))if(result.status==='fulfilled')for(const row of result.value){
+      const anchor=String(row['Anchor Name']||'').trim(),photo=String(row['Photo File']||'').trim();if(!anchor||!photo)continue;
+      const record={anchor,photo:new URL(photo.replace(/^\//,''),'https://sites.gatech.edu/thomas-test-website/').href};
+      for(const name of [row.Name,...authorList(row['Alternate Name(s)'])])if(name)memberRecords.set(nameKey(name),record);
+    }
+    update();
+  }
   function updateAreaAuthors(card){
-    if(card.dataset.esplAuthorsAligned)return;
-    const people=card.querySelector('.knowledge-slide__people'),rows=[...card.querySelectorAll('.knowledge-person-row')];
-    if(!people||!rows.length)return;
-    const all=rows.flatMap(row=>[...row.querySelectorAll('.knowledge-person')]);
-    if(!all.length)return;
-    card.dataset.esplAuthorsAligned='true';
-    const first=rows[0];for(const row of rows.slice(1))row.remove();first.replaceChildren();
-    const chosen=all.length>5?all.slice(0,4):all.slice();
-    if(all.length>5){const thomas=all.find(node=>/thomas (?:g\.|gonz[aá]lez) roberts/i.test(node.title||node.querySelector('img')?.alt||''));if(thomas&&!chosen.includes(thomas)){chosen.pop();chosen.push(thomas)}}
-    first.append(...chosen);
-    if(all.length>5){const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.textContent=`+${all.length-chosen.length}`;more.title=all.filter(node=>!chosen.includes(node)).map(node=>node.title||node.querySelector('img')?.alt).join(', ');first.append(more)}
+    if(card.dataset.esplAuthorsAligned||!authorRecords.size)return;
+    const title=card.querySelector('.knowledge-slide__title')?.textContent||'';
+    const names=authorRecords.get(publicationKey(title));if(!names?.length)return;
+    const media=card.querySelector('.knowledge-output-media');if(!media)return;
+    const people=card.querySelector('.knowledge-slide__people')||document.createElement('div');people.className='knowledge-slide__people';people.dataset.authorCount=String(names.length);
+    const row=document.createElement('div');row.className='knowledge-person-row';
+    const selected=names.length>5?names.slice(0,4):names.slice();
+    if(names.length>5){
+      const thomas=names.find(name=>nameKey(name)===nameKey('Thomas G. Roberts'));
+      if(thomas&&!selected.includes(thomas)){selected.pop();selected.push(thomas)}
+    }
+    for(const name of selected){
+      const member=memberRecords.get(nameKey(name)),wrapper=document.createElement(member?'a':'span');wrapper.className='knowledge-person'+(member?'':' knowledge-person--fallback');wrapper.title=name;
+      if(member)wrapper.href=`https://espl.ae.gatech.edu/people/#${encodeURIComponent(member.anchor)}`;
+      const img=document.createElement('img');img.className='knowledge-person__photo';img.src=member?.photo||astronautPhoto;img.alt=name;img.loading='lazy';wrapper.append(img);row.append(wrapper);
+    }
+    if(names.length>5){
+      const omitted=names.filter(name=>!selected.includes(name));
+      const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.textContent=`+${omitted.length}`;
+      more.title=omitted.join(', ');more.setAttribute('aria-label',`${omitted.length} more authors: ${omitted.join(', ')}`);row.append(more);
+    }
+    people.replaceChildren(row);media.replaceChildren(people);card.dataset.esplAuthorsAligned='true';
   }
   function update() {
     if(root.id==='studentOverlay')return;
@@ -166,4 +209,5 @@
     requestAnimationFrame(() => { pending = false; update(); });
   }).observe(root, { childList: true, subtree: true });
   update();
+  if(root.id!=='studentOverlay')loadAreaAuthorData().catch(error=>console.warn('Area author records unavailable',error));
 })();
