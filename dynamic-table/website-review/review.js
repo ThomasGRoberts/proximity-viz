@@ -236,6 +236,7 @@ async function loadPreview() {
 }
 
 function updateCopyIndicators() {
+  document.querySelectorAll('.review-switch button.needs-update').forEach(button => button.classList.remove('needs-update'));
   document.querySelectorAll(".review-switch [data-update-version]").forEach(button => {
     let copied = false;
     try { copied = localStorage.getItem(`espl-copied-${button.dataset.preview}`) === button.dataset.updateVersion; } catch { /* Private browser storage can be unavailable. */ }

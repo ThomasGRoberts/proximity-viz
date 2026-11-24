@@ -25,6 +25,12 @@
     ` : ''}
     #espl-project-page .project-person:hover,#espl-project-page .project-person:focus-visible{border-color:transparent!important;box-shadow:0 0 0 8px #fff,0 13px 30px #00000018!important}
     #espl-project-page .project-publications:not([data-espl-publications-ready="true"]){visibility:hidden}
+    #espl-project-page .espl-project-publication-pager{display:flex;align-items:center;justify-content:flex-end;gap:.5rem;margin:16px 0 0;font-size:12px;color:#6b7280}
+    #espl-project-page .espl-project-publication-pager[hidden]{display:none!important}
+    #espl-project-page .espl-project-publication-pager button{border:1px solid #e3e5e7;background:#fff;padding:.3rem .55rem;border-radius:.4rem;cursor:pointer;color:#252525!important;font:inherit;text-decoration:none!important;min-width:30px}
+    #espl-project-page .espl-project-publication-pager button:hover,#espl-project-page .espl-project-publication-pager button:focus-visible{background:#f7f7f7}
+    #espl-project-page .espl-project-publication-pager button[disabled]{opacity:.5;cursor:not-allowed;background:#fff}
+    #espl-project-page .espl-project-publication-pager button[aria-current="page"]{background:#fff3d6;border-color:#f1d188;font-weight:700}
     #espl-project-page .project-outputs .espl-special-card{grid-template-columns:minmax(0,1fr) 414px!important}
     #espl-project-page .espl-special-card .model-output-media{display:flex;align-items:center;justify-content:flex-start;gap:14px;min-height:90px;padding:16px!important}
     #espl-project-page .espl-special-card .model-polyhedron-link,
@@ -267,7 +273,7 @@
     const href=safeURL(rowField(featuredRow,'URL'));if(!href)return;
     const model=typeOf(featuredRow)==='model',repository=typeOf(featuredRow)==='data repository';
     const label=model?'Explore the interactive model':repository?'Explore the data':'Read the publication';
-    if(native&&model){native.href=href;native.setAttribute('aria-label',label);native.style.removeProperty('visibility');native.dispatchEvent(new doc.defaultView.Event('mouseleave'));native.classList.remove('is-arrived','is-open');doc.defaultView.setTimeout(()=>{native.classList.add('is-arrived');native.dispatchEvent(new doc.defaultView.Event('mouseenter'));doc.defaultView.setTimeout(()=>native.dispatchEvent(new doc.defaultView.Event('mouseleave')),2600)},100);return}
+    if(native&&model){native.href=href;native.setAttribute('aria-label',label);native.style.removeProperty('visibility');native.dispatchEvent(new doc.defaultView.Event('mouseleave'));native.classList.remove('is-arrived','is-open');doc.defaultView.setTimeout(()=>{native.classList.add('is-arrived');native.dispatchEvent(new doc.defaultView.Event('mouseenter'));doc.defaultView.setTimeout(()=>native.dispatchEvent(new doc.defaultView.Event('mouseleave')),4800)},250);return}
     native?.remove();
     const banner=doc.querySelector('main.banner,.banner')||doc.body;
     if(!doc.getElementById('espl-featured-hero-style')){
@@ -313,8 +319,8 @@
     const reveal=()=>{link.classList.add('is-open');icon.dispatchEvent(new doc.defaultView.Event('mouseenter'));};
     const retract=()=>{if(link.matches(':hover')||doc.activeElement===link)return;link.classList.remove('is-open');icon.dispatchEvent(new doc.defaultView.Event('mouseleave'))};
     link.addEventListener('mouseenter',reveal);link.addEventListener('focusin',reveal);link.addEventListener('mouseleave',retract);link.addEventListener('focusout',retract);
-    doc.defaultView.setTimeout(()=>{link.classList.add('is-arrived');if(!reduced)doc.defaultView.setTimeout(()=>{reveal();doc.defaultView.setTimeout(retract,2600)},700)},1100);
-    const timer=doc.defaultView.setInterval(()=>{if(reduced||doc.hidden||link.classList.contains('is-open'))return;reveal();doc.defaultView.setTimeout(retract,2200)},18000);
+    doc.defaultView.setTimeout(()=>{link.classList.add('is-arrived');if(!reduced)doc.defaultView.setTimeout(()=>{reveal();doc.defaultView.setTimeout(retract,4800)},180)},250);
+    const timer=doc.defaultView.setInterval(()=>{if(reduced||doc.hidden||link.classList.contains('is-open'))return;reveal();doc.defaultView.setTimeout(retract,4200)},16000);
     frame._esplHeroTimer&&doc.defaultView.clearInterval(frame._esplHeroTimer);frame._esplHeroTimer=timer;
   }
   function installHeroAction(row) {
@@ -350,6 +356,19 @@
     const container=projectRoot.querySelector('.project-publications');
     if(!container)return;
     let desired=[];
+    let allCards=[],page=0;
+    const pageSize=5;
+    const pager=document.createElement('nav');pager.className='espl-project-publication-pager';pager.setAttribute('aria-label','Research updates pages');pager.hidden=true;container.after(pager);
+    const showPage=()=>{
+      const pages=Math.max(1,Math.ceil(allCards.length/pageSize));page=Math.max(0,Math.min(page,pages-1));
+      desired=allCards.slice(page*pageSize,(page+1)*pageSize);reconcile();
+      pager.hidden=pages<=1;pager.replaceChildren();
+      if(pages<=1)return;
+      const button=(label,target,disabled=false,current=false)=>{const control=document.createElement('button');control.type='button';control.textContent=label;control.disabled=disabled;if(current)control.setAttribute('aria-current','page');control.addEventListener('click',()=>{page=target;showPage();container.scrollIntoView({block:'start',behavior:'smooth'})});return control};
+      pager.append(button('Prev',page-1,page===0));
+      for(let number=0;number<pages;number++)pager.append(button(String(number+1),number,false,number===page));
+      pager.append(button('Next',page+1,page===pages-1));
+    };
     let queued=false;
     const reconcile=()=>{
       if(desired.length!==container.children.length||desired.some((node,index)=>container.children[index]!==node))container.replaceChildren(...desired);
@@ -367,7 +386,7 @@
       try{await loadAuthorRoster()}catch(error){console.warn('Student author photos unavailable.',error)}
     }catch(error){
       console.warn('Project research updates could not load from the published Publications sheet.',error);
-      const notice=document.createElement('p');notice.textContent='Research updates are temporarily unavailable.';desired=[notice];reconcile();
+      const notice=document.createElement('p');notice.textContent='Research updates are temporarily unavailable.';allCards=[notice];showPage();
       container.dataset.esplPublicationsReady='true';
       return;
     }
@@ -375,8 +394,8 @@
     const byDate=(a,b)=>dateNumber(rowField(b,'Date'))-dateNumber(rowField(a,'Date'))||a._sheetOrder-b._sheetOrder;
     const featured=relevant.filter(row=>/^(true|yes|1)$/i.test(rowField(row,'Featured'))).sort(byDate)[0]||null;
     const ordered=[...(featured?[featured]:[]),...relevant.filter(row=>row!==featured).sort(byDate)];
-    desired=ordered.map(makeCard).filter(Boolean);
-    reconcile();
+    allCards=ordered.map(makeCard).filter(Boolean);
+    showPage();
     container.dataset.esplPublicationsReady='true';
     installHeroAction(featured);
   }

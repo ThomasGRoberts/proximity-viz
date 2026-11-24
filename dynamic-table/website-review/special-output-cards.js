@@ -35,6 +35,23 @@
   `;
   root.prepend(style);
   if(root.id==='espl-area-page'){
+    let pageSizeAttempts=0;
+    const setFiveCards=()=>{
+      const select=root.querySelector('#area-publications-pager .pw-page-size-select');
+      if(!select||!root.querySelector('.project-publications .knowledge-output-card')){
+        if(pageSizeAttempts++<16)setTimeout(setFiveCards,250);
+        return;
+      }
+      if(!select.querySelector('option[value="5"]')){
+        const option=new Option('5 per page','5');
+        const before=select.querySelector('option[value="10"]');
+        select.add(option,before||null);
+      }
+      select.value='5';
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+    };
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setFiveCards,{once:true});
+    else setFiveCards();
     const artVideo=root.querySelector('.area-intro__art video[crossorigin]');
     if(artVideo){
       artVideo.removeAttribute('crossorigin');artVideo.load();
@@ -192,11 +209,10 @@
       return;
     }
     for (const card of root.querySelectorAll('.project-publications .publication-card')) {
-      updateAreaAuthors(card);
-      if (card.dataset.esplSpecialReady) continue;
       const category = card.querySelector('.knowledge-slide__category');
       const kind = category?.textContent.trim().toLowerCase();
-      if (!/^(interactive )?model$|^data repository$/.test(kind || '')) continue;
+      if (!/^(interactive )?model$|^data repository$/.test(kind || '')) { updateAreaAuthors(card); continue; }
+      if (card.dataset.esplSpecialReady && card.querySelector('.model-text-link')) continue;
       const href = card.querySelector('.knowledge-slide__title-link[href], .knowledge-slide__title a[href], .external-metadata-link[href]')?.href;
       if (!href) continue;
       card.dataset.esplSpecialReady = 'true';
