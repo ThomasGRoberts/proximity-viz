@@ -76,13 +76,13 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_error(404, "Unknown project preview")
             try:
                 request = Request(PROJECT_URLS[slug], headers={"User-Agent": "Mozilla/5.0 (ESPL local design review)"})
-                with urlopen(request, timeout=20) as source:
+                with urlopen(request, timeout=8) as source:
                     html = source.read().decode("utf-8", "replace")
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
                 script_name = "project-page-updates.js" if slug in {"sbi", "proximity"} else f"{slug}-page-updates.js"
                 addon = ""
                 if slug != "lunar":
-                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=6'
+                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}?v=7'
                     addon += f'<script src="{local_script}" data-espl-project="{slug}"></script>'
                 if slug in {"proximity", "lunar"}:
                     addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/project-news-controls.js?v=2"></script>'
@@ -94,7 +94,25 @@ class Handler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(encoded)
             except Exception as error:
-                self.send_error(502, f"Could not load live project page: {error}")
+                # Keep the review pane usable while the lab site is temporarily unavailable.
+                fallback = HERE / f"{slug}-complete-block.html"
+                if not fallback.exists():
+                    self.send_error(502, f"Could not load live project page: {error}")
+                    return
+                block = fallback.read_text(encoding="utf-8")
+                for script_name in ("project-page-updates.js", "project-news-controls.js"):
+                    block = block.replace(
+                        f"https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/{script_name}",
+                        f"http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}",
+                    )
+                html = '<!doctype html><html><head><base href="https://espl.ae.gatech.edu/"></head><body>' + block + '</body></html>'
+                encoded = html.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("X-Review-Source", "local-block-fallback")
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
             return
         return super().do_GET()
 
