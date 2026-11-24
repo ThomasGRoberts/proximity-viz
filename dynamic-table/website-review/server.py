@@ -91,6 +91,10 @@ class Handler(SimpleHTTPRequestHandler):
                     "https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/people-page-updates.js",
                     f"http://127.0.0.1:{PORT}/dynamic-table/website-review/people-page-updates.js",
                 )
+                block = block.replace(
+                    "https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/special-output-cards.js",
+                    f"http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js",
+                )
                 html = '<!doctype html><html><head><base href="https://espl.ae.gatech.edu/"></head><body>' + block + '</body></html>'
                 encoded = html.encode("utf-8")
                 self.send_response(200)
@@ -114,6 +118,8 @@ class Handler(SimpleHTTPRequestHandler):
                     addon += "<style>" + local_block.split("<style>", 1)[1].split("</style>", 1)[0] + "</style>"
                 if slug in {"proximity", "lunar"}:
                     addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/project-news-controls.js?v=2"></script>'
+                if slug in {"space-security", "space-sustainability", "space-coordination"}:
+                    addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js?v=1"></script>'
                 html = html.replace("</body>", addon + "</body>", 1)
                 encoded = html.encode("utf-8")
                 self.send_response(200)

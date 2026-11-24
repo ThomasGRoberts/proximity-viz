@@ -64,9 +64,9 @@ const panes = {
   home: { surface: "Home" },
   opportunities: { surface: "Opportunities" },
   news: { surface: "News" },
-  "space-security": { surface: "Space Security Area", group: "areas" },
-  "space-sustainability": { surface: "Space Sustainability Area", group: "areas" },
-  "space-coordination": { surface: "Space Coordination Area", group: "areas" },
+  "space-security": { surface: "Space Security Area", group: "areas", snippet: "./area-page-update-snippet.html", copyLabel: "Copy area HTML update" },
+  "space-sustainability": { surface: "Space Sustainability Area", group: "areas", snippet: "./area-page-update-snippet.html", copyLabel: "Copy area HTML update" },
+  "space-coordination": { surface: "Space Coordination Area", group: "areas", snippet: "./area-page-update-snippet.html", copyLabel: "Copy area HTML update" },
   "model-sbi": { surface: "SBI Model" },
   "model-proximity": { surface: "Proximity Model" },
 };
@@ -343,7 +343,7 @@ $("copyHtml").addEventListener("click", async () => {
     button.textContent = "Copied HTML";
     const paneButton = document.querySelector(`.review-switch [data-preview="${pane}"]`);
     if (paneButton?.dataset.updateVersion) { try { localStorage.setItem(`espl-copied-${pane}`, paneButton.dataset.updateVersion); } catch {} updateCopyIndicators(); }
-    status(pane === "library" ? "The complete table page Custom HTML block is on your clipboard." : pane === "research" ? "The complete Research page Code Editor content is on your clipboard." : `The complete ${paneName[pane]} Custom HTML block is on your clipboard. Replace the existing block with it.`);
+    status(pane === "library" ? "The complete table page Custom HTML block is on your clipboard." : pane === "research" ? "The complete Research page Code Editor content is on your clipboard." : panes[pane].group === "areas" ? "The research-area update is on your clipboard. Paste it after the existing area-page block." : `The complete ${paneName[pane]} Custom HTML block is on your clipboard. Replace the existing block with it.`);
     setTimeout(() => { if (activePane === pane) button.textContent = panes[pane].copyLabel; }, 1800);
   } catch (error) { status(`Could not copy HTML: ${error.message}`); }
 });
