@@ -1,4 +1,4 @@
-body.e002-shared #scene{position:fixed;inset:0 0 0 300px;z-index:0;background:#fffcf6}
+body.e002-shared #scene{position:fixed;inset:0;z-index:0;background:#fffcf6}
 body.e002-shared #scene canvas{display:block;width:100%;height:100%}
 .e002-player-scaffold{display:none}
 .e002-scene-status{position:fixed;z-index:2;right:18px;bottom:74px;max-width:330px;padding:6px 8px;border:1px solid #e5e1d8;border-radius:5px;background:#fffdf9de;color:#666;font-size:10px;line-height:1.3;pointer-events:none}

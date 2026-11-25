@@ -19,6 +19,7 @@ import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-prev
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js?v=2";
 import { formatDwellDuration } from "../../shared/format-duration.js";
 import { safeEpisodeName } from "../../shared/episode-name.js";
+import { offsetCameraForPanel, watchEpisodePanelLayout } from "./episode-scene-layout.js";
 
 const $ = id => document.getElementById(id);
 const panelPreview = new URLSearchParams(location.search).get("panelPreview") === "1";
@@ -107,7 +108,7 @@ async function start() {
   }));
 
   document.body.classList.add("e005-shared");
-  document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css"><link rel="stylesheet" href="episode-e005.css">');
+  document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css?v=7"><link rel="stylesheet" href="episode-e005.css?v=2">');
   $("ui").querySelector(".episodeHeader h1").textContent = "Visualizing Proximity in the Space Domain";
   $("episodeTitle").replaceChildren(safeEpisodeName(row["Episode Name"]));
   const oldBack = $("ui").querySelector(".backEpisodes");
@@ -615,8 +616,8 @@ async function start() {
     }
     if (referenceSlot !== "A") referenceSlot = slot; autoCamera = true; lastTrailKey = ""; lastReferenceOrbitKey = ""; updateMinima(); updateSticky(); render();
   }
-  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); renderer.domElement.style.width = `${width}px`; renderer.domElement.style.height = `${height}px`; for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
-  new ResizeObserver(resize).observe(sceneHost); new ResizeObserver(drawCharts).observe($("distanceChartGroup"));
+  function resize() { const width = Math.max(1, sceneHost.clientWidth), height = Math.max(1, sceneHost.clientHeight); camera.aspect = width / height; offsetCameraForPanel(camera, sceneHost, { miniScene, panelPreview }); camera.updateProjectionMatrix(); renderer.setSize(width, height, false); renderer.domElement.style.width = `${width}px`; renderer.domElement.style.height = `${height}px`; for (const trail of Object.values(trails)) trail.material.uniforms.uResolution.value.set(width, height); drawCharts(); }
+  new ResizeObserver(resize).observe(sceneHost); watchEpisodePanelLayout(resize); new ResizeObserver(drawCharts).observe($("distanceChartGroup"));
   selector.addEventListener("click", event => { const button = event.target.closest("button[data-slot]"); if (button) { if (button.dataset.slot === selected) sharedChevron.click(); else chooseChaser(button.dataset.slot); } });
   chapterNav.addEventListener("click", event => { const button = event.target.closest("button[data-chapter]"); if (button) void switchChapter(button.dataset.chapter); });
   $("timelineSlider").addEventListener("input", event => setTime(Number(event.target.value)));

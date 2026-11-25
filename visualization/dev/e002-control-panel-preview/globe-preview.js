@@ -188,7 +188,7 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
   function resize() {
     const width = Math.max(1, mount.clientWidth), height = Math.max(1, mount.clientHeight);
     camera.aspect = width / height;
-    const panelVisible = !document.body.classList.contains("ui-collapsed");
+    const panelVisible = !document.body.classList.contains("ui-collapsed") && !document.body.classList.contains("episode-panel-collapsed");
     const panel = document.getElementById("ui");
     const panelEdge = width > 620 && panelVisible && panel
       ? Math.max(0, panel.getBoundingClientRect().right - mount.getBoundingClientRect().left + 18) : 0;

@@ -38,20 +38,15 @@ body.episode-panel-collapsed #episodePanelToggle{left:0}
 @media(max-width:760px){body:not(.e002-shared) #ui{width:calc(100vw - 36px)!important}#episodePanelToggle{left:calc(100vw - 18px)}}
 @media(max-width:760px){html:not(.mini-scene) body.e009-review #scene,html:not(.mini-scene) body.e009-review #e009ScreenLabels{inset:0!important;border:0!important;border-radius:0!important}}
 @media(prefers-reduced-motion:reduce){body:not(.e002-shared) #ui,#episodePanelToggle{transition:none}}
-/* The scene owns the unobscured area while the panel is open. */
+/* The scene fills the viewport; each episode camera centers the subject in the
+   unobscured area while its control panel is open. */
 @media(min-width:761px){
-  html:not(.mini-scene) body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared,.e009-shared):not([class*="-review"]):not(.episode-panel-collapsed) #scene,
-  html:not(.mini-scene) body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared,.e009-shared):not([class*="-review"]):not(.episode-panel-collapsed) [id$="ScreenLabels"]{left:361px!important}
-  html:not(.mini-scene) body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared,.e009-shared)[class*="-review"]:not(.episode-panel-collapsed) #scene,
-  html:not(.mini-scene) body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared,.e009-shared)[class*="-review"]:not(.episode-panel-collapsed) [id$="ScreenLabels"]{left:390px!important}
+  html:not(.mini-scene) body[class*="-shared"] #scene,
+  html:not(.mini-scene) body[class*="-shared"] [id$="ScreenLabels"]{left:0!important;right:0!important}
   html:not(.mini-scene) body:is(.e003-review,.e005-review,.e006-review,.e008-review,.e016-review,.e059-review,.e009-review) #scene,
   html:not(.mini-scene) body:is(.e003-review,.e005-review,.e006-review,.e008-review,.e016-review,.e059-review,.e009-review) [id$="ScreenLabels"]{top:0!important;right:0!important;bottom:0!important;border:0!important;border-radius:0!important;overflow:visible!important}
   html:not(.mini-scene) body:is(.e003-review,.e005-review,.e006-review,.e008-review,.e016-review,.e059-review,.e009-review) [class$="-chapter-transition"]{inset:0!important;border-radius:0!important;padding-left:390px!important}
   html:not(.mini-scene) body:is(.e003-review,.e005-review,.e006-review,.e008-review,.e016-review,.e059-review,.e009-review).episode-panel-collapsed [class$="-chapter-transition"]{padding-left:0!important}
-  body[class*="-shared"].episode-panel-collapsed #scene,
-  body[class*="-shared"].episode-panel-collapsed [id$="ScreenLabels"]{left:0!important;right:0!important}
-  body[class*="-shared"] #scene,
-  body[class*="-shared"] [id$="ScreenLabels"]{transition:left .28s ease}
 }
 .episode-neighbors{display:flex;align-items:center;justify-content:space-between;margin:5px 2px 0;font:600 9px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .episode-neighbors a{padding:4px 5px;border-radius:4px;color:#8a7b5d;text-decoration:none;transition:background .16s,color .16s}

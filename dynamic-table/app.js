@@ -501,6 +501,18 @@ function sourceFallback(meta, row, url, documentSource) {
   return fallback;
 }
 const reviewedSourceMetadata = {
+  "https://thomasgroberts.github.io/proximity-viz/dynamic-table/assets/records/A-AC.297-2026-WP.13-Russian-Federation.pdf": {
+    kind: "document",
+    previewPath: "./assets/source-previews/e009-russian-working-paper-first-page.png",
+    imageAlt: "First page of the Russian Federation working paper circulated to the OEWG on PAROS",
+  },
+  "https://integrityflash.com/integrity-flash/issue-155/": {
+    title: "Issue 155 — Close Approaches",
+    publisher: "Integrity Flash",
+    publishedDate: "2026-10-12",
+    imagePath: "./assets/source-previews/e009-integrity-flash-issue-155.png",
+    imageAlt: "Integrity Flash Issue 155 cover",
+  },
   "https://www.nytimes.com/2026/10/19/science/russia-satellite-kosmos-2612.html": {
     title: "Russian Satellite Makes a Menacing Approach to Another Craft in Orbit",
     publisher: "The New York Times",
@@ -957,7 +969,7 @@ function stageEpisodeAssets() {
   if (matchMedia("(max-width:760px)").matches) return;
   const idle = callback => "requestIdleCallback" in window
     ? requestIdleCallback(callback, { timeout: 1500 }) : setTimeout(callback, 250);
-  const orbitalAssets = [["e003", 13], ["e005", 18], ["e006", 20], ["e008", 12], ["e016", 10], ["e059", 13]];
+  const orbitalAssets = [["e003", 17], ["e005", 22], ["e006", 24], ["e008", 16], ["e016", 14], ["e059", 16]];
   const assets = [
     "../visualization/Viz/vendor/three/three.module.js",
     "../visualization/Viz/vendor/countries-50m.json",
@@ -968,7 +980,7 @@ function stageEpisodeAssets() {
     "../visualization/e001/?v=9",
     "../visualization/e002/?build=5",
     "../visualization/e001/public.js?v=16",
-    "../visualization/dev/e002-control-panel-preview/app.js?v=20",
+    "../visualization/dev/e002-control-panel-preview/app.js?v=22",
   ];
   let index = 0, queued = false;
   const scheduleNext = () => {

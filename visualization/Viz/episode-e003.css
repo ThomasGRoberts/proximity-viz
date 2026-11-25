@@ -1,10 +1,10 @@
-body.e003-shared #scene{position:fixed;inset:0 0 0 300px;background:#fff}
+body.e003-shared #scene{position:fixed;inset:0;background:#fff}
 .mini-scene body.e003-shared #scene{inset:0;background:#fffcf6}
 .mini-scene body.e003-shared #e003ScreenLabels,.mini-scene body.e003-shared #sceneStatus,.mini-scene body.e003-shared #e003ChapterTransition{display:none!important}
 .mini-scene body.e003-shared #scene canvas{pointer-events:none}
 .mini-scene.mini-editing body.e003-shared #scene canvas{pointer-events:auto}
 body.e003-shared #scene canvas{width:100%;height:100%;display:block}
-body.e003-shared #e003ScreenLabels{position:fixed;inset:0 0 0 300px;z-index:4;pointer-events:none}
+body.e003-shared #e003ScreenLabels{position:fixed;inset:0;z-index:4;pointer-events:none}
 .e003-screen-label{position:absolute;color:#292929;font-size:12px;font-weight:700;line-height:1;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 6px #fff;transform:translateY(-50%)}
 .e003-screen-label.is-muted{opacity:.3}
 .e003-screen-label[hidden]{display:none}
@@ -71,8 +71,8 @@ body.e003-shared #thresholdRangeNote{display:block}
 .e003-review-bar nav:first-child a[aria-current]{border-color:#cfc6b5;background:#fff;color:#3e392e;box-shadow:0 1px 3px #0001}
 .e003-review-drawer{position:fixed;z-index:101;top:40px;right:0;bottom:0;width:min(330px,100vw);padding:15px;border-left:1px solid #ddd;background:#fffdf8;box-shadow:-4px 0 14px #0001;overflow:auto;font:11px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.e003-review-drawer[hidden]{display:none}.e003-review-drawer textarea{display:block;width:100%;min-height:80px;margin:8px 0}.e003-review-drawer button{margin:3px;padding:6px 8px;border:1px solid #ccc;border-radius:5px;background:#fff;cursor:pointer}.e003-review-item{padding:8px 0;border-top:1px solid #eee}.e003-review-item p{margin:4px 0}
 .e003-pin-layer{position:fixed;z-index:99;inset:0;pointer-events:none}.e003-spot-pin{position:absolute;display:grid;place-items:center;width:23px;height:23px;border:2px solid #fff;border-radius:50%;background:#a87c00;color:#fff;box-shadow:0 1px 5px #0005;font:700 11px/1 sans-serif;pointer-events:auto;cursor:pointer;transform:translate(-50%,-50%)}
-body.e003-review #scene{inset:76px 14px 16px 14px;border:1px solid #e5e1d8;border-radius:12px;overflow:hidden}
-body.e003-review #e003ScreenLabels{inset:76px 14px 16px 14px;overflow:hidden}
+body.e003-review #scene{inset:0;border:0;border-radius:0;overflow:visible}
+body.e003-review #e003ScreenLabels{inset:0;overflow:visible}
 body.e003-review #ui{top:99px;left:31px;width:342px;max-height:calc(100vh - 226px);padding:18px;border-radius:16px}
 body.e003-review:not(.e003-multi-chapter) #ui{max-height:calc(100vh - 188px)}
 body.e003-review #ui .episodeHeader h1{font-size:24px;line-height:1.08;white-space:normal}
@@ -206,9 +206,9 @@ body.e003-review .e003-workshop{left:390px;right:18px;bottom:17px;width:auto;max
 .e003-workshop-main .e003-workshop-save-actions{position:static;margin:5px 0 0;padding:0;border:0;background:transparent;box-shadow:none}
 .e003-workshop-more{margin-top:5px;padding-top:4px;border-top:1px solid #e6dfd2;font-size:10px}.e003-workshop-more summary{width:max-content;color:#75633b;cursor:pointer}.e003-workshop-more .e003-workshop-list{max-height:115px;overflow:auto}
 .e003-workshop #e003WorkshopStatus{margin:3px 0 0;padding:0;border:0;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body.e003-review.e003-eci #scene,body.e003-review.e003-eci #e003ScreenLabels{left:390px}
+body.e003-review.e003-eci #scene,body.e003-review.e003-eci #e003ScreenLabels{left:0}
 @media(max-width:1180px){body.e003-review .e003-workshop{max-height:245px}.e003-workshop-main{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:800px){body.e003-review .e003-workshop{left:12px;right:12px;bottom:12px;max-height:42vh}body.e003-review.e003-eci #scene,body.e003-review.e003-eci #e003ScreenLabels{left:14px}}
+@media(max-width:800px){body.e003-review .e003-workshop{left:12px;right:12px;bottom:12px;max-height:42vh}body.e003-review.e003-eci #scene,body.e003-review.e003-eci #e003ScreenLabels{left:0}}
 
 @media(min-width:761px){body.e003-shared:not(.e003-review) #ui{max-height:calc(100vh - 145px)}}
 

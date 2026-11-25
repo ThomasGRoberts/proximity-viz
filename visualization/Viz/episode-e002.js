@@ -38,7 +38,7 @@ const sourceLabel = tle => tle?.source === "space-track" ? "Space-Track.org" : t
 
 document.body.classList.add("e002-shared");
 document.body.classList.toggle("e002-multi-pair", comparisons.length > 1);
-document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css?v=6">');
+document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="episode-e002.css?v=7">');
 const scene = document.createElement("div"); scene.id = "scene"; document.body.prepend(scene);
 const labels = document.createElement("div"); labels.id = "satelliteScreenLabels"; document.body.append(labels);
 const scaffold = document.createElement("div"); scaffold.className = "e002-player-scaffold";

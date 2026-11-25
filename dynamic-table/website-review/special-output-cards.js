@@ -28,8 +28,6 @@
     #studentOverlay .espl-special-card .model-text-link:hover, #espl-area-page .espl-special-card .model-text-link:hover{color:#666;text-decoration:none}
     #studentOverlay .espl-special-card .model-link-arrow, #espl-area-page .espl-special-card .model-link-arrow{display:inline-block}
     #studentOverlay .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.external-metadata-link),#espl-area-page .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.external-metadata-link){display:none!important}
-    #studentOverlay .espl-special-card{grid-template-columns:1fr!important}
-    #studentOverlay .espl-special-card .knowledge-output-main{display:none!important}
     #studentOverlay .espl-special-card .knowledge-output-media:not(.espl-type-media),#espl-area-page .espl-special-card .knowledge-output-media:not(.model-output-media){display:none!important}
     #studentOverlay .espl-special-card:is(:hover,:focus-within) .model-link-arrow, #espl-area-page .espl-special-card:is(:hover,:focus-within) .model-link-arrow{animation:espl-special-link-nudge .7s ease}
     #studentOverlay .espl-special-card .knowledge-slide__category-icon, #espl-area-page .espl-special-card .knowledge-slide__category-icon{display:inline-grid;flex:0 0 1rem;width:1rem;height:1rem;place-items:center}
@@ -270,6 +268,12 @@
           action.textContent=model?'Explore the model':'Explore the data';
           const arrow=document.createElement('span');arrow.className='model-link-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='→';action.append(arrow);
           media.append(link,action);card.append(media);
+          if(model){
+            card.addEventListener('mouseenter',()=>link.dispatchEvent(new Event('mouseenter')));
+            card.addEventListener('mouseleave',()=>link.dispatchEvent(new Event('mouseleave')));
+            card.addEventListener('focusin',()=>link.dispatchEvent(new Event('focusin')));
+            card.addEventListener('focusout',()=>link.dispatchEvent(new Event('focusout')));
+          }
         }
       }
       return;
@@ -320,6 +324,12 @@
       action.append(label, arrow);
       media.replaceChildren(iconLink, action);
       card.append(media);
+      if (model) {
+        card.addEventListener('mouseenter', () => iconLink.dispatchEvent(new Event('mouseenter')));
+        card.addEventListener('mouseleave', () => iconLink.dispatchEvent(new Event('mouseleave')));
+        card.addEventListener('focusin', () => iconLink.dispatchEvent(new Event('focusin')));
+        card.addEventListener('focusout', () => iconLink.dispatchEvent(new Event('focusout')));
+      }
     }
   }
   let pending = false;
