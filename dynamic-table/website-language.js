@@ -40,6 +40,8 @@ function showModelWarning(url) {
 
 if (!window.__esplTableFrameMessageListener) {
   window.__esplTableFrameMessageListener = true;
+  let deepLinkScrollTimer;
+  let deepLinkScrolled = false;
   window.addEventListener("message", event => {
     for (const frame of document.querySelectorAll("[data-espl-episodes-page] iframe")) {
       if (frame.contentWindow !== event.source || new URL(frame.src).origin !== event.origin) continue;
@@ -49,8 +51,23 @@ if (!window.__esplTableFrameMessageListener) {
       } else if (event.data?.type === "espl-table-wheel" && Number.isFinite(event.data.deltaY)) {
         window.scrollBy(0, event.data.deltaY);
       } else if (event.data?.type === "espl-table-row" && Number.isFinite(event.data.top)) {
-        const top = window.scrollY + frame.getBoundingClientRect().top + event.data.top - 8;
-        window.scrollTo(0, Math.max(0, top));
+        if (event.data.reason === "deep-link") {
+          if (!deepLinkScrolled) {
+            clearTimeout(deepLinkScrollTimer);
+            const rowTop = event.data.top;
+            deepLinkScrollTimer = setTimeout(() => {
+              deepLinkScrolled = true;
+              const top = window.scrollY + frame.getBoundingClientRect().top + rowTop - 8;
+              window.scrollTo({
+                top: Math.max(0, top),
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+              });
+            }, 220);
+          }
+        } else {
+          const top = window.scrollY + frame.getBoundingClientRect().top + event.data.top - 8;
+          window.scrollTo(0, Math.max(0, top));
+        }
       } else if (event.data?.type === "espl-table-model-warning") {
         try {
           const destination = new URL(event.data.url);

@@ -1462,10 +1462,10 @@ async function init() {
       const row = document.querySelector(`.episode-row.selected[data-episode-id="${selectedId}"]`);
       if (!row) return;
       if (pageParams.get("embed") === "1" && window.parent !== window) {
-        window.parent.postMessage({ type: "espl-table-row", top: row.getBoundingClientRect().top }, "*");
+        window.parent.postMessage({ type: "espl-table-row", reason: "deep-link", top: row.getBoundingClientRect().top }, "*");
       } else {
         const offset = document.getElementById("tableReviewBar")?.getBoundingClientRect().height || 0;
-        scrollTo({ top: Math.max(0, scrollY + row.getBoundingClientRect().top - offset - 16) });
+        scrollTo({ top: Math.max(0, scrollY + row.getBoundingClientRect().top - offset - 16), behavior: reducedMotion.matches ? "auto" : "smooth" });
       }
     };
     requestAnimationFrame(alignSelectedRow);
