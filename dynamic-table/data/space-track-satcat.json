@@ -432,6 +432,17 @@
       "SITE": "XSC",
       "DECAY": ""
     },
+    "2025-131A": {
+      "NORAD_CAT_ID": "64467",
+      "OBJECT_ID": "2025-131A",
+      "OBJECT_NAME": "COSMOS 2589",
+      "SATNAME": "COSMOS 2589",
+      "OBJECT_TYPE": "PAYLOAD",
+      "COUNTRY": "CIS",
+      "LAUNCH": "2025-06-19",
+      "SITE": "PKMTR",
+      "DECAY": ""
+    },
     "2026-083H": {
       "NORAD_CAT_ID": "68762",
       "OBJECT_ID": "2026-083H",
@@ -471,5 +482,6 @@
     "TANSC": "Tanegashima Space Center",
     "PKMTR": "Plesetsk Cosmodrome",
     "TTMTR": "Baikonur Cosmodrome"
-  }
+  },
+  "additionalSource": "Space-Track SATCAT export, 2026-11-16 (COSMOS 2589)"
 }

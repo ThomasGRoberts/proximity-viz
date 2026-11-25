@@ -981,6 +981,7 @@ html.mobile-review-frame .table-comment-drawer{top:54px}
 .episode-heading{position:relative;display:block;min-height:28px;padding-right:48px}
 .episode-heading .episode-title{display:block!important}
 .episode-heading .orbit-tag{position:absolute;top:50%;right:0;margin:0!important;transform:translateY(-50%)}
+.episode-heading .new-episode-cue{display:inline-block;margin-top:5px;padding:2px 6px;border:1px solid #d5ac43;border-radius:3px;background:#fff4cf;color:#6c5016;font-size:9px;font-weight:700;letter-spacing:.02em}
 .table-wrap tr.episode-row td,.table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{transition:background-color .18s ease!important}
 @media(min-width:901px){.table-wrap tr.episode-row:not(.selected):is(:hover,:focus-visible) td{padding-bottom:30px!important}}
 .table-wrap tr.episode-row.selected td:first-child{position:relative;box-shadow:none}

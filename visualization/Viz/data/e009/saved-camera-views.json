@@ -1,0 +1,31 @@
+{
+  "schema": "espl-shared-review-v1",
+  "views": [
+    {
+      "id": "3a2575fbd1f140d98a9bec72aab1bfdc",
+      "createdAt": "2026-11-25T14:34:36+00:00",
+      "chapterId": "chapter-1",
+      "timeUtc": "2026-09-20T00:57:00.000Z",
+      "selected": "B",
+      "referenceSlot": "B",
+      "position": [
+        0.7618158250116275,
+        0.7028461743743556,
+        3.8741358235637833
+      ],
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        1,
+        0
+      ],
+      "zoom": 1,
+      "fov": 35,
+      "note": ""
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "espl-e009-satcat-v1",
+  "source": "Space-Track SATCAT export, 2026-11-16",
+  "records": {
+    "2016-052A": {
+      "NORAD_CAT_ID": "41744",
+      "OBJECT_ID": "2016-052A",
+      "OBJECT_NAME": "USA 270",
+      "SATNAME": "USA 270",
+      "OBJECT_TYPE": "PAYLOAD",
+      "COUNTRY": "US",
+      "LAUNCH": "2016-08-19",
+      "SITE": "AFETR",
+      "DECAY": ""
+    },
+    "2025-131A": {
+      "NORAD_CAT_ID": "64467",
+      "OBJECT_ID": "2025-131A",
+      "OBJECT_NAME": "COSMOS 2589",
+      "SATNAME": "COSMOS 2589",
+      "OBJECT_TYPE": "PAYLOAD",
+      "COUNTRY": "CIS",
+      "LAUNCH": "2025-06-19",
+      "SITE": "PKMTR",
+      "DECAY": ""
+    }
+  },
+  "launchSiteNames": {
+    "AFETR": "Cape Canaveral / Kennedy Space Center",
+    "PKMTR": "Plesetsk Cosmodrome"
+  }
+}

@@ -15,7 +15,9 @@ function satelliteLibrary() {
 }
 
 async function verifiedElements(id, norad) {
-  const base = new URL(`../visualization/dev/${id.toLowerCase().replace("-", "")}/`, import.meta.url);
+  const base = id === "E-009"
+    ? new URL("../visualization/Viz/data/e009/", import.meta.url)
+    : new URL(`../visualization/dev/${id.toLowerCase().replace("-", "")}/`, import.meta.url);
   const manifest = await fetch(new URL("data/provenance.json", base), { cache: "no-store" }).then(response => {
     if (!response.ok) throw new Error(`${id} element manifest returned ${response.status}`);
     return response.json();

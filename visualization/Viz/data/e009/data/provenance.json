@@ -1,0 +1,40 @@
+{
+  "schema": "espl-e009-dated-elements-v1",
+  "source": "User-provided Space-Track TLE export (2026tle.txt)",
+  "retrievedUtc": "2026-11-25",
+  "note": "Excluded one 41744 line labeled 2014-043A, inconsistent with USA 270 (2016-052A). Deduplicated identical TLE epochs.",
+  "datasets": [
+    {
+      "object": {
+        "norad": "41744"
+      },
+      "url": "data/41744.json",
+      "sha256": "483b55e4d33f9d752648e78ad30a40c4e1d038492132ee97c70b92d283235e95",
+      "count": 74,
+      "firstEpoch": "2026-01-02T08:24:53.358048Z",
+      "lastEpoch": "2026-11-02T06:44:40.507296Z"
+    },
+    {
+      "object": {
+        "norad": "64467"
+      },
+      "url": "data/64467.json",
+      "sha256": "de5bddaf53ebc3e7da569aa7c590181d089521ee07cbc07430cfc8345f92f8c8",
+      "count": 274,
+      "firstEpoch": "2026-01-02T18:30:07.648704Z",
+      "lastEpoch": "2026-11-22T18:24:12.702816Z"
+    },
+    {
+      "object": {
+        "norad": "41745"
+      },
+      "url": "data/41745.json",
+      "sha256": "62e665a5aa8174ba9c872ddb6848f7da68c969ccad6ff14717101fa85d8f7d00",
+      "count": 13,
+      "firstEpoch": "2026-09-06T09:28:26.228064Z",
+      "lastEpoch": "2026-10-12T10:19:20.558784Z",
+      "purpose": "GSSAP partner audit",
+      "retrievedUtc": "2026-11-25T12:13:31.032619+00:00"
+    }
+  ]
+}

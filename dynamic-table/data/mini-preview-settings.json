@@ -279,6 +279,41 @@
           "y": -44
         }
       }
+    },
+    "E-009": {
+      "episodeId": "E-009",
+      "windowId": "chapter-1",
+      "frameMode": "relative",
+      "loopStartUtc": "2026-09-25T20:41:09.189Z",
+      "loopEndUtc": "2026-10-03T08:00:00.000Z",
+      "rate": 7200,
+      "camera": {
+        "name": "Dynamic Table mini preview",
+        "timestampUtc": "2026-09-27T06:35:22.149Z",
+        "frameMode": "relative",
+        "referenceSatellite": "B",
+        "position": [
+          3.0485861828650735,
+          0.3437018291741929,
+          5.445956334037253
+        ],
+        "target": [
+          0.0015562680422592653,
+          -0.7542786900773302,
+          0.13060596304535987
+        ],
+        "up": [
+          0,
+          1,
+          0
+        ],
+        "fieldOfViewDeg": 35,
+        "zoom": 1,
+        "viewportOffset": {
+          "x": -12,
+          "y": -64
+        }
+      }
     }
   },
   "savedAt": "2026-11-22T17:53:37+00:00"

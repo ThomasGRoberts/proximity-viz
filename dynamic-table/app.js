@@ -2,7 +2,7 @@ import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
 import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar, parseCsv } from "../shared/episode-feed.js?v=7";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
-import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js?v=2";
+import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js?v=3";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
 import { estimatedValue } from "../shared/estimated-values.js?v=3";
 import { applyMarkerCssVariables } from "../shared/marker-spec.js?v=3";
@@ -20,7 +20,7 @@ const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.
 const EARTH_COLOR = 0xedeae5;
 const localE003Review = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
 const isLocalReview = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
-const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(id) || (isLocalReview && id === "E-009");
+const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009"].includes(id);
 const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, historicalMetrics: {}, usePreview: false, selected: null, query: "", sort: { key: "date", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 let sourceCarouselCleanup = () => {};
@@ -652,7 +652,7 @@ function expandedContent(row, data) {
     const viz = el("section", "visual-block");
     const target = new URLSearchParams(location.search).get("embed") === "1" || location.hostname === "thomasgroberts.github.io"
       ? `https://espl.ae.gatech.edu/research/models/proximity/?episode=${encodeURIComponent(publicId)}`
-      : new URL(episodeId === "E-001" ? "../visualization/e001/?v=9" : episodeId === "E-002" ? "../visualization/e002/?build=5" : `../visualization/Viz/compare.html?${localE003Review || episodeId === "E-009" ? "dev=1&" : ""}episode=${publicId}&build=5`, location.href).href;
+      : new URL(episodeId === "E-001" ? "../visualization/e001/?v=9" : episodeId === "E-002" ? "../visualization/e002/?build=5" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=6`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -1271,7 +1271,7 @@ function startPreview(row) {
       miniResizeObserver.observe(expanded);
     }
     frame.addEventListener("load", () => localReview?.attachMini(frame));
-    if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) frame.addEventListener("load", () => void applyPublishedMiniConfig(frame, episodeId));
+    if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009"].includes(episodeId)) frame.addEventListener("load", () => void applyPublishedMiniConfig(frame, episodeId));
     localReview?.attachMini(frame);
     return;
   }
@@ -1339,6 +1339,7 @@ function render() {
     const cue = el("span", "row-open-cue"); cue.setAttribute("aria-hidden", "true");
     cue.append(el("span", "row-open-chevron"));
     heading.append(name, badge);
+    if (isLocalReview && field(row, "ID") === "E-009") heading.append(el("span", "new-episode-cue", "Newly added"));
     episode.append(heading); tr.append(episode);
     const orbitCell = el("td", "orbit-cell"); tr.append(orbitCell);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
@@ -1407,10 +1408,8 @@ async function init() {
     loadCurrentEpisodes(),
     loadCurrentDescriptions().catch(error => ({ descriptions: [], error: error.message })),
     fetch("./data/space-track-satcat.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Space-Track catalog returned ${response.status}`); return response.json(); }),
-    localReviewMode ? fetch("../visualization/dev/e009/space-track-e009.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`E-009 local catalog returned ${response.status}`); return response.json(); }) : Promise.resolve(null),
-  ]).then(([snapshot, feed, descriptionFeed, spaceTrack, localCatalog]) => {
-    if (localCatalog?.records) Object.assign(spaceTrack.records, localCatalog.records);
-    const episodes = localReviewMode ? feed.episodes : feed.episodes.filter(row => row["Episode ID"] !== "E-009");
+  ]).then(([snapshot, feed, descriptionFeed, spaceTrack]) => {
+    const episodes = feed.episodes;
     const e001 = episodes.find(row => field(row, "ID") === "E-001");
     if (e001) episodeUtcInterval(e001);
     return { ...snapshot, descriptions: descriptionFeed.descriptions, episodes, spaceTrack, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc, descriptionsCheckedUtc: descriptionFeed.fetchedUtc, descriptionError: descriptionFeed.error || "" };
@@ -1440,7 +1439,7 @@ async function init() {
     if (state.sort.key === "distance" || state.sort.key === "speed") render();
   });
   state.selected = initialSelection; render();
-  for (const id of ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059", ...(localReviewMode ? ["E-009"] : [])]) {
+  for (const id of ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009"]) {
     const row = state.live.episodes?.find(item => item.ID === id);
     if (!row) continue;
     historicalEpisodeMetrics(row, state.live.spaceTrack).then(metrics => {
