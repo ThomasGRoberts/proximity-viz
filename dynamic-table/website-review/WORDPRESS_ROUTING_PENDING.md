@@ -5,7 +5,9 @@ it leaves the default E-001 iframe in place. Replace the entire model page
 Custom HTML block, including its iframe and router, with
 [`model-proximity-complete-block.html`](model-proximity-complete-block.html).
 The website review pane's Proximity model Copy HTML button provides this exact
-complete block. Do not append it beneath the old block. Until the replacement
+complete block on one line to prevent WordPress from turning a standalone HTML
+comment or script into a full-height empty paragraph. Do not append it beneath
+the old block. Until the replacement
 is visible on the lab site, public E-009 links use the direct GitHub
 visualization so visitors see the correct episode. Other episode links continue
 to use the lab-site model page.
