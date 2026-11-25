@@ -46,7 +46,13 @@
     #espl-people-page #studentOverlay .espl-student-socials{display:flex;gap:9px;margin:auto 0 0;padding:14px 0 0;list-style:none}
     #espl-people-page #studentOverlay .espl-student-socials li{margin:0;padding:0;list-style:none}
     #espl-people-page #studentOverlay .student-bio a,#espl-people-page #studentOverlay .student-bio a:visited,#espl-people-page #studentOverlay .student-bio a:hover,#espl-people-page #studentOverlay .student-bio a:focus-visible{color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px}
-    @media(max-width:700px){#espl-people-page #studentOverlay .profile-head-copy{padding-top:6px}}
+    #espl-people-page #studentOverlay .knowledge-slide__summary a[href*="/people/"],#espl-people-page #studentOverlay .knowledge-slide__summary a[href*="/people/"]:is(:visited,:hover,:focus-visible){color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px;transition:none!important}
+    @media(max-width:700px){
+      #espl-people-page #studentOverlay .profile-head{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:start!important;gap:12px!important}
+      #espl-people-page #studentOverlay .profile-head .profile-photo{flex:none!important;width:min(var(--espl-student-photo-size,218px),140px)!important;height:min(var(--espl-student-photo-size,218px),140px)!important}
+      #espl-people-page #studentOverlay .profile-head-copy{width:100%!important;min-height:0!important;padding-top:0!important}
+      #espl-people-page #studentOverlay .espl-student-socials{margin:12px 0 0!important;padding-top:0!important}
+    }
   `;
   root.prepend(style);
 

@@ -11,9 +11,12 @@
     #espl-area-page .project-publications .publication-card .knowledge-person-row{display:flex!important;flex-wrap:nowrap!important;justify-content:flex-start!important;gap:8px!important;width:100%!important}
     #espl-area-page .project-publications .publication-card .knowledge-person__photo{width:70px!important;height:70px!important;flex:0 0 70px!important}
     #espl-area-page .project-publications .knowledge-slide__category{margin-bottom:.88rem!important}
+    #espl-area-page .project-publications .knowledge-slide__summary a[href*="/people/"],#espl-area-page .project-publications .knowledge-slide__summary a[href*="/people/"]:is(:visited,:hover,:focus-visible){color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px;transition:none!important}
+    #studentOverlay .project-publications .knowledge-slide__summary a[href*="/people/"],#studentOverlay .project-publications .knowledge-slide__summary a[href*="/people/"]:is(:visited,:hover,:focus-visible){color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px;transition:none!important}
     @media(min-width:768px){#espl-area-page .student-card{margin-block:8px!important}}
     #espl-area-page .espl-author-overflow{display:grid!important;place-items:center!important;flex:0 0 70px!important;width:70px!important;height:70px!important;box-sizing:border-box!important;margin:0!important;padding:0!important;border:5px solid #fff!important;border-radius:50%!important;background:#c7c7c7!important;color:#353535!important;font-weight:700!important;line-height:1!important;text-align:center!important}
     #studentOverlay .espl-special-card .model-output-media, #espl-area-page .espl-special-card .model-output-media{display:flex;align-items:center!important;align-self:stretch;height:100%;box-sizing:border-box;justify-content:flex-start;gap:14px;min-height:90px;padding:16px}
+    #espl-area-page .espl-special-card .espl-mobile-special-summary,#espl-area-page .espl-special-card .espl-mobile-special-people{display:none!important}
     #studentOverlay .espl-special-card .model-polyhedron-link, #studentOverlay .espl-special-card .espl-table-icon-link,
     #espl-area-page .espl-special-card .model-polyhedron-link, #espl-area-page .espl-special-card .espl-table-icon-link{display:block;flex:0 0 76px;width:76px;height:76px;border-radius:8px;text-decoration:none!important}
     #studentOverlay .espl-special-card .model-polyhedron-canvas, #studentOverlay .espl-special-card .espl-table-icon,
@@ -31,7 +34,7 @@
     @keyframes espl-special-link-nudge{0%,100%{transform:translateX(0)}45%{transform:translateX(4px)}70%{transform:translateX(-1px)}}
     @keyframes espl-special-table-scan-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(25px)}}
     @media(max-width:999px){#espl-area-page .project-publications .publication-card,#espl-area-page .espl-special-card{grid-template-columns:1fr!important}}
-    @media(max-width:767px){#studentOverlay .espl-special-card,#espl-area-page .espl-special-card{grid-template-columns:minmax(0,1fr)!important}#studentOverlay .espl-special-card .model-output-media,#espl-area-page .espl-special-card .model-output-media{min-height:0;padding:0 1.2rem 1.2rem;overflow-x:auto}}
+    @media(max-width:767px){#studentOverlay .espl-special-card,#espl-area-page .espl-special-card{grid-template-columns:minmax(0,1fr)!important}#studentOverlay .espl-special-card .model-output-media{min-height:0;padding:0 1.2rem 1.2rem;overflow-x:auto}#espl-area-page .espl-special-card .model-output-media{display:none!important}#espl-area-page .espl-special-card .espl-mobile-special-summary{display:block!important}#espl-area-page .espl-special-card .espl-mobile-special-people{display:flex!important;min-height:0;padding:0 1.2rem 1.2rem;overflow-x:auto}}
     @media(prefers-reduced-motion:reduce){#studentOverlay .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan),#espl-area-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
   root.prepend(style);
@@ -202,7 +205,7 @@
         const kind=category.textContent.trim().toLowerCase();
         if(!/^(interactive )?model$|^data repository$/.test(kind))continue;
         const model=kind!=='data repository';
-        category.textContent=model?'Interactive model':'Data repository';
+        category.textContent=model?'Interactive Model':'Data Repository';
         const icon=document.createElement('span');icon.className='knowledge-slide__category-icon';icon.setAttribute('aria-hidden','true');
         icon.innerHTML=model?'<svg viewBox="0 0 24 24"><path d="M4 3.5 19 12l-7 1.2-2.5 6.3z"/><path d="m12 13.2 3.4 6"/></svg>':'<svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M3.5 14h17M9 9v11M15 9v11"/></svg>';
         category.prepend(icon);category.dataset.esplSpecialEyebrow='true';
@@ -225,9 +228,11 @@
       categoryIcon.className = 'knowledge-slide__category-icon';
       categoryIcon.setAttribute('aria-hidden', 'true');
       categoryIcon.innerHTML = model ? '<svg viewBox="0 0 24 24"><path d="M4 3.5 19 12l-7 1.2-2.5 6.3z"/><path d="m12 13.2 3.4 6"/></svg>' : '<svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M3.5 14h17M9 9v11M15 9v11"/></svg>';
-      category.replaceChildren(categoryIcon, document.createTextNode(model ? 'Interactive model' : 'Data repository'));
-      card.querySelector('.knowledge-slide__summary')?.remove();
-      const media = card.querySelector('.knowledge-output-media') || document.createElement('div');
+      category.replaceChildren(categoryIcon, document.createTextNode(model ? 'Interactive Model' : 'Data Repository'));
+      card.querySelector('.knowledge-slide__summary')?.classList.add('espl-mobile-special-summary');
+      const mobileMedia = card.querySelector('.knowledge-output-media');
+      if(mobileMedia)mobileMedia.classList.add('espl-mobile-special-people');
+      const media = document.createElement('div');
       media.className = 'knowledge-output-media model-output-media';
       const iconLink = document.createElement('a');
       iconLink.href = href;
@@ -252,7 +257,7 @@
       arrow.textContent = '→';
       action.append(label, arrow);
       media.replaceChildren(iconLink, action);
-      if (!media.isConnected) card.append(media);
+      card.append(media);
     }
   }
   let pending = false;

@@ -48,6 +48,8 @@
     #espl-project-page .project-outputs .publication-card.no-portraits{grid-template-columns:1fr}
     #espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;padding:16px!important}
     #espl-project-page .publication-card .espl-author-name,#espl-project-page .publication-card .espl-author-name:visited,#espl-project-page .publication-card .espl-author-name:hover{color:#252525;text-decoration:underline;text-decoration-color:#252525;text-underline-offset:2px}
+    #espl-project-page .knowledge-output-card .espl-author-name,#espl-project-page .knowledge-output-card .espl-author-name:is(:visited,:hover,:focus-visible){color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px;transition:none!important}
+    #espl-project-page .espl-mobile-special-summary,#espl-project-page .espl-mobile-special-people{display:none!important}
     #espl-project-page .project-outputs .publication-card .knowledge-slide__people{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;flex-wrap:nowrap;gap:7px;width:100%;max-width:100%}
     #espl-project-page .project-outputs .publication-card .knowledge-person-row{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%}
     #espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{display:grid;place-items:center;width:70px;height:70px;border-radius:50%;background:#efebe1;color:#615b50;font-weight:700}
@@ -57,7 +59,7 @@
     @keyframes espl-data-link-nudge{0%,100%{transform:translateX(0)}45%{transform:translateX(4px)}70%{transform:translateX(-1px)}}
     @keyframes espl-table-scan-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(25px)}}
     @media(max-width:999px){#espl-project-page .project-outputs .publication-card,.project-outputs .espl-special-card{grid-template-columns:1fr!important}#espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;min-height:0;padding:0 1.65rem 1.25rem}}
-    @media(max-width:767px){#espl-project-page .espl-special-card{grid-template-columns:1fr}#espl-project-page .espl-special-card .model-output-media{min-height:0;padding:0 1.2rem 1.2rem;gap:8px}#espl-project-page .espl-special-card .model-text-link{gap:5px;white-space:nowrap;font-size:10.5px}#espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem;overflow-x:auto}#espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:70px;height:70px}}
+    @media(max-width:767px){#espl-project-page .project-outputs .espl-special-card{display:block!important;max-width:100%;min-width:0}#espl-project-page .espl-special-card .knowledge-output-main{width:100%!important;min-width:0!important;box-sizing:border-box}#espl-project-page .espl-special-card .model-output-media{display:none!important}#espl-project-page .espl-special-card .espl-mobile-special-summary{display:block!important}#espl-project-page .espl-special-card .espl-mobile-special-people{display:flex!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;min-height:0;padding:0 1.2rem 1.2rem;overflow-x:auto}#espl-project-page .espl-mobile-special-people .knowledge-slide__people{width:100%;max-width:none;justify-content:flex-start}#espl-project-page .espl-mobile-special-people .knowledge-person-row{display:flex;flex-wrap:nowrap;justify-content:flex-start;gap:8px;width:max-content}#espl-project-page .espl-mobile-special-people .knowledge-person__photo{width:70px;height:70px}#espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem;overflow-x:auto}#espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:70px;height:70px}}
     @media(max-width:380px){#espl-project-page .espl-special-card .model-output-media{flex-wrap:wrap}#espl-project-page .espl-special-card .model-text-link{width:100%;font-size:11px}}
     @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
@@ -172,6 +174,7 @@
   };
   const externalIcon = () => '<span class="external-link-icon" aria-hidden="true"><svg viewBox="0 0 18 18"><path class="external-link-icon__box" d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><g class="external-link-icon__arrow"><path d="M9.25 2.75h6v6"/><path d="m8 10 7.25-7.25"/></g></svg></span>';
   const documentIcon = '<svg viewBox="0 0 24 24"><path d="M6.5 3.5h8l3 3v14h-11z"/><path d="M14.5 3.5v3h3"/><path d="M9.5 11h5M9.5 14h5M9.5 17h3.5"/></svg>';
+  const astronautPhoto = 'https://sites.gatech.edu/thomas-test-website/files/2026/09/Astronaut_gray.jpg';
   function parseCSV(text,required=['Title','Authors','Date','Type','URL','Project(s)','Featured']) {
     const rows=[]; let row=[],cell='',quoted=false;
     for(let i=0;i<text.length;i++){
@@ -190,7 +193,7 @@
     const category=document.createElement('p');category.className='knowledge-slide__category';
     const icon=document.createElement('span');icon.className='knowledge-slide__category-icon';icon.setAttribute('aria-hidden','true');
     icon.innerHTML=typeOf(row)==='model'?'<svg viewBox="0 0 24 24"><path d="M4 3.5 19 12l-7 1.2-2.5 6.3z"/><path d="m12 13.2 3.4 6"/></svg>':typeOf(row)==='data repository'?'<svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M3.5 14h17M9 9v11M15 9v11"/></svg>':documentIcon;
-    const label=typeOf(row)==='model'?'Interactive model':rowField(row,'Type');
+    const label=typeOf(row)==='model'?'Interactive Model':typeOf(row)==='data repository'?'Data Repository':rowField(row,'Type');
     category.append(icon,document.createTextNode(label));return category;
   }
   function summaryNode(row,href) {
@@ -232,6 +235,20 @@
     if(!holder.childElementCount)return null;
     people.append(holder);return people;
   }
+  function mobileSpecialPortraitsNode(row){
+    const names=rowField(row,'Authors').replace(/,?\s+and\s+/gi,',').split(',').map(name=>name.trim()).filter(Boolean);
+    if(!names.length)return null;
+    const media=document.createElement('div');media.className='knowledge-output-media espl-mobile-special-people';
+    const people=document.createElement('div');people.className='knowledge-slide__people';people.dataset.authorCount=String(names.length);
+    const rowNode=document.createElement('div');rowNode.className='knowledge-person-row';
+    for(const name of names){
+      const info=authorPhoto[authorKey(name)],person=document.createElement(info?'a':'span');
+      person.className='knowledge-person'+(info?'':' knowledge-person--fallback');person.title=name;
+      if(info)person.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;
+      const photo=document.createElement('img');photo.className='knowledge-person__photo';photo.src=info?.[1]||astronautPhoto;photo.alt=name;photo.loading='lazy';person.append(photo);rowNode.append(person);
+    }
+    people.append(rowNode);media.append(people);return media;
+  }
   function makeCard(row) {
     const href=safeURL(rowField(row,'URL')),isSpecial=special(row),model=typeOf(row)==='model';
     if(!href)return null;
@@ -242,7 +259,10 @@
     const main=document.createElement('div');main.className='knowledge-output-main';
     const title=document.createElement('h3');title.className='knowledge-slide__title';
     const titleLink=document.createElement('a');titleLink.className='knowledge-slide__title-link';titleLink.href=href;titleLink.textContent=rowField(row,'Title');title.append(titleLink);
-    main.append(categoryNode(row),title);if(!isSpecial)main.append(summaryNode(row,href));card.append(main);
+    main.append(categoryNode(row),title);
+    if(isSpecial){const summary=summaryNode(row,href);summary.classList.add('espl-mobile-special-summary');main.append(summary)}
+    else main.append(summaryNode(row,href));
+    card.append(main);
     if(isSpecial){
       const media=document.createElement('div');media.className='knowledge-output-media model-output-media';
       const iconLink=document.createElement('a');iconLink.href=href;iconLink.className=model?'model-polyhedron-link':'espl-table-icon-link';
@@ -253,6 +273,7 @@
       const label=document.createElement('span');label.className='model-link-label-text';label.textContent=model?'Explore the interactive model':'Explore the data';
       const arrow=document.createElement('span');arrow.className='model-link-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='→';
       action.append(label,arrow);media.append(iconLink,action);card.append(media);
+      const mobilePeople=mobileSpecialPortraitsNode(row);if(mobilePeople)card.append(mobilePeople);
       if(model){
         card.addEventListener('mouseenter',()=>iconLink.dispatchEvent(new Event('mouseenter')));
         card.addEventListener('mouseleave',()=>iconLink.dispatchEvent(new Event('mouseleave')));
@@ -347,14 +368,15 @@
     const previous=projects[(index+projects.length-1)%projects.length];
     const next=projects[(index+1)%projects.length];
     const nav=document.createElement('nav');nav.className='espl-project-nav theme-nav';nav.setAttribute('aria-label','Other projects');
-    const link=(project,direction)=>{const a=document.createElement('a');a.className=`theme-${direction}`;a.href=`https://espl.ae.gatech.edu/research/projects/${project.slug}/`;a.innerHTML=direction==='prev'?`← <span>${project.title}</span>`:`<span>${project.title}</span> →`;return a};
+    const link=(project,direction)=>{const a=document.createElement('a');a.className=`theme-${direction}`;a.href=`https://espl.ae.gatech.edu/research/projects/${project.slug}/`;const full=`<span class="theme-label-full">${project.title}</span>`,short=`<span class="theme-label-short">${direction==='prev'?'Previous':'Next'}</span>`;a.innerHTML=direction==='prev'?`← ${full}${short}`:`${full}${short} →`;return a};
     nav.append(link(previous,'prev'),link(next,'next'));
     const style=document.createElement('style');style.textContent=`
       #espl-project-page .espl-project-nav{display:flex;justify-content:space-between;max-width:1080px;margin:0 auto 56px;padding:24px 28px 0;border-top:1px solid #e6e6e6;font-family:Roboto,system-ui,-apple-system,Segoe UI,'Helvetica Neue',Arial,sans-serif;flex-wrap:wrap;gap:1rem}
       #espl-project-page .espl-project-nav a{display:inline-flex;align-items:center;gap:.35em;text-decoration:none!important;font-size:16px;color:#a4925a!important;padding:.5rem 1rem;transition:background-color .2s ease,color .2s ease;border-radius:999px;white-space:nowrap}
       #espl-project-page .espl-project-nav a:hover,#espl-project-page .espl-project-nav a:focus-visible{background-color:#f0f0f0;color:#000!important;text-decoration:none!important}
       #espl-project-page .espl-project-nav .theme-next{margin-left:auto}
-      @media(max-width:767px){#espl-project-page .espl-project-nav{padding:20px 24px 0;gap:.5rem}#espl-project-page .espl-project-nav a{font-size:13px;white-space:normal;max-width:48%}}
+      #espl-project-page .espl-project-nav .theme-label-short{display:none}
+      @media(max-width:767px){#espl-project-page .espl-project-nav{padding:20px 24px 0;gap:.5rem}#espl-project-page .espl-project-nav a{font-size:13px;white-space:normal;max-width:48%}#espl-project-page .espl-project-nav .theme-label-full{display:none}#espl-project-page .espl-project-nav .theme-label-short{display:inline}}
     `;
     projectRoot.append(style,nav);
   }
