@@ -189,7 +189,10 @@ export function createGlobePreview(model, episode, names, initialCameraViews = [
     const width = Math.max(1, mount.clientWidth), height = Math.max(1, mount.clientHeight);
     camera.aspect = width / height;
     const panelVisible = !document.body.classList.contains("ui-collapsed");
-    if (options.tableMini || (width > 620 && panelVisible)) camera.setViewOffset(width, height, width > 620 && panelVisible ? -Math.min(165, width * .14) : 0,
+    const panel = document.getElementById("ui");
+    const panelEdge = width > 620 && panelVisible && panel
+      ? Math.max(0, panel.getBoundingClientRect().right - mount.getBoundingClientRect().left + 18) : 0;
+    if (options.tableMini || panelEdge) camera.setViewOffset(width, height, -panelEdge / 2,
       options.tableMini ? Math.max(0, height / 2 - Math.min(240, height * .36)) : 0, width, height);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();

@@ -785,7 +785,7 @@ th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacit
 .source-carousel-arrow:disabled{opacity:.25;cursor:default}
 
 /* Muted third objects use opaque colors so trails cannot show through dots. */
-.object-line.inactive-secondary-chaser .dot.c{background:#b9b9b9;border-color:#767676;opacity:1}
+.object-line.inactive-secondary-chaser .dot.c{background:#e9ce82;border-color:#767676;opacity:1}
 .episode-row[data-episode-id="E-005"][data-mini-selected="B"] .object-line:has(.dot.c),
 .episode-row[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b),
 .episode-row[data-episode-id="E-006"][data-mini-selected="B"] .object-line:has(.dot.c),

@@ -19,6 +19,7 @@ const panelColumn = $("panelColumn");
 const panelToggle = $("panelToggleBtn");
 panelToggle?.addEventListener("click", () => {
   const collapsed = document.body.classList.toggle("ui-collapsed");
+  document.body.classList.toggle("episode-panel-collapsed", collapsed);
   panelToggle.setAttribute("aria-expanded", String(!collapsed));
   panelToggle.setAttribute("aria-label", collapsed ? "Show control panel" : "Hide control panel");
   panelToggle.title = collapsed ? "Show control panel" : "Hide control panel";

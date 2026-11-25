@@ -17,3 +17,5 @@ visualization/dev/e009/
 visualization/Viz/episode-e009.js
 visualization/Viz/episode-e009.css
 visualization/Viz/e009-camera-workshop.js
+# Local student chapter tool archive is rebuilt from its source repository.
+visualization/dev/chapter-analysis/tle-data.json.gz

@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapter analysis · Episode Window — separation distance from public TLE history</title>
+<style>
+  /* Design language copied from the RPO tool's style.css / style_guide.md:
+     white page, single gold accent, warm neutral text, 8px cards with 1px
+     #dddddd borders, 6px inputs and gold-only interaction affordances. */
+  :root {
+    --color-accent: #eaaa00;
+    --color-accent-light: #f7dc93;
+    --color-accent-dark: #c99000;
+
+    --color-bg: #ffffff;
+    --color-bg-card: #ffffff;
+    --color-bg-subtle: #fafafa;
+
+    --color-text-primary: #111111;
+    --color-text-secondary: #444444;
+    --color-text-muted: #666666;
+    --color-text-muted-strong: #555555;
+
+    --color-border-subtle: #dddddd;
+    --color-border-input: #cccccc;
+    --color-border-focus: var(--color-accent);
+
+    --color-planned: #1977AD;
+    --color-nonplanned: #E69F00;
+    --color-station: #8f8f8f;
+    --color-highlight: #e9ab00;
+
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+    --card-radius: 8px;
+    --panel-radius: 14px;
+    --input-radius: 6px;
+    --btn-radius: 6px;
+    --panel-shadow: 0 12px 35px rgba(0, 0, 0, 0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body {
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-stack);
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-weight: 700; }
+  code { font-family: var(--mono); font-size: 11px; color: var(--color-text-secondary); }
+
+  .shell { max-width: 1560px; margin: 0 auto; padding: 18px 24px 56px; }
+
+  header.top { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--color-border-subtle); }
+  header.top h1 { font-size: 18px; font-weight: 800; color: #222222; line-height: 1.2; }
+  header.top h1 span { color: var(--color-text-muted); font-weight: 400; font-size: 12px; }
+  .top-meta { margin-left: auto; text-align: right; font-size: 11px; color: var(--color-text-muted); line-height: 1.6; }
+  .top-meta b { color: var(--color-text-muted-strong); font-weight: 700; }
+
+  .layout { margin-top: 18px; }
+  main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+  .card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--card-radius);
+    padding: 12px 14px;
+    min-width: 0;
+  }
+  .card > h3 {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.055em; color: var(--color-text-muted-strong);
+  }
+
+  /* ---------- episode picker ---------- */
+  .picker { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--color-border-subtle); }
+  .picker label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.055em; color: var(--color-text-muted-strong); }
+  .picker input {
+    font-family: var(--font-stack); font-size: 12px; font-weight: 600; color: var(--color-text-primary);
+    background: #ffffff; border: 1px solid var(--color-border-input); border-radius: var(--input-radius);
+    padding: 6px 28px 6px 8px; width: 560px; max-width: 100%; cursor: pointer;
+    appearance: none; -webkit-appearance: none; text-overflow: ellipsis;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' fill='none' stroke='%23666666' stroke-width='1.6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center;
+  }
+  .picker input:hover { border-color: var(--color-accent); }
+  .picker input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+  .picker-note { font-size: 11px; color: var(--color-text-muted); }
+
+  .ep-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; }
+  .ep-title { font-size: 20px; font-weight: 800; color: #222222; letter-spacing: -0.01em; }
+  .ep-obj { font-size: 13px; color: var(--color-text-secondary); margin-top: 2px; }
+  .ep-obj b { color: var(--color-text-primary); font-weight: 700; }
+  .ep-obj .norad { font-family: var(--mono); font-size: 11px; color: var(--color-planned); }
+  .coverage { margin-left: auto; text-align: right; font-size: 11px; color: var(--color-text-muted); line-height: 1.7; font-variant-numeric: tabular-nums; }
+  .coverage b { color: var(--color-text-muted-strong); font-weight: 700; }
+
+  /* ---------- reported window ---------- */
+  .reported { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: flex-end; }
+  .csv-field { display: flex; flex-direction: column; gap: 2px; min-width: 130px; }
+  .csv-field .k { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.055em; color: var(--color-text-muted); }
+  .csv-field .v { font-size: 15px; font-weight: 700; color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+  .csv-field .sub { font-size: 11px; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+  /* ---------- buttons (tool: .btn / .btn-primary / .btn-secondary) ---------- */
+  .btn {
+    font-family: var(--font-stack); font-size: 12px; font-weight: 600;
+    padding: 7px 12px; border-radius: var(--btn-radius);
+    border: 1px solid var(--color-border-input); background: #ffffff; color: var(--color-text-primary);
+    cursor: pointer; transition: background 150ms, border-color 150ms, transform 100ms;
+  }
+  .btn:hover:not(:disabled) { background: #f5f5f5; }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+  .btn.primary { background: var(--color-accent-light); color: #1a1a1a; border-color: var(--color-accent); }
+  .btn.primary:hover:not(:disabled) { background: #ffe98a; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ---------- readout ---------- */
+  .readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  @media (max-width: 900px) { .readout { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--color-bg-subtle); border: 1px solid #e8e8e8; border-radius: var(--card-radius); padding: 10px 12px; min-width: 0; }
+  .stat .k { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.055em; color: var(--color-text-muted); white-space: nowrap; }
+  .stat .v { font-size: 26px; font-weight: 800; color: #222222; margin-top: 2px; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat .v small { font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-left: 4px; letter-spacing: 0; }
+  .stat .sub { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .stat .v .unc { font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-left: 6px; letter-spacing: 0; }
+  .stat.miss .v { color: #111111; }
+  .stat.vel .v { color: #111111; }
+
+  /* ---------- chart ---------- */
+  .chart-wrap { position: relative; }
+  canvas#chart { display: block; width: 100%; height: 340px; cursor: crosshair; touch-action: none; background: #ffffff; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 11px; color: var(--color-text-muted); }
+  .legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+
+  /* ---------- dual slider (gold handles, like .range-slider) ---------- */
+  .slider { position: relative; height: 44px; margin: 2px 4px 0; touch-action: none; user-select: none; }
+  .slider-track, .slider-fill { position: absolute; top: 19px; height: 6px; border-radius: 3px; }
+  .slider-track { left: 0; right: 0; background: #e8e8e8; }
+  .slider-fill { background: var(--color-accent-light); }
+  .handle {
+    position: absolute; top: 10px; width: 14px; height: 24px; margin-left: -7px;
+    border-radius: 3px; background: var(--color-accent); border: 2px solid #222222;
+    cursor: ew-resize; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+  .handle:hover { background: #f3b918; }
+  .handle:focus-visible { outline: 2px solid var(--color-accent-dark); outline-offset: 2px; }
+  .handle::after { content: ""; position: absolute; left: 50%; top: 6px; width: 1px; height: 8px; background: rgba(34, 34, 34, 0.45); }
+  .slider-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-muted); margin: 0 4px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- provenance ---------- */
+  .prov { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 900px) { .prov { grid-template-columns: 1fr; } }
+  .prov-item { background: var(--color-bg-subtle); border: 1px solid #e8e8e8; border-radius: var(--card-radius); padding: 10px 12px; min-width: 0; }
+  .prov-item .who { font-size: 12px; font-weight: 700; color: var(--color-text-primary); }
+  .prov-item .who span { font-family: var(--mono); font-weight: 400; font-size: 10.5px; color: var(--color-text-muted); }
+  .prov-item .how { font-size: 11.5px; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+  .prov-item .how b { color: var(--color-text-primary); font-weight: 700; }
+  .prov-item .tle { font-family: var(--mono); font-size: 10px; color: var(--color-text-muted); background: #f2f2f2; border-radius: 4px; padding: 5px 6px; margin-top: 6px; overflow-x: auto; white-space: pre; }
+  .flag {
+    display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.04em; padding: 3px 7px; border-radius: 4px;
+    color: #7a5a00; border: 1px solid var(--color-accent); background: #fff4d6;
+  }
+  .flag.hidden { display: none; }
+
+  /* ---------- saved windows ---------- */
+  .saved-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .saved-head h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.055em; color: var(--color-text-muted-strong); }
+  .saved-head .btn { margin-left: auto; }
+  table.saved { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  table.saved th {
+    text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.055em; color: var(--color-text-muted-strong);
+    padding: 6px 8px; border-bottom: 1px solid var(--color-border-subtle); white-space: nowrap;
+  }
+  table.saved td { padding: 7px 8px; border-bottom: 1px solid #eeeeee; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--color-text-secondary); }
+  table.saved td:first-child { font-weight: 700; color: var(--color-text-primary); }
+  table.saved td.num { text-align: right; }
+  table.saved tr:hover td { background: var(--color-bg-subtle); }
+  .table-scroll { overflow-x: auto; margin-top: 10px; }
+  .saved-head .btn { margin-left: 0; }
+  .saved-head .btn + .btn { margin-left: 8px; }
+  .saved-head #resetChapters { margin-left: auto; }
+  table.saved#chapterTable th { white-space: normal; font-size: 10px; line-height: 1.4; letter-spacing: 0.03em; padding: 6px 4px; vertical-align: bottom; }
+  table.saved#chapterTable td { padding: 7px 4px; }
+  td.chap-center { white-space: nowrap; vertical-align: top; }
+  .chap-tools { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+  .chap-jump, .chap-clear {
+    display: inline-block; padding: 1px 7px;
+    font-family: var(--font-stack); font-size: 11px; font-weight: 700; line-height: 1.5;
+    border: 1px solid var(--color-border-input); border-radius: 4px;
+    background: #ffffff; color: var(--color-text-secondary); cursor: pointer;
+  }
+  .chap-jump:hover:not(:disabled) { background: var(--color-accent-light); border-color: var(--color-accent); color: #1a1a1a; }
+  .chap-jump:disabled, .chap-clear:disabled { opacity: 0.35; cursor: not-allowed; }
+  .chap-clear { padding: 1px 6px; }
+  .chap-clear:hover:not(:disabled) { background: #fdecea; border-color: #d93025; color: #a52a1f; }
+  .chap-time { display: block; font-size: 11.5px; letter-spacing: -0.1px; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+  .chap-stat { display: block; font-size: 11px; color: var(--color-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  input.chap-width {
+    width: 72px; font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
+    padding: 3px 6px; border: 1px solid var(--color-border-input); border-radius: 4px;
+    color: var(--color-text-primary); background: #ffffff;
+  }
+  input.chap-width:focus { outline: 2px solid var(--color-accent-light); outline-offset: 1px; }
+  .empty { color: var(--color-text-muted); font-size: 12px; padding: 12px 0 2px; }
+  .remove {
+    font-family: var(--font-stack); font-size: 12px; line-height: 1; padding: 3px 7px;
+    border-radius: 4px; border: 1px solid var(--color-border-input); background: #ffffff;
+    color: var(--color-text-muted); cursor: pointer;
+  }
+  .remove:hover { color: #a12a1a; border-color: #e0b4ad; background: #fdf4f2; }
+
+  /* ---------- notes / notices ---------- */
+  .notes { font-size: 12px; color: var(--color-text-secondary); line-height: 1.7; }
+  .notes h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.055em; color: var(--color-text-muted-strong); margin-bottom: 4px; }
+  .notes ul { margin: 4px 0 0; padding-left: 16px; }
+  .notes li { margin-bottom: 4px; }
+  .notes code { background: #f2f2f2; border-radius: 3px; padding: 0 3px; }
+
+  .notice { border: 1px solid #f0d18a; background: #fff8e1; color: #6b4e00; border-radius: var(--card-radius); padding: 12px 14px; font-size: 12.5px; }
+  .notice b { color: #4a3600; }
+  .notice code { background: rgba(234, 170, 0, 0.14); color: #5a4400; }
+
+  .hidden { display: none !important; }
+
+  #loading { display: flex; align-items: center; gap: 10px; color: var(--color-text-muted); font-size: 12px; padding: 18px 2px; }
+  .spinner { width: 13px; height: 13px; border-radius: 50%; border: 2px solid #e8e8e8; border-top-color: var(--color-accent); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <h1>Episode Window <span>· separation distance over the public TLE history</span></h1>
+    <div class="top-meta">
+      <b id="metaEpisodes">—</b> episodes in <code>publicep.csv</code> ·
+      <b id="metaAnalysable">—</b> with TLE history on both objects<br>
+      Element histories from the project TLE archive <code>tlehistory.db</code> · SGP4 and method from the <code>proximity-viz</code> dataset
+    </div>
+  <a href="../../../dynamic-table/" style="color:#725615;font-size:12px;font-weight:700">← Dynamic Library review</a></header>
+
+  <div class="layout">
+    <main>
+      <!-- episode picker + heading -->
+      <section class="card">
+        <div class="picker">
+          <label for="objectA">Object A</label>
+          <input id="objectA" list="objectsA" autocomplete="off" placeholder="Type a satellite name or NORAD ID"><datalist id="objectsA"></datalist>
+          <label for="objectB">Object B</label>
+          <input id="objectB" list="objectsB" autocomplete="off" placeholder="Type to compare"><datalist id="objectsB"></datalist>
+          <span class="picker-note" id="pickerNote" role="status"></span>
+        </div>
+        <div class="ep-head">
+          <div>
+            <div class="ep-title" id="epId">—</div>
+            <div class="ep-obj" id="epObjects"></div>
+          </div>
+          <div class="coverage" id="epCoverage"></div>
+        </div>
+      </section>
+
+      <!-- reported window from the CSV -->
+      <section class="card">
+        <h3>Archive overlap window</h3>
+        <div class="reported" style="margin-top:10px">
+          <div class="csv-field">
+            <span class="k">Start Date</span>
+            <span class="v" id="csvStart">—</span>
+            <span class="sub" id="csvStartParsed"></span>
+          </div>
+          <div class="csv-field">
+            <span class="k">End Date</span>
+            <span class="v" id="csvEnd">—</span>
+            <span class="sub" id="csvEndParsed"></span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px; margin-left:auto">
+            <button class="btn primary" id="showReported" disabled>Show overlap window</button>
+            <span class="sub" style="font-size:11px;color:var(--ink-faint)" id="reportedHint"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- no data notice -->
+      <section class="card notice hidden" id="noDataNotice"></section>
+
+      <!-- analysis -->
+      <div id="analysis">
+        <div id="loading"><span class="spinner"></span><span id="loadingText">Propagating the TLE histories with SGP4…</span></div>
+
+        <div id="analysisBody" class="hidden" style="display:flex;flex-direction:column;gap:16px">
+          <!-- readout -->
+          <section class="card">
+            <h3>Selected window</h3>
+            <div class="readout" style="margin-top:10px">
+              <div class="stat miss">
+                <div class="k">Miss distance</div>
+                <div class="v" id="statMiss">—</div>
+                <div class="sub" id="statMissSub">—</div>
+              </div>
+              <div class="stat vel">
+                <div class="k">Relative velocity</div>
+                <div class="v" id="statVel">—</div>
+                <div class="sub" id="statVelSub">at closest approach</div>
+              </div>
+              <div class="stat">
+                <div class="k">Window start</div>
+                <div class="v" id="statStart" style="font-size:15px">—</div>
+                <div class="sub" id="statStartSub">UTC</div>
+              </div>
+              <div class="stat">
+                <div class="k">Window end</div>
+                <div class="v" id="statEnd" style="font-size:15px">—</div>
+                <div class="sub" id="statEndSub">UTC</div>
+              </div>
+            </div>
+
+            <div class="flag hidden" id="dupFlag" style="margin-top:14px">identical element sets for both objects at this approach — the archive holds duplicate records, so this separation reflects the data rather than two independent orbits</div>
+
+            <div class="chart-wrap" style="margin-top:16px">
+              <canvas id="chart"></canvas>
+              <div class="slider" id="slider">
+                <div class="slider-track"></div>
+                <div class="slider-fill" id="sliderFill"></div>
+                <div class="handle" id="handleStart" tabindex="0" role="slider" aria-label="Window start"></div>
+                <div class="handle" id="handleEnd" tabindex="0" role="slider" aria-label="Window end"></div>
+              </div>
+              <div class="slider-scale" id="sliderScale"><span id="scaleStart"></span><span id="scaleMid"></span><span id="scaleEnd"></span></div>
+              <div class="legend">
+                <span><i style="background:#1977AD"></i>separation distance (SGP4)</span>
+                <span><i style="background:rgba(25,119,173,.28);height:10px;border:1px solid rgba(25,119,173,.45)"></i>± uncertainty band around the curve (1 km + 2 km/day per object)</span>
+                <span><i style="background:rgba(234,170,0,.35);height:10px"></i>selected window</span>
+                <span><i style="background:#E69F00"></i>closest approach in window</span>
+                <span><i style="background:#1977AD;height:10px;border-radius:1px"></i>TLEs held for the first object (upper row)</span>
+                <span><i style="background:#E69F00;height:10px;border-radius:1px"></i>TLEs held for the second object (lower row)</span>
+              </div>
+            </div>
+
+            <div class="prov" style="margin-top:16px">
+              <div class="prov-item">
+                <div class="who" id="provAWho">—</div>
+                <div class="how" id="provAHow">—</div>
+                <div class="tle" id="provATle"></div>
+                <span class="flag hidden" id="provAFlag"></span>
+              </div>
+              <div class="prov-item">
+                <div class="who" id="provBWho">—</div>
+                <div class="how" id="provBHow">—</div>
+                <div class="tle" id="provBTle"></div>
+                <span class="flag hidden" id="provBFlag"></span>
+              </div>
+            </div>
+          </section>
+
+          <!-- chapters -->
+          <section class="card">
+            <div class="saved-head">
+              <h3>Chapters</h3>
+              <button class="btn primary" id="saveChapter">Save chapter</button>
+              <button class="btn" id="copyRow">Copy row</button>
+              <button class="btn" id="resetChapters">Reset</button>
+            </div>
+            <div class="empty" id="chapterHint">Scrub the slider to the window you want, then press “Save chapter”: that window's closest-approach time becomes the chapter centre and its length the width. “→” puts the slider back on a chapter, “×” clears it.</div>
+            <div class="table-scroll">
+              <table class="saved" id="chapterTable">
+                <thead><tr id="chapterHead"></tr></thead>
+                <tbody><tr id="chapterRow"></tr></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- TLE histories from tlehistory.db: line 1, line 2 per epoch -->
+<!-- TLE archive loaded from tle-data.json.gz -->
+
+<!-- satellite.js (MIT, © 2013 Shashwat Kandadai / UCSC) — the SGP4 implementation vendored by proximity-viz -->
+<script>/*!
+ * satellite-js v5.0.0
+ * (c) 2013 Shashwat Kandadai and UCSC
+ * https://github.com/shashwatak/satellite-js
+ * License: MIT
+ */
+
+!function(o,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t():"function"==typeof define&&define.amd?define(t):(o="undefined"!=typeof globalThis?globalThis:o||self).satellite=t()}(this,(function(){"use strict";var o=Math.PI,t=2*o,e=o/180,s=180/o,a=1440,n=398600.8,d=6378.135,r=60/Math.sqrt(650942.9922085947),i=d*r/60,c=1/r,h=.001082616,m=-253881e-11,l=-165597e-11,p=m/h,x=2/3;function g(o,t){for(var e=[31,o%4==0?29:28,31,30,31,30,31,31,30,31,30,31],s=Math.floor(t),a=1,n=0;s>n+e[a-1]&&a<12;)n+=e[a-1],a+=1;var d=a,r=s-n,i=24*(t-s),c=Math.floor(i);i=60*(i-c);var h=Math.floor(i);return{mon:d,day:r,hr:c,minute:h,sec:60*(i-h)}}function M(o,t,e,s,a,n){var d=arguments.length>6&&void 0!==arguments[6]?arguments[6]:0;return 367*o-Math.floor(7*(o+Math.floor((t+9)/12))*.25)+Math.floor(275*t/9)+e+1721013.5+((d/6e4+n/60+a)/60+s)/24}function f(o,t,e,s,a,n,d){if(o instanceof Date){var r=o;return M(r.getUTCFullYear(),r.getUTCMonth()+1,r.getUTCDate(),r.getUTCHours(),r.getUTCMinutes(),r.getUTCSeconds(),r.getUTCMilliseconds())}return M(o,t,e,s,a,n,d)}function u(e,s){var a,n,d,r,i,c,h,m,l,p,x,g,M,f,u,z,v,y,b=e.e3,q=e.ee2,w=e.peo,T=e.pgho,j=e.pho,E=e.pinco,F=e.plo,A=e.se2,C=e.se3,L=e.sgh2,S=e.sgh3,U=e.sgh4,D=e.sh2,I=e.sh3,R=e.si2,_=e.si3,k=e.sl2,O=e.sl3,P=e.sl4,Z=e.t,G=e.xgh2,H=e.xgh3,Y=e.xgh4,$=e.xh2,B=e.xh3,J=e.xi2,K=e.xi3,N=e.xl2,Q=e.xl3,V=e.xl4,W=e.zmol,X=e.zmos,oo=s.init,to=s.opsmode,eo=s.ep,so=s.inclp,ao=s.nodep,no=s.argpp,ro=s.mp;y=X+119459e-10*Z,"y"===oo&&(y=X),v=y+.0335*Math.sin(y);var io=A*(h=.5*(f=Math.sin(v))*f-.25)+C*(m=-.5*f*Math.cos(v)),co=R*h+_*m,ho=k*h+O*m+P*f,mo=L*h+S*m+U*f,lo=D*h+I*m;return y=W+.00015835218*Z,"y"===oo&&(y=W),v=y+.1098*Math.sin(y),l=io+(q*(h=.5*(f=Math.sin(v))*f-.25)+b*(m=-.5*f*Math.cos(v))),g=co+(J*h+K*m),M=ho+(N*h+Q*m+V*f),p=mo+(G*h+H*m+Y*f),x=lo+($*h+B*m),"n"===oo&&(M-=F,p-=T,x-=j,so+=g-=E,eo+=l-=w,r=Math.sin(so),d=Math.cos(so),so>=.2?(no+=p-=d*(x/=r),ao+=x,ro+=M):(a=r*(c=Math.sin(ao)),n=r*(i=Math.cos(ao)),a+=x*i+g*d*c,n+=-x*c+g*d*i,(ao%=t)<0&&"a"===to&&(ao+=t),u=ro+no+d*ao,u+=M+p-g*ao*r,z=ao,(ao=Math.atan2(a,n))<0&&"a"===to&&(ao+=t),Math.abs(z-ao)>o&&(ao<z?ao+=t:ao-=t),no=u-(ro+=M)-d*ao)),{ep:eo,inclp:so,nodep:ao,argpp:no,mp:ro}}function z(o){var s=(o-2451545)/36525,a=-62e-7*s*s*s+.093104*s*s+3164400184.812866*s+67310.54841;return(a=a*e/240%t)<0&&(a+=t),a}function v(){return(arguments.length<=0?void 0:arguments[0])instanceof Date||arguments.length>1?z(f.apply(void 0,arguments)):z.apply(void 0,arguments)}function y(e,s){var a,n,c,m,l,g,M,f,z,v,y,b,q,w,T,j,E,F,A,C,L,S,U,D,I,R;e.t=s,e.error=0;var _=e.mo+e.mdot*e.t,k=e.argpo+e.argpdot*e.t,O=e.nodeo+e.nodedot*e.t;f=k,C=_;var P=e.t*e.t;if(S=O+e.nodecf*P,j=1-e.cc1*e.t,E=e.bstar*e.cc4*e.t,F=e.t2cof*P,1!==e.isimp){g=e.omgcof*e.t;var Z=1+e.eta*Math.cos(_);C=_+(T=g+e.xmcof*(Z*Z*Z-e.delmo)),f=k-T,b=(y=P*e.t)*e.t,j=j-e.d2*P-e.d3*y-e.d4*b,E+=e.bstar*e.cc5*(Math.sin(C)-e.sinmao),F=F+e.t3cof*y+b*(e.t4cof+e.t*e.t5cof)}L=e.no;var G=e.ecco;if(A=e.inclo,"d"===e.method){q=e.t;var H=function(o){var e,s,a,n,d,r,i,c,h=o.irez,m=o.d2201,l=o.d2211,p=o.d3210,x=o.d3222,g=o.d4410,M=o.d4422,f=o.d5220,u=o.d5232,z=o.d5421,v=o.d5433,y=o.dedt,b=o.del1,q=o.del2,w=o.del3,T=o.didt,j=o.dmdt,E=o.dnodt,F=o.domdt,A=o.argpo,C=o.argpdot,L=o.t,S=o.tc,U=o.gsto,D=o.xfact,I=o.xlamo,R=o.no,_=o.atime,k=o.em,O=o.argpm,P=o.inclm,Z=o.xli,G=o.mm,H=o.xni,Y=o.nodem,$=o.nm,B=.13130908,J=2.8843198,K=.37448087,N=5.7686396,Q=.95240898,V=1.8014998,W=1.050833,X=4.4108898,oo=259200,to=0,eo=0,so=(U+.0043752690880113*S)%t;if(k+=y*L,P+=T*L,O+=F*L,Y+=E*L,G+=j*L,0!==h){(0===_||L*_<=0||Math.abs(L)<Math.abs(_))&&(_=0,H=R,Z=I),e=L>0?720:-720;for(var ao=381;381===ao;)2!==h?(i=b*Math.sin(Z-B)+q*Math.sin(2*(Z-J))+w*Math.sin(3*(Z-K)),d=H+D,r=b*Math.cos(Z-B)+2*q*Math.cos(2*(Z-J))+3*w*Math.cos(3*(Z-K)),r*=d):(a=(c=A+C*_)+c,s=Z+Z,i=m*Math.sin(a+Z-N)+l*Math.sin(Z-N)+p*Math.sin(c+Z-Q)+x*Math.sin(-c+Z-Q)+g*Math.sin(a+s-V)+M*Math.sin(s-V)+f*Math.sin(c+Z-W)+u*Math.sin(-c+Z-W)+z*Math.sin(c+s-X)+v*Math.sin(-c+s-X),d=H+D,r=m*Math.cos(a+Z-N)+l*Math.cos(Z-N)+p*Math.cos(c+Z-Q)+x*Math.cos(-c+Z-Q)+f*Math.cos(c+Z-W)+u*Math.cos(-c+Z-W)+2*(g*Math.cos(a+s-V)+M*Math.cos(s-V)+z*Math.cos(c+s-X)+v*Math.cos(-c+s-X)),r*=d),Math.abs(L-_)>=720?ao=381:(eo=L-_,ao=0),381===ao&&(Z+=d*e+i*oo,H+=i*e+r*oo,_+=e);$=H+i*eo+r*eo*eo*.5,n=Z+d*eo+i*eo*eo*.5,1!==h?(G=n-2*Y+2*so,to=$-R):(G=n-Y-O+so,to=$-R),$=R+to}return{atime:_,em:k,argpm:O,inclm:P,xli:Z,mm:G,xni:H,nodem:Y,dndt:to,nm:$}}({irez:e.irez,d2201:e.d2201,d2211:e.d2211,d3210:e.d3210,d3222:e.d3222,d4410:e.d4410,d4422:e.d4422,d5220:e.d5220,d5232:e.d5232,d5421:e.d5421,d5433:e.d5433,dedt:e.dedt,del1:e.del1,del2:e.del2,del3:e.del3,didt:e.didt,dmdt:e.dmdt,dnodt:e.dnodt,domdt:e.domdt,argpo:e.argpo,argpdot:e.argpdot,t:e.t,tc:q,gsto:e.gsto,xfact:e.xfact,xlamo:e.xlamo,no:e.no,atime:e.atime,em:G,argpm:f,inclm:A,xli:e.xli,mm:C,xni:e.xni,nodem:S,nm:L});G=H.em,f=H.argpm,A=H.inclm,C=H.mm,S=H.nodem,L=H.nm}if(L<=0)return e.error=2,[!1,!1];var Y=Math.pow(r/L,x)*j*j;if(L=r/Math.pow(Y,1.5),(G-=E)>=1||G<-.001)return e.error=1,[!1,!1];G<1e-6&&(G=1e-6),D=(C+=e.no*F)+f+S;var $=G;if(U=A,z=f%=t,R=S%=t,I=C=((D%=t)-f-S)%t,m=Math.sin(A),c=Math.cos(A),"d"===e.method){var B=u(e,{inclo:e.inclo,init:"n",ep:$,inclp:U,nodep:R,argpp:z,mp:I,opsmode:e.operationmode});if($=B.ep,R=B.nodep,z=B.argpp,I=B.mp,(U=B.inclp)<0&&(U=-U,R+=o,z-=o),$<0||$>1)return e.error=3,[!1,!1]}"d"===e.method&&(m=Math.sin(U),c=Math.cos(U),e.aycof=-.5*p*m,Math.abs(c+1)>15e-13?e.xlcof=-.25*p*m*(3+5*c)/(1+c):e.xlcof=-.25*p*m*(3+5*c)/15e-13);var J=$*Math.cos(z);T=1/(Y*(1-$*$));var K=$*Math.sin(z)+T*e.aycof,N=(I+z+R+T*e.xlcof*J-R)%t;M=N,w=9999.9;for(var Q=1;Math.abs(w)>=1e-12&&Q<=10;)n=Math.sin(M),w=(N-K*(a=Math.cos(M))+J*n-M)/(w=1-a*J-n*K),Math.abs(w)>=.95&&(w=w>0?.95:-.95),M+=w,Q+=1;var V=J*a+K*n,W=J*n-K*a,X=J*J+K*K,oo=Y*(1-X);if(oo<0)return e.error=4,[!1,!1];var to=Y*(1-V),eo=Math.sqrt(Y)*W/to,so=Math.sqrt(oo)/to,ao=Math.sqrt(1-X),no=Y/to*(n-K-J*(T=W/(1+ao))),ro=Y/to*(a-J+K*T);v=Math.atan2(no,ro);var io=(ro+ro)*no,co=1-2*no*no,ho=.5*h*(T=1/oo),mo=ho*T;"d"===e.method&&(l=c*c,e.con41=3*l-1,e.x1mth2=1-l,e.x7thm1=7*l-1);var lo=to*(1-1.5*mo*ao*e.con41)+.5*ho*e.x1mth2*co;if(lo<1)return e.error=6,{position:!1,velocity:!1};v-=.25*mo*e.x7thm1*io;var po=R+1.5*mo*c*io,xo=U+1.5*mo*c*m*co,go=eo-L*ho*e.x1mth2*io/r,Mo=so+L*ho*(e.x1mth2*co+1.5*e.con41)/r,fo=Math.sin(v),uo=Math.cos(v),zo=Math.sin(po),vo=Math.cos(po),yo=Math.sin(xo),bo=Math.cos(xo),qo=-zo*bo,wo=vo*bo,To=qo*fo+vo*uo,jo=wo*fo+zo*uo,Eo=yo*fo;return{position:{x:lo*To*d,y:lo*jo*d,z:lo*Eo*d},velocity:{x:(go*To+Mo*(qo*uo-vo*fo))*i,y:(go*jo+Mo*(wo*uo-zo*fo))*i,z:(go*Eo+Mo*(yo*uo))*i}}}function b(e,s){var a,n,i,m,g,M,f,z,b,q,w,T,j,E,F,A,C,L,S,U,D,I,R,_,k,O,P,Z,G,H,Y,$,B,J,K,N,Q,V,W,X,oo,to,eo,so,ao,no,ro,io,co,ho,mo,lo,po=s.opsmode,xo=s.satn,go=s.epoch,Mo=s.xbstar,fo=s.xecco,uo=s.xargpo,zo=s.xinclo,vo=s.xmo,yo=s.xno,bo=s.xnodeo;e.isimp=0,e.method="n",e.aycof=0,e.con41=0,e.cc1=0,e.cc4=0,e.cc5=0,e.d2=0,e.d3=0,e.d4=0,e.delmo=0,e.eta=0,e.argpdot=0,e.omgcof=0,e.sinmao=0,e.t=0,e.t2cof=0,e.t3cof=0,e.t4cof=0,e.t5cof=0,e.x1mth2=0,e.x7thm1=0,e.mdot=0,e.nodedot=0,e.xlcof=0,e.xmcof=0,e.nodecf=0,e.irez=0,e.d2201=0,e.d2211=0,e.d3210=0,e.d3222=0,e.d4410=0,e.d4422=0,e.d5220=0,e.d5232=0,e.d5421=0,e.d5433=0,e.dedt=0,e.del1=0,e.del2=0,e.del3=0,e.didt=0,e.dmdt=0,e.dnodt=0,e.domdt=0,e.e3=0,e.ee2=0,e.peo=0,e.pgho=0,e.pho=0,e.pinco=0,e.plo=0,e.se2=0,e.se3=0,e.sgh2=0,e.sgh3=0,e.sgh4=0,e.sh2=0,e.sh3=0,e.si2=0,e.si3=0,e.sl2=0,e.sl3=0,e.sl4=0,e.gsto=0,e.xfact=0,e.xgh2=0,e.xgh3=0,e.xgh4=0,e.xh2=0,e.xh3=0,e.xi2=0,e.xi3=0,e.xl2=0,e.xl3=0,e.xl4=0,e.xlamo=0,e.zmol=0,e.zmos=0,e.atime=0,e.xli=0,e.xni=0,e.bstar=Mo,e.ecco=fo,e.argpo=uo,e.inclo=zo,e.mo=vo,e.no=yo,e.nodeo=bo,e.operationmode=po;e.init="y",e.t=0;var qo=function(o){var e=o.ecco,s=o.epoch,a=o.inclo,n=o.opsmode,d=o.no,i=e*e,c=1-i,m=Math.sqrt(c),l=Math.cos(a),p=l*l,g=Math.pow(r/d,x),M=.75*h*(3*p-1)/(m*c),f=M/(g*g),u=g*(1-f*f-f*(1/3+134*f*f/81));d/=1+(f=M/(u*u));var z,y=Math.pow(r/d,x),b=Math.sin(a),q=y*c,w=1-5*p,T=-w-p-p,j=1/y,E=q*q,F=y*(1-e);if("a"===n){var A=s-7305,C=Math.floor(A+1e-8),L=.017202791694070362;(z=(1.7321343856509375+L*C+(L+t)*(A-C)+A*A*5075514194322695e-30)%t)<0&&(z+=t)}else z=v(s+2433281.5);return{no:d,method:"n",ainv:j,ao:y,con41:T,con42:w,cosio:l,cosio2:p,eccsq:i,omeosq:c,posq:E,rp:F,rteosq:m,sinio:b,gsto:z}}({satn:xo,ecco:e.ecco,epoch:go,inclo:e.inclo,no:e.no,method:e.method,opsmode:e.operationmode}),wo=qo.ao,To=qo.con42,jo=qo.cosio,Eo=qo.cosio2,Fo=qo.eccsq,Ao=qo.omeosq,Co=qo.posq,Lo=qo.rp,So=qo.rteosq,Uo=qo.sinio;if(e.no=qo.no,e.con41=qo.con41,e.gsto=qo.gsto,e.a=Math.pow(e.no*c,-2/3),e.alta=e.a*(1+e.ecco)-1,e.altp=e.a*(1-e.ecco)-1,e.error=0,Ao>=0||e.no>=0){if(e.isimp=0,Lo<1.034492841559484&&(e.isimp=1),_=1.0122292801892716,L=1.880279159015271e-9,(F=(Lo-1)*d)<156){_=F-78,F<98&&(_=20);var Do=(120-_)/d;L=Do*Do*Do*Do,_=_/d+1}A=1/Co,to=1/(wo-_),e.eta=wo*e.ecco*to,T=e.eta*e.eta,w=e.ecco*e.eta,C=Math.abs(1-T),m=(f=(M=L*Math.pow(to,4))/Math.pow(C,3.5))*e.no*(wo*(1+1.5*T+w*(4+T))+.375*h*to/C*e.con41*(8+3*T*(8+T))),e.cc1=e.bstar*m,g=0,e.ecco>1e-4&&(g=-2*M*to*p*e.no*Uo/e.ecco),e.x1mth2=1-Eo,e.cc4=2*e.no*f*wo*Ao*(e.eta*(2+.5*T)+e.ecco*(.5+2*T)-h*to/(wo*C)*(-3*e.con41*(1-2*w+T*(1.5-.5*w))+.75*e.x1mth2*(2*T-w*(1+T))*Math.cos(2*e.argpo))),e.cc5=2*f*wo*Ao*(1+2.75*(T+w)+w*T),z=Eo*Eo,X=.5*(W=1.5*h*A*e.no)*h*A,oo=-.46875*l*A*A*e.no,e.mdot=e.no+.5*W*So*e.con41+.0625*X*So*(13-78*Eo+137*z),e.argpdot=-.5*W*To+.0625*X*(7-114*Eo+395*z)+oo*(3-36*Eo+49*z),so=-W*jo,e.nodedot=so+(.5*X*(4-19*Eo)+2*oo*(3-7*Eo))*jo,eo=e.argpdot+e.nodedot,e.omgcof=e.bstar*g*Math.cos(e.argpo),e.xmcof=0,e.ecco>1e-4&&(e.xmcof=-x*M*e.bstar/w),e.nodecf=3.5*Ao*so*e.cc1,e.t2cof=1.5*e.cc1,Math.abs(jo+1)>15e-13?e.xlcof=-.25*p*Uo*(3+5*jo)/(1+jo):e.xlcof=-.25*p*Uo*(3+5*jo)/15e-13,e.aycof=-.5*p*Uo;var Io=1+e.eta*Math.cos(e.mo);if(e.delmo=Io*Io*Io,e.sinmao=Math.sin(e.mo),e.x7thm1=7*Eo-1,2*o/e.no>=225){e.method="d",e.isimp=1,0,j=e.inclo;var Ro=function(o){var e,s,a,n,d,r,i,c,h,m,l,p,x,g,M,f,u,z,v,y,b,q,w,T,j,E,F,A,C,L,S,U,D,I,R,_,k,O,P,Z,G,H,Y,$,B,J,K,N,Q,V,W,X,oo,to,eo,so,ao,no,ro,io,co,ho,mo,lo=o.epoch,po=o.ep,xo=o.argpp,go=o.tc,Mo=o.inclp,fo=o.nodep,uo=.01675,zo=.0549,vo=o.np,yo=po,bo=Math.sin(fo),qo=Math.cos(fo),wo=Math.sin(xo),To=Math.cos(xo),jo=Math.sin(Mo),Eo=Math.cos(Mo),Fo=yo*yo,Ao=1-Fo,Co=Math.sqrt(Ao),Lo=lo+18261.5+go/1440,So=(4.523602-.00092422029*Lo)%t,Uo=Math.sin(So),Do=Math.cos(So),Io=.91375164-.03568096*Do,Ro=Math.sqrt(1-Io*Io),_o=.089683511*Uo/Ro,ko=Math.sqrt(1-_o*_o),Oo=5.8351514+.001944368*Lo,Po=.39785416*Uo/Ro,Zo=ko*Do+.91744867*_o*Uo;Po=Math.atan2(Po,Zo),Po+=Oo-So;var Go=Math.cos(Po),Ho=Math.sin(Po);y=.1945905,b=-.98088458,T=.91744867,j=.39785416,q=qo,w=bo,l=29864797e-13;for(var Yo=1/vo,$o=0;$o<2;)eo=-6*(e=y*q+b*T*w)*(d=-jo*(i=-y*w+b*T*q)+Eo*(c=b*j))+Fo*(-24*(p=e*To+(s=Eo*i+jo*c)*wo)*(z=d*To)-6*(g=-e*wo+s*To)*(f=d*wo)),so=-6*(e*(r=-jo*(h=b*w+y*T*q)+Eo*(m=y*j))+(a=-b*q+y*T*w)*d)+Fo*(-24*((x=a*To+(n=Eo*h+jo*m)*wo)*z+p*(v=r*To))+-6*(g*(u=r*wo)+(M=-a*wo+n*To)*f)),ao=-6*a*r+Fo*(-24*x*v-6*M*u),no=6*s*d+Fo*(24*p*f-6*g*z),ro=6*(n*d+s*r)+Fo*(24*(x*f+p*u)-6*(M*z+g*v)),io=6*n*r+Fo*(24*x*u-6*M*v),X=(X=3*(e*e+s*s)+(co=12*p*p-3*g*g)*Fo)+X+Ao*co,oo=(oo=6*(e*a+s*n)+(ho=24*p*x-6*g*M)*Fo)+oo+Ao*ho,to=(to=3*(a*a+n*n)+(mo=12*x*x-3*M*M)*Fo)+to+Ao*mo,J=-.5*(K=l*Yo)/Co,B=-15*yo*(N=K*Co),Q=p*g+x*M,V=x*g+p*M,W=x*M-p*g,1===($o+=1)&&(E=B,F=J,A=K,C=N,L=Q,S=V,U=W,D=X,I=oo,R=to,_=eo,k=so,O=ao,P=no,Z=ro,G=io,H=co,Y=ho,$=mo,y=Go,b=Ho,T=Io,j=Ro,q=ko*qo+_o*bo,w=bo*ko-qo*_o,l=4.7968065e-7);return{snodm:bo,cnodm:qo,sinim:jo,cosim:Eo,sinomm:wo,cosomm:To,day:Lo,e3:2*B*W,ee2:2*B*V,em:yo,emsq:Fo,gam:Oo,peo:0,pgho:0,pho:0,pinco:0,plo:0,rtemsq:Co,se2:2*E*S,se3:2*E*U,sgh2:2*C*Y,sgh3:2*C*($-H),sgh4:-18*C*uo,sh2:-2*F*Z,sh3:-2*F*(G-P),si2:2*F*k,si3:2*F*(O-_),sl2:-2*A*I,sl3:-2*A*(R-D),sl4:-2*A*(-21-9*Fo)*uo,s1:B,s2:J,s3:K,s4:N,s5:Q,s6:V,s7:W,ss1:E,ss2:F,ss3:A,ss4:C,ss5:L,ss6:S,ss7:U,sz1:D,sz2:I,sz3:R,sz11:_,sz12:k,sz13:O,sz21:P,sz22:Z,sz23:G,sz31:H,sz32:Y,sz33:$,xgh2:2*N*ho,xgh3:2*N*(mo-co),xgh4:-18*N*zo,xh2:-2*J*ro,xh3:-2*J*(io-no),xi2:2*J*so,xi3:2*J*(ao-eo),xl2:-2*K*oo,xl3:-2*K*(to-X),xl4:-2*K*(-21-9*Fo)*zo,nm:vo,z1:X,z2:oo,z3:to,z11:eo,z12:so,z13:ao,z21:no,z22:ro,z23:io,z31:co,z32:ho,z33:mo,zmol:(.2299715*Lo-Oo+4.7199672)%t,zmos:(6.2565837+.017201977*Lo)%t}}({epoch:go,ep:e.ecco,argpp:e.argpo,tc:0,inclp:e.inclo,nodep:e.nodeo,np:e.no,e3:e.e3,ee2:e.ee2,peo:e.peo,pgho:e.pgho,pho:e.pho,pinco:e.pinco,plo:e.plo,se2:e.se2,se3:e.se3,sgh2:e.sgh2,sgh3:e.sgh3,sgh4:e.sgh4,sh2:e.sh2,sh3:e.sh3,si2:e.si2,si3:e.si3,sl2:e.sl2,sl3:e.sl3,sl4:e.sl4,xgh2:e.xgh2,xgh3:e.xgh3,xgh4:e.xgh4,xh2:e.xh2,xh3:e.xh3,xi2:e.xi2,xi3:e.xi3,xl2:e.xl2,xl3:e.xl3,xl4:e.xl4,zmol:e.zmol,zmos:e.zmos});e.e3=Ro.e3,e.ee2=Ro.ee2,e.peo=Ro.peo,e.pgho=Ro.pgho,e.pho=Ro.pho,e.pinco=Ro.pinco,e.plo=Ro.plo,e.se2=Ro.se2,e.se3=Ro.se3,e.sgh2=Ro.sgh2,e.sgh3=Ro.sgh3,e.sgh4=Ro.sgh4,e.sh2=Ro.sh2,e.sh3=Ro.sh3,e.si2=Ro.si2,e.si3=Ro.si3,e.sl2=Ro.sl2,e.sl3=Ro.sl3,e.sl4=Ro.sl4,n=Ro.sinim,a=Ro.cosim,b=Ro.em,q=Ro.emsq,S=Ro.s1,U=Ro.s2,D=Ro.s3,I=Ro.s4,R=Ro.s5,k=Ro.ss1,O=Ro.ss2,P=Ro.ss3,Z=Ro.ss4,G=Ro.ss5,H=Ro.sz1,Y=Ro.sz3,$=Ro.sz11,B=Ro.sz13,J=Ro.sz21,K=Ro.sz23,N=Ro.sz31,Q=Ro.sz33,e.xgh2=Ro.xgh2,e.xgh3=Ro.xgh3,e.xgh4=Ro.xgh4,e.xh2=Ro.xh2,e.xh3=Ro.xh3,e.xi2=Ro.xi2,e.xi3=Ro.xi3,e.xl2=Ro.xl2,e.xl3=Ro.xl3,e.xl4=Ro.xl4,e.zmol=Ro.zmol,e.zmos=Ro.zmos,E=Ro.nm,ao=Ro.z1,no=Ro.z3,ro=Ro.z11,io=Ro.z13,co=Ro.z21,ho=Ro.z23,mo=Ro.z31,lo=Ro.z33;var _o=u(e,{inclo:j,init:e.init,ep:e.ecco,inclp:e.inclo,nodep:e.nodeo,argpp:e.argpo,mp:e.mo,opsmode:e.operationmode});e.ecco=_o.ep,e.inclo=_o.inclp,e.nodeo=_o.nodep,e.argpo=_o.argpp,e.mo=_o.mp,0,0,0;var ko=function(e){var s,a,n,d,i,c,h,m,l,p,g,M,f,u,z,v,y,b=e.cosim,q=e.argpo,w=e.s1,T=e.s2,j=e.s3,E=e.s4,F=e.s5,A=e.sinim,C=e.ss1,L=e.ss2,S=e.ss3,U=e.ss4,D=e.ss5,I=e.sz1,R=e.sz3,_=e.sz11,k=e.sz13,O=e.sz21,P=e.sz23,Z=e.sz31,G=e.sz33,H=e.t,Y=e.tc,$=e.gsto,B=e.mo,J=e.mdot,K=e.no,N=e.nodeo,Q=e.nodedot,V=e.xpidot,W=e.z1,X=e.z3,oo=e.z11,to=e.z13,eo=e.z21,so=e.z23,ao=e.z31,no=e.z33,ro=e.ecco,io=e.eccsq,co=e.emsq,ho=e.em,mo=e.argpm,lo=e.inclm,po=e.mm,xo=e.nm,go=e.nodem,Mo=e.irez,fo=e.atime,uo=e.d2201,zo=e.d2211,vo=e.d3210,yo=e.d3222,bo=e.d4410,qo=e.d4422,wo=e.d5220,To=e.d5232,jo=e.d5421,Eo=e.d5433,Fo=e.dedt,Ao=e.didt,Co=e.dmdt,Lo=e.dnodt,So=e.domdt,Uo=e.del1,Do=e.del2,Io=e.del3,Ro=e.xfact,_o=e.xlamo,ko=e.xli,Oo=e.xni,Po=.0043752690880113,Zo=.00015835218,Go=119459e-10;Mo=0,xo<.0052359877&&xo>.0034906585&&(Mo=1),xo>=.00826&&xo<=.00924&&ho>=.5&&(Mo=2);var Ho=-Go*L*(O+P);(lo<.052359877||lo>o-.052359877)&&(Ho=0),0!==A&&(Ho/=A);var Yo=-Zo*T*(eo+so);(lo<.052359877||lo>o-.052359877)&&(Yo=0),So=U*Go*(Z+G-6)-b*Ho+E*Zo*(ao+no-6),Lo=Ho,0!==A&&(So-=b/A*Yo,Lo+=Yo/A);var $o=($+Y*Po)%t;if(ho+=(Fo=C*Go*D+w*Zo*F)*H,lo+=(Ao=L*Go*(_+k)+T*Zo*(oo+to))*H,mo+=So*H,go+=Lo*H,po+=(Co=-Go*S*(I+R-14-6*co)-Zo*j*(W+X-14-6*co))*H,0!==Mo){if(z=Math.pow(xo/r,x),2===Mo){var Bo=ho,Jo=co;y=(ho=ro)*(co=io),ho<=.65?(n=3.616-13.247*ho+16.29*co,d=117.39*ho-19.302-228.419*co+156.591*y,i=109.7927*ho-18.9068-214.6334*co+146.5816*y,c=242.694*ho-41.122-471.094*co+313.953*y,h=841.88*ho-146.407-1629.014*co+1083.435*y,m=3017.977*ho-532.114-5740.032*co+3708.276*y):(n=331.819*ho-72.099-508.738*co+266.724*y,d=1582.851*ho-346.844-2415.925*co+1246.113*y,i=1554.908*ho-342.585-2366.899*co+1215.972*y,c=4758.686*ho-1052.797-7193.992*co+3651.957*y,h=16178.11*ho-3581.69-24462.77*co+12422.52*y,m=ho>.715?29936.92*ho-5149.66-54087.36*co+31324.56*y:1464.74-4664.75*ho+3763.64*co),ho<.7?(g=4988.61*ho-919.2277-9064.77*co+5542.21*y,l=4568.6173*ho-822.71072-8491.4146*co+5337.524*y,p=4690.25*ho-853.666-8624.77*co+5341.4*y):(g=161616.52*ho-37995.78-229838.2*co+109377.94*y,l=218913.95*ho-51752.104-309468.16*co+146349.42*y,p=170470.89*ho-40023.88-242699.48*co+115605.82*y),uo=(f=17891679e-13*(u=xo*xo*3*(z*z)))*(s=.75*(1+2*b+(v=b*b)))*(-.306-.44*(ho-.64)),zo=f*(1.5*(M=A*A))*n,vo=(f=3.7393792e-7*(u*=z))*(1.875*A*(1-2*b-3*v))*d,yo=f*(-1.875*A*(1+2*b-3*v))*i,bo=(f=2*(u*=z)*7.3636953e-9)*(35*M*s)*c,qo=f*(39.375*M*M)*h,wo=(f=1.1428639e-7*(u*=z))*(9.84375*A*(M*(1-2*b-5*v)+.33333333*(4*b-2+6*v)))*m,To=f*(A*(4.92187512*M*(-2-4*b+10*v)+6.56250012*(1+2*b-3*v)))*p,jo=(f=2*u*2.1765803e-9)*(29.53125*A*(2-8*b+v*(8*b-12+10*v)))*l,Eo=f*(29.53125*A*(-2-8*b+v*(12+8*b-10*v)))*g,_o=(B+N+N-($o+$o))%t,Ro=J+Co+2*(Q+Lo-Po)-K,ho=Bo,co=Jo}1===Mo&&(a=1+b,Do=2*(Uo=3*xo*xo*z*z)*(s=.75*(1+b)*(1+b))*(1+co*(.8125*co-2.5))*17891679e-13,Io=3*Uo*(a*=1.875*a*a)*(1+co*(6.60937*co-6))*2.2123015e-7*z,Uo=Uo*(.9375*A*A*(1+3*b)-.75*(1+b))*(d=1+2*co)*21460748e-13*z,_o=(B+N+q-$o)%t,Ro=J+V+Co+So+Lo-(K+Po)),ko=_o,Oo=K,fo=0,xo=K+0}return{em:ho,argpm:mo,inclm:lo,mm:po,nm:xo,nodem:go,irez:Mo,atime:fo,d2201:uo,d2211:zo,d3210:vo,d3222:yo,d4410:bo,d4422:qo,d5220:wo,d5232:To,d5421:jo,d5433:Eo,dedt:Fo,didt:Ao,dmdt:Co,dndt:0,dnodt:Lo,domdt:So,del1:Uo,del2:Do,del3:Io,xfact:Ro,xlamo:_o,xli:ko,xni:Oo}}({cosim:a,emsq:q,argpo:e.argpo,s1:S,s2:U,s3:D,s4:I,s5:R,sinim:n,ss1:k,ss2:O,ss3:P,ss4:Z,ss5:G,sz1:H,sz3:Y,sz11:$,sz13:B,sz21:J,sz23:K,sz31:N,sz33:Q,t:e.t,tc:0,gsto:e.gsto,mo:e.mo,mdot:e.mdot,no:e.no,nodeo:e.nodeo,nodedot:e.nodedot,xpidot:eo,z1:ao,z3:no,z11:ro,z13:io,z21:co,z23:ho,z31:mo,z33:lo,ecco:e.ecco,eccsq:Fo,em:b,argpm:0,inclm:j,mm:0,nm:E,nodem:0,irez:e.irez,atime:e.atime,d2201:e.d2201,d2211:e.d2211,d3210:e.d3210,d3222:e.d3222,d4410:e.d4410,d4422:e.d4422,d5220:e.d5220,d5232:e.d5232,d5421:e.d5421,d5433:e.d5433,dedt:e.dedt,didt:e.didt,dmdt:e.dmdt,dnodt:e.dnodt,domdt:e.domdt,del1:e.del1,del2:e.del2,del3:e.del3,xfact:e.xfact,xlamo:e.xlamo,xli:e.xli,xni:e.xni});e.irez=ko.irez,e.atime=ko.atime,e.d2201=ko.d2201,e.d2211=ko.d2211,e.d3210=ko.d3210,e.d3222=ko.d3222,e.d4410=ko.d4410,e.d4422=ko.d4422,e.d5220=ko.d5220,e.d5232=ko.d5232,e.d5421=ko.d5421,e.d5433=ko.d5433,e.dedt=ko.dedt,e.didt=ko.didt,e.dmdt=ko.dmdt,e.dnodt=ko.dnodt,e.domdt=ko.domdt,e.del1=ko.del1,e.del2=ko.del2,e.del3=ko.del3,e.xfact=ko.xfact,e.xlamo=ko.xlamo,e.xli=ko.xli,e.xni=ko.xni}1!==e.isimp&&(i=e.cc1*e.cc1,e.d2=4*wo*to*i,V=e.d2*to*e.cc1/3,e.d3=(17*wo+_)*V,e.d4=.5*V*wo*to*(221*wo+31*_)*e.cc1,e.t3cof=e.d2+2*i,e.t4cof=.25*(3*e.d3+e.cc1*(12*e.d2+10*i)),e.t5cof=.2*(3*e.d4+12*e.cc1*e.d3+6*e.d2*e.d2+15*i*(2*e.d2+i)))}y(e,0),e.init="n"}function q(o){return function(o){if(Array.isArray(o))return w(o)}(o)||function(o){if("undefined"!=typeof Symbol&&null!=o[Symbol.iterator]||null!=o["@@iterator"])return Array.from(o)}(o)||function(o,t){if(!o)return;if("string"==typeof o)return w(o,t);var e=Object.prototype.toString.call(o).slice(8,-1);"Object"===e&&o.constructor&&(e=o.constructor.name);if("Map"===e||"Set"===e)return Array.from(o);if("Arguments"===e||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(e))return w(o,t)}(o)||function(){throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}function w(o,t){(null==t||t>o.length)&&(t=o.length);for(var e=0,s=new Array(t);e<t;e++)s[e]=o[e];return s}function T(o){return o*s}function j(o){return o*e}function E(o){var t=o.longitude,e=o.latitude,s=o.height,a=6378.137,n=(a-6356.7523142)/a,d=2*n-n*n,r=a/Math.sqrt(1-d*(Math.sin(e)*Math.sin(e)));return{x:(r+s)*Math.cos(e)*Math.cos(t),y:(r+s)*Math.cos(e)*Math.sin(t),z:(r*(1-d)+s)*Math.sin(e)}}var F={constants:Object.freeze({__proto__:null,deg2rad:e,earthRadius:d,j2:h,j3:m,j3oj2:p,j4:l,minutesPerDay:a,mu:n,pi:o,rad2deg:s,tumin:c,twoPi:t,vkmpersec:i,x2o3:x,xke:r}),propagate:function(){for(var o=arguments.length,t=new Array(o),e=0;e<o;e++)t[e]=arguments[e];var s=t[0],n=Array.prototype.slice.call(t,1),d=f.apply(void 0,q(n)),r=(d-s.jdsatepoch)*a;return y(s,r)},sgp4:y,twoline2satrec:function(t,s){var a=1440/(2*o),n=0,d={error:0};d.satnum=t.substring(2,7),d.epochyr=parseInt(t.substring(18,20),10),d.epochdays=parseFloat(t.substring(20,32)),d.ndot=parseFloat(t.substring(33,43)),d.nddot=parseFloat(".".concat(parseInt(t.substring(44,50),10),"E").concat(t.substring(50,52))),d.bstar=parseFloat("".concat(t.substring(53,54),".").concat(parseInt(t.substring(54,59),10),"E").concat(t.substring(59,61))),d.inclo=parseFloat(s.substring(8,16)),d.nodeo=parseFloat(s.substring(17,25)),d.ecco=parseFloat(".".concat(s.substring(26,33))),d.argpo=parseFloat(s.substring(34,42)),d.mo=parseFloat(s.substring(43,51)),d.no=parseFloat(s.substring(52,63)),d.no/=a,d.inclo*=e,d.nodeo*=e,d.argpo*=e,d.mo*=e;var r=g(n=d.epochyr<57?d.epochyr+2e3:d.epochyr+1900,d.epochdays),i=r.mon,c=r.day,h=r.hr,m=r.minute,l=r.sec;return d.jdsatepoch=f(n,i,c,h,m,l),b(d,{opsmode:"i",satn:d.satnum,epoch:d.jdsatepoch-2433281.5,xbstar:d.bstar,xecco:d.ecco,xargpo:d.argpo,xinclo:d.inclo,xmo:d.mo,xno:d.no,xnodeo:d.nodeo}),d},gstime:v,jday:f,invjday:function(o,t){var e=o-2415019.5,s=e/365.25,a=1900+Math.floor(s),n=Math.floor(.25*(a-1901)),d=e-(365*(a-1900)+n)+1e-11;d<1&&(d=e-(365*((a-=1)-1900)+(n=Math.floor(.25*(a-1901)))));var r=g(a,d),i=r.mon,c=r.day,h=r.hr,m=r.minute,l=r.sec-864e-9;return t?[a,i,c,h,m,Math.floor(l)]:new Date(Date.UTC(a,i-1,c,h,m,Math.floor(l)))},dopplerFactor:function(o,t,e){var s=7292115e-11,a={x:t.x-o.x,y:t.y-o.y,z:t.z-o.z};a.w=Math.sqrt(Math.pow(a.x,2)+Math.pow(a.y,2)+Math.pow(a.z,2));var n=e.x+s*o.y,d=e.y-s*o.x,r=e.z,i=(a.x*n+a.y*d+a.z*r)/a.w;return 1+i/299792.458*(i>=0?1:-1)},radiansToDegrees:T,degreesToRadians:j,degreesLat:function(t){if(t<-o/2||t>o/2)throw new RangeError("Latitude radians must be in range [-pi/2; pi/2].");return T(t)},degreesLong:function(t){if(t<-o||t>o)throw new RangeError("Longitude radians must be in range [-pi; pi].");return T(t)},radiansLat:function(o){if(o<-90||o>90)throw new RangeError("Latitude degrees must be in range [-90; 90].");return j(o)},radiansLong:function(o){if(o<-180||o>180)throw new RangeError("Longitude degrees must be in range [-180; 180].");return j(o)},geodeticToEcf:E,eciToGeodetic:function(e,s){for(var a=6378.137,n=Math.sqrt(e.x*e.x+e.y*e.y),d=(a-6356.7523142)/a,r=2*d-d*d,i=Math.atan2(e.y,e.x)-s;i<-o;)i+=t;for(;i>o;)i-=t;for(var c,h=0,m=Math.atan2(e.z,Math.sqrt(e.x*e.x+e.y*e.y));h<20;)c=1/Math.sqrt(1-r*(Math.sin(m)*Math.sin(m))),m=Math.atan2(e.z+a*c*r*Math.sin(m),n),h+=1;return{longitude:i,latitude:m,height:n/Math.cos(m)-a*c}},eciToEcf:function(o,t){return{x:o.x*Math.cos(t)+o.y*Math.sin(t),y:o.x*-Math.sin(t)+o.y*Math.cos(t),z:o.z}},ecfToEci:function(o,t){return{x:o.x*Math.cos(t)-o.y*Math.sin(t),y:o.x*Math.sin(t)+o.y*Math.cos(t),z:o.z}},ecfToLookAngles:function(t,e){var s,a,n,d,r,i,c=function(o,t){var e=o.longitude,s=o.latitude,a=E(o),n=t.x-a.x,d=t.y-a.y,r=t.z-a.z;return{topS:Math.sin(s)*Math.cos(e)*n+Math.sin(s)*Math.sin(e)*d-Math.cos(s)*r,topE:-Math.sin(e)*n+Math.cos(e)*d,topZ:Math.cos(s)*Math.cos(e)*n+Math.cos(s)*Math.sin(e)*d+Math.sin(s)*r}}(t,e);return a=(s=c).topS,n=s.topE,d=s.topZ,r=Math.sqrt(a*a+n*n+d*d),i=Math.asin(d/r),{azimuth:Math.atan2(-n,a)+o,elevation:i,rangeSat:r}}};return F}));
+</script>
+
+<script>
+(async function () {
+  "use strict";
+
+  var SGP4 = window.satellite;
+  var MIN = 60000, HOUR = 3600000, DAY = 86400000;
+  var STEP = 15 * MIN;            // sampling step of the history series
+  var SPARSE_AGE = 3 * DAY;       // TLE age beyond which a sample is flagged
+  var MIN_WINDOW = HOUR;          // shortest selectable window
+
+  var archiveResponse=await fetch('./tle-data.json.gz');
+  if(!archiveResponse.ok)throw new Error('TLE archive unavailable');
+  var DATA=await new Response(archiveResponse.body.pipeThrough(new DecompressionStream('gzip'))).json();
+  var EPISODES = DATA.episodes;
+  var OBJECTS = DATA.objects;
+  var catalog = new Map();
+  Object.keys(OBJECTS).forEach(function (norad) { var item=OBJECTS[norad]; catalog.set(norad,{norad:norad,name:item.name||norad,cospar:item.cospar||'',hasHistory:true}); });
+  EPISODES.forEach(function (episode) { [[episode.n1,episode.o1,episode.c1],[episode.n2,episode.o2,episode.c2]].forEach(function (parts) {
+    if(parts[0]&&!catalog.has(String(parts[0])))catalog.set(String(parts[0]),{norad:String(parts[0]),name:parts[1]||String(parts[0]),cospar:parts[2]||'',hasHistory:false});
+  }); });
+  var candidates=[...catalog.values()].sort(function(a,b){return a.name.localeCompare(b.name)||a.norad.localeCompare(b.norad)});
+  function candidateLabel(item){return item.name+' · '+item.norad+(item.cospar?' · '+item.cospar:'')}
+  function resolveCandidate(value){var query=String(value||'').trim().toLowerCase();return candidates.find(function(item){return candidateLabel(item).toLowerCase()===query||item.norad===query||item.name.toLowerCase()===query})||null}
+  function pairCoverage(a,b){if(!a||!b)return {ok:false,reason:'Select both spacecraft.'};if(a.norad===b.norad)return {ok:false,reason:'Choose two different spacecraft.'};
+    var one=libFor(a.norad),two=libFor(b.norad);if(!one||!two)return {ok:false,reason:'No TLE history for '+(!one?a.name:b.name)+' in this archive.'};
+    var start=Math.max(one.epochs[0],two.epochs[0]),end=Math.min(one.epochs[one.epochs.length-1],two.epochs[two.epochs.length-1]);
+    return start<end?{ok:true,start:start,end:end}:{ok:false,reason:'No overlapping TLE dates for this pair.'};
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------------------------------------------------------------- formatting
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function isoDay(ms) { var d = new Date(ms); return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()); }
+  function isoMin(ms, withT) {
+    var d = new Date(ms);
+    var s = d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()) + " " +
+            pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes());
+    if (withT) s = s.replace(" ", "T") + "Z";
+    return s;
+  }
+  // Chapter centres are minute-resolution; the seconds field is shown as :00
+  // rather than propagated so the copied row reads hh:mm:ss.
+  function isoMin00(ms) { return isoMin(ms) + ":00"; }
+  function isoSec(ms) {
+    var d = new Date(ms);
+    return isoMin(ms) + ":" + pad(d.getUTCSeconds());
+  }
+  function fmtKm(km) {
+    if (!isFinite(km)) return "—";
+    if (km < 10) return km.toFixed(3);
+    if (km < 1000) return km.toFixed(1);
+    return Math.round(km).toLocaleString("en-US");
+  }
+  function fmtMps(mps) {
+    if (!isFinite(mps)) return "—";
+    return mps < 1000 ? mps.toFixed(2) : (mps / 1000).toFixed(2);
+  }
+  function fmtAge(ms) {
+    var a = Math.abs(ms);
+    if (a < 36 * HOUR) return (a / HOUR).toFixed(1) + " h";
+    return (a / DAY).toFixed(1) + " d";
+  }
+  function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]); }
+  // Position uncertainty model: 1 km at the element epoch, growing 2 km per day
+  // of propagation either side of it (same both ways), summed over both objects.
+  function sigmaForAge(ageMs) { return 1 + 2 * Math.abs(ageMs) / DAY; }
+  function sigmaKm(ageA, ageB) { return sigmaForAge(ageA) + sigmaForAge(ageB); }
+  function fmtSigma(km) { return (km < 10 ? km.toFixed(1) : String(Math.round(km))).replace(/\.0$/, ""); }
+
+  // -------------------------------------------------------- reported windows
+  // The CSV mixes ISO dates, YYYY-MM, plain years and free text ("approx.",
+  // "Not established"). Each is widened to the UTC interval it denotes.
+  function parseReported(text) {
+    if (!text) return null;
+    var s = String(text).trim();
+    if (/^not established/i.test(s)) return null;
+    s = s.replace(/\(.*?\)/g, "").trim();
+    var m;
+    if ((m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s))) {
+      var t = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+      return { start: t, end: t + DAY - 1, label: "single day" };
+    }
+    if ((m = /^(\d{4})-(\d{2})$/.exec(s))) {
+      return { start: Date.UTC(+m[1], +m[2] - 1, 1), end: Date.UTC(+m[1], +m[2], 1) - 1, label: "whole month" };
+    }
+    if ((m = /^(\d{4})$/.exec(s))) {
+      return { start: Date.UTC(+m[1], 0, 1), end: Date.UTC(+m[1] + 1, 0, 1) - 1, label: "whole year" };
+    }
+    return null;
+  }
+
+  // ------------------------------------------------------------ TLE libraries
+  // Each object carries one newline-separated blob: line 1 then line 2 for every
+  // element of its history. The epoch is already in columns 19-32 of line 1, so
+  // it is read from there instead of being stored a second time.
+  function epochFromLine1(l1) {
+    var yy = parseInt(l1.substr(18, 2), 10);
+    var doy = parseFloat(l1.substr(20, 14));
+    return Date.UTC(yy < 57 ? 2000 + yy : 1900 + yy, 0, 1) + (doy - 1) * DAY;
+  }
+  var LIBS = {};
+  function libFor(norad) {
+    if (LIBS[norad]) return LIBS[norad];
+    var obj = OBJECTS[norad];
+    if (!obj) return null;
+    var lines = obj.blob.split("\n"), tles = [];
+    for (var i = 0; i + 1 < lines.length; i += 2) {
+      var l1 = lines[i], l2 = lines[i + 1];
+      if (!l1 || !l2) continue;
+      tles.push({ epoch: epochFromLine1(l1), line1: l1, line2: l2 });
+    }
+    var epochs = tles.map(function (t) { return t.epoch; });
+    return (LIBS[norad] = { obj: obj, tles: tles, epochs: epochs, recs: new Array(tles.length) });
+  }
+  // Index of the TLE whose epoch is closest to ms (forward or backward).
+  function nearestIndex(epochs, ms) {
+    var lo = 0, hi = epochs.length - 1;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (epochs[mid] < ms) lo = mid + 1; else hi = mid; }
+    if (lo > 0 && ms - epochs[lo - 1] < epochs[lo] - ms) return lo - 1;
+    return lo;
+  }
+  function stateAt(lib, ms, index) {
+    var i = index == null ? nearestIndex(lib.epochs, ms) : index;
+    var rec = lib.recs[i];
+    if (!rec) rec = lib.recs[i] = SGP4.twoline2satrec(lib.tles[i].line1, lib.tles[i].line2);
+    var res = SGP4.propagate(rec, new Date(ms));
+    if (!res || !res.position || !res.velocity) return null;
+    return {
+      i: i, epoch: lib.epochs[i], age: ms - lib.epochs[i],
+      r: [res.position.x, res.position.y, res.position.z],
+      v: [res.velocity.x, res.velocity.y, res.velocity.z]
+    };
+  }
+  // Every timestamp is propagated from the nearest TLE of each object, however
+  // far away that epoch is: the curve is continuous over the whole axis. The
+  // availability strip above the plot shows only the archive's own element sets,
+  // so wherever its bar is missing the plotted position is extrapolation.
+  function pairAt(A, B, ms) {
+    var ia = nearestIndex(A.epochs, ms), ib = nearestIndex(B.epochs, ms);
+    var a = stateAt(A, ms, ia), b = stateAt(B, ms, ib);
+    if (!a || !b) return null;
+    return { ms: ms, km: dist(a.r, b.r), mps: dist(a.v, b.v) * 1000, a: a, b: b };
+  }
+
+  // ------------------------------------------------------------ view state
+  var view = {
+    episode: null,
+    A: null, B: null,
+    t0: 0, t1: 0,
+    series: null,          // {ms:[], km:[], mps:[], ia:[], ib:[], minIndex}
+    step: STEP,
+    start: 0, end: 0,
+    hoverMs: null,
+    log: true,
+    chapters: {}
+  };
+
+  // ------------------------------------------------------------ series build
+  function buildSeries() {
+    // 15-minute sampling, widened only if a span were so long that the sample
+    // count would get out of hand (none of the current episodes need it).
+    var span = view.t1 - view.t0;
+    view.step = span > 900 * DAY ? 30 * MIN : STEP;
+    if (span / view.step > 500000) view.step = Math.ceil(span / 500000 / MIN) * MIN;
+    var ms = [], km = [], mps = [], ia = [], ib = [], sig = [], gaps = [];
+    var n = 0, minIndex = -1, gapStart = null;
+    for (var t = view.t0; ; t += view.step) {
+      var at = Math.min(t, view.t1);
+      var s = pairAt(view.A, view.B, at);
+      if (s) {
+        if (gapStart !== null) { gaps.push([gapStart, at]); gapStart = null; }
+        ms.push(at); km.push(s.km); mps.push(s.mps); ia.push(s.a.i); ib.push(s.b.i);
+        sig.push(sigmaKm(s.a.age, s.b.age));
+        if (minIndex < 0 || s.km < km[minIndex]) minIndex = n;
+        n++;
+      } else if (gapStart === null) {
+        gapStart = at;
+      }
+      if (at >= view.t1) break;
+    }
+    if (gapStart !== null) gaps.push([gapStart, view.t1]);
+    view.series = { ms: ms, km: km, mps: mps, ia: ia, ib: ib, sig: sig, gaps: gaps, minIndex: minIndex };
+    pickCache.key = "";
+    pickCache.key = "";
+  }
+
+  // Closest approach inside [start, end]: the coarse series picks the bracket,
+  // then a 10 s scan and a 1 s scan refine it with the same SGP4 propagator.
+  // The readout and the chart marker ask for the same window on every redraw
+  // (mouse moves included), so the result is memoised until the window changes.
+  var pickCache = { key: "", value: null };
+  function analyseWindow(start, end) {
+    var key = start + ":" + end;
+    if (pickCache.key === key) return pickCache.value;
+    var result = analyseWindowAt(start, end);
+    pickCache = { key: key, value: result };
+    return result;
+  }
+  function analyseWindowAt(start, end) {
+    var S = view.series, best = -1;
+    for (var k = 0; k < S.ms.length; k++) {
+      var t = S.ms[k];
+      if (t < start || t > end) continue;
+      if (best < 0 || S.km[k] < S.km[best]) best = k;
+    }
+    var centre = best >= 0 ? S.ms[best] : (start + end) / 2;
+    var lo = Math.max(start, centre - view.step), hi = Math.min(end, centre + view.step);
+    if (hi <= lo) { lo = Math.max(start, centre - MIN); hi = Math.min(end, centre + MIN); }
+    if (hi < lo) { lo = start; hi = end; }
+
+    var pick = null;
+    function scan(from, to, stepMs) {
+      for (var t = from; t <= to + 1; t += stepMs) {
+        var at = Math.min(t, to);
+        var s = pairAt(view.A, view.B, at);
+        if (s && (!pick || s.km < pick.km)) pick = s;
+      }
+    }
+    scan(lo, hi, 10 * 1000);
+    if (pick) {
+      var c = pick.ms;
+      scan(Math.max(start, c - 10 * 1000), Math.min(end, c + 10 * 1000), 1000);
+    }
+    return pick;
+  }
+
+  // ------------------------------------------------------------------ chart
+  var chart = { cv: null, ctx: null, base: document.createElement("canvas"), w: 0, h: 0, dpr: 1, pad: { l: 60, r: 16, t: 35, b: 30 } };
+  var plot = { x0: 0, x1: 0, y0: 0, y1: 0, lo: 1, hi: 4 };
+
+  function kmToY(km) {
+    var v = view.log ? Math.log10(Math.max(km, 1e-3)) : km;
+    var lo = view.log ? plot.lo : 0, hi = view.log ? plot.hi : plot.hiLinear;
+    return plot.y1 - ((v - lo) / (hi - lo)) * (plot.y1 - plot.y0);
+  }
+  function msToX(ms) { return plot.x0 + ((ms - view.t0) / (view.t1 - view.t0)) * (plot.x1 - plot.x0); }
+  function xToMs(x) { return view.t0 + ((x - plot.x0) / (plot.x1 - plot.x0)) * (view.t1 - view.t0); }
+
+  function setupPlot() {
+    plot.x0 = chart.pad.l; plot.x1 = chart.w - chart.pad.r;
+    plot.y0 = chart.pad.t; plot.y1 = chart.h - chart.pad.b;
+    var S = view.series, minKm = Infinity, maxKm = 0;
+    for (var k = 0; k < S.km.length; k++) { if (S.km[k] < minKm) minKm = S.km[k]; if (S.km[k] > maxKm) maxKm = S.km[k]; }
+    // log by default: the range spans two decades, so a linear axis would flatten
+    // every close approach into the baseline.
+    plot.lo = Math.log10(Math.max(minKm * 0.75, 0.01));
+    plot.hi = Math.log10(Math.max(maxKm * 1.15, 10));
+    plot.hiLinear = maxKm * 1.08;
+    plot.minKm = minKm; plot.maxKm = maxKm;
+    alignSlider();
+  }
+
+  // The scrub slider lives in the same box as the canvas, so giving it the plot's
+  // left/right insets as margins makes its handle centres travel exactly x0 -> x1.
+  function alignSlider() {
+    var el = $("slider"), sc = $("sliderScale");
+    if (el) { el.style.marginLeft = chart.pad.l + "px"; el.style.marginRight = chart.pad.r + "px"; }
+    if (sc) { sc.style.marginLeft = chart.pad.l + "px"; sc.style.marginRight = chart.pad.r + "px"; }
+  }
+
+  function axisTicks() {
+    var out = [];    if (view.log) {
+      // whole powers of ten only, with 1/2/5 steps in between
+      for (var e = Math.ceil(plot.lo); e <= Math.floor(plot.hi); e++) {
+        [1, 2, 5].forEach(function (m) {
+          var v = m * Math.pow(10, e);
+          if (v >= Math.pow(10, plot.lo) && v <= Math.pow(10, plot.hi)) out.push(v);
+        });
+      }
+      return out;
+    }
+    var span = plot.hiLinear, base = Math.pow(10, Math.floor(Math.log10(span / 4))), stepv = base;
+    [1, 2, 5, 10].forEach(function (m) { if (span / (base * m) > 6) stepv = base * m; });
+    for (var v2 = 0; v2 <= span; v2 += stepv) out.push(v2);
+    return out;
+  }
+
+  // ---------------------------------------------------- TLE availability strip
+  // Two thin rows above the plot, one per object: one coloured tick at every TLE
+  // epoch the archive holds for that satellite, across the whole timeline. There
+  // is no merging, padding or gap rule -- a tick sits exactly on an element epoch
+  // and nowhere else, so an hour-by-hour cadence merges into a solid bar at
+  // screen resolution while a sparse one stays visibly dashed, one tick per
+  // element set, and the dark run beyond the last epoch is extrapolation.
+  var STRIP = { top: 6, rowH: 9, gap: 3 };
+
+  function fitLabel(ctx, text, maxW) {
+    if (!text) return "";
+    if (ctx.measureText(text).width <= maxW) return text;
+    var t = text;
+    while (t.length > 1 && ctx.measureText(t + "\u2026").width > maxW) t = t.slice(0, -1);
+    return t + "\u2026";
+  }
+
+  function drawCoverageStrip(ctx) {
+    var rows = [
+      { lib: view.A, colour: "#1977AD" },
+      { lib: view.B, colour: "#E69F00" }
+    ];
+    ctx.save();
+    ctx.font = "9px -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif";
+    ctx.textBaseline = "middle";
+    rows.forEach(function (row, ri) {
+      var y = STRIP.top + ri * (STRIP.rowH + STRIP.gap);
+      ctx.fillStyle = "#f3f3f3";
+      ctx.fillRect(plot.x0, y, plot.x1 - plot.x0, STRIP.rowH);
+      if (row.lib) {
+        ctx.fillStyle = row.colour;
+        var e = row.lib.epochs, wide = 1 / chart.dpr, lastX = -Infinity;
+        for (var i = 0; i < e.length; i++) {
+          if (e[i] < view.t0 || e[i] > view.t1) continue;
+          var x = Math.round(msToX(e[i]) / wide) * wide;
+          if (x < plot.x0) x = plot.x0;
+          else if (x > plot.x1 - wide) x = plot.x1 - wide;
+          if (x === lastX) continue;            // several epochs in one pixel column
+          lastX = x;
+          ctx.fillRect(x, y, wide, STRIP.rowH);
+        }
+      }
+      ctx.fillStyle = "#666666"; ctx.textAlign = "right";
+      var name = row.lib ? (row.lib.obj.name || ("NORAD " + row.lib.obj.norad)) : "";
+      ctx.fillText(fitLabel(ctx, name, chart.pad.l - 12), plot.x0 - 8, y + STRIP.rowH / 2 + 0.5);
+    });
+    ctx.strokeStyle = "#dedede"; ctx.lineWidth = 1;
+    ctx.strokeRect(plot.x0 + 0.5, STRIP.top + 0.5, plot.x1 - plot.x0, 2 * STRIP.rowH + STRIP.gap);
+    ctx.restore();
+  }
+
+  function drawBase() {
+    var S = view.series, b = chart.base, bctx = b.getContext("2d");
+    b.width = Math.round(chart.w * chart.dpr); b.height = Math.round(chart.h * chart.dpr);
+    bctx.setTransform(chart.dpr, 0, 0, chart.dpr, 0, 0);
+    bctx.clearRect(0, 0, chart.w, chart.h);
+
+    var k;
+
+    drawCoverageStrip(bctx);
+
+    // grid
+    bctx.strokeStyle = "#e8e8e8"; bctx.lineWidth = 1;
+    bctx.font = "10px -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"; bctx.fillStyle = "#666666";
+    bctx.textAlign = "right"; bctx.textBaseline = "middle";
+    axisTicks().forEach(function (v) {
+      var y = Math.round(kmToY(v)) + 0.5;
+      if (y < plot.y0 - 1 || y > plot.y1 + 1) return;
+      bctx.beginPath(); bctx.moveTo(plot.x0, y); bctx.lineTo(plot.x1, y); bctx.stroke();
+      bctx.fillText(v >= 1000 ? (v / 1000) + "k" : String(v), plot.x0 - 8, y);
+    });
+    bctx.save();
+    bctx.translate(14, (plot.y0 + plot.y1) / 2); bctx.rotate(-Math.PI / 2);
+    bctx.textAlign = "center"; bctx.fillStyle = "#666666";
+    bctx.fillText("separation (km)", 0, 0);
+    bctx.restore();
+
+    // x ticks: whole years once the span is long, months otherwise
+    bctx.textAlign = "center"; bctx.textBaseline = "top";
+    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var spanDays = (view.t1 - view.t0) / DAY;
+    var drawTick = function (ms, label) {
+      var x = Math.round(msToX(ms)) + 0.5;
+      bctx.strokeStyle = "#e8e8e8";
+      bctx.beginPath(); bctx.moveTo(x, plot.y0); bctx.lineTo(x, plot.y1); bctx.stroke();
+      bctx.fillStyle = "#666666";
+      bctx.fillText(label, x, plot.y1 + 8);
+    };
+    if (spanDays > 1400) {
+      var plotPx = Math.max(2, Math.floor((plot.x1 - plot.x0) / 70));
+      var stepY = Math.max(1, Math.ceil((spanDays / 365.25) / plotPx));
+      var yi = 0;
+      for (var yr = new Date(view.t0).getUTCFullYear() + 1; ; yr++, yi++) {
+        var ty = Date.UTC(yr, 0, 1);
+        if (ty > view.t1) break;
+        if (yi % stepY === 0) drawTick(ty, String(yr));
+      }
+    } else {
+      var stepMonths = Math.max(1, Math.ceil(spanDays / 30 / 10));
+      var firstMonth = new Date(view.t0);
+      for (var mt = Date.UTC(firstMonth.getUTCFullYear(), firstMonth.getUTCMonth() + 1, 1); mt <= view.t1;
+           mt = Date.UTC(new Date(mt).getUTCFullYear(), new Date(mt).getUTCMonth() + stepMonths, 1)) {
+        var mo = new Date(mt);
+        drawTick(mt, months[mo.getUTCMonth()] + " " + String(mo.getUTCFullYear()).slice(2));
+      }
+    }
+
+    // The separation curve. A 15-minute series over eleven years is far denser
+    // than the canvas, so every pixel column is drawn as the [min, max] envelope
+    // of the samples inside it. The shape and every spike survive, and the path
+    // stays at about one segment per pixel instead of hundreds of thousands.
+    var cols = Math.max(1, Math.round(plot.x1 - plot.x0));
+    var colLo = new Float64Array(cols).fill(Infinity);
+    var colSig = new Float64Array(cols);
+    for (k = 0; k < S.ms.length; k++) {
+      var col = Math.floor(msToX(S.ms[k]) - plot.x0);
+      if (col < 0) col = 0; else if (col >= cols) col = cols - 1;
+      if (S.km[k] < colLo[col]) colLo[col] = S.km[k];
+      var sigK = (S.sig && S.sig[k]) || 0;
+      if (sigK > colSig[col]) colSig[col] = sigK;
+    }
+    // The line is the per-column minimum. The per-column min/max fill is gone:
+    // at a fast dive it covered a whole column and read as a pale blue wash.
+    var started = false, ca, cx;
+
+    // Uncertainty band, centred on the plotted line so it clearly sits above and
+    // below it: +/- (1 + 2*dA) + (1 + 2*dB) km, d being each element set's
+    // propagation age. Hatched so it reads as a range over the envelope fill
+    // instead of merging with it.
+    var bandLo = Math.pow(10, plot.lo), c1;
+    var bandTop = new Float64Array(cols).fill(NaN), bandBot = new Float64Array(cols).fill(NaN);
+    for (c1 = 0; c1 < cols; c1++) {
+      if (colLo[c1] === Infinity || !colSig[c1]) continue;
+      bandTop[c1] = colLo[c1] + colSig[c1];
+      bandBot[c1] = Math.max(colLo[c1] - colSig[c1], bandLo);
+    }
+    // A band of a few km is thinner than a pixel on a three-decade axis, so the
+    // drawn half-height never drops below MIN_HALF px: the range stays visible on
+    // both sides of the curve at every separation, and grows once the real
+    // uncertainty exceeds that floor.
+    var MIN_HALF = 3;
+    bctx.fillStyle = "rgba(25,119,173,0.28)";
+    for (c1 = 0; c1 < cols; c1++) {
+      if (bandTop[c1] !== bandTop[c1]) continue;
+      var yLine = kmToY(colLo[c1]);
+      var bty = Math.min(kmToY(bandTop[c1]), yLine - MIN_HALF);
+      var bby = Math.max(kmToY(bandBot[c1]), yLine + MIN_HALF);
+      bctx.fillRect(plot.x0 + c1, bty, 1, Math.max(1, bby - bty));
+    }
+
+    // the closest approach inside each column, with a break wherever the data stops
+    bctx.beginPath();
+    for (ca = 0; ca < cols; ca++) {
+      if (colLo[ca] === Infinity) { started = false; continue; }
+      cx = plot.x0 + ca + 0.5;
+      if (!started) { bctx.moveTo(cx, kmToY(colLo[ca])); started = true; }
+      else bctx.lineTo(cx, kmToY(colLo[ca]));
+    }
+    bctx.strokeStyle = "#1977AD"; bctx.lineWidth = 1.2;
+    bctx.stroke();
+
+    // frame
+    bctx.strokeStyle = "#dddddd";
+    bctx.strokeRect(plot.x0 + 0.5, plot.y0 + 0.5, plot.x1 - plot.x0, plot.y1 - plot.y0);
+  }
+
+  function render() {
+    if (!view.series || !chart.ctx) return;
+    var ctx = chart.ctx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, chart.base.width, chart.base.height);
+    ctx.drawImage(chart.base, 0, 0);
+    ctx.setTransform(chart.dpr, 0, 0, chart.dpr, 0, 0);
+
+    var xa = msToX(view.start), xb = msToX(view.end);
+    ctx.fillStyle = "rgba(234,170,0,0.16)";
+    ctx.fillRect(xa, plot.y0, Math.max(1, xb - xa), plot.y1 - plot.y0);
+    ctx.strokeStyle = "rgba(201,144,0,0.9)"; ctx.lineWidth = 1;
+    [xa, xb].forEach(function (x) {
+      ctx.beginPath(); ctx.moveTo(x + 0.5, plot.y0); ctx.lineTo(x + 0.5, plot.y1); ctx.stroke();
+    });
+
+    var pick = analyseWindow(view.start, view.end);
+    if (pick) {
+      var px = msToX(pick.ms), py = kmToY(pick.km);
+      ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#E69F00"; ctx.fill();
+      ctx.strokeStyle = "rgba(230,159,0,0.9)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2); ctx.stroke();
+      ctx.font = "11px -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif";
+      ctx.fillStyle = "#8a5b00"; ctx.textAlign = px > (plot.x0 + plot.x1) / 2 ? "right" : "left";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(fmtKm(pick.km) + " km", px + (px > (plot.x0 + plot.x1) / 2 ? -12 : 12), py - 6);
+    }
+
+    if (view.hoverMs != null) {
+      var hx = msToX(view.hoverMs);
+      ctx.strokeStyle = "rgba(17,17,17,0.25)"; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(hx + 0.5, plot.y0); ctx.lineTo(hx + 0.5, plot.y1); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function resize() {
+    var cv = chart.cv;
+    var rect = cv.getBoundingClientRect();
+    chart.w = rect.width; chart.h = rect.height || 340;
+    if (!chart.w) return;
+    chart.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(chart.w * chart.dpr);
+    cv.height = Math.round(chart.h * chart.dpr);
+    chart.ctx = cv.getContext("2d");
+    setupPlot();
+    drawBase();
+    render();
+  }
+
+  // -------------------------------------------------------------- slider
+  function setWindow(start, end, opts) {
+    start = Math.min(Math.max(start, view.t0), view.t1 - MIN_WINDOW);
+    end = Math.min(Math.max(end, start + MIN_WINDOW), view.t1);
+    view.start = Math.round(start); view.end = Math.round(end);
+    layoutSlider();
+    updateReadout();
+    render();
+    if (opts && opts.keepHover) return;
+  }
+  function layoutSlider() {
+    var a = (view.start - view.t0) / (view.t1 - view.t0) * 100;
+    var b = (view.end - view.t0) / (view.t1 - view.t0) * 100;
+    $("handleStart").style.left = a + "%";
+    $("handleEnd").style.left = b + "%";
+    var fill = $("sliderFill");
+    fill.style.left = a + "%"; fill.style.width = Math.max(0.4, b - a) + "%";
+    $("handleStart").setAttribute("aria-valuetext", isoMin(view.start) + " UTC");
+    $("handleEnd").setAttribute("aria-valuetext", isoMin(view.end) + " UTC");
+  }
+  function pointerToMs(ev) {
+    var rect = $("slider").getBoundingClientRect();
+    var frac = Math.min(Math.max((ev.clientX - rect.left) / rect.width, 0), 1);
+    return view.t0 + frac * (view.t1 - view.t0);
+  }
+
+  var drag = { which: null };
+  function beginDrag(ev) {
+    var ms = pointerToMs(ev);
+    drag.which = Math.abs(ms - view.start) <= Math.abs(ms - view.end) ? "start" : "end";
+    try { $("slider").setPointerCapture(ev.pointerId); } catch (e) {}
+    applyDrag(ms);
+  }
+  function applyDrag(ms) {
+    if (drag.which === "start") setWindow(Math.min(ms, view.end - MIN_WINDOW), view.end);
+    else setWindow(view.start, Math.max(ms, view.start + MIN_WINDOW));
+  }
+
+  // ------------------------------------------------------------ readout
+  function updateReadout() {
+    var pick = analyseWindow(view.start, view.end);
+    $("statStart").textContent = isoMin(view.start);
+    $("statEnd").textContent = isoMin(view.end);
+    $("statStartSub").textContent = "UTC · window opens";
+    $("statEndSub").textContent = "UTC · window closes (incl.)";
+
+    if (!pick) {
+      $("statMiss").innerHTML = "unavailable";
+      $("statMissSub").textContent = "no propagated state in this window";
+      $("statVel").innerHTML = "—";
+      $("dupFlag").classList.add("hidden");
+      return;
+    }
+    var sigPick = sigmaKm(pick.a.age, pick.b.age);
+    $("statMiss").innerHTML = fmtKm(pick.km) + "<small>km</small>" +
+      "<span class=\"unc\">± " + fmtSigma(sigPick) + " km</span>";
+    $("statMissSub").textContent = isoMin(pick.ms) + " UTC";
+    $("statVel").innerHTML = fmtMps(pick.mps) + "<small>m/s</small>";
+    $("statVelSub").textContent = pick.mps < 1000 ? "at closest approach" : (pick.mps / 1000).toFixed(2) + " km/s at closest approach";
+
+
+    [[view.A, pick.a, "A"], [view.B, pick.b, "B"]].forEach(function (row) {
+      var lib = row[0], st = row[1], key = row[2];
+      var name = lib.obj.name || ("NORAD " + lib.obj.norad);
+      $("prov" + key + "Who").innerHTML = name + " <span>" + lib.obj.cospar + " · NORAD " + lib.obj.norad + " · " + lib.obj.src + "</span>";
+      $("prov" + key + "How").innerHTML =
+        "TLE <b>#" + (st.i + 1) + "</b> of " + lib.tles.length + " in span" +
+        " · epoch <b>" + isoSec(st.epoch) + "Z</b><br>" +
+        "propagated <b>" + (st.age >= 0 ? "forward" : "backward") + " " + fmtAge(st.age) + "</b> to the closest approach";
+      $("prov" + key + "Tle").textContent = lib.tles[st.i].line1 + "\n" + lib.tles[st.i].line2;
+      var flag = $("prov" + key + "Flag");
+      if (Math.abs(st.age) > SPARSE_AGE) {
+        flag.textContent = "element age > 3 d — position less reliable";
+        flag.classList.remove("hidden");
+      } else flag.classList.add("hidden");
+    });
+  }
+
+  // -------------------------------------------------------------- episodes
+  function episodeStatus(ep) {
+    var a = OBJECTS[ep.n1], b = OBJECTS[ep.n2];
+    if (a && b) return "ok";
+    if (a || b) return "partial";
+    return "none";
+  }
+
+  var STATUS_TEXT = { ok: "analysable", partial: "1 of 2 objects", none: "no TLE history" };
+  var STATUS_TITLE = { ok: "Both objects have TLE history in the dataset", partial: "Only one object has TLE history in the dataset", none: "Neither object has TLE history in the dataset" };
+
+  // Every episode in publicep.csv becomes an option, grouped by what the
+  // dataset can actually support.
+  function renderEpisodeList() {
+    var first=$('objectA'),second=$('objectB'),listA=$('objectsA'),listB=$('objectsB');
+    candidates.forEach(function(item){var option=document.createElement('option');option.value=candidateLabel(item);listA.append(option)});
+    function updateSecond(){
+      var selected=resolveCandidate(first.value);listB.replaceChildren();
+      candidates.filter(function(item){return !selected||item.norad!==selected.norad}).forEach(function(item){var option=document.createElement('option');option.value=candidateLabel(item);
+        if(selected){var coverage=pairCoverage(selected,item);option.label=coverage.ok?'TLE dates overlap':coverage.reason}listB.append(option)});
+    }
+    function choosePair(){
+      var a=resolveCandidate(first.value),b=resolveCandidate(second.value),coverage=pairCoverage(a,b);
+      $('pickerNote').textContent=coverage.ok?'Both spacecraft have overlapping TLE history.':coverage.reason;
+      if(!coverage.ok)return;
+      var id='PAIR-'+a.norad+'-'+b.norad;
+      var prior=EPISODES.find(function(ep){return ep.id===id});
+      if(!prior){prior={id:id,o1:a.name,o2:b.name,c1:a.cospar,c2:b.cospar,n1:a.norad,n2:b.norad,start:isoDay(coverage.start),end:isoDay(coverage.end)};EPISODES.push(prior)}
+      selectEpisode(id);
+    }
+    first.addEventListener('input',function(){updateSecond();choosePair()});
+    first.addEventListener('change',function(){updateSecond();choosePair()});
+    second.addEventListener('input',choosePair);second.addEventListener('change',choosePair);
+    $('metaEpisodes').textContent=String(candidates.length);
+    $('metaAnalysable').textContent=String(candidates.filter(function(item){return item.hasHistory}).length);
+    var initial=EPISODES.find(function(ep){return episodeStatus(ep)==='ok'})||EPISODES[0];
+    first.value=candidateLabel(catalog.get(String(initial.n1)));updateSecond();second.value=candidateLabel(catalog.get(String(initial.n2)));choosePair();
+  }
+  function markListSelection(id) {
+    var ep=EPISODES.find(function(item){return item.id===id});if(!ep)return;
+    var a=catalog.get(String(ep.n1)),b=catalog.get(String(ep.n2));
+    if(a)$('objectA').value=candidateLabel(a);if(b)$('objectB').value=candidateLabel(b);
+  }
+  function selectEpisode(id) {
+    var ep = EPISODES.filter(function (e) { return e.id === id; })[0];
+    if (!ep) return;
+    view.episode = ep;
+    markListSelection(id);
+
+    $("epId").textContent = ep.id;
+    $("epObjects").innerHTML =
+      "<b>" + ep.o1 + "</b> <span class='norad'>" + ep.c1 + " · NORAD " + (ep.n1 || "—") + "</span>" +
+      " &nbsp;×&nbsp; " +
+      "<b>" + ep.o2 + "</b> <span class='norad'>" + ep.c2 + " · NORAD " + (ep.n2 || "—") + "</span>";
+
+    // reported window block
+    var rs = parseReported(ep.start), re = parseReported(ep.end);
+    $("csvStart").textContent = ep.start;
+    $("csvEnd").textContent = ep.end;
+    $("csvStartParsed").textContent = rs ? isoDay(rs.start) + (rs.label === "single day" ? "" : " → " + isoDay(rs.end)) + " · " + rs.label : "no usable UTC range";
+    $("csvEndParsed").textContent = re ? isoDay(re.start) + (re.label === "single day" ? "" : " → " + isoDay(re.end)) + " · " + re.label : "no usable UTC range";
+
+    var a = OBJECTS[ep.n1], b = OBJECTS[ep.n2];
+    var st = episodeStatus(ep);
+
+    var cov = $("epCoverage");
+    var lines = [];
+    [[ep.c1, ep.n1], [ep.c2, ep.n2]].forEach(function (pair) {
+      var lib = pair[1] ? libFor(pair[1]) : null;
+      if (lib) lines.push("<b>" + lib.obj.cospar + "</b> " + lib.tles.length.toLocaleString("en-US") + " TLEs · " +
+        isoDay(lib.epochs[0]) + " → " + isoDay(lib.epochs[lib.epochs.length - 1]));
+      else lines.push("<b>" + pair[0] + "</b> no TLE history in the archive");
+    });
+    cov.innerHTML = lines.join("<br>");
+
+    var notice = $("noDataNotice");
+    var showReported = $("showReported");
+    var analysis = $("analysis");
+
+    if (st !== "ok") {
+      analysis.classList.add("hidden");
+      notice.classList.remove("hidden");
+      showReported.disabled = true;
+      $("reportedHint").textContent = "";
+      if (st === "partial") {
+        var missing = a ? ep.c2 : ep.c1;
+        var present = a ? ep.c1 : ep.c2;
+        notice.innerHTML = "<b>" + ep.id + " cannot be analysed.</b> " +
+          "Only one object (<code>" + present + "</code>) has a TLE history in the archive, so no separation can be reconstructed for the pair. " +
+          "The archive has no elements for <code>" + missing + "</code>. The reported dates above are shown for reference only.";
+      } else {
+        notice.innerHTML = "<b>" + ep.id + " cannot be analysed.</b> Neither object has a TLE history in the archive " +
+          "(<code>tlehistory.db</code>). The reported dates above are shown for reference only.";
+      }
+      return;
+    }
+
+    // analysable
+    notice.classList.add("hidden");
+    analysis.classList.remove("hidden");
+    $("analysisBody").classList.add("hidden");
+    $("loading").classList.remove("hidden");
+    $("reportedHint").textContent = "";
+    var libA = libFor(ep.n1), libB = libFor(ep.n2);
+    $("loadingText").textContent = "Propagating " + (libA.tles.length + libB.tles.length).toLocaleString("en-US") +
+      " TLEs with SGP4 over " + Math.round((Math.min(libA.epochs[libA.epochs.length - 1], libB.epochs[libB.epochs.length - 1]) -
+      Math.max(libA.epochs[0], libB.epochs[0])) / DAY) + " days…";
+
+    // let the spinner paint before the (synchronous) propagation pass
+    // a new selection supersedes a build that has not started yet
+    var token = (view.buildToken = (view.buildToken || 0) + 1);
+    setTimeout(function () {
+      if (token !== view.buildToken) return;
+      view.A = libFor(ep.n1);
+      view.B = libFor(ep.n2);
+      var aStart = view.A.epochs[0], aEnd = view.A.epochs[view.A.epochs.length - 1];
+      var bStart = view.B.epochs[0], bEnd = view.B.epochs[view.B.epochs.length - 1];
+      // The plot starts where both objects actually have TLEs, so the left-hand
+      // side is never a stretch where one of them is pure extrapolation. The end
+      // stays at the widest coverage of the pair.
+      var overlapStart = Math.max(aStart, bStart), overlapEnd = Math.min(aEnd, bEnd);
+      view.t0 = overlapStart < overlapEnd ? overlapStart : Math.min(aStart, bStart);
+      view.t1 = Math.max(aEnd, bEnd);
+      view.hoverMs = null;
+      buildSeries();
+
+      // Data-quality note: a catalogue duplicate shows up as one element set
+      // filed under both objects, which makes a near-zero separation meaningless.
+      var sharedEpoch = null, setB = {};
+      view.B.tles.forEach(function (t) { setB[t.line2.slice(8, 63)] = 1; });
+      for (var ti = 0; ti < view.A.tles.length && sharedEpoch === null; ti++) {
+        if (setB[view.A.tles[ti].line2.slice(8, 63)]) sharedEpoch = view.A.tles[ti].epoch;
+      }
+      var dupFlag = $("dupFlag");
+      if (sharedEpoch !== null) {
+        dupFlag.textContent = "The archive files one identical element set under both objects (duplicate record, e.g. " +
+          isoMin(sharedEpoch) + "Z). A separation computed on that element set is not two independent orbits, so treat very small values near that epoch with suspicion.";
+        dupFlag.classList.remove("hidden");
+      } else {
+        dupFlag.classList.add("hidden");
+      }
+
+      // default window: the reported one when it lands inside the coverage
+      var winStart = view.t0, winEnd = view.t1;
+      if (rs && re) {
+        var s = Math.max(rs.start, view.t0), e = Math.min(re.end, view.t1);
+        if (e > s) { winStart = s; winEnd = e; }
+      } else if (view.series.minIndex >= 0) {
+        winStart = Math.max(view.t0, view.series.ms[view.series.minIndex] - 3 * DAY);
+        winEnd = Math.min(view.t1, view.series.ms[view.series.minIndex] + 3 * DAY);
+      }
+
+      $("loading").classList.add("hidden");
+      $("analysisBody").classList.remove("hidden");
+      $("scaleStart").textContent = isoDay(view.t0);
+      $("scaleMid").textContent = isoDay((view.t0 + view.t1) / 2);
+      $("scaleEnd").textContent = isoDay(view.t1);
+
+      setWindow(winStart, winEnd);
+      resize();
+
+      var reportedInside = rs && re && Math.max(rs.start, view.t0) < Math.min(re.end, view.t1);
+      showReported.disabled = !reportedInside;
+      $("reportedHint").textContent = reportedInside
+        ? "moves both handles to the reported start and end"
+        : "reported dates fall outside the available TLE coverage";
+      renderChapters();
+
+    }, 30);
+  }
+
+  $("showReported").addEventListener("click", function () {
+    var ep = view.episode;
+    if (!ep || episodeStatus(ep) !== "ok") return;
+    var rs = parseReported(ep.start), re = parseReported(ep.end);
+    if (!rs || !re) return;
+    var s = Math.max(rs.start, view.t0), e = Math.min(re.end, view.t1);
+    if (!(e > s)) return;
+    setWindow(s, e);
+  });
+
+  // ------------------------------------------------------------ chapters
+  var CHAPTERS = 4;
+  function chapterStore() {
+    var id = view.episode ? view.episode.id : "none";
+    if (!view.chapters[id]) view.chapters[id] = [];
+    return view.chapters[id];
+  }
+  function fmtHours(hours) { return hours >= 100 ? String(Math.round(hours)) : String(Math.round(hours * 100) / 100); }
+  function renderChapters() {
+    var head = $("chapterHead"), row = $("chapterRow");
+    if (!head || !row) return;
+    head.innerHTML = ""; row.innerHTML = "";
+    var store = chapterStore(), c;
+    for (c = 0; c < CHAPTERS; c++) {
+      var th = document.createElement("th");
+      th.textContent = "Chapter " + (c + 1) + " Center";
+      head.appendChild(th);
+      var thw = document.createElement("th");
+      thw.textContent = "Chapter " + (c + 1) + " Width (hours)";
+      head.appendChild(thw);
+    }
+    for (c = 0; c < CHAPTERS; c++) {
+      var rec = store[c] || null;
+
+      var td = document.createElement("td");
+      td.className = "chap-center";
+      var tools = document.createElement("div");
+      tools.className = "chap-tools";
+      var jump = document.createElement("button");
+      jump.className = "chap-jump";
+      jump.textContent = "\u2192";
+      jump.disabled = !rec;
+      jump.title = rec ? "move the slider to this chapter" : "no chapter saved here yet";
+      jump.addEventListener("click", (function (idx) {
+        return function () { jumpToChapter(idx); };
+      })(c));
+      var clear = document.createElement("button");
+      clear.className = "chap-clear";
+      clear.textContent = "\u00d7";
+      clear.disabled = !rec;
+      clear.title = rec ? "clear this chapter" : "nothing to clear here";
+      clear.addEventListener("click", (function (idx) {
+        return function () { clearChapter(idx); };
+      })(c));
+      tools.appendChild(jump); tools.appendChild(clear);
+      td.appendChild(tools);
+
+      var time = document.createElement("span");
+      time.className = "chap-time";
+      time.textContent = rec ? isoMin00(rec.center) : "\u2014";
+      td.appendChild(time);
+
+      // Miss distance and relative velocity stay on screen only: the copy row
+      // carries just the centres and widths.
+      var km = document.createElement("span");
+      km.className = "chap-stat";
+      km.textContent = rec && isFinite(rec.km) ? fmtKm(rec.km) + " km" : "";
+      var vel = document.createElement("span");
+      vel.className = "chap-stat";
+      vel.textContent = rec && isFinite(rec.mps) ? fmtMps(rec.mps) + " m/s" : "";
+      td.appendChild(km); td.appendChild(vel);
+      row.appendChild(td);
+
+      var tdw = document.createElement("td");
+      var inp = document.createElement("input");
+      inp.className = "chap-width";
+      // Hours exactly as typed: no day conversion, and "any" with min 0 so a
+      // whole number (2, 24, 30 ...) is a valid value instead of an invalid one
+      // that the browser refuses to commit.
+      inp.type = "number"; inp.step = "any"; inp.min = "0";
+      inp.inputMode = "decimal";
+      inp.placeholder = "hours";
+      inp.value = rec ? fmtHours(rec.widthH) : "";
+      inp.setAttribute("aria-label", "Chapter " + (c + 1) + " width in hours");
+      // Keystrokes go straight into the chapter record; the box is not rewritten
+      // while typing so a half-typed "1.5" survives.
+      inp.addEventListener("input", (function (idx, el) {
+        return function () {
+          var s = chapterStore(), r = s[idx];
+          if (!r) return;
+          var v = parseFloat(el.value);
+          if (isFinite(v) && v > 0) r.widthH = v;
+        };
+      })(c, inp));
+      // Leaving the box (blur, Enter, Tab) stores the hours and tidies the text.
+      inp.addEventListener("change", (function (idx, el) {
+        return function () {
+          var s = chapterStore(), r = s[idx];
+          if (!r) { el.value = ""; return; }
+          var v = parseFloat(el.value);
+          r.widthH = isFinite(v) && v > 0 ? v : r.widthH;
+          el.value = fmtHours(r.widthH);
+        };
+      })(c, inp));
+      inp.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") { ev.preventDefault(); this.blur(); }
+      });
+      tdw.appendChild(inp);
+      row.appendChild(tdw);
+    }
+  }
+  function clearChapter(idx) {
+    var store = chapterStore();
+    if (!store[idx]) return;
+    store[idx] = null;
+    renderChapters();
+  }
+  function jumpToChapter(idx) {
+    var rec = chapterStore()[idx];
+    if (!rec) return;
+    var half = Math.max(rec.widthH, 0.05) * HOUR / 2;
+    setWindow(rec.center - half, rec.center + half);
+  }
+  $("saveChapter").addEventListener("click", function () {
+    var pick = analyseWindow(view.start, view.end);
+    if (!pick) return;
+    var store = chapterStore(), slot = 0;
+    while (slot < CHAPTERS && store[slot]) slot++;
+    if (slot >= CHAPTERS) slot = CHAPTERS - 1;   // a fifth save replaces chapter 4
+    store[slot] = { center: pick.ms, widthH: (view.end - view.start) / HOUR, km: pick.km, mps: pick.mps };
+    renderChapters();
+  });
+  $("resetChapters").addEventListener("click", function () {
+    view.chapters[view.episode ? view.episode.id : "none"] = [];
+    renderChapters();
+  });
+  // One tab-separated line of values only (centres then widths, no headers) so
+  // it drops under an existing header row on a Google Slides table. Only the
+  // filled chapters are copied, compacted to the left: three saved chapters
+  // with chapter 2 cleared produce chapter 1, 3 and 4 in the first three pairs.
+  $("copyRow").addEventListener("click", function () {
+    var store = chapterStore(), vals = [], c;
+    for (c = 0; c < CHAPTERS; c++) {
+      var rec = store[c];
+      if (!rec) continue;
+      vals.push(isoMin00(rec.center), fmtHours(rec.widthH));
+    }
+    if (!vals.length) return;   // nothing saved yet
+    var tsv = vals.join("\t");
+    var button = $("copyRow"), label = button.textContent;
+    var done = function (ok) {
+      button.textContent = ok ? "Copied \u2713" : "Copy failed";
+      setTimeout(function () { button.textContent = label; }, 1400);
+    };
+    // execCommand is the fallback for a page opened from file:// or a browser
+    // that refuses the async clipboard API.
+    var legacyCopy = function () {
+      var ta = document.createElement("textarea");
+      ta.value = tsv;
+      ta.style.position = "fixed"; ta.style.top = "-1000px";
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+      done(ok);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(tsv).then(function () { done(true); }, legacyCopy);
+    } else {
+      legacyCopy();
+    }
+  });
+
+  // ---------------------------------------------------------------- events
+
+
+  var slider = $("slider");
+  slider.addEventListener("pointerdown", function (ev) { ev.preventDefault(); beginDrag(ev); });
+  slider.addEventListener("pointermove", function (ev) { if (drag.which) applyDrag(pointerToMs(ev)); });
+  slider.addEventListener("pointerup", function () { drag.which = null; });
+  slider.addEventListener("pointercancel", function () { drag.which = null; });
+
+  function keyStep(which, ev) {
+    var amount = ev.shiftKey ? DAY : (ev.altKey ? 4 * HOUR : view.step);
+    if (ev.key === "ArrowLeft" || ev.key === "ArrowDown") amount = -amount;
+    else if (ev.key !== "ArrowRight" && ev.key !== "ArrowUp") return;
+    ev.preventDefault();
+    if (which === "start") setWindow(view.start + amount, view.end);
+    else setWindow(view.start, view.end + amount);
+  }
+  $("handleStart").addEventListener("keydown", function (ev) { keyStep("start", ev); });
+  $("handleEnd").addEventListener("keydown", function (ev) { keyStep("end", ev); });
+
+  // clicking the chart moves the nearer handle
+  chart.cv = $("chart");
+  chart.cv.addEventListener("pointerdown", function (ev) {
+    var rect = chart.cv.getBoundingClientRect();
+    var x = ev.clientX - rect.left;
+    if (x < plot.x0 || x > plot.x1) return;
+    var ms = xToMs(x);
+    if (Math.abs(ms - view.start) <= Math.abs(ms - view.end)) setWindow(ms, view.end);
+    else setWindow(view.start, ms);
+  });
+  chart.cv.addEventListener("pointermove", function (ev) {
+    var rect = chart.cv.getBoundingClientRect();
+    var x = ev.clientX - rect.left;
+    if (x < plot.x0 || x > plot.x1) { if (view.hoverMs != null) { view.hoverMs = null; render(); } return; }
+    view.hoverMs = xToMs(x);
+    render();
+  });
+  chart.cv.addEventListener("pointerleave", function () { view.hoverMs = null; render(); });
+
+  window.addEventListener("resize", function () { if (view.series) resize(); });
+
+  // ------------------------------------------------------------------ boot
+  renderEpisodeList();
+
+})();
+</script>
+</body>
+</html>

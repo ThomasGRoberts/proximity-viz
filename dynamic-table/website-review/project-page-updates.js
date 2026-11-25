@@ -78,6 +78,8 @@
       #espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits) .knowledge-person{flex:0 0 var(--espl-mobile-circle-size)!important;width:var(--espl-mobile-circle-size)!important;height:var(--espl-mobile-circle-size)!important;min-width:0!important;max-width:70px!important}
       #espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits) .knowledge-person__photo{display:grid!important;place-items:center!important;width:100%!important;height:100%!important}
     }
+    #espl-project-page .project-outputs .publication-card .espl-author-overflow{box-sizing:border-box!important;flex:0 0 70px;width:70px;height:70px;margin:0;border:5px solid #fff;border-radius:50%;background:#c7c7c7;color:#353535}
+    @media(max-width:767px){#espl-project-page .espl-special-card .espl-mobile-special-summary,#espl-project-page .espl-special-card .espl-mobile-special-people{display:none!important}#espl-project-page .espl-special-card .model-output-media{display:flex!important;min-height:0;padding:0 1.2rem 1.2rem!important}#espl-project-page .espl-special-card .model-text-link{display:none!important}#espl-project-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}}
     @media(max-width:380px){#espl-project-page .espl-special-card .model-output-media{flex-wrap:wrap}#espl-project-page .espl-special-card .model-text-link{width:100%;font-size:11px}}
     @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
@@ -262,22 +264,20 @@
   }
   function portraitsNode(row) {
     const names=rowField(row,'Authors').replace(/,?\s+and\s+/gi,',').split(',').map(name=>name.trim()).filter(Boolean);
+    if(!names.length)return null;
+    const indices=names.length>4?[0,1,2]:names.map((_,index)=>index);
+    const thomasIndex=names.findIndex(name=>/^(thomas g\.? roberts|thomas gonzalez roberts)$/.test(authorKey(name)));
+    if(names.length>4&&thomasIndex>2)indices[2]=thomasIndex;
+    const hidden=names.filter((_,index)=>!indices.includes(index));
     const people=document.createElement('div');people.className='knowledge-slide__people espl-desktop-portraits';people.dataset.authorCount=String(names.length);
     const holder=document.createElement('div');holder.className='knowledge-person-row';
-    const selected=names.length>5?names.slice(0,4):names.slice();
-    if(names.length>5){
-      const thomas=names.find(name=>authorKey(name)==='thomas g. roberts'||authorKey(name)==='thomas gonzalez roberts');
-      if(thomas&&!selected.includes(thomas)){selected.pop();selected.push(thomas)}
+    for(const index of indices){
+      const name=names[index],info=authorPhoto[authorKey(name)],person=document.createElement(info?'a':'span');
+      person.className='knowledge-person'+(info?'':' knowledge-person--fallback');person.title=name;
+      if(info)person.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;
+      const photo=document.createElement('img');photo.className='knowledge-person__photo';photo.src=info?.[1]||astronautPhoto;photo.alt=name;photo.loading='lazy';person.append(photo);holder.append(person);
     }
-    for(const name of selected){
-      const info=authorPhoto[authorKey(name)];
-      const a=document.createElement(info?'a':'span');a.className='knowledge-person';if(info)a.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;a.title=name;
-      if(info){const img=document.createElement('img');img.className='knowledge-person__photo';img.src=info[1];img.alt=name;img.loading='lazy';a.append(img)}
-      else{const initials=document.createElement('span');initials.className='knowledge-person__photo';initials.textContent=name.split(/\s+/).map(part=>part[0]).slice(0,2).join('');initials.setAttribute('aria-label',name);a.append(initials)}
-      holder.append(a);
-    }
-    if(names.length>5){const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.title=names.filter(name=>!selected.includes(name)).join(', ');more.textContent=`+${names.length-selected.length}`;holder.append(more)}
-    if(!holder.childElementCount)return null;
+    if(hidden.length){const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.title=hidden.join(', ');more.textContent=`+${hidden.length}`;holder.append(more)}
     people.append(holder);return people;
   }
   function mobilePortraitsNode(row,kind='espl-mobile-portraits'){
@@ -328,7 +328,7 @@
       const label=document.createElement('span');label.className='model-link-label-text';label.textContent=model?'Explore the interactive model':'Explore the data';
       const arrow=document.createElement('span');arrow.className='model-link-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='→';
       action.append(label,arrow);media.append(iconLink,action);card.append(media);
-      const mobilePeople=mobileSpecialPortraitsNode(row);if(mobilePeople)card.append(mobilePeople);
+
       if(model){
         card.addEventListener('mouseenter',()=>iconLink.dispatchEvent(new Event('mouseenter')));
         card.addEventListener('mouseleave',()=>iconLink.dispatchEvent(new Event('mouseleave')));
