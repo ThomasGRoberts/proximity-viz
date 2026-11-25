@@ -34,6 +34,29 @@ PROJECT_URLS = {
     "research": "https://espl.ae.gatech.edu/research/",
     "people": "https://espl.ae.gatech.edu/people/",
 }
+AREA_SLUGS = {"space-security", "space-sustainability", "space-coordination"}
+SPECIAL_OUTPUT_URL = "https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/special-output-cards.js"
+
+
+def local_area_block(slug):
+    block = (HERE / f"{slug}-complete-block.html").read_text(encoding="utf-8")
+    return block.replace(SPECIAL_OUTPUT_URL, f"http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js")
+
+
+def replace_live_area_block(html, slug):
+    """Keep the WordPress theme around the exact complete block offered by Copy HTML."""
+    start = html.find("<style>/* Research Area framing")
+    root = html.find('id="espl-area-page"', start)
+    script = html.find("<script>new Function(new TextDecoder", root)
+    if min(start, root, script) < 0:
+        raise ValueError(f"Could not locate the complete {slug} area block in the live page")
+    end = html.find("</script>", script)
+    if end < 0:
+        raise ValueError(f"Could not locate the end of the {slug} area block")
+    end += len("</script>")
+    if html[end:end + 4] == "</p>":
+        end += 4
+    return html[:start] + local_area_block(slug) + html[end:]
 
 
 def read_comments():
@@ -109,6 +132,8 @@ class Handler(SimpleHTTPRequestHandler):
                 with urlopen(request, timeout=8) as source:
                     html = source.read().decode("utf-8", "replace")
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
+                if slug in AREA_SLUGS:
+                    html = replace_live_area_block(html, slug)
                 addon = ""
                 if slug in {"sbi", "proximity", "lunar"}:
                     local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=17'
@@ -125,8 +150,6 @@ class Handler(SimpleHTTPRequestHandler):
                     addon += "<style>" + local_block.split("<style>", 1)[1].split("</style>", 1)[0] + "</style>"
                 if slug in {"proximity", "lunar"}:
                     addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/project-news-controls.js?v=2"></script>'
-                if slug in {"space-security", "space-sustainability", "space-coordination"}:
-                    addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js?v=8"></script>'
                 html = html.replace("</body>", addon + "</body>", 1)
                 encoded = html.encode("utf-8")
                 self.send_response(200)
@@ -141,7 +164,7 @@ class Handler(SimpleHTTPRequestHandler):
                     self.send_error(502, f"Could not load live project page: {error}")
                     return
                 block = fallback.read_text(encoding="utf-8")
-                for script_name in ("project-page-updates.js", "project-news-controls.js"):
+                for script_name in ("project-page-updates.js", "project-news-controls.js", "special-output-cards.js"):
                     block = block.replace(
                         f"https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/{script_name}",
                         f"http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}",
