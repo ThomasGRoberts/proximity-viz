@@ -33,6 +33,16 @@
     #studentOverlay .espl-special-card .model-link-arrow, #espl-area-page .espl-special-card .model-link-arrow{display:inline-block}
     #studentOverlay .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.external-metadata-link),#espl-area-page .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.external-metadata-link){display:none!important}
     #studentOverlay .espl-special-card .knowledge-output-media:not(.espl-type-media),#espl-area-page .espl-special-card .knowledge-output-media:not(.model-output-media){display:none!important}
+    @media(min-width:768px){
+      #studentOverlay .espl-special-card{grid-template-columns:minmax(0,1fr)!important}
+      #studentOverlay .espl-special-card .knowledge-output-main{grid-column:1;grid-row:1}
+      #studentOverlay .espl-special-card .knowledge-slide__summary{display:block!important;margin-top:.6rem}
+      #studentOverlay .espl-special-card .knowledge-slide__summary .external-metadata-link{display:none!important}
+      #studentOverlay .espl-special-card .espl-type-media{grid-column:1;grid-row:2}
+      #studentOverlay .espl-special-card .knowledge-output-media:not(.espl-type-media){display:flex!important;grid-column:1;grid-row:3;justify-content:flex-start!important;min-height:0!important;padding:0 1.65rem 1.2rem!important}
+      #studentOverlay .espl-special-card .knowledge-output-media:not(.espl-type-media) .knowledge-slide__people{display:flex!important}
+      #studentOverlay .espl-special-card .knowledge-output-media:not(.espl-type-media) .knowledge-person-row{justify-content:flex-start!important;gap:8px!important}
+    }
     #studentOverlay .espl-special-card:is(:hover,:focus-within) .model-link-arrow, #espl-area-page .espl-special-card:is(:hover,:focus-within) .model-link-arrow{animation:espl-special-link-nudge .7s ease}
     #studentOverlay .espl-special-card .knowledge-slide__category-icon, #espl-area-page .espl-special-card .knowledge-slide__category-icon{display:inline-grid;flex:0 0 1rem;width:1rem;height:1rem;place-items:center}
     #studentOverlay .espl-special-card .knowledge-slide__category-icon svg, #espl-area-page .espl-special-card .knowledge-slide__category-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}

@@ -444,7 +444,7 @@
     const retract=()=>{if(link.matches(':hover')||doc.activeElement===link)return;link.classList.remove('is-open');icon.dispatchEvent(new doc.defaultView.Event('mouseleave'))};
     link.addEventListener('mouseenter',reveal);link.addEventListener('focusin',reveal);link.addEventListener('mouseleave',retract);link.addEventListener('focusout',retract);
     if(link.classList.contains('is-mobile-cta')){link.classList.add('is-arrived');reveal();return}
-    if(slug==='sbi'){
+    if(slug==='sbi'||slug==='proximity'){
       const frameRect=frame.getBoundingClientRect(),linkRect=link.getBoundingClientRect();
       link.style.setProperty('--espl-featured-rise',`${Math.max(72,window.innerHeight-frameRect.top-linkRect.top+linkRect.height+84)}px`);
       void link.offsetHeight;
