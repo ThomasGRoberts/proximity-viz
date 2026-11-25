@@ -6,6 +6,7 @@ import json
 import re
 from pathlib import Path
 import tempfile
+import time
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 from uuid import uuid4
@@ -129,8 +130,14 @@ class Handler(SimpleHTTPRequestHandler):
                 return
             try:
                 request = Request(PROJECT_URLS[slug], headers={"User-Agent": "Mozilla/5.0 (ESPL local design review)"})
-                with urlopen(request, timeout=8) as source:
-                    html = source.read().decode("utf-8", "replace")
+                deadline = time.monotonic() + 8
+                chunks = []
+                with urlopen(request, timeout=4) as source:
+                    while chunk := source.read(65536):
+                        chunks.append(chunk)
+                        if time.monotonic() > deadline:
+                            raise TimeoutError("Live project page exceeded the preview time limit")
+                html = b"".join(chunks).decode("utf-8", "replace")
                 html = html.replace("<head>", '<head><base href="https://espl.ae.gatech.edu/">', 1)
                 if slug in AREA_SLUGS:
                     html = replace_live_area_block(html, slug)
