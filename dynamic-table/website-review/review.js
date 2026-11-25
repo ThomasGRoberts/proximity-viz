@@ -68,7 +68,7 @@ const panes = {
   "space-sustainability": { surface: "Space Sustainability Area", group: "areas", snippet: "./space-sustainability-complete-block.html", copyLabel: "Copy Space Sustainability HTML" },
   "space-coordination": { surface: "Space Coordination Area", group: "areas", snippet: "./space-coordination-complete-block.html", copyLabel: "Copy Space Coordination HTML" },
   "model-sbi": { surface: "SBI Model" },
-  "model-proximity": { surface: "Proximity Model" },
+  "model-proximity": { surface: "Proximity Model", snippet: "./model-proximity-complete-block.html", copyLabel: "Copy Proximity model HTML" },
 };
 for (const key of ["sbi", "proximity", "lunar"]) panes[key].group = "projects";
 const paneSelectors = { library: selectors, sbi: projectSelectors, proximity: projectSelectors, lunar: projectSelectors, research: researchSelectors, people: peopleSelectors,
@@ -190,11 +190,13 @@ async function loadPreview() {
       const frame = document.createElement("iframe");
       frame.id = "projectFrame"; frame.className = "project-frame";
       frame.title = `${paneName[pane]} page preview`;
-      frame.src = `/api/project-preview/${pane}?refresh=${Date.now()}`;
+      const previewEpisode = new URLSearchParams(location.search).get("episode");
+      const episodeQuery = pane === "model-proximity" && /^E-\d{3}$/.test(previewEpisode || "") ? `&episode=${encodeURIComponent(previewEpisode)}` : "";
+      frame.src = `/api/project-preview/${pane}?refresh=${Date.now()}${episodeQuery}`;
       frame.addEventListener("load", () => {
         if (activePane !== pane || frame !== projectFrame()) return;
         try {
-          const required = pane === "people" ? "#espl-people-page" : pane === "research" ? "#espl-research-projects" : ["sbi", "proximity", "lunar"].includes(pane) ? "#espl-project-page" : "body";
+          const required = pane === "people" ? "#espl-people-page" : pane === "research" ? "#espl-research-projects" : pane === "model-proximity" ? "#espl-proximity-model" : ["sbi", "proximity", "lunar"].includes(pane) ? "#espl-project-page" : "body";
           if (!frame.contentDocument?.querySelector(required) || frame.contentDocument?.title === "Error response") throw new Error("Page unavailable");
           annotate(); drawPins();
           frame.contentWindow.addEventListener("scroll", drawPins, { passive: true });
@@ -207,7 +209,7 @@ async function loadPreview() {
               requestAnimationFrame(() => { scheduled = false; if (activePane === pane && frame === projectFrame()) { annotate(); drawPins(); } });
             }).observe(publications, { childList: true, subtree: pane === "people" });
           }
-          status(`Live ${paneName[pane]} page. Spot comments save locally.`);
+          status(pane === "model-proximity" ? "Complete Proximity model HTML draft. Copy HTML replaces the current model block." : `Live ${paneName[pane]} page. Spot comments save locally.`);
         } catch (error) { status(`Could not display page: ${error.message}`); }
       });
       $("pageHost").replaceChildren(frame);

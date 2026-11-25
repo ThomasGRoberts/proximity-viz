@@ -108,6 +108,16 @@ class Handler(SimpleHTTPRequestHandler):
             slug = path.rsplit("/", 1)[-1]
             if slug not in PROJECT_URLS:
                 return self.send_error(404, "Unknown project preview")
+            if slug == "model-proximity":
+                block = (HERE / "model-proximity-complete-block.html").read_text(encoding="utf-8")
+                html = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{height:100%;margin:0}#espl-proximity-model{height:100vh!important}</style></head><body>' + block + '</body></html>'
+                encoded = html.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+                return
             if slug == "people":
                 # Show the current editable People block, including its location map,
                 # before that block has been copied into WordPress.
