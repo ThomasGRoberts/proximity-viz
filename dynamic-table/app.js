@@ -651,7 +651,9 @@ function expandedContent(row, data) {
     const publicId = publicEpisodeId(row);
     const viz = el("section", "visual-block");
     const target = new URLSearchParams(location.search).get("embed") === "1" || location.hostname === "thomasgroberts.github.io"
-      ? `https://espl.ae.gatech.edu/research/models/proximity/?episode=${encodeURIComponent(publicId)}`
+      ? publicId === "E-009"
+        ? `https://thomasgroberts.github.io/proximity-viz/visualization/Viz/compare.html?episode=${encodeURIComponent(publicId)}&published=1`
+        : `https://espl.ae.gatech.edu/research/models/proximity/?episode=${encodeURIComponent(publicId)}`
       : new URL(episodeId === "E-001" ? "../visualization/e001/?v=9" : episodeId === "E-002" ? "../visualization/e002/?build=5" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=6`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
@@ -1339,10 +1341,6 @@ function render() {
     const cue = el("span", "row-open-cue"); cue.setAttribute("aria-hidden", "true");
     cue.append(el("span", "row-open-chevron"));
     heading.append(name, badge);
-    if (isLocalReview && publicEpisodeId(row) === "E-009") {
-      tr.classList.add("new-episode-demo");
-      tr.title = "Newly added episode";
-    }
     episode.append(heading); tr.append(episode);
     const orbitCell = el("td", "orbit-cell"); tr.append(orbitCell);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
@@ -1400,7 +1398,7 @@ async function init() {
     const shell = await fetch("./review-bar.html", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Local review shell returned ${response.status}`); return response.text(); });
     document.body.insertAdjacentHTML("afterbegin", shell);
     const reviewStyles = document.createElement("link"); reviewStyles.rel = "stylesheet"; reviewStyles.href = "../visualization/dev/review-nav.css"; document.head.append(reviewStyles);
-    const { createLocalReview } = await import("./local-review.js?v=11");
+    const { createLocalReview } = await import("./local-review.js?v=12");
     localReview = createLocalReview({ getMini: () => miniFrame?.contentWindow?.miniWorkshop, getFrame: () => miniFrame, setEditing: setMiniEditing, getSelectedEpisode: () => field(state.selected, "ID"), getPublicEpisode: assetId => state.live?.episodes?.find(row => row.ID === assetId)?.["Episode ID"] || assetId });
   }
   $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; setStatus(); render(); });

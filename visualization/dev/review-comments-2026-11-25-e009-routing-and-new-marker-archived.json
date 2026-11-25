@@ -1,0 +1,29 @@
+{
+  "schema": "espl-shared-review-v1",
+  "comments": [
+    {
+      "id": "94faede2f6774f189481dee502245f9d",
+      "createdAt": "2026-11-25T17:55:43+00:00",
+      "surface": "Library",
+      "root": "table",
+      "key": "E-009-visual-block",
+      "label": "E-009 · visual block",
+      "x": 0.4412933680644727,
+      "y": 1,
+      "text": "Uh oh, when I click this, I do jump to \"https://espl.ae.gatech.edu/research/models/proximity/?episode=E-009\", but then what I actually see is the Luch / Athena-Fidus episode. So, something is wrong there.",
+      "appliesToAllEpisodes": false
+    },
+    {
+      "id": "1dd1aa59adcf48869e856d853e9235d9",
+      "createdAt": "2026-11-25T17:56:12+00:00",
+      "surface": "Library",
+      "root": "table",
+      "key": "E-009-cell-0",
+      "label": "E-009 · Episode",
+      "x": 0.7847397675593735,
+      "y": 0.4101215905356556,
+      "text": "Please just nix the whole new episode indicator. It's not working! I don't want to see the cue drop down in the review pane either.",
+      "appliesToAllEpisodes": false
+    }
+  ]
+}

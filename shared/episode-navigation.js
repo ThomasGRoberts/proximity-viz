@@ -18,7 +18,7 @@ function periodLabel(chapters) {
 
 export function installEpisodeNavigation(focus, episodes, assetId, { review = false, period = true } = {}) {
   if (!focus || focus.nextElementSibling?.classList.contains("episode-neighbors")) return;
-  const rows = episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || "") && (row["Episode ID"] !== "E-009" || (review && location.port === "8769")));
+  const rows = episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || ""));
   try {
     const order = JSON.parse(localStorage.getItem("espl-episode-order-v1") || "null");
     if (Array.isArray(order) && order.length === rows.length &&
@@ -48,6 +48,8 @@ export function installEpisodeNavigation(focus, episodes, assetId, { review = fa
     if (review) {
       const path = reviewPath(next.ID);
       link.href = new URL(path + (path.endsWith("episode=") ? encodeURIComponent(next["Episode ID"]) : ""), root).href;
+    } else if (next["Episode ID"] === "E-009") {
+      link.href = "https://thomasgroberts.github.io/proximity-viz/visualization/Viz/compare.html?episode=E-009&published=1";
     } else {
       const destination = new URL("https://espl.ae.gatech.edu/research/models/proximity/");
       destination.searchParams.set("episode", next["Episode ID"]);
