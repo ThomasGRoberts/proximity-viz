@@ -12,3 +12,8 @@ private/
 dynamic-table/website-review/comments.json
 presentation/config.json
 presentation/comments.json
+# E-009 remains a local review episode until publication is approved.
+visualization/dev/e009/
+visualization/Viz/episode-e009.js
+visualization/Viz/episode-e009.css
+visualization/Viz/e009-camera-workshop.js
