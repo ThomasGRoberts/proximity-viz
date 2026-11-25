@@ -62,17 +62,16 @@
     @media(max-width:999px){#espl-project-page .project-outputs .publication-card,.project-outputs .espl-special-card{grid-template-columns:1fr!important}#espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;min-height:0;padding:0 1.65rem 1.25rem}}
     @media(max-width:767px){#espl-project-page .project-outputs .espl-special-card{display:block!important;max-width:100%;min-width:0}#espl-project-page .espl-special-card .knowledge-output-main{width:100%!important;min-width:0!important;box-sizing:border-box}#espl-project-page .espl-special-card .model-output-media{display:none!important}#espl-project-page .espl-special-card .espl-mobile-special-summary{display:block!important}#espl-project-page .espl-special-card .espl-mobile-special-people{display:flex!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;min-height:0;padding:0 1.2rem 1.2rem;overflow-x:auto}#espl-project-page .espl-mobile-special-people .knowledge-slide__people{width:100%;max-width:none;justify-content:flex-start}#espl-project-page .espl-mobile-special-people .knowledge-person-row{display:flex;flex-wrap:nowrap;justify-content:flex-start;gap:8px;width:max-content}#espl-project-page .espl-mobile-special-people .knowledge-person__photo{width:70px;height:70px}#espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem;overflow-x:auto}#espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:70px;height:70px}}
     @media(max-width:767px){
-      #espl-project-page .project-outputs .publication-card .knowledge-output-media{container-type:inline-size;--espl-mobile-circle-size:min(70px,calc((100cqw - 18px)/4))}
-      #espl-project-page .project-outputs .publication-card .knowledge-output-media{overflow:visible!important}
+      #espl-project-page .project-outputs .publication-card .knowledge-output-media,#espl-project-page .espl-special-card .espl-mobile-special-people{container-type:inline-size;--espl-mobile-circle-size:min(70px,calc((100cqw - 18px)/4));overflow:visible!important}
+      #espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem!important}
       #espl-project-page .publication-card .espl-desktop-portraits{display:none!important}
       #espl-project-page .publication-card .espl-mobile-portraits{display:flex!important;width:100%!important;max-width:100%!important}
-      #espl-project-page .publication-card .espl-mobile-portraits[data-visible-count="1"]{--espl-mobile-circle-size:min(70px,100cqw)}
-      #espl-project-page .publication-card .espl-mobile-portraits[data-visible-count="2"]{--espl-mobile-circle-size:min(70px,calc((100cqw - 6px)/2))}
-      #espl-project-page .publication-card .espl-mobile-portraits[data-visible-count="3"]{--espl-mobile-circle-size:min(70px,calc((100cqw - 12px)/3))}
-      #espl-project-page .publication-card .espl-mobile-portraits .knowledge-person-row{display:flex!important;justify-content:space-evenly!important;align-items:center!important;gap:6px!important;width:100%!important;max-width:100%!important}
-      #espl-project-page .publication-card .espl-mobile-portraits .knowledge-person{flex:0 0 var(--espl-mobile-circle-size)!important;width:var(--espl-mobile-circle-size)!important;height:var(--espl-mobile-circle-size)!important;min-width:0!important;max-width:70px!important}
-      #espl-project-page .publication-card .espl-mobile-portraits .knowledge-person__photo{display:grid!important;place-items:center!important;width:100%!important;height:100%!important}
-      #espl-project-page .espl-special-card .espl-mobile-special-people .knowledge-person__photo{width:70px!important;height:70px!important}
+      #espl-project-page .espl-special-card .espl-mobile-special-people{display:flex!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box}
+      #espl-project-page .espl-special-card .espl-mobile-special-portraits{width:100%!important;max-width:100%!important}
+      #espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits) .knowledge-person-row{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:6px!important;width:100%!important;max-width:100%!important}
+      #espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits)[data-visible-count="1"] .knowledge-person-row,#espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits)[data-visible-count="2"] .knowledge-person-row,#espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits)[data-visible-count="3"] .knowledge-person-row{justify-content:flex-start!important}
+      #espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits) .knowledge-person{flex:0 0 var(--espl-mobile-circle-size)!important;width:var(--espl-mobile-circle-size)!important;height:var(--espl-mobile-circle-size)!important;min-width:0!important;max-width:70px!important}
+      #espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits) .knowledge-person__photo{display:grid!important;place-items:center!important;width:100%!important;height:100%!important}
     }
     @media(max-width:380px){#espl-project-page .espl-special-card .model-output-media{flex-wrap:wrap}#espl-project-page .espl-special-card .model-text-link{width:100%;font-size:11px}}
     @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
@@ -83,6 +82,7 @@
   const typeOf = row => rowField(row, 'Type').toLowerCase();
   const special = row => /^(model|data repository)$/.test(typeOf(row));
   const publicationsCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN6Pc85vfaqu_XEU4MQC9HTGckmU9k5AXtSXuy8iOp5uPUcOrbJdI1Lmklqtqp4IpAdQoO3TtrEZuR/pub?output=csv';
+  const projectsCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT08-Yg6ATv7mk2BiEScmxTdevWRbNiJydlaR2WOdI-QOxtBsj-zeLdvSLmh4zNGNZIPYqjGSQu-gEg/pub?output=csv';
   const projectName = {sbi:'Space-based Interceptors and Strategic Stability',proximity:'How Close is Too Close',lunar:'Lunar Surface Coordination'}[slug];
   const tableIcon = () => `
     <svg class="espl-table-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
@@ -249,35 +249,32 @@
     if(!holder.childElementCount)return null;
     people.append(holder);return people;
   }
-  function mobilePortraitsNode(row){
+  function mobilePortraitsNode(row,kind='espl-mobile-portraits'){
     const names=rowField(row,'Authors').replace(/,?\s+and\s+/gi,',').split(',').map(name=>name.trim()).filter(Boolean);
     if(!names.length)return null;
-    const people=document.createElement('div');people.className='knowledge-slide__people espl-mobile-portraits';people.dataset.authorCount=String(names.length);
+    const indices=names.length>4?[0,1,2]:names.map((_,index)=>index);
+    const thomasIndex=names.findIndex(name=>/^(thomas g\.? roberts|thomas gonzalez roberts)$/.test(authorKey(name)));
+    const firstTwoHaveStudent=names.slice(0,2).some(name=>{
+      const photo=authorPhoto[authorKey(name)];return photo&&photo[0]!=='biography';
+    });
+    if(names.length>4&&thomasIndex>2&&!firstTwoHaveStudent)indices[2]=thomasIndex;
+    const hidden=names.filter((_,index)=>!indices.includes(index));
+    const people=document.createElement('div');people.className=`knowledge-slide__people ${kind}`;people.dataset.authorCount=String(names.length);people.dataset.visibleCount=String(indices.length+(hidden.length?1:0));
     const holder=document.createElement('div');holder.className='knowledge-person-row';
-    const selected=names.length>4?names.slice(0,3):names;
-    people.dataset.visibleCount=String(selected.length+(names.length>4?1:0));
-    for(const name of selected){
-      const info=authorPhoto[authorKey(name)],person=document.createElement(info?'a':'span');
-      person.className='knowledge-person';person.title=name;
-      if(info)person.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;
-      const photo=document.createElement('img');photo.className='knowledge-person__photo';photo.src=info?.[1]||astronautPhoto;photo.alt=name;photo.loading='lazy';person.append(photo);holder.append(person);
-    }
-    if(names.length>4){const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.title=names.slice(3).join(', ');more.textContent=`+${names.length-3}`;holder.append(more)}
-    people.append(holder);return people;
-  }
-  function mobileSpecialPortraitsNode(row){
-    const names=rowField(row,'Authors').replace(/,?\s+and\s+/gi,',').split(',').map(name=>name.trim()).filter(Boolean);
-    if(!names.length)return null;
-    const media=document.createElement('div');media.className='knowledge-output-media espl-mobile-special-people';
-    const people=document.createElement('div');people.className='knowledge-slide__people';people.dataset.authorCount=String(names.length);
-    const rowNode=document.createElement('div');rowNode.className='knowledge-person-row';
-    for(const name of names){
+    for(const index of indices){
+      const name=names[index];
       const info=authorPhoto[authorKey(name)],person=document.createElement(info?'a':'span');
       person.className='knowledge-person'+(info?'':' knowledge-person--fallback');person.title=name;
       if(info)person.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;
-      const photo=document.createElement('img');photo.className='knowledge-person__photo';photo.src=info?.[1]||astronautPhoto;photo.alt=name;photo.loading='lazy';person.append(photo);rowNode.append(person);
+      const photo=document.createElement('img');photo.className='knowledge-person__photo';photo.src=info?.[1]||astronautPhoto;photo.alt=name;photo.loading='lazy';person.append(photo);holder.append(person);
     }
-    people.append(rowNode);media.append(people);return media;
+    if(hidden.length){const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.title=hidden.join(', ');more.textContent=`+${hidden.length}`;holder.append(more)}
+    people.append(holder);return people;
+  }
+  function mobileSpecialPortraitsNode(row){
+    const people=mobilePortraitsNode(row,'espl-mobile-special-portraits');
+    if(!people)return null;
+    const media=document.createElement('div');media.className='knowledge-output-media espl-mobile-special-people';media.append(people);return media;
   }
   function makeCard(row) {
     const href=safeURL(rowField(row,'URL')),isSpecial=special(row),model=typeOf(row)==='model';
@@ -389,17 +386,14 @@
   }
   function installProjectNavigation(){
     if(projectRoot.querySelector('.espl-project-nav'))return;
-    const projects=[
+    const fallback=[
       {slug:'sbi',title:'Space-based Interceptors and Strategic Stability'},
-      {slug:'proximity',title:'How Close is Too Close'},
-      {slug:'lunar',title:'Lunar Surface Coordination'}
+      {slug:'lunar',title:'Lunar Surface Coordination'},
+      {slug:'proximity',title:'How Close is Too Close'}
     ];
-    const index=projects.findIndex(project=>project.slug===slug);
-    const previous=projects[(index+projects.length-1)%projects.length];
-    const next=projects[(index+1)%projects.length];
     const nav=document.createElement('nav');nav.className='espl-project-nav theme-nav';nav.setAttribute('aria-label','Other projects');
-    const link=(project,direction)=>{const a=document.createElement('a');a.className=`theme-${direction}`;a.href=`https://espl.ae.gatech.edu/research/projects/${project.slug}/`;const full=`<span class="theme-label-full">${project.title}</span>`,short=`<span class="theme-label-short">${direction==='prev'?'Previous':'Next'}</span>`;a.innerHTML=direction==='prev'?`← ${full}${short}`:`${full}${short} →`;return a};
-    nav.append(link(previous,'prev'),link(next,'next'));
+    const link=(project,direction)=>{const a=document.createElement('a');a.className=`theme-${direction}`;a.href=project.url||`https://espl.ae.gatech.edu/research/projects/${project.slug}/`;const full=document.createElement('span');full.className='theme-label-full';full.textContent=project.title;const short=document.createElement('span');short.className='theme-label-short';short.textContent=direction==='prev'?'Previous':'Next';if(direction==='prev')a.append('← ',full,short);else a.append(full,short,' →');return a};
+    const setLinks=projects=>{const index=projects.findIndex(project=>project.slug===slug);if(index<0||projects.length<2)return;nav.replaceChildren(link(projects[(index+projects.length-1)%projects.length],'prev'),link(projects[(index+1)%projects.length],'next'))};
     const style=document.createElement('style');style.textContent=`
       #espl-project-page .espl-project-nav{display:flex;justify-content:space-between;max-width:1080px;margin:0 auto 56px;padding:24px 28px 0;border-top:1px solid #e6e6e6;font-family:Roboto,system-ui,-apple-system,Segoe UI,'Helvetica Neue',Arial,sans-serif;flex-wrap:wrap;gap:1rem}
       #espl-project-page .espl-project-nav a{display:inline-flex;align-items:center;gap:.35em;text-decoration:none!important;font-size:16px;color:#a4925a!important;padding:.5rem 1rem;transition:background-color .2s ease,color .2s ease;border-radius:999px;white-space:nowrap}
@@ -409,6 +403,15 @@
       @media(max-width:767px){#espl-project-page .espl-project-nav{padding:20px 24px 0;gap:.5rem}#espl-project-page .espl-project-nav a{font-size:13px;white-space:normal;max-width:48%}#espl-project-page .espl-project-nav .theme-label-full{display:none}#espl-project-page .espl-project-nav .theme-label-short{display:inline}}
     `;
     projectRoot.append(style,nav);
+    setLinks(fallback);
+    fetch(`${projectsCSV}&refresh=${Date.now()}`,{cache:'no-store',credentials:'omit'})
+      .then(response=>{if(!response.ok)throw new Error(`Projects sheet returned ${response.status}`);return response.text()})
+      .then(text=>{
+        const projects=parseCSV(text,['Slug','Title','Fallback Image'])
+          .filter(row=>rowField(row,'Fallback Image')&&/^[a-z0-9-]+$/.test(rowField(row,'Slug'))&&rowField(row,'Title'))
+          .map(row=>({slug:rowField(row,'Slug'),title:rowField(row,'Title'),url:safeURL(rowField(row,'Project URL')||rowField(row,'URL')||rowField(row,'Link'))}));
+        setLinks(projects);
+      }).catch(error=>console.warn('Project navigation order unavailable; using the last published order.',error));
   }
   async function installResearchCards() {
     const container=projectRoot.querySelector('.project-publications');
