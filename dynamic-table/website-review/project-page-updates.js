@@ -19,12 +19,12 @@
     #espl-project-page .project-person:focus-visible{outline:2px solid #a4925a;outline-offset:3px}
     #espl-project-page .project-person img{width:min(100%,112px);border-radius:8px;margin-bottom:10px;transition:none!important}
     #espl-project-page .project-person:hover img,#espl-project-page .project-person:focus-visible img{transform:none!important}
-    #espl-project-page .project-person strong{color:#252525;font-family:Roboto,'Helvetica Neue',Arial,sans-serif;font-size:14px!important;font-weight:700!important;line-height:1.4!important;text-decoration:none!important}
     #espl-project-page .project-person:hover strong,#espl-project-page .project-person:focus-visible strong{text-decoration:none!important}
     #espl-project-page .project-person span{margin-top:10px!important;color:#333!important;font-size:12px!important;line-height:1.4!important;white-space:pre-line!important}
     ` : ''}
+    #espl-project-page .project-person strong{display:block;width:calc(100% + 20px)!important;max-width:none!important;margin-left:-10px!important}
     #espl-project-page .project-team:not([data-espl-team-ready="true"]){visibility:hidden}
-    #espl-project-page .project-team .project-person{box-sizing:border-box;width:calc(100% - 10px);margin-inline:5px}
+    #espl-project-page .project-team .project-person{box-sizing:border-box;width:calc(100% - 2px);margin-inline:1px}
     #espl-project-page .project-person:hover,#espl-project-page .project-person:focus-visible{border-color:transparent!important;box-shadow:0 0 0 8px #fff,0 13px 30px #00000018!important}
     #espl-project-page .espl-featured-mobile-cta{display:none;background:#fff;max-width:1080px;margin:0 auto;padding:0 28px}
     #espl-project-page .espl-featured-mobile-cta iframe{display:block;width:100%;height:76px;border:0;margin:0;padding:0}
@@ -43,7 +43,7 @@
     #espl-project-page .espl-special-card .model-polyhedron-canvas,
     #espl-project-page .espl-special-card .espl-table-icon{display:block;width:76px;height:76px;opacity:.9;transition:transform 260ms cubic-bezier(.34,1.56,.64,1),opacity .2s ease}
     #espl-project-page .espl-special-card:is(:hover,:focus-within) :is(.model-polyhedron-canvas,.espl-table-icon),#espl-project-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link):is(:hover,:focus-visible) :is(.model-polyhedron-canvas,.espl-table-icon){transform:translateY(-2px) scale(1.055);opacity:1}
-    #espl-project-page .espl-special-card .model-text-link{display:inline-flex;align-items:center;gap:8px;min-width:0;color:#666;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(11px,1.05vw,15px);font-weight:400;line-height:normal;white-space:nowrap}
+    #espl-project-page .espl-special-card .model-text-link{display:inline-flex;align-items:center;gap:8px;min-width:0;color:#666;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(12px,1.15vw,16px);font-weight:400;line-height:1.25;white-space:nowrap}
     #espl-project-page .espl-special-card .model-text-link:hover,#espl-project-page .espl-special-card .model-text-link:focus-visible{color:#666;text-decoration:none}
     #espl-project-page .espl-special-card .model-link-arrow{display:inline-block;transition:transform .22s ease}
     #espl-project-page .espl-special-card:is(:hover,:focus-within) .model-link-arrow{transform:translateX(4px);animation:espl-data-link-nudge .7s ease}
@@ -79,7 +79,8 @@
       #espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits) .knowledge-person__photo{display:grid!important;place-items:center!important;width:100%!important;height:100%!important}
     }
     #espl-project-page .project-outputs .publication-card .espl-author-overflow{box-sizing:border-box!important;flex:0 0 70px;width:70px;height:70px;margin:0;border:5px solid #fff;border-radius:50%;background:#c7c7c7;color:#353535}
-    @media(max-width:767px){#espl-project-page .espl-special-card .espl-mobile-special-summary,#espl-project-page .espl-special-card .espl-mobile-special-people{display:none!important}#espl-project-page .espl-special-card .model-output-media{display:flex!important;min-height:0;padding:0 1.2rem 1.2rem!important}#espl-project-page .espl-special-card .model-text-link{display:none!important}#espl-project-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}}
+    #espl-project-page .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.espl-mobile-special-summary,.espl-mobile-special-people,.external-metadata-link){display:none!important}
+    @media(max-width:767px){#espl-project-page .espl-special-card .model-output-media{display:flex!important;min-height:0;padding:0 1.2rem 1.2rem!important}#espl-project-page .espl-special-card .model-text-link{display:inline-flex!important;font-size:13px!important;white-space:normal!important}#espl-project-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}}
     @media(max-width:380px){#espl-project-page .espl-special-card .model-output-media{flex-wrap:wrap}#espl-project-page .espl-special-card .model-text-link{width:100%;font-size:11px}}
     @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
@@ -191,7 +192,9 @@
       const people=[...team.querySelectorAll('.project-person')];
       if(!people.length)return;
       for(const person of people){
-        const name=person.querySelector('strong')?.textContent?.trim();
+        const nameBox=person.querySelector('strong');
+        if(nameBox){nameBox.style.setProperty('width','calc(100% + 24px)','important');nameBox.style.setProperty('max-width','none','important');nameBox.style.setProperty('margin-left','-12px','important')}
+        const name=nameBox?.textContent?.trim();
         const record=authorPhoto[authorKey(name)] || (/^thomas (?:gonzalez |g )?roberts$/i.test(name||'') ? authorPhoto[authorKey('Thomas G. Roberts')] : null);
         let photo=person.querySelector('img');
         if(!photo && record){photo=document.createElement('img');photo.alt=name;person.prepend(photo)}
@@ -325,7 +328,7 @@
       if(model){const canvas=document.createElement('canvas');canvas.className='model-polyhedron-canvas';canvas.setAttribute('aria-hidden','true');iconLink.append(canvas);mountPolyhedron(canvas)}
       else iconLink.innerHTML=tableIcon();
       const action=document.createElement('a');action.href=href;action.className='model-text-link';
-      const label=document.createElement('span');label.className='model-link-label-text';label.textContent=model?'Explore the interactive model':'Explore the data';
+      const label=document.createElement('span');label.className='model-link-label-text';label.textContent=model?'Explore the model':'Explore the data';
       const arrow=document.createElement('span');arrow.className='model-link-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='→';
       action.append(label,arrow);media.append(iconLink,action);card.append(media);
 

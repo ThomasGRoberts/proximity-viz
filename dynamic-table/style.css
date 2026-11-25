@@ -1110,3 +1110,13 @@ html.embedded-table .table-wrap .expanded-row .expanded-inner{max-height:none!im
 /* The detached E-001/E-002 mini canvases sit behind the table. Keep the table
    above them so the expanded description, model link, and records remain visible. */
 .table-wrap > table{position:relative;z-index:5}
+
+/* A miniature fills the expanded row, including the space behind record cards.
+   The text column supplies its own local wash; the records canvas stays clear. */
+@media(min-width:901px){
+  .table-wrap .expanded-row:has(.expanded-inner.has-visual)>td,
+  .table-wrap .expanded-row .expanded-inner.has-visual,
+  html body .table-wrap tr.expanded-row[data-episode-id] .expanded-inner.has-visual :is(.context-block,.evidence-section,.source-grid,.visual-block){background:transparent!important}
+  html body .table-wrap tr.expanded-row[data-episode-id] .expanded-inner.has-visual{background:transparent!important;box-shadow:none!important}
+  .table-wrap .expanded-row .expanded-inner.has-visual::after{top:-2px;bottom:0;width:3px;border-radius:0 0 0 9px}
+}

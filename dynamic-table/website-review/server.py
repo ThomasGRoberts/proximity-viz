@@ -143,7 +143,7 @@ class Handler(SimpleHTTPRequestHandler):
                     html = replace_live_area_block(html, slug)
                 addon = ""
                 if slug in {"sbi", "proximity", "lunar"}:
-                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=24'
+                    local_script = f'http://127.0.0.1:{PORT}/dynamic-table/website-review/project-page-updates.js?v=25'
                     html, replaced = re.subn(
                         r'https://thomasgroberts\.github\.io/proximity-viz/dynamic-table/website-review/project-page-updates\.js(?:\?v=\d+)?',
                         local_script, html,

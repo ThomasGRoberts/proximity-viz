@@ -1154,8 +1154,7 @@ function updateE001BackdropBounds(host, tableWrap, expanded) {
   const header = host.classList.contains("e001-live") || host.classList.contains("e005-live") ? expanded.previousElementSibling?.getBoundingClientRect() : null;
   const top = header?.top ?? rect.top;
   const table = tableWrap.querySelector("table")?.getBoundingClientRect() || origin;
-  const records = expanded.querySelector(".evidence-section")?.getBoundingClientRect();
-  const height = host.classList.contains("e005-live") && records ? Math.min(detail.bottom - top + 2, records.top - top + 95) : detail.bottom - top + 2;
+  const height = detail.bottom - top + 2;
   Object.assign(host.style, { top: `${top - origin.top - 1}px`, left: `${table.left - origin.left}px`, width: `${table.width}px`, height: `${height}px` });
   positionMiniLoader(host, expanded.previousElementSibling, expanded);
 }
@@ -1244,13 +1243,15 @@ function startPreview(row) {
       const fillExpandedRow = () => {
         if (!expanded?.isConnected || !host.isConnected) return;
         const area = expanded.getBoundingClientRect(), link = host.parentElement.getBoundingClientRect();
-        const overlap = episodeId === "E-059" ? 2 : 1;
-        const height = area.height + overlap;
+        const overlap = 3;
+        const height = area.height + overlap + 8;
         Object.assign(host.style, { left: `${area.left - link.left}px`, top: `${area.top - link.top - overlap}px`, width: `${area.width}px`, height: `${height}px` });
         positionMiniLoader(host, header, expanded);
         Object.assign(frame.style, { position: "absolute", inset: "0", width: "100%", height: "100%" });
       };
       fillExpandedRow();
+      expanded.addEventListener("animationend", fillExpandedRow, { once: true });
+      setTimeout(fillExpandedRow, 350);
       miniResizeObserver?.disconnect();
       miniResizeObserver = new ResizeObserver(fillExpandedRow);
       miniResizeObserver.observe(expanded);

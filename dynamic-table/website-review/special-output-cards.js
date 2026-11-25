@@ -24,9 +24,13 @@
     #espl-area-page .espl-special-card .model-polyhedron-canvas, #espl-area-page .espl-special-card .espl-table-icon{display:block;width:76px;height:76px;opacity:.9;transition:transform 260ms cubic-bezier(.34,1.56,.64,1),opacity .2s ease}
     #studentOverlay .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link):is(:hover,:focus-visible) :is(.model-polyhedron-canvas,.espl-table-icon),
     #espl-area-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link):is(:hover,:focus-visible) :is(.model-polyhedron-canvas,.espl-table-icon){transform:translateY(-2px) scale(1.055);opacity:1}
-    #studentOverlay .espl-special-card .model-text-link, #espl-area-page .espl-special-card .model-text-link{display:inline-flex;align-items:center;align-self:center!important;gap:8px;min-width:0;margin:0!important;color:#666;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(11px,1.05vw,15px);font-weight:400;line-height:normal;white-space:nowrap}
+    #studentOverlay .espl-special-card .model-text-link, #espl-area-page .espl-special-card .model-text-link{display:inline-flex;align-items:center;align-self:center!important;gap:8px;min-width:0;margin:0!important;color:#666;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(12px,1.15vw,16px);font-weight:400;line-height:1.25;white-space:nowrap}
     #studentOverlay .espl-special-card .model-text-link:hover, #espl-area-page .espl-special-card .model-text-link:hover{color:#666;text-decoration:none}
     #studentOverlay .espl-special-card .model-link-arrow, #espl-area-page .espl-special-card .model-link-arrow{display:inline-block}
+    #studentOverlay .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.external-metadata-link),#espl-area-page .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.external-metadata-link){display:none!important}
+    #studentOverlay .espl-special-card{grid-template-columns:1fr!important}
+    #studentOverlay .espl-special-card .knowledge-output-main{display:none!important}
+    #studentOverlay .espl-special-card .knowledge-output-media:not(.espl-type-media),#espl-area-page .espl-special-card .knowledge-output-media:not(.model-output-media){display:none!important}
     #studentOverlay .espl-special-card:is(:hover,:focus-within) .model-link-arrow, #espl-area-page .espl-special-card:is(:hover,:focus-within) .model-link-arrow{animation:espl-special-link-nudge .7s ease}
     #studentOverlay .espl-special-card .knowledge-slide__category-icon, #espl-area-page .espl-special-card .knowledge-slide__category-icon{display:inline-grid;flex:0 0 1rem;width:1rem;height:1rem;place-items:center}
     #studentOverlay .espl-special-card .knowledge-slide__category-icon svg, #espl-area-page .espl-special-card .knowledge-slide__category-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -48,9 +52,9 @@
     @media(max-width:767px){
       #espl-area-page .espl-special-card .espl-mobile-special-summary,#espl-area-page .espl-special-card .espl-mobile-special-people{display:none!important}
       #espl-area-page .espl-special-card .model-output-media{display:flex!important;min-height:0;padding:0 1.2rem 1.2rem!important}
-      #espl-area-page .espl-special-card .model-text-link{display:none!important}
+      #espl-area-page .espl-special-card .model-text-link,#studentOverlay .espl-special-card .model-text-link{display:inline-flex!important;font-size:13px!important;white-space:normal!important}
       #espl-area-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}
-      #studentOverlay .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.external-metadata-link),#studentOverlay .espl-special-card .knowledge-output-media:not(.espl-type-media){display:none!important}
+      #studentOverlay .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.external-metadata-link){display:none!important}
       #studentOverlay .espl-special-card .espl-type-media{display:flex!important;padding:0 1.2rem 1.2rem!important;min-height:0!important}
       #studentOverlay .espl-special-card .espl-type-media :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}
     }
@@ -257,12 +261,15 @@
         card.classList.add('espl-special-card',model?'archive-model-card':'data-repository-card');
         const href=card.querySelector('.knowledge-slide__title-link[href], .knowledge-slide__title a[href]')?.href;
         if(href&&!card.querySelector('.espl-type-media')){
-          const media=document.createElement('div');media.className='knowledge-output-media espl-type-media';
+          const media=document.createElement('div');media.className='knowledge-output-media model-output-media espl-type-media';
           const link=document.createElement('a');link.href=href;link.className=model?'model-polyhedron-link':'espl-table-icon-link';
           link.setAttribute('aria-label',model?'Explore the interactive model':'Explore the data');
           if(model){const canvas=document.createElement('canvas');canvas.className='model-polyhedron-canvas';canvas.setAttribute('aria-hidden','true');link.append(canvas);mountPolyhedron(canvas)}
           else link.innerHTML=tableIcon();
-          media.append(link);card.append(media);
+          const action=document.createElement('a');action.href=href;action.className='model-text-link';
+          action.textContent=model?'Explore the model':'Explore the data';
+          const arrow=document.createElement('span');arrow.className='model-link-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='→';action.append(arrow);
+          media.append(link,action);card.append(media);
         }
       }
       return;
@@ -305,7 +312,7 @@
       action.className = 'model-text-link';
       const label = document.createElement('span');
       label.className = 'model-link-label-text';
-      label.textContent = model ? 'Explore the interactive model' : 'Explore the data';
+      label.textContent = model ? 'Explore the model' : 'Explore the data';
       const arrow = document.createElement('span');
       arrow.className = 'model-link-arrow';
       arrow.setAttribute('aria-hidden', 'true');
