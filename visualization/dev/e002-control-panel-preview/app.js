@@ -367,7 +367,7 @@ function renderDwellDescription(node) {
 
 const compactSpeed = metersPerSecond => `${Math.round(metersPerSecond).toLocaleString("en-US")} m/s`;
 
-function showMinimum(node, minimum, unit) {
+function showMinimum(node, minimum, unit, metric) {
   const key = minimum ? `${minimum.window.id}:${minimum.ms}:${minimum.value}:${unit}` : "unavailable";
   if (node.dataset.minimumKey === key) return;
   node.dataset.minimumKey = key;
@@ -380,8 +380,8 @@ function showMinimum(node, minimum, unit) {
   link.title = `Jump to ${prettyDate(minimum.ms)}`;
   link.addEventListener("click", event => {
     event.preventDefault();
-    minimumMarker = { windowId: minimum.window.id, ms: minimum.ms };
-    playbackControl?.goTo(minimum.window, minimum.ms, { afterMinutes: minimum.window.id === "dec30" ? 15 : 30 });
+    minimumMarker = { windowId: minimum.window.id, ms: minimum.ms, metric };
+    playbackControl?.goTo(minimum.window, minimum.ms);
   });
   node.append("Minimum this chapter: ", strong, " on ", link);
 }
@@ -410,12 +410,12 @@ function renderOrbitalPanel() {
     const sample = samples.reduce((best, item) => Number.isFinite(item[key]) && (!best || item[key] < best[key]) ? item : best, null);
     return sample ? { value: sample[key], ms: sample.ms, window: currentWindow } : null;
   };
-  showMinimum($("distanceMinimum"), minimumWithinChapter("distanceKm"), "km");
-  showMinimum($("speedMinimum"), minimumWithinChapter("speedMs"), "m/s");
-  const markedMs = minimumMarker?.windowId === currentWindow.id ? minimumMarker.ms : null;
+  showMinimum($("distanceMinimum"), minimumWithinChapter("distanceKm"), "km", "distanceKm");
+  showMinimum($("speedMinimum"), minimumWithinChapter("speedMs"), "m/s", "speedMs");
+  const markedMs = metric => minimumMarker?.windowId === currentWindow.id && minimumMarker.metric === metric ? minimumMarker.ms : null;
   const speedUnit = "m/s";
-  chartScales.set("distanceChartGroup", drawOrbitalChart($("separationChart"), samples, "distanceKm", { window: currentWindow, currentMs, threshold: distance, title: "Separation distance (km)", maximum: Number($("distanceThresholdSlider").max), qualifications, markedMs }));
-  chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), samples, "speedMs", { window: currentWindow, currentMs, threshold: speed, title: `Relative speed (${speedUnit})`, maximum: Number($("speedThresholdSlider").max), qualifications, markedMs, speedUnit }));
+  chartScales.set("distanceChartGroup", drawOrbitalChart($("separationChart"), samples, "distanceKm", { window: currentWindow, currentMs, threshold: distance, title: "Separation distance (km)", maximum: Number($("distanceThresholdSlider").max), qualifications, markedMs: markedMs("distanceKm") }));
+  chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), samples, "speedMs", { window: currentWindow, currentMs, threshold: speed, title: `Relative speed (${speedUnit})`, maximum: Number($("speedThresholdSlider").max), qualifications, markedMs: markedMs("speedMs"), speedUnit }));
   $("separationChart").setAttribute("aria-label", `${chaser} to ${catalogNames.B || "USA 245"} separation over time`);
   $("speedChart").setAttribute("aria-label", `${chaser} to ${catalogNames.B || "USA 245"} relative speed over time`);
   $("dwellStat").textContent = qualifications.both.validSamples ? formatDwellDuration(qualifications.both.totalMs) : "—";

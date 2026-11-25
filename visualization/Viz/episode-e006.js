@@ -239,6 +239,7 @@ async function start() {
   const miniPinnedTles = {};
   const chartScales = new Map(), qualificationCache = new Map();
   let focusedMinimumMs = null;
+  let focusedMinimumMetric = null;
   let lastChartPaint = 0;
   const sticky = document.createElement("div"); sticky.id = "pairSticky"; sticky.className = "e006-pair-sticky"; sticky.hidden = true;
   const stickyIntro = document.createElement("span"); stickyIntro.className = "e006-pair-intro"; stickyIntro.textContent = "Current Episode:";
@@ -376,7 +377,7 @@ async function start() {
       const link = document.createElement("a"); link.href = "#playbackDock"; link.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" }).format(new Date(min.ms));
       link.title = `Jump playback to ${new Date(min.ms).toISOString()}`;
       link.setAttribute("aria-label", link.title);
-      link.addEventListener("click", event => { event.preventDefault(); focusedMinimumMs = min.ms; setTime(min.ms, true); });
+      link.addEventListener("click", event => { event.preventDefault(); focusedMinimumMs = min.ms; focusedMinimumMetric = key; setTime(min.ms, true); });
       target.append("Minimum this chapter: ", strong, " on ", link);
     }
   }
@@ -415,8 +416,8 @@ async function start() {
     const minimumTickHours = Math.ceil((chapter.endMs - chapter.startMs) / HOUR / 2);
     const maxConnectionGapMs = (series[1]?.ms - series[0]?.ms || 60000) * 1.01;
     const speedUnit = "m/s";
-    chartScales.set("distanceChartGroup", drawOrbitalChart($("separationChart"), drawnSamples, "distanceKm", { window, currentMs: current, threshold: distance, title: "Separation distance (km)", maximum: Number($("distanceThresholdSlider").max) || 50000, qualifications, markedMs: focusedMinimumMs === distanceMin?.ms ? focusedMinimumMs : null, minimumTickHours, connectSwitches: true, maxConnectionGapMs }));
-    chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), drawnSamples, "speedMs", { window, currentMs: current, threshold: speed, title: `Relative speed (${speedUnit})`, maximum: Number($("speedThresholdSlider").max) || 20000, qualifications, markedMs: focusedMinimumMs === speedMin?.ms ? focusedMinimumMs : null, minimumTickHours, connectSwitches: true, maxConnectionGapMs, speedUnit }));
+    chartScales.set("distanceChartGroup", drawOrbitalChart($("separationChart"), drawnSamples, "distanceKm", { window, currentMs: current, threshold: distance, title: "Separation distance (km)", maximum: Number($("distanceThresholdSlider").max) || 50000, qualifications, markedMs: focusedMinimumMetric === "distanceKm" && focusedMinimumMs === distanceMin?.ms ? focusedMinimumMs : null, minimumTickHours, connectSwitches: true, maxConnectionGapMs }));
+    chartScales.set("speedChartGroup", drawOrbitalChart($("speedChart"), drawnSamples, "speedMs", { window, currentMs: current, threshold: speed, title: `Relative speed (${speedUnit})`, maximum: Number($("speedThresholdSlider").max) || 20000, qualifications, markedMs: focusedMinimumMetric === "speedMs" && focusedMinimumMs === speedMin?.ms ? focusedMinimumMs : null, minimumTickHours, connectSwitches: true, maxConnectionGapMs, speedUnit }));
     $("thresholdSummary").textContent = `${distance.toLocaleString()} km · ${speed.toLocaleString()} m/s`;
     $("dwellStat").textContent = qualifications.both.validSamples ? formatDwellDuration(qualifications.both.totalMs) : "—";
     $("dwellUnit").textContent = "";

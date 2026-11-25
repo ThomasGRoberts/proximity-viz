@@ -26,6 +26,18 @@
       "count": 744,
       "firstEpoch": "2020-04-01T01:06:04.370688Z",
       "lastEpoch": "2020-11-19T22:00:45.305856Z"
+    },
+    {
+      "object": {
+        "norad": "41744"
+      },
+      "url": "data/41744.json",
+      "sha256": "2f5864e3be64ff33ea4b6ccebf811bac38d3fd1966aba8491c09adae4285bbcf",
+      "count": 27,
+      "firstEpoch": "2020-04-16T00:17:18.434688Z",
+      "lastEpoch": "2020-11-02T04:05:08.081952Z",
+      "purpose": "GSSAP partner audit",
+      "retrievedUtc": "2026-11-25T12:13:31.031767+00:00"
     }
   ]
 }

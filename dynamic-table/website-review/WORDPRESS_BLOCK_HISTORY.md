@@ -4,6 +4,7 @@ The website review pane's Copy HTML button reads the complete `*-complete-block.
 
 | Date | Pages | Change |
 | --- | --- | --- |
+| 2026-11-25 | SBI, Proximity, Lunar projects | Wait for all project collaborator portraits to load before revealing the team; narrow each collaborator hover card by 10 px. Updated full blocks to `project-page-updates.js?v=23`. |
 | 2026-11-25 | SBI, Proximity, Lunar projects | Put the featured action below the banner on mobile Proximity and Lunar pages, and give four mobile author circles equal outer margins and equal spacing. Updated full blocks to `project-page-updates.js?v=22`. |
 | 2026-11-25 | SBI, Proximity, Lunar projects | Show the featured banner icon immediately when the banner frame loads, and shorten its entrance motion. Updated full blocks to `project-page-updates.js?v=21`. |
 | 2026-11-25 | SBI, Proximity, Lunar projects | Limited every mobile research card to four same-size author circles, retained left alignment for shorter lists, kept Thomas visible in external-author lists, and matched previous/next order to the published Research Projects sheet. Updated full blocks to `project-page-updates.js?v=20`. |

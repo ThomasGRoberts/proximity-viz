@@ -283,12 +283,13 @@ document.addEventListener("pointerdown", event => { if (activeObject && !activeO
 document.addEventListener("keydown", event => { if (event.key === "Escape") closeObject(); });
 window.addEventListener("resize", positionObject); window.addEventListener("scroll", positionObject, true);
 function objectNode(info, row) {
+  const secondaryChaser = info.role === "C" && (field(row, "ID") === "E-002" || /^another chaser$/i.test(field(row, "Object C's Role")));
   const compactName = ["1998-052A", "2021-129A", "2021-129B"].includes(info.cospar)
     ? info.name.replace(/\s*\((?:PAS 7|SY-12 0[12])\)$/i, "") : info.name;
   const line = el("div", "object-line"), button = el("button", "object-trigger", compactName);
   button.type = "button"; button.setAttribute("aria-haspopup", "dialog"); button.setAttribute("aria-expanded", "false"); button.setAttribute("aria-label", `${info.name}, show object metadata`);
-  line.append(el("span", `dot ${info.role.toLowerCase()}${field(row, "ID") === "E-002" && info.role === "C" ? " e002-chaser" : ""}`), button);
-  if (field(row, "ID") === "E-002" && info.role === "C") line.classList.add("e002-inactive-chaser");
+  line.append(el("span", `dot ${info.role.toLowerCase()}${secondaryChaser ? " e002-chaser" : ""}`), button);
+  if (secondaryChaser) line.classList.add("inactive-secondary-chaser");
   if (info.cospar) line.append(el("span", "object-id", info.cospar));
   button.addEventListener("pointerenter", () => { if (matchMedia("(hover:hover)").matches) { clearTimeout(hideTimer); clearTimeout(showTimer); showTimer = setTimeout(() => showObject(button, info, false, row), 90); } });
   button.addEventListener("pointerleave", scheduleObjectClose);

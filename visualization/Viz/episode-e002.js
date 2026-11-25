@@ -29,6 +29,7 @@ const cospar = Object.fromEntries(participants.map(item => [item.slot, item.cosp
 const norad = Object.fromEntries(participants.map(item => [item.slot, item.norad]));
 const comparisons = participants.filter(item => item.slot !== "B").map(item => ({ slots: [item.slot, "B"], color: item.slot === "A" ? "#eaaa00" : "#707070", short: `${item.name} / USA 245` }));
 let series = [], lastWindow = "";
+let focusedMinimumMetric = null, focusedMinimumMs = null;
 const chartScales = new Map();
 const icon = '<svg viewBox="0 0 18 18" aria-hidden="true"><path d="M7.25 4.25H4.5A1.75 1.75 0 0 0 2.75 6v7.5a1.75 1.75 0 0 0 1.75 1.75H12a1.75 1.75 0 0 0 1.75-1.75v-2.75"/><path d="M9.25 2.75h6v6M8 10l7.25-7.25"/></svg>';
 const formatTime = ms => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" }).format(new Date(ms)) + " UTC";
@@ -125,11 +126,12 @@ function minimumNote(id, key, unit, metric) {
     const values = series.filter(item => Number.isFinite(item[comparison.slots[0]]?.[key]));
     const line = comparisons.length === 1 ? node : document.createElement("div"); line.className = comparisons.length === 1 ? "minimumNote" : "e002-minimum-line";
     const minimum = values.length ? values.reduce((best, item) => item[comparison.slots[0]][key] < best[comparison.slots[0]][key] ? item : best) : null;
-    renderEstimatedMinimum(line, { episodeId: "E-002", metric, value: minimum?.[comparison.slots[0]][key], unit, ms: minimum?.ms, onJump: ms => model.setTime(ms) });
+    renderEstimatedMinimum(line, { episodeId: "E-002", metric, value: minimum?.[comparison.slots[0]][key], unit, ms: minimum?.ms, onJump: ms => { focusedMinimumMetric = key; focusedMinimumMs = ms; model.setTime(ms); } });
     if (line !== node) node.append(line);
   }
 }
 function buildSeries() {
+  focusedMinimumMetric = null; focusedMinimumMs = null;
   const start = Date.parse(model.window.start), end = Date.parse(model.window.end);
   series = [];
   for (let ms = start; ms <= end; ms += 60000) series.push({ ms, ...Object.fromEntries(comparisons.map(comparison => [comparison.slots[0], validSample(comparison, ms)])) });
@@ -190,8 +192,12 @@ function drawChart(id, key, threshold, current) {
     }
     context.stroke(); context.beginPath();
   }
-  context.strokeStyle = "#8b806a"; context.lineWidth = 1; context.setLineDash([2, 3]);
+  const selectedMinimum = focusedMinimumMetric === key && focusedMinimumMs === current;
+  context.strokeStyle = selectedMinimum ? "#8b806a" : "#b0b0b0"; context.lineWidth = 1;
+  if (selectedMinimum) context.setLineDash([2, 3]);
   context.beginPath(); context.moveTo(x(current), top); context.lineTo(x(current), bottom); context.stroke(); context.setLineDash([]);
+  if (selectedMinimum) canvas.dataset.focusedMinimumUtc = new Date(current).toISOString();
+  else delete canvas.dataset.focusedMinimumUtc;
   comparisons.forEach((comparison, index) => {
     const slot = comparison.slots[0];
     for (let sampleIndex = 1; sampleIndex < series.length; sampleIndex++) {

@@ -482,8 +482,7 @@ body.table-spot-mode .component-wrap,body.table-spot-mode .component-wrap *{curs
 .records-head .sort-indicator{position:absolute;right:-10px}
 .metric-heading>span:first-child{display:block;text-align:center}
 .metric-heading{letter-spacing:.035em}
-.object-line.e002-inactive-chaser .dot.c{background:var(--marker-A,#eaaa00);opacity:.4}
-.object-line.e002-inactive-chaser .object-trigger{color:#888}
+.object-line.inactive-secondary-chaser .object-trigger{color:#888}
 .episode-row[data-episode-id="E-005"] .object-line .dot:is(.b,.c){background:#a9a9a9}
 .episode-row[data-episode-id="E-005"][data-mini-selected="B"] .object-line:has(.dot.c),
 .episode-row[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b){opacity:.3}
@@ -786,7 +785,7 @@ th[aria-sort="none"] .sort-head:is(:hover,:focus-visible) .sort-indicator{opacit
 .source-carousel-arrow:disabled{opacity:.25;cursor:default}
 
 /* Muted third objects use opaque colors so trails cannot show through dots. */
-.object-line.e002-inactive-chaser .dot.c{background:#d3b46b;border-color:#9e8958;opacity:1}
+.object-line.inactive-secondary-chaser .dot.c{background:#b9b9b9;border-color:#767676;opacity:1}
 .episode-row[data-episode-id="E-005"][data-mini-selected="B"] .object-line:has(.dot.c),
 .episode-row[data-episode-id="E-005"][data-mini-selected="C"] .object-line:has(.dot.b),
 .episode-row[data-episode-id="E-006"][data-mini-selected="B"] .object-line:has(.dot.c),

@@ -24,10 +24,10 @@ if (!episodeId) {
   }
 }
 const episodeModule = {
-  "E-001": "./compare.js?v=31", "E-002": "./episode-e002.js?v=16",
-  "E-005": "./episode-e005.js?v=20", "E-003": "./episode-e003.js?v=15",
-  "E-006": "./episode-e006.js?v=22", "E-008": "./episode-e008.js?v=14",
-  "E-016": "./episode-e016.js?v=12", "E-059": "./episode-e059.js?v=14",
+  "E-001": "./compare.js?v=32", "E-002": "./episode-e002.js?v=17",
+  "E-005": "./episode-e005.js?v=21", "E-003": "./episode-e003.js?v=16",
+  "E-006": "./episode-e006.js?v=23", "E-008": "./episode-e008.js?v=15",
+  "E-016": "./episode-e016.js?v=13", "E-059": "./episode-e059.js?v=15",
   ...(localReview ? { "E-009": "./episode-e009.js?v=1" } : {}),
 }[episodeId];
 if (episodeModule) import(episodeModule).then(async () => {

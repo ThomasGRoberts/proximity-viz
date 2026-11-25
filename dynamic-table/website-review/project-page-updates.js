@@ -23,6 +23,8 @@
     #espl-project-page .project-person:hover strong,#espl-project-page .project-person:focus-visible strong{text-decoration:none!important}
     #espl-project-page .project-person span{margin-top:10px!important;color:#333!important;font-size:12px!important;line-height:1.4!important;white-space:pre-line!important}
     ` : ''}
+    #espl-project-page .project-team:not([data-espl-team-ready="true"]){visibility:hidden}
+    #espl-project-page .project-team .project-person{box-sizing:border-box;width:calc(100% - 10px);margin-inline:5px}
     #espl-project-page .project-person:hover,#espl-project-page .project-person:focus-visible{border-color:transparent!important;box-shadow:0 0 0 8px #fff,0 13px 30px #00000018!important}
     #espl-project-page .espl-featured-mobile-cta{display:none;background:#fff;max-width:1080px;margin:0 auto;padding:0 28px}
     #espl-project-page .espl-featured-mobile-cta iframe{display:block;width:100%;height:76px;border:0;margin:0;padding:0}
@@ -174,6 +176,32 @@
         for(const name of [rowField(row,'Name'),...rowField(row,'Alternate Name(s)').split(/[,;]+/).map(x=>x.trim())])if(name)authorPhoto[authorKey(name)]=record;
       }
     }));
+  }
+  const rosterPromise=loadAuthorRoster().catch(error=>console.warn('Student author photos unavailable.',error));
+  function installTeamPhotos(){
+    const team=projectRoot.querySelector('.project-team');
+    if(!team)return;
+    let generation=0,queued=false;
+    const reconcile=async()=>{
+      const current=++generation;
+      team.removeAttribute('data-espl-team-ready');
+      await rosterPromise;
+      const people=[...team.querySelectorAll('.project-person')];
+      if(!people.length)return;
+      for(const person of people){
+        const name=person.querySelector('strong')?.textContent?.trim();
+        const record=authorPhoto[authorKey(name)] || (/^thomas (?:gonzalez |g )?roberts$/i.test(name||'') ? authorPhoto[authorKey('Thomas G. Roberts')] : null);
+        let photo=person.querySelector('img');
+        if(!photo && record){photo=document.createElement('img');photo.alt=name;person.prepend(photo)}
+        if(photo){photo.loading='eager';if(record && (!photo.src || photo.naturalWidth===0))photo.src=record[1]}
+      }
+      const photos=people.map(person=>person.querySelector('img'));
+      if(photos.some(photo=>!photo)){console.warn('Project collaborator photo missing.',people.filter((_,i)=>!photos[i]).map(person=>person.querySelector('strong')?.textContent));return}
+      await Promise.all(photos.map(photo=>photo.decode().catch(()=>null)));
+      if(current===generation && photos.every(photo=>photo.isConnected && photo.naturalWidth>0))team.dataset.esplTeamReady='true';
+    };
+    new MutationObserver(()=>{if(!queued){queued=true;queueMicrotask(()=>{queued=false;reconcile()})}}).observe(team,{childList:true,subtree:true});
+    reconcile();
   }
   const safeURL = raw => { try { const url = new URL(String(raw || '').trim()); return /^https?:$/.test(url.protocol) ? url.href : ''; } catch { return ''; } };
   const projectKey = value => String(value || '').normalize('NFKD').replace(/\p{M}/gu,'').trim().toLowerCase();
@@ -453,7 +481,6 @@
     container.replaceChildren();
     installHeroAction(null);
     let records;
-    const rosterPromise=loadAuthorRoster().catch(error=>console.warn('Student author photos unavailable.',error));
     try{
       const response=await fetch(`${publicationsCSV}&refresh=${Date.now()}`,{cache:'no-store',credentials:'omit'});
       if(!response.ok)throw new Error(`Publications sheet returned ${response.status}`);
@@ -474,6 +501,6 @@
     showPage();
     container.dataset.esplPublicationsReady='true';
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{installProjectNavigation();installResearchCards()},{once:true});
-  else {installProjectNavigation();installResearchCards()}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{installProjectNavigation();installTeamPhotos();installResearchCards()},{once:true});
+  else {installProjectNavigation();installTeamPhotos();installResearchCards()}
 })();

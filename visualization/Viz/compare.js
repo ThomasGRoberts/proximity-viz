@@ -124,6 +124,7 @@ let episodeConfig = null;
 let episodeStartMs = 0, episodeEndMs = 0, analysisStepMs = 15 * MINUTE_MS;
 let analysisSamples = [], chartSamples = [], analysisResult = null;
 let focusedMinimumMs = null;
+let focusedMinimumMetric = null;
 let chartScales = { distanceKm: 1000, speedMps: 100 };
 let chartDirty = true;
 let lastChartDraw = 0;
@@ -931,6 +932,7 @@ function updateThresholds() {
       slider.value = Math.max(startMs, Math.min(endMs, ms));
       slider.dispatchEvent(new Event("input", { bubbles: true }));
       focusedMinimumMs = ms;
+      focusedMinimumMetric = metric;
       chartDirty = true; drawEpisodeCharts();
       slider.focus({ preventScroll: true });
     } });
@@ -966,7 +968,7 @@ function drawEpisodeCharts() {
       const qualifications = { single: metric === "distanceKm" ? distanceOnlyIntervals : speedOnlyIntervals, both: { intervals: analysisResult.intervals } };
       const canvas = $(canvasId), scale = localChartModule.drawOrbitalChart(canvas, samples, metric, {
         window, currentMs, threshold: Number($(thresholdId).value), title, maximum, qualifications,
-        markedMs: focusedMinimumMs, speedUnit: "m/s", connectSwitches: true
+        markedMs: (metric === "distanceKm" && focusedMinimumMetric === "separationKm" || metric === "speedMs" && focusedMinimumMetric === "relativeSpeedMps") ? focusedMinimumMs : null, speedUnit: "m/s", connectSwitches: true
       });
       chartGeometry.set(canvas, { top: scale.top, bottom: scale.bottom, left: scale.left, right: scale.right,
         yMax: scale.max, thresholdY: scale.thresholdY });
@@ -1139,7 +1141,7 @@ function drawFixedChart(canvasId, key, yMax, threshold, unit) {
     }
   }
   if (clipped) { ctx.fillStyle = "#805e10"; ctx.textAlign = "right"; ctx.fillText("↑ clipped", right, 11); }
-  if (focusedMinimumMs !== null) {
+  if (focusedMinimumMs !== null && (key === "distanceKm" && focusedMinimumMetric === "separationKm" || key === "speedMps" && focusedMinimumMetric === "relativeSpeedMps")) {
     ctx.save(); ctx.strokeStyle = "#8b806a"; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
     ctx.beginPath(); ctx.moveTo(x(focusedMinimumMs), pad.top); ctx.lineTo(x(focusedMinimumMs), bottom); ctx.stroke(); ctx.restore();
     canvas.dataset.focusedMinimumUtc = new Date(focusedMinimumMs).toISOString();
