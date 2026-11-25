@@ -651,9 +651,7 @@ function expandedContent(row, data) {
     const publicId = publicEpisodeId(row);
     const viz = el("section", "visual-block");
     const target = new URLSearchParams(location.search).get("embed") === "1" || location.hostname === "thomasgroberts.github.io"
-      ? publicId === "E-009"
-        ? `https://thomasgroberts.github.io/proximity-viz/visualization/Viz/compare.html?episode=${encodeURIComponent(publicId)}&published=1`
-        : `https://espl.ae.gatech.edu/research/models/proximity/?episode=${encodeURIComponent(publicId)}`
+      ? `https://espl.ae.gatech.edu/research/models/proximity/?episode=${encodeURIComponent(publicId)}`
       : new URL(episodeId === "E-001" ? "../visualization/e001/?v=9" : episodeId === "E-002" ? "../visualization/e002/?build=5" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=6`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
