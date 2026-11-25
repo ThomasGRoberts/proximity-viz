@@ -726,6 +726,10 @@ body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden
 }
 .orbital-preview iframe.e059-mini{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#fffcf6}
 .expanded-row[data-episode-id="E-059"] .orbital-preview.mini-editing-viewport iframe.e059-mini{pointer-events:auto}
+.expanded-row[data-episode-id="E-009"] .visual-block.mini-workshop-active{position:relative;z-index:8}
+.expanded-row[data-episode-id="E-009"] .visual-block.mini-workshop-active .visual-link.model-link{pointer-events:none}
+.expanded-row[data-episode-id="E-009"] .orbital-preview.mini-editing-viewport{z-index:9;pointer-events:auto;mask-image:none;-webkit-mask-image:none}
+.expanded-row[data-episode-id="E-009"] .orbital-preview.mini-editing-viewport iframe.e009-mini{pointer-events:auto}
 @media(min-width:901px){
   .table-wrap .expanded-row .expanded-inner.has-visual{min-height:var(--review-expanded-height,auto);box-sizing:border-box}
 }

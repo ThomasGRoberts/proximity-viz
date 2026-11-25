@@ -368,15 +368,28 @@
     const model=typeOf(featuredRow)==='model',repository=typeOf(featuredRow)==='data repository';
     const label=model?'Explore the interactive model':repository?'Explore the data':'Read the publication';
     if(native&&model){
-      native.href=href;native.setAttribute('aria-label',label);native.style.removeProperty('visibility');
+      native.href=href;native.setAttribute('aria-label',label);
       native.dispatchEvent(new doc.defaultView.Event('mouseleave'));
-      native.classList.remove('is-arrived','is-open');
-      // Let the below-banner position paint before starting the entrance.
+      native.classList.remove('is-open');
+      frame._esplNativeRiseTimer&&doc.defaultView.clearTimeout(frame._esplNativeRiseTimer);
+      const reduced=doc.defaultView.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      native.classList.add('is-arrived');
+      native.style.visibility='visible';
+      native.style.transform='none';
+      const linkRect=native.getBoundingClientRect(),frameRect=frame.getBoundingClientRect();
+      const rise=Math.max(72,window.innerHeight-frameRect.top-linkRect.top+linkRect.height+12);
+      native.style.transition='none';
+      native.style.opacity=reduced?'1':'0';
+      native.style.transform=reduced?'translateY(0)':`translateY(${rise}px)`;
+      // The starting frame is fully below the browser edge. Give it a paint
+      // before moving the icon and label together into their final position.
       void native.offsetHeight;
-      doc.defaultView.requestAnimationFrame(()=>doc.defaultView.requestAnimationFrame(()=>{
-        native.classList.add('is-arrived');
-        doc.defaultView.setTimeout(()=>{native.dispatchEvent(new doc.defaultView.Event('mouseenter'));doc.defaultView.setTimeout(()=>native.dispatchEvent(new doc.defaultView.Event('mouseleave')),2600)},700);
-      }));
+      if(!reduced)frame._esplNativeRiseTimer=doc.defaultView.setTimeout(()=>{
+        native.style.transition='transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease';
+        native.style.transform='translateY(0)';
+        native.style.opacity='1';
+        doc.defaultView.setTimeout(()=>{native.dispatchEvent(new doc.defaultView.Event('mouseenter'));doc.defaultView.setTimeout(()=>native.dispatchEvent(new doc.defaultView.Event('mouseleave')),2600)},720);
+      },150);
       return;
     }
     native?.remove();

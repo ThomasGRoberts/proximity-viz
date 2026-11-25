@@ -16,7 +16,9 @@
     #studentOverlay .project-publications .knowledge-slide__summary a[href*="/people/"],#studentOverlay .project-publications .knowledge-slide__summary a[href*="/people/"]:is(:visited,:hover,:focus-visible){color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px;transition:none!important}
     @media(min-width:768px){#espl-area-page .student-card{margin-block:8px!important}}
     #espl-area-page .espl-author-overflow{display:grid!important;place-items:center!important;flex:0 0 70px!important;width:70px!important;height:70px!important;box-sizing:border-box!important;margin:0!important;padding:0!important;border:5px solid #fff!important;border-radius:50%!important;background:#c7c7c7!important;color:#353535!important;font-weight:700!important;line-height:1!important;text-align:center!important}
-    #studentOverlay .espl-special-card{grid-template-columns:minmax(0,1fr) 380px!important}
+    #studentOverlay .espl-special-card{grid-template-columns:minmax(0,1fr)!important}
+    #studentOverlay .espl-special-card .knowledge-output-main{padding-bottom:.5rem!important}
+    #studentOverlay .espl-special-card .espl-type-media{height:auto!important;min-height:0!important;align-self:auto!important;padding:0 1.65rem 1.2rem!important}
     #studentOverlay .espl-special-card .model-output-media, #espl-area-page .espl-special-card .model-output-media{display:flex;align-items:center!important;align-self:stretch;height:100%;box-sizing:border-box;justify-content:flex-start;gap:14px;min-height:90px;padding:16px}
     #espl-area-page .espl-special-card .espl-mobile-special-summary,#espl-area-page .espl-special-card .espl-mobile-special-people{display:none!important}
     #studentOverlay .espl-special-card .model-polyhedron-link, #studentOverlay .espl-special-card .espl-table-icon-link,

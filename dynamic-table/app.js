@@ -1094,7 +1094,9 @@ function setMiniEditing(open) {
   miniEditing = open; block.classList.toggle("mini-workshop-active", open);
   miniBackdropHost.classList.toggle("mini-editing-viewport", open);
   miniFrame.contentWindow?.miniWorkshop?.setEditing?.(open);
-  if (["E-001", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
+  // These miniatures live inside the expanded row. Moving their host as if it
+  // were a table-level backdrop sends the scene outside the editor viewport.
+  if (["E-001", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009"].includes(episodeId)) {
     miniFrame.tabIndex = open ? 0 : -1;
     if (open) miniFrame.removeAttribute("aria-hidden"); else miniFrame.setAttribute("aria-hidden", "true");
     return true;
