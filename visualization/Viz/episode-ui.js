@@ -31,7 +31,10 @@ if ((query.get("asset") || publicId) === "E-001") {
   if (header && back && title && !header.querySelector(".episode-focus")) {
     document.body.classList.add("e001-shared");
     const focus = document.createElement("section"); focus.id = "episodeFocus"; focus.className = "episode-focus";
-    const link = document.createElement("a"); link.href = back.href; link.className = "episode-focus-link";
+    const link = document.createElement("a");
+    const library = new URL("https://espl.ae.gatech.edu/research/tables/proximity/");
+    library.searchParams.set("episode", publicId);
+    link.href = library.href; link.target = "_top"; link.className = "episode-focus-link";
     link.setAttribute("aria-label", "Choose a different episode");
     const top = document.createElement("div"); top.className = "episode-focus-top";
     const eyebrow = document.createElement("span"); eyebrow.className = "episode-eyebrow"; eyebrow.textContent = "Current episode";

@@ -31,7 +31,7 @@ export function installEpisodeNavigation(focus, episodes, assetId, { review = fa
   const libraryLink = focus.querySelector(".episode-focus-link");
   if (libraryLink) {
     const destination = new URL("https://espl.ae.gatech.edu/research/tables/proximity/");
-    destination.searchParams.set("review", current["Episode ID"]);
+    destination.searchParams.set("episode", current["Episode ID"]);
     libraryLink.href = destination.href;
     libraryLink.target = "_top";
   }
