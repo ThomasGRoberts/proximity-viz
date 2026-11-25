@@ -2,6 +2,25 @@
 (() => {
   const root = document.querySelector('#espl-people-page #studentOverlay, #espl-area-page');
   if (!root || root.querySelector('#espl-special-output-style')) return;
+  // Approved card copy. Keep the same titles and descriptions in project-page-updates.js.
+  const specialDescriptions = {
+    'optimizing space-based missile defense': 'Explore how different missile threats shape the interceptor constellations needed for boost-phase defense.',
+    'visualizing proximity in the space domain': 'Understand the orbital dynamics of satellite proximity events that have concerned state actors in recent history.',
+    'episodes of concerning satellite proximity': 'Browse documented episodes of satellites in close proximity and linked source records.',
+    'itu compliance assessment monitor': 'Assess how GEO satellite operators adhere to their International Telecommunication Union orbital prescriptions.',
+    'space launch to low earth orbit: how much does it cost?': 'Compare launch vehicles by their cost to deliver a kilogram of payload to low Earth orbit.',
+    'spaceports of the world': 'Explore the history of ground-based orbital space launch sites around the world.',
+    'history of the nasa budget': 'Explore how NASA’s budget and spending categories have changed over time.',
+  };
+  function addSpecialDescription(card){
+    const title=card.querySelector('.knowledge-slide__title');
+    if(!title)return;
+    const copy=specialDescriptions[title.textContent.trim().toLowerCase()];
+    if(!copy)return;
+    let description=card.querySelector('.espl-special-description');
+    if(!description){description=document.createElement('p');description.className='espl-special-description';title.after(description)}
+    if(description.textContent!==copy)description.textContent=copy;
+  }
   const style = document.createElement('style');
   style.id = 'espl-special-output-style';
   style.textContent = `
@@ -18,6 +37,7 @@
     #espl-area-page .espl-author-overflow{display:grid!important;place-items:center!important;flex:0 0 70px!important;width:70px!important;height:70px!important;box-sizing:border-box!important;margin:0!important;padding:0!important;border:5px solid #fff!important;border-radius:50%!important;background:#c7c7c7!important;color:#353535!important;font-weight:700!important;line-height:1!important;text-align:center!important}
     #studentOverlay .espl-special-card{grid-template-columns:minmax(0,1fr)!important}
     #studentOverlay .espl-special-card .knowledge-output-main{padding-bottom:.5rem!important}
+    #studentOverlay .espl-special-card .espl-special-description,#espl-area-page .espl-special-card .espl-special-description{max-width:60ch;margin:.6rem 0 0;color:#666;font-size:14px;line-height:1.45}
     #studentOverlay .espl-special-card .espl-type-media{height:auto!important;min-height:0!important;align-self:auto!important;padding:0 1.65rem 1.2rem!important}
     #studentOverlay .espl-special-card .model-output-media, #espl-area-page .espl-special-card .model-output-media{display:flex;align-items:center!important;align-self:stretch;height:100%;box-sizing:border-box;justify-content:flex-start;gap:14px;min-height:90px;padding:16px}
     #espl-area-page .espl-special-card .espl-mobile-special-summary,#espl-area-page .espl-special-card .espl-mobile-special-people{display:none!important}
@@ -268,6 +288,7 @@
         if(!category)continue;
         const kind=category.textContent.trim().toLowerCase();
         if(!/^(interactive )?model$|^data repository$/.test(kind)){updateAreaAuthors(card);continue;}
+        addSpecialDescription(card);
         if(category.dataset.esplSpecialEyebrow==='true'){updateAreaAuthors(card);continue;}
         const model=kind!=='data repository';
         category.textContent=model?'Interactive Model':'Data Repository';
@@ -284,6 +305,7 @@
       const category = card.querySelector('.knowledge-slide__category');
       const kind = category?.textContent.trim().toLowerCase();
       if (!/^(interactive )?model$|^data repository$/.test(kind || '')) { updateAreaAuthors(card); continue; }
+      addSpecialDescription(card);
       if (card.dataset.esplSpecialReady && card.querySelector('.model-text-link')) continue;
       const href = card.querySelector('.knowledge-slide__title-link[href], .knowledge-slide__title a[href], .external-metadata-link[href]')?.href;
       if (!href) continue;

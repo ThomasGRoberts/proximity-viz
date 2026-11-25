@@ -48,6 +48,7 @@
     #espl-project-page .espl-special-card .model-link-arrow{display:inline-block;transition:transform .22s ease}
     #espl-project-page .espl-special-card:is(:hover,:focus-within) .model-link-arrow{transform:translateX(4px);animation:espl-data-link-nudge .7s ease}
     #espl-project-page .espl-special-card .knowledge-slide__summary{max-width:60ch}
+    #espl-project-page .espl-special-card .espl-special-description{max-width:60ch;margin:.6rem 0 0;color:#666;font-size:14px;line-height:1.45}
     /* SBI's Research Updates card geometry, applied to both project pages. */
     #espl-project-page .project-outputs .publication-card{grid-template-columns:minmax(0,1fr) 414px!important}
     #espl-project-page .project-outputs .publication-card.no-portraits{grid-template-columns:1fr}
@@ -88,6 +89,17 @@
   const rowField = (row, name) => String(row?.[name] || '').trim();
   const typeOf = row => rowField(row, 'Type').toLowerCase();
   const special = row => /^(model|data repository)$/.test(typeOf(row));
+  // Approved card copy. Keep the same titles and descriptions in special-output-cards.js.
+  const specialDescriptions = {
+    'optimizing space-based missile defense': 'Explore how different missile threats shape the interceptor constellations needed for boost-phase defense.',
+    'visualizing proximity in the space domain': 'Understand the orbital dynamics of satellite proximity events that have concerned state actors in recent history.',
+    'episodes of concerning satellite proximity': 'Browse documented episodes of satellites in close proximity and linked source records.',
+    'itu compliance assessment monitor': 'Assess how GEO satellite operators adhere to their International Telecommunication Union orbital prescriptions.',
+    'space launch to low earth orbit: how much does it cost?': 'Compare launch vehicles by their cost to deliver a kilogram of payload to low Earth orbit.',
+    'spaceports of the world': 'Explore the history of ground-based orbital space launch sites around the world.',
+    'history of the nasa budget': 'Explore how NASA’s budget and spending categories have changed over time.',
+  };
+  const specialDescription = title => specialDescriptions[String(title).trim().toLowerCase()] || '';
   const publicationsCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRN6Pc85vfaqu_XEU4MQC9HTGckmU9k5AXtSXuy8iOp5uPUcOrbJdI1Lmklqtqp4IpAdQoO3TtrEZuR/pub?output=csv';
   const projectsCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT08-Yg6ATv7mk2BiEScmxTdevWRbNiJydlaR2WOdI-QOxtBsj-zeLdvSLmh4zNGNZIPYqjGSQu-gEg/pub?output=csv';
   const projectName = {sbi:'Space-based Interceptors and Strategic Stability',proximity:'How Close is Too Close',lunar:'Lunar Surface Coordination'}[slug];
@@ -317,6 +329,10 @@
     const title=document.createElement('h3');title.className='knowledge-slide__title';
     const titleLink=document.createElement('a');titleLink.className='knowledge-slide__title-link';titleLink.href=href;titleLink.textContent=rowField(row,'Title');title.append(titleLink);
     main.append(categoryNode(row),title);
+    if(isSpecial){
+      const description=specialDescription(rowField(row,'Title'));
+      if(description){const copy=document.createElement('p');copy.className='espl-special-description';copy.textContent=description;main.append(copy)}
+    }
     if(isSpecial){const summary=summaryNode(row,href);summary.classList.add('espl-mobile-special-summary');main.append(summary)}
     else main.append(summaryNode(row,href));
     card.append(main);
