@@ -17,7 +17,8 @@ E006_VIEWS = ROOT / "e006" / "saved-camera-views.json"
 E008_VIEWS = ROOT / "e008" / "saved-camera-views.json"
 E016_VIEWS = ROOT / "e016" / "saved-camera-views.json"
 E059_VIEWS = ROOT / "e059" / "saved-camera-views.json"
-SURFACES = {"E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "Library"}
+E009_VIEWS = ROOT / "e009" / "saved-camera-views.json"
+SURFACES = {"E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009", "Library"}
 
 
 def read(path, key):
@@ -183,6 +184,12 @@ def e059_views():
 def change_e059_view(request):
     return change_two_object_view(request, E059_VIEWS, "E-059")
 
+def e009_views():
+    return read(E009_VIEWS, "views")
+
+def change_e009_view(request):
+    return change_two_object_view(request, E009_VIEWS, "E-009")
+
 def e008_views():
     return read(E008_VIEWS, "views")
 
@@ -317,7 +324,7 @@ def change_moment(request):
         items = [item for item in items if item.get("id") != request.get("id")]
     elif request.get("action") == "add":
         item = request.get("moment")
-        if not isinstance(item, dict) or item.get("surface") not in ("E-001", "E-002", "E-003", "E-005"):
+        if not isinstance(item, dict) or item.get("surface") not in SURFACES - {"Library"}:
             raise ValueError("Invalid camera moment")
         for key in ("windowId", "selected", "referenceMode", "mode", "timeUtc"):
             if not isinstance(item.get(key), str) or not item[key] or len(item[key]) > 100:

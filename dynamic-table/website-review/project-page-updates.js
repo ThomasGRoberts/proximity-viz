@@ -327,12 +327,12 @@
     const href=safeURL(rowField(featuredRow,'URL'));if(!href)return;
     const model=typeOf(featuredRow)==='model',repository=typeOf(featuredRow)==='data repository';
     const label=model?'Explore the interactive model':repository?'Explore the data':'Read the publication';
-    if(native&&model){native.href=href;native.setAttribute('aria-label',label);native.style.removeProperty('visibility');native.dispatchEvent(new doc.defaultView.Event('mouseleave'));native.classList.remove('is-arrived','is-open');doc.defaultView.setTimeout(()=>{native.classList.add('is-arrived');native.dispatchEvent(new doc.defaultView.Event('mouseenter'));doc.defaultView.setTimeout(()=>native.dispatchEvent(new doc.defaultView.Event('mouseleave')),4800)},250);return}
+    if(native&&model){native.href=href;native.setAttribute('aria-label',label);native.style.removeProperty('visibility');native.dispatchEvent(new doc.defaultView.Event('mouseleave'));native.classList.remove('is-arrived','is-open');native.classList.add('is-arrived');doc.defaultView.requestAnimationFrame(()=>{native.dispatchEvent(new doc.defaultView.Event('mouseenter'));doc.defaultView.setTimeout(()=>native.dispatchEvent(new doc.defaultView.Event('mouseleave')),4800)});return}
     native?.remove();
     const banner=doc.querySelector('main.banner,.banner')||doc.body;
     if(!doc.getElementById('espl-featured-hero-style')){
       const style=doc.createElement('style');style.id='espl-featured-hero-style';style.textContent=`
-        #espl-featured-hero-link{position:absolute;left:max(6%,calc((100% - 1080px)/2 + 28px));bottom:10px;z-index:9;display:flex;align-items:center;width:max-content;max-width:calc(100% - 12%);height:46px;pointer-events:auto;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
+        #espl-featured-hero-link{position:absolute;left:max(6%,calc((100% - 1080px)/2 + 28px));bottom:10px;z-index:9;display:flex;align-items:center;width:max-content;max-width:calc(100% - 12%);height:46px;pointer-events:auto;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .18s ease}
         #espl-featured-hero-link.is-arrived{visibility:visible;opacity:1;transform:translateY(0)}
         #espl-featured-hero-link .featured-icon{display:grid;place-items:center;width:46px;height:46px;flex:none}
         #espl-featured-hero-link .featured-icon :is(svg,canvas){display:block;width:46px;height:46px}
@@ -373,7 +373,8 @@
     const reveal=()=>{link.classList.add('is-open');icon.dispatchEvent(new doc.defaultView.Event('mouseenter'));};
     const retract=()=>{if(link.matches(':hover')||doc.activeElement===link)return;link.classList.remove('is-open');icon.dispatchEvent(new doc.defaultView.Event('mouseleave'))};
     link.addEventListener('mouseenter',reveal);link.addEventListener('focusin',reveal);link.addEventListener('mouseleave',retract);link.addEventListener('focusout',retract);
-    doc.defaultView.setTimeout(()=>{link.classList.add('is-arrived');if(!reduced)doc.defaultView.setTimeout(()=>{reveal();doc.defaultView.setTimeout(retract,4800)},180)},250);
+    link.classList.add('is-arrived');
+    if(!reduced)doc.defaultView.requestAnimationFrame(()=>{reveal();doc.defaultView.setTimeout(retract,4800)});
     const timer=doc.defaultView.setInterval(()=>{if(reduced||doc.hidden||link.classList.contains('is-open'))return;reveal();doc.defaultView.setTimeout(retract,4200)},16000);
     frame._esplHeroTimer&&doc.defaultView.clearInterval(frame._esplHeroTimer);frame._esplHeroTimer=timer;
   }
@@ -440,11 +441,11 @@
     container.replaceChildren();
     installHeroAction(null);
     let records;
+    const rosterPromise=loadAuthorRoster().catch(error=>console.warn('Student author photos unavailable.',error));
     try{
       const response=await fetch(`${publicationsCSV}&refresh=${Date.now()}`,{cache:'no-store',credentials:'omit'});
       if(!response.ok)throw new Error(`Publications sheet returned ${response.status}`);
       records=parseCSV(await response.text());
-      try{await loadAuthorRoster()}catch(error){console.warn('Student author photos unavailable.',error)}
     }catch(error){
       console.warn('Project research updates could not load from the published Publications sheet.',error);
       const notice=document.createElement('p');notice.textContent='Research updates are temporarily unavailable.';allCards=[notice];showPage();
@@ -454,11 +455,12 @@
     const relevant=records.filter(row=>projectMatch(row)&&safeURL(rowField(row,'URL'))&&rowField(row,'Title'));
     const byDate=(a,b)=>dateNumber(rowField(b,'Date'))-dateNumber(rowField(a,'Date'))||a._sheetOrder-b._sheetOrder;
     const featured=relevant.filter(row=>/^(true|yes|1)$/i.test(rowField(row,'Featured'))).sort(byDate)[0]||null;
+    installHeroAction(featured);
+    await rosterPromise;
     const ordered=[...(featured?[featured]:[]),...relevant.filter(row=>row!==featured).sort(byDate)];
     allCards=ordered.map(makeCard).filter(Boolean);
     showPage();
     container.dataset.esplPublicationsReady='true';
-    installHeroAction(featured);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{installProjectNavigation();installResearchCards()},{once:true});
   else {installProjectNavigation();installResearchCards()}

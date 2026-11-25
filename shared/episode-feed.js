@@ -59,6 +59,7 @@ const ORBITAL_ASSET_BY_OBJECTS = new Map([
   ["2016-065A|2007-007B", "E-008"],
   ["2014-058A|2016-053A", "E-016"],
   ["2026-083H|2024-043F", "E-059"],
+  ["2016-052A|2025-131A", "E-009"],
 ]);
 export function loadCurrentEpisodes() {
   return request ||= fetchCsv(EPISODES_CSV)

@@ -18,7 +18,8 @@ const field = (row, ...names) => {
 const safeUrl = value => { try { const url = new URL(value); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch { return ""; } };
 const EARTH_COLOR = 0xedeae5;
 const localE003Review = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
-const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(id);
+const isLocalReview = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
+const hasEpisodeVisual = id => ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(id) || (isLocalReview && id === "E-009");
 const state = { live: null, preview: null, series: null, seriesPromise: null, e002Metrics: null, historicalMetrics: {}, usePreview: false, selected: null, query: "", sort: { key: "date", direction: "asc" }, glossary: [], details: new Map(), detailPending: new Map(), detailFailures: new Set() };
 const prefetch = { queue: [], active: 0, scheduled: false, images: [], imageActive: 0, imageSeen: new Set() };
 let sourceCarouselCleanup = () => {};
@@ -1374,7 +1375,7 @@ function setStatus() {
 }
 async function init() {
   installHeaderGlossary();
-  const localReviewMode = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "8769";
+  const localReviewMode = isLocalReview;
   if (localReviewMode) {
     const shell = await fetch("./review-bar.html", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Local review shell returned ${response.status}`); return response.text(); });
     document.body.insertAdjacentHTML("afterbegin", shell);
@@ -1390,8 +1391,10 @@ async function init() {
     loadCurrentEpisodes(),
     loadCurrentDescriptions().catch(error => ({ descriptions: [], error: error.message })),
     fetch("./data/space-track-satcat.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Space-Track catalog returned ${response.status}`); return response.json(); }),
-  ]).then(([snapshot, feed, descriptionFeed, spaceTrack]) => {
-    const episodes = feed.episodes;
+    localReviewMode ? fetch("../visualization/dev/e009/space-track-e009.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`E-009 local catalog returned ${response.status}`); return response.json(); }) : Promise.resolve(null),
+  ]).then(([snapshot, feed, descriptionFeed, spaceTrack, localCatalog]) => {
+    if (localCatalog?.records) Object.assign(spaceTrack.records, localCatalog.records);
+    const episodes = localReviewMode ? feed.episodes : feed.episodes.filter(row => row["Episode ID"] !== "E-009");
     const e001 = episodes.find(row => field(row, "ID") === "E-001");
     if (e001) episodeUtcInterval(e001);
     return { ...snapshot, descriptions: descriptionFeed.descriptions, episodes, spaceTrack, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc, descriptionsCheckedUtc: descriptionFeed.fetchedUtc, descriptionError: descriptionFeed.error || "" };

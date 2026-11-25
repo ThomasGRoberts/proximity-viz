@@ -18,7 +18,7 @@ function periodLabel(chapters) {
 
 export function installEpisodeNavigation(focus, episodes, assetId, { review = false, period = true } = {}) {
   if (!focus || focus.nextElementSibling?.classList.contains("episode-neighbors")) return;
-  const rows = episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || ""));
+  const rows = episodes.filter(row => /^(true|yes|1)$/i.test(row.Frontend || "") && (row["Episode ID"] !== "E-009" || (review && location.port === "8769")));
   try {
     const order = JSON.parse(localStorage.getItem("espl-episode-order-v1") || "null");
     if (Array.isArray(order) && order.length === rows.length &&
