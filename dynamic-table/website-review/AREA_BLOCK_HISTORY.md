@@ -6,6 +6,7 @@ For each future area-page edit, update the affected complete block, add an entry
 
 | Date | Pages | Change |
 | --- | --- | --- |
+| 2026-11-25 | Space Security, Space Sustainability, Space Coordination | Added project-style mobile author rows from the published publication and student sheets, including full-size photos, the four-circle layout, and a `+N` circle for longer lists. Updated full blocks to `special-output-cards.js?v=10`. |
 | 2026-11-25 | Space Security, Space Sustainability, Space Coordination | Preserved full author names and photos on mobile model and data repository cards, restored their category icons, and standardized author links. Updated the complete blocks to `special-output-cards.js?v=9`. |
 | 2026-11-25 | Space Security, Space Sustainability, Space Coordination | Created complete replacement blocks from the then-current live WordPress area blocks and included the reviewed `special-output-cards.js?v=8` treatment. Replaced the add-on-only copy workflow. |
 | 2026-11-24 | All three areas | Centered model and repository action text and added space around student hover cards (`3947255`). |
