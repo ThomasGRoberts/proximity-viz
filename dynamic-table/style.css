@@ -730,6 +730,7 @@ body:has(#tableReviewBar) .table-wrap>.orbital-preview.e001-live{overflow:hidden
 .expanded-row[data-episode-id="E-009"] .visual-block.mini-workshop-active .visual-link.model-link{pointer-events:none}
 .expanded-row[data-episode-id="E-009"] .orbital-preview.mini-editing-viewport{z-index:9;pointer-events:auto;mask-image:none;-webkit-mask-image:none}
 .expanded-row[data-episode-id="E-009"] .orbital-preview.mini-editing-viewport iframe.e009-mini{pointer-events:auto}
+.table-wrap .expanded-row[data-episode-id="E-009"] .expanded-inner.has-visual .context-block{z-index:10!important}
 @media(min-width:901px){
   .table-wrap .expanded-row .expanded-inner.has-visual{min-height:var(--review-expanded-height,auto);box-sizing:border-box}
 }

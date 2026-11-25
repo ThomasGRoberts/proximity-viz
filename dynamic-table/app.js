@@ -652,7 +652,7 @@ function expandedContent(row, data) {
     const viz = el("section", "visual-block");
     const target = new URLSearchParams(location.search).get("embed") === "1" || location.hostname === "thomasgroberts.github.io"
       ? `https://espl.ae.gatech.edu/research/models/proximity/?episode=${encodeURIComponent(publicId)}`
-      : new URL(episodeId === "E-001" ? "../visualization/e001/?v=9" : episodeId === "E-002" ? "../visualization/e002/?build=5" : `../visualization/Viz/compare.html?${localE003Review ? "dev=1&" : ""}episode=${publicId}&build=5`, location.href).href;
+      : new URL(episodeId === "E-001" ? "../visualization/e001/?v=9" : episodeId === "E-002" ? "../visualization/e002/?build=5" : `../visualization/Viz/compare.html?${localE003Review || episodeId === "E-009" ? "dev=1&" : ""}episode=${publicId}&build=5`, location.href).href;
     viz.setAttribute("aria-label", `${publicId} orbital visualization`);
     const label = `Explore the interactive model for ${title(row)}`;
     const sceneLink = visualizationLink(target, label), actionLink = visualizationActionLink(target, label);
@@ -1396,7 +1396,7 @@ async function init() {
     const shell = await fetch("./review-bar.html", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Local review shell returned ${response.status}`); return response.text(); });
     document.body.insertAdjacentHTML("afterbegin", shell);
     const reviewStyles = document.createElement("link"); reviewStyles.rel = "stylesheet"; reviewStyles.href = "../visualization/dev/review-nav.css"; document.head.append(reviewStyles);
-    const { createLocalReview } = await import("./local-review.js?v=9");
+    const { createLocalReview } = await import("./local-review.js?v=10");
     localReview = createLocalReview({ getMini: () => miniFrame?.contentWindow?.miniWorkshop, getFrame: () => miniFrame, setEditing: setMiniEditing, getSelectedEpisode: () => field(state.selected, "ID"), getPublicEpisode: assetId => state.live?.episodes?.find(row => row.ID === assetId)?.["Episode ID"] || assetId });
   }
   $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; setStatus(); render(); });

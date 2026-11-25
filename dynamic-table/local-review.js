@@ -32,6 +32,11 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
 
   const controls = ["miniEditToggle", "miniChapter", "miniPlay", "miniTime", "miniSpeed", "miniFrame", "miniOrigin", "miniZoomOut", "miniZoomIn", "miniReset", "miniMoveLeft", "miniMoveRight", "miniMoveUp", "miniMoveDown", "miniPlaceLeft", "miniPlaceRight", "miniPlaceUp", "miniPlaceDown", "miniMarkStart", "miniMarkEnd", "miniSaveLoop"].map($);
   let activeFrame = null, editing = false, spotMode = false, comments = [], savedConfigs = {}, draft = null;
+  let e009DefaultView = null;
+  const e009DefaultReady = fetch("../visualization/dev/e009/saved-camera-views.json", { cache: "no-store" })
+    .then(response => response.ok ? response.json() : null)
+    .then(data => { e009DefaultView = data?.views?.[0] || null; })
+    .catch(error => console.warn("E-009 starting camera unavailable", error));
   let loopStart = null, loopEnd = null, scrub = false;
   let viewportOffset = { x: 0, y: 0 };
   const publicId = assetId => getPublicEpisode?.(assetId) || assetId;
@@ -147,6 +152,21 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
   };
   const applySaved = m => {
     const savedConfig = savedConfigs[getSelectedEpisode()];
+    if (!savedConfig && getSelectedEpisode() === "E-009" && e009DefaultView && frameApplied !== getFrame()) {
+      try {
+        const view = e009DefaultView;
+        m.selectWindow(view.chapterId);
+        const time = Date.parse(view.timeUtc), start = Date.parse(m.window.start), end = Date.parse(m.window.end);
+        m.setLoop(Math.max(start, time - 2 * 3600000), Math.min(end, time + 2 * 3600000));
+        m.setTime(time);
+        m.applyCamera({ timestampUtc: view.timeUtc, frameMode: "relative", referenceSatellite: view.referenceSlot,
+          position: view.position, target: view.target, up: view.up, fieldOfViewDeg: view.fov, zoom: view.zoom });
+        m.setPlaying(true);
+        loopStart = m.loopStart; loopEnd = m.loopEnd; frameApplied = getFrame();
+        getFrame().dataset.miniConfigured = "1";
+      } catch (error) { say(`E-009 starting camera could not be applied: ${error.message}`); }
+      return;
+    }
     if (!savedConfig || frameApplied === getFrame()) return;
     try {
       const offset = savedConfig.camera?.viewportOffset;
@@ -165,9 +185,11 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
     if (!frame || activeFrame === frame) return;
     activeFrame = frame;
     let attempts = 0;
-    const check = () => {
+    const check = async () => {
       if (frame !== getFrame()) return;
       const m = model(); if (!m) { if (++attempts < 240) setTimeout(check, 250); return; }
+      if (getSelectedEpisode() === "E-009") await Promise.all([savedReady, e009DefaultReady]);
+      if (frame !== getFrame()) return;
       const options = $("miniChapter"); options.replaceChildren(...m.windows.map(window => {
         const option = document.createElement("option"); option.value = window.id; option.textContent = window.label; return option;
       }));

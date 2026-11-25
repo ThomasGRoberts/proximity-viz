@@ -363,7 +363,12 @@
     for(const old of doc.querySelectorAll('#espl-proximity-table-link')) old.remove();
     const native=doc.querySelector('.model-link');
     doc.getElementById('espl-featured-hero-link')?.remove();
-    if(!featuredRow){native?.remove();return;}
+    // The featured row arrives after the banner iframe. Keep its native link
+    // hidden until then; removing it here forced the nonanimated fallback.
+    if(!featuredRow){
+      if(native){native.classList.remove('is-arrived','is-open');native.style.setProperty('visibility','hidden','important')}
+      return;
+    }
     const href=safeURL(rowField(featuredRow,'URL'));if(!href)return;
     const model=typeOf(featuredRow)==='model',repository=typeOf(featuredRow)==='data repository';
     const label=model?'Explore the interactive model':repository?'Explore the data':'Read the publication';
@@ -374,7 +379,7 @@
       frame._esplNativeRiseTimer&&doc.defaultView.clearTimeout(frame._esplNativeRiseTimer);
       const reduced=doc.defaultView.matchMedia('(prefers-reduced-motion: reduce)').matches;
       native.classList.add('is-arrived');
-      native.style.visibility='visible';
+      native.style.setProperty('visibility','visible');
       native.style.transform='none';
       const linkRect=native.getBoundingClientRect(),frameRect=frame.getBoundingClientRect();
       const rise=Math.max(72,window.innerHeight-frameRect.top-linkRect.top+linkRect.height+12);
@@ -396,7 +401,7 @@
     const banner=doc.querySelector('main.banner,.banner')||doc.body;
     if(!doc.getElementById('espl-featured-hero-style')){
       const style=doc.createElement('style');style.id='espl-featured-hero-style';style.textContent=`
-        #espl-featured-hero-link{position:absolute;left:max(6%,calc((100% - 1080px)/2 + 28px));bottom:10px;z-index:9;display:flex;align-items:center;width:max-content;max-width:calc(100% - 12%);height:46px;pointer-events:auto;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(72px);transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .18s ease}
+        #espl-featured-hero-link{position:absolute;left:max(6%,calc((100% - 1080px)/2 + 28px));bottom:10px;z-index:9;display:flex;align-items:center;width:max-content;max-width:calc(100% - 12%);height:46px;pointer-events:auto;color:#555;text-decoration:none;visibility:hidden;opacity:0;transform:translateY(var(--espl-featured-rise,72px));transition:transform .7s cubic-bezier(.16,1,.3,1),opacity .25s ease}
         #espl-featured-hero-link.is-arrived{visibility:visible;opacity:1;transform:translateY(0)}
         #espl-featured-hero-link .featured-icon{display:grid;place-items:center;width:46px;height:46px;flex:none}
         #espl-featured-hero-link .featured-icon :is(svg,canvas){display:block;width:46px;height:46px}
@@ -438,9 +443,19 @@
     const reveal=()=>{link.classList.add('is-open');icon.dispatchEvent(new doc.defaultView.Event('mouseenter'));};
     const retract=()=>{if(link.matches(':hover')||doc.activeElement===link)return;link.classList.remove('is-open');icon.dispatchEvent(new doc.defaultView.Event('mouseleave'))};
     link.addEventListener('mouseenter',reveal);link.addEventListener('focusin',reveal);link.addEventListener('mouseleave',retract);link.addEventListener('focusout',retract);
-    link.classList.add('is-arrived');
-    if(link.classList.contains('is-mobile-cta')){reveal();return}
-    if(!reduced)doc.defaultView.requestAnimationFrame(()=>{reveal();doc.defaultView.setTimeout(retract,4800)});
+    if(link.classList.contains('is-mobile-cta')){link.classList.add('is-arrived');reveal();return}
+    if(slug==='sbi'){
+      const frameRect=frame.getBoundingClientRect(),linkRect=link.getBoundingClientRect();
+      link.style.setProperty('--espl-featured-rise',`${Math.max(72,window.innerHeight-frameRect.top-linkRect.top+linkRect.height+84)}px`);
+      void link.offsetHeight;
+      doc.defaultView.setTimeout(()=>{
+        link.classList.add('is-arrived');
+        if(!reduced)doc.defaultView.setTimeout(()=>{reveal();doc.defaultView.setTimeout(retract,4800)},720);
+      },150);
+    }else{
+      link.classList.add('is-arrived');
+      if(!reduced)doc.defaultView.requestAnimationFrame(()=>{reveal();doc.defaultView.setTimeout(retract,4800)});
+    }
     const timer=doc.defaultView.setInterval(()=>{if(reduced||doc.hidden||link.classList.contains('is-open'))return;reveal();doc.defaultView.setTimeout(retract,4200)},16000);
     frame._esplHeroTimer&&doc.defaultView.clearInterval(frame._esplHeroTimer);frame._esplHeroTimer=timer;
   }
