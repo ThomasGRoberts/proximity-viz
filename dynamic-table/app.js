@@ -1339,7 +1339,10 @@ function render() {
     const cue = el("span", "row-open-cue"); cue.setAttribute("aria-hidden", "true");
     cue.append(el("span", "row-open-chevron"));
     heading.append(name, badge);
-    if (isLocalReview && field(row, "ID") === "E-009") heading.append(el("span", "new-episode-cue", "Newly added"));
+    if (isLocalReview && publicEpisodeId(row) === "E-009") {
+      tr.classList.add("new-episode-demo");
+      tr.title = "Newly added episode";
+    }
     episode.append(heading); tr.append(episode);
     const orbitCell = el("td", "orbit-cell"); tr.append(orbitCell);
     const objectCell = el("td", "object-cell"); objectCell.append(objects(row, data)); tr.append(objectCell);
@@ -1397,7 +1400,7 @@ async function init() {
     const shell = await fetch("./review-bar.html", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Local review shell returned ${response.status}`); return response.text(); });
     document.body.insertAdjacentHTML("afterbegin", shell);
     const reviewStyles = document.createElement("link"); reviewStyles.rel = "stylesheet"; reviewStyles.href = "../visualization/dev/review-nav.css"; document.head.append(reviewStyles);
-    const { createLocalReview } = await import("./local-review.js?v=10");
+    const { createLocalReview } = await import("./local-review.js?v=11");
     localReview = createLocalReview({ getMini: () => miniFrame?.contentWindow?.miniWorkshop, getFrame: () => miniFrame, setEditing: setMiniEditing, getSelectedEpisode: () => field(state.selected, "ID"), getPublicEpisode: assetId => state.live?.episodes?.find(row => row.ID === assetId)?.["Episode ID"] || assetId });
   }
   $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; setStatus(); render(); });
@@ -1414,7 +1417,8 @@ async function init() {
     if (e001) episodeUtcInterval(e001);
     return { ...snapshot, descriptions: descriptionFeed.descriptions, episodes, spaceTrack, publishedEpisodes: episodes.length, source: "live", snapshotUtc: feed.fetchedUtc, descriptionsCheckedUtc: descriptionFeed.fetchedUtc, descriptionError: descriptionFeed.error || "" };
   }).catch(error => ({ source: "unavailable", episodes: [], error: error.message }));
-  const reviewEpisode = new URLSearchParams(location.search).get("review");
+  const pageParams = new URLSearchParams(location.search);
+  const reviewEpisode = pageParams.get("episode") || pageParams.get("review");
   if (reviewEpisode) state.selected = state.live.episodes?.find(row => publicEpisodeId(row) === reviewEpisode) || null;
   if (state.selected && !hasEpisodeVisual(field(state.selected, "ID"))) state.selected = null;
   const initialSelection = state.selected;
@@ -1456,10 +1460,21 @@ async function init() {
       render();
     });
   }
-  if (state.selected) requestAnimationFrame(() => {
-    const row = document.querySelector(`.episode-row[data-episode-id="${field(state.selected, "ID")}"]`);
-    if (row) scrollTo({ top: scrollY + row.getBoundingClientRect().top - (document.getElementById("tableReviewBar")?.getBoundingClientRect().height || 0) - 16 });
-  });
+  if (state.selected) {
+    const selectedId = field(state.selected, "ID");
+    const alignSelectedRow = () => {
+      const row = document.querySelector(`.episode-row.selected[data-episode-id="${selectedId}"]`);
+      if (!row) return;
+      if (pageParams.get("embed") === "1" && window.parent !== window) {
+        window.parent.postMessage({ type: "espl-table-row", top: row.getBoundingClientRect().top }, "*");
+      } else {
+        const offset = document.getElementById("tableReviewBar")?.getBoundingClientRect().height || 0;
+        scrollTo({ top: Math.max(0, scrollY + row.getBoundingClientRect().top - offset - 16) });
+      }
+    };
+    requestAnimationFrame(alignSelectedRow);
+    setTimeout(alignSelectedRow, 350);
+  }
   const e001 = state.live.episodes?.find(row => field(row, "ID") === "E-001");
   if (e001) state.seriesPromise = calculateE001(episodeUtcInterval(e001)).then(series => { state.series = series; render(); return series; })
     .catch(error => { $("#status").dataset.kind = "error"; $("#status").textContent += ` E-001 reconstruction unavailable: ${error.message}.`; });

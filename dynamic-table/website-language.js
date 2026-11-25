@@ -12,11 +12,13 @@ const tablePages = [...document.querySelectorAll("[data-espl-episodes-page]")];
 for (const previous of tablePages.slice(0, -1)) previous.remove();
 
 // Preserve the selected episode when returning from a full visualization.
-const requestedEpisode = new URLSearchParams(location.search).get("review");
+const pageParams = new URLSearchParams(location.search);
+const requestedEpisode = pageParams.get("episode") || pageParams.get("review");
 if (requestedEpisode && /^E-\d{3}$/.test(requestedEpisode)) {
   for (const frame of document.querySelectorAll("[data-espl-episodes-page] iframe")) {
     const url = new URL(frame.src);
-    url.searchParams.set("review", requestedEpisode);
+    url.searchParams.set("episode", requestedEpisode);
+    url.searchParams.delete("review");
     if (frame.src !== url.href) frame.src = url.href;
   }
 }

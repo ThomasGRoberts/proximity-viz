@@ -19,6 +19,16 @@ async function jsonRequest(path, payload) {
 
 export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEpisode, getPublicEpisode }) {
   const bar = $("tableReviewBar"), status = $("tableReviewStatus"), pins = $("tableSpotPins");
+  const markerPicker = $("newEpisodeMarker");
+  if (markerPicker) {
+    const savedMarker = localStorage.getItem("espl-new-episode-marker");
+    markerPicker.value = ["corner", "spark", "rail"].includes(savedMarker) ? savedMarker : "corner";
+    document.documentElement.dataset.newMarker = markerPicker.value;
+    markerPicker.addEventListener("change", () => {
+      document.documentElement.dataset.newMarker = markerPicker.value;
+      localStorage.setItem("espl-new-episode-marker", markerPicker.value);
+    });
+  }
   if (!document.documentElement.classList.contains("mobile-review-frame")) {
     const button = $("tableMobilePreview"), stage = $("mobileReviewStage"), frame = $("mobileReviewFrame");
     button.addEventListener("click", () => {

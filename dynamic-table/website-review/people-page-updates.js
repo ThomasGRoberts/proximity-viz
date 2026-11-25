@@ -5,6 +5,11 @@
   const style = document.createElement('style');
   style.id = 'espl-people-author-row-style';
   style.textContent = `
+    @media(max-width:700px){
+      #espl-people-page #studentOverlay.overlay{--biocard-inset:max(16px,env(safe-area-inset-top),env(safe-area-inset-bottom));top:0;bottom:auto;height:100vh;height:100dvh;min-height:0;box-sizing:border-box;padding:var(--biocard-inset) 8px!important}
+      #espl-people-page #studentOverlay .overlay-content{width:100%;max-height:100%;min-height:0;overflow-y:auto}
+      #espl-people-page #studentOverlay .overlay-controls{top:0;z-index:6;background:#fff}
+    }
     @media(min-width:900px){#studentOverlay .publication-card{grid-template-columns:minmax(0,1fr) minmax(360px,38%)}}
     #studentOverlay .publication-card .knowledge-output-media{min-width:0;overflow:hidden}
     #studentOverlay .publication-card .knowledge-slide__people{display:flex;flex-flow:row nowrap;justify-content:flex-start;align-items:center;gap:6px;width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
