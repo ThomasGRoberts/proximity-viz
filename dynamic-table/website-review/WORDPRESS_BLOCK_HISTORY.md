@@ -4,6 +4,8 @@ The website review pane's Copy HTML button reads the complete `*-complete-block.
 
 | Date | Pages | Change |
 | --- | --- | --- |
+| 2026-11-25 | SBI, Proximity, Lunar projects | Kept mobile model and data repository actions beside their icons at narrow widths. Updated complete blocks to `project-page-updates.js?v=30`. |
+| 2026-11-25 | People | Made the mobile biocard's Copy link and close controls scroll with the card content. |
 | 2026-11-25 | SBI, Proximity, Lunar projects | Wait for all project collaborator portraits to load before revealing the team; narrow each collaborator hover card by 10 px. Updated full blocks to `project-page-updates.js?v=23`. |
 | 2026-11-25 | SBI, Proximity, Lunar projects | Put the featured action below the banner on mobile Proximity and Lunar pages, and give four mobile author circles equal outer margins and equal spacing. Updated full blocks to `project-page-updates.js?v=22`. |
 | 2026-11-25 | SBI, Proximity, Lunar projects | Show the featured banner icon immediately when the banner frame loads, and shorten its entrance motion. Updated full blocks to `project-page-updates.js?v=21`. |
