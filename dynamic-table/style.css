@@ -1126,12 +1126,14 @@ html.embedded-table .table-wrap .expanded-row .expanded-inner{max-height:none!im
   .table-wrap .expanded-row .expanded-inner.has-visual::after{top:-2px;bottom:0;width:3px;border-radius:0 0 0 9px}
 }
 
-/* Selected headers and their disclosures share one gold edge. The E-009
-   miniature uses the same borderless frame treatment as the other episodes. */
-.table-wrap tr.episode-row.selected td:first-child::before{width:3px;border-radius:3px 3px 0 0}
+/* Selected headers and their disclosures share one gold edge with round ends.
+   The E-009 miniature uses the same borderless frame as the other episodes. */
+.table-wrap tr.episode-row.selected td:first-child::before{top:2px;width:4px;border-radius:999px 999px 0 0}
 .table-wrap tr.expanded-row .expanded-inner::after,
-.table-wrap tr.expanded-row .expanded-inner.has-visual::after{width:3px;border-radius:0 0 3px 3px}
+.table-wrap tr.expanded-row .expanded-inner.has-visual::after{bottom:2px;width:4px;border-radius:0 0 999px 999px}
 .table-wrap tr.expanded-row .orbital-preview iframe.e009-mini{border:0}
 @media(max-width:760px){
-  .table-wrap tr.episode-row.selected::before{width:3px!important;border-radius:3px 3px 0 0}
+  .table-wrap tr.episode-row.selected::before{top:2px;width:4px!important;border-radius:999px 999px 0 0}
+  .table-wrap tr.expanded-row .expanded-inner::after,
+  .table-wrap tr.expanded-row .expanded-inner.has-visual::after{width:4px!important}
 }

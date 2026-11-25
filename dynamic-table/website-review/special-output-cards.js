@@ -97,6 +97,8 @@
     #studentOverlay .publication-card .espl-author-overflow{display:grid!important;place-items:center!important;border:5px solid #fff!important;border-radius:50%!important;background:#c7c7c7!important;color:#353535!important}
     #studentOverlay .publication-card .espl-mobile-portraits{display:none!important}
     @media(max-width:767px){#studentOverlay .publication-card .espl-desktop-portraits{display:none!important}#studentOverlay .publication-card .espl-mobile-portraits{display:flex!important;width:100%!important}#studentOverlay .publication-card .knowledge-output-media{container-type:inline-size;--espl-mobile-circle-size:min(70px,calc((100cqw - 18px)/4))}#studentOverlay .publication-card .espl-mobile-portraits .knowledge-person-row{justify-content:space-evenly!important;gap:0!important;width:100%!important}#studentOverlay .publication-card .espl-mobile-portraits .knowledge-person,#studentOverlay .publication-card .espl-mobile-portraits .knowledge-person__photo{flex:0 0 var(--espl-mobile-circle-size)!important;width:var(--espl-mobile-circle-size)!important;height:var(--espl-mobile-circle-size)!important;max-width:70px!important}#studentOverlay .publication-card .espl-mobile-portraits[data-visible-count="1"] .knowledge-person-row,#studentOverlay .publication-card .espl-mobile-portraits[data-visible-count="2"] .knowledge-person-row,#studentOverlay .publication-card .espl-mobile-portraits[data-visible-count="3"] .knowledge-person-row{justify-content:flex-start!important;gap:8px!important}}
+    #studentOverlay .publication-card .knowledge-slide__people[data-full-slate="true"] .knowledge-person-row,#espl-area-page .publication-card .knowledge-slide__people[data-full-slate="true"] .knowledge-person-row{justify-content:space-evenly!important;gap:0!important;width:100%!important;max-width:100%!important}
+    #studentOverlay .publication-card .knowledge-slide__people[data-full-slate="false"] .knowledge-person-row,#espl-area-page .publication-card .knowledge-slide__people[data-full-slate="false"] .knowledge-person-row{justify-content:flex-start!important;gap:8px!important;width:100%!important;max-width:100%!important}
     @media(prefers-reduced-motion:reduce){#studentOverlay .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan),#espl-area-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
   root.prepend(style);
@@ -236,6 +238,44 @@
     root.querySelectorAll('.project-publications .publication-card[data-espl-authors-aligned]').forEach(card=>delete card.dataset.esplAuthorsAligned);
     update();
   }
+  function visibleAuthorIndices(names,slots,preferredIndex){
+    const count=Math.min(names.length,names.length>slots?slots-1:slots);
+    const indices=Array.from({length:count},(_,index)=>index);
+    if(names.length>slots&&preferredIndex>=count&&count)indices[count-1]=preferredIndex;
+    return indices;
+  }
+  function authorPortraits(names,slots,preferredIndex,mobile=false){
+    const indices=visibleAuthorIndices(names,slots,preferredIndex);
+    const omitted=names.filter((_,index)=>!indices.includes(index));
+    const people=document.createElement('div');people.className=`knowledge-slide__people ${mobile?'espl-mobile-portraits':'espl-desktop-portraits'}`;
+    people.dataset.authorCount=String(names.length);people.dataset.visibleCount=String(indices.length+(omitted.length?1:0));
+    people.dataset.fullSlate=String(indices.length+(omitted.length?1:0)===slots);
+    const row=document.createElement('div');row.className='knowledge-person-row';
+    for(const index of indices){
+      const name=names[index],member=memberRecords.get(nameKey(name)),wrapper=document.createElement(member?'a':'span');
+      wrapper.className='knowledge-person'+(member?'':' knowledge-person--fallback');wrapper.title=name;
+      if(member)wrapper.href=`https://espl.ae.gatech.edu/people/#${encodeURIComponent(member.anchor)}`;
+      const img=document.createElement('img');img.className='knowledge-person__photo';img.src=member?.photo||astronautPhoto;img.alt=name;img.loading='lazy';wrapper.append(img);row.append(wrapper);
+    }
+    if(omitted.length){const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.textContent=`+${omitted.length}`;more.title=omitted.join(', ');more.setAttribute('aria-label',`${omitted.length} more authors: ${omitted.join(', ')}`);row.append(more)}
+    people.append(row);return people;
+  }
+  function fitAuthorCard(card){
+    const {media,names,preferredIndex}=card._esplAuthorData||{};if(!media)return;
+    const width=media.getBoundingClientRect().width;if(width<80)return;
+    const mobile=matchMedia('(max-width:767px)').matches;
+    const people=media.querySelector(mobile?'.espl-mobile-portraits':'.espl-desktop-portraits');if(!people)return;
+    const photo=people.querySelector('.knowledge-person__photo,.espl-author-overflow');
+    const size=photo?.getBoundingClientRect().width||70;
+    const rowNode=people.querySelector('.knowledge-person-row');if(!rowNode)return;
+    const gap=parseFloat(getComputedStyle(rowNode).columnGap)||0;
+    const css=getComputedStyle(media),available=width-parseFloat(css.paddingLeft||0)-parseFloat(css.paddingRight||0);
+    const slots=Math.max(2,Math.floor((available+gap)/(size+gap)));
+    const key=`${mobile?'mobile':'desktop'}:${slots}`;if(media.dataset.esplAuthorSlots===key)return;
+    media.dataset.esplAuthorSlots=key;
+    people.replaceWith(authorPortraits(names,slots,preferredIndex,mobile));
+  }
+  window.addEventListener('resize',()=>root.querySelectorAll('.publication-card[data-espl-authors-aligned]').forEach(fitAuthorCard));
   function updateAreaAuthors(card){
     if(card.dataset.esplAuthorsAligned)return;
     const title=card.querySelector('.knowledge-slide__title')?.textContent||'';
@@ -245,41 +285,17 @@
     const names=authorRecords.get(publicationKey(title))||((existingCount&&fallback.length===existingCount)?fallback:null);
     if(!names?.length)return;
     const media=card.querySelector('.knowledge-output-media');if(!media)return;
-    const people=card.querySelector('.knowledge-slide__people')||document.createElement('div');people.className='knowledge-slide__people espl-desktop-portraits';people.dataset.authorCount=String(names.length);
-    const row=document.createElement('div');row.className='knowledge-person-row';
     const profileName=root.id==='studentOverlay'?root.querySelector('#overlayName')?.textContent?.trim():'';
     const profileMember=memberRecords.get(nameKey(profileName));
     const featuredIndex=names.findIndex(name=>nameKey(name)===nameKey(profileName) || (profileMember&&memberRecords.get(nameKey(name))?.anchor===profileMember.anchor));
     const preferredIndex=root.id==='studentOverlay'?featuredIndex:names.findIndex(name=>nameKey(name)===nameKey('Thomas G. Roberts'));
-    const selected=names.length>4?names.slice(0,3):names.slice();
-    if(names.length>4){
-      if(preferredIndex>2)selected[2]=names[preferredIndex];
+    media.replaceChildren(authorPortraits(names,4,preferredIndex),authorPortraits(names,4,preferredIndex,true));
+    card._esplAuthorData={media,names,preferredIndex};card.dataset.esplAuthorsAligned='true';
+    delete media.dataset.esplAuthorSlots;
+    if(!media._esplAuthorResizeObserver&&typeof ResizeObserver==='function'){
+      media._esplAuthorResizeObserver=new ResizeObserver(()=>fitAuthorCard(card));media._esplAuthorResizeObserver.observe(media);
     }
-    for(const name of selected){
-      const member=memberRecords.get(nameKey(name)),wrapper=document.createElement(member?'a':'span');wrapper.className='knowledge-person'+(member?'':' knowledge-person--fallback');wrapper.title=name;
-      if(member)wrapper.href=`https://espl.ae.gatech.edu/people/#${encodeURIComponent(member.anchor)}`;
-      const img=document.createElement('img');img.className='knowledge-person__photo';img.src=member?.photo||astronautPhoto;img.alt=name;img.loading='lazy';wrapper.append(img);row.append(wrapper);
-    }
-    if(names.length>4){
-      const omitted=names.filter(name=>!selected.includes(name));
-      const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.textContent=`+${omitted.length}`;
-      more.title=omitted.join(', ');more.setAttribute('aria-label',`${omitted.length} more authors: ${omitted.join(', ')}`);row.append(more);
-    }
-    people.replaceChildren(row);
-    const mobile=document.createElement('div');mobile.className='knowledge-slide__people espl-mobile-portraits';mobile.dataset.authorCount=String(names.length);
-    const indices=names.length>4?[0,1,2]:names.map((_,index)=>index);
-    if(names.length>4&&preferredIndex>2)indices[2]=preferredIndex;
-    const omitted=names.filter((_,index)=>!indices.includes(index));
-    mobile.dataset.visibleCount=String(indices.length+(omitted.length?1:0));
-    const mobileRow=document.createElement('div');mobileRow.className='knowledge-person-row';
-    for(const index of indices){
-      const name=names[index],member=memberRecords.get(nameKey(name));
-      const wrapper=document.createElement(member?'a':'span');wrapper.className='knowledge-person'+(member?'':' knowledge-person--fallback');wrapper.title=name;
-      if(member)wrapper.href=`https://espl.ae.gatech.edu/people/#${encodeURIComponent(member.anchor)}`;
-      const img=document.createElement('img');img.className='knowledge-person__photo';img.src=member?.photo||astronautPhoto;img.alt=name;img.loading='lazy';wrapper.append(img);mobileRow.append(wrapper);
-    }
-    if(omitted.length){const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.textContent=`+${omitted.length}`;more.title=omitted.join(', ');more.setAttribute('aria-label',`${omitted.length} more authors: ${omitted.join(', ')}`);mobileRow.append(more)}
-    mobile.append(mobileRow);media.replaceChildren(people,mobile);card.dataset.esplAuthorsAligned='true';
+    requestAnimationFrame(()=>fitAuthorCard(card));
   }
   function update() {
     if(root.id==='studentOverlay'){

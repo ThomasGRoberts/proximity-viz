@@ -130,7 +130,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/special-output-cards.js",
                     f"http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js",
                 )
-                html = '<!doctype html><html><head><base href="https://espl.ae.gatech.edu/"></head><body>' + block + '</body></html>'
+                html = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://espl.ae.gatech.edu/"></head><body>' + block + '</body></html>'
                 encoded = html.encode("utf-8")
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
