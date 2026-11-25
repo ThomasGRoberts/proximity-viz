@@ -50,6 +50,7 @@
     #espl-project-page .publication-card .espl-author-name,#espl-project-page .publication-card .espl-author-name:visited,#espl-project-page .publication-card .espl-author-name:hover{color:#252525;text-decoration:underline;text-decoration-color:#252525;text-underline-offset:2px}
     #espl-project-page .knowledge-output-card .espl-author-name,#espl-project-page .knowledge-output-card .espl-author-name:is(:visited,:hover,:focus-visible){color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px;transition:none!important}
     #espl-project-page .espl-mobile-special-summary,#espl-project-page .espl-mobile-special-people{display:none!important}
+    #espl-project-page .espl-mobile-portraits{display:none!important}
     #espl-project-page .project-outputs .publication-card .knowledge-slide__people{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;flex-wrap:nowrap;gap:7px;width:100%;max-width:100%}
     #espl-project-page .project-outputs .publication-card .knowledge-person-row{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%}
     #espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{display:grid;place-items:center;width:70px;height:70px;border-radius:50%;background:#efebe1;color:#615b50;font-weight:700}
@@ -60,6 +61,19 @@
     @keyframes espl-table-scan-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(25px)}}
     @media(max-width:999px){#espl-project-page .project-outputs .publication-card,.project-outputs .espl-special-card{grid-template-columns:1fr!important}#espl-project-page .project-outputs .publication-card .knowledge-output-media{justify-content:flex-start;min-height:0;padding:0 1.65rem 1.25rem}}
     @media(max-width:767px){#espl-project-page .project-outputs .espl-special-card{display:block!important;max-width:100%;min-width:0}#espl-project-page .espl-special-card .knowledge-output-main{width:100%!important;min-width:0!important;box-sizing:border-box}#espl-project-page .espl-special-card .model-output-media{display:none!important}#espl-project-page .espl-special-card .espl-mobile-special-summary{display:block!important}#espl-project-page .espl-special-card .espl-mobile-special-people{display:flex!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box;min-height:0;padding:0 1.2rem 1.2rem;overflow-x:auto}#espl-project-page .espl-mobile-special-people .knowledge-slide__people{width:100%;max-width:none;justify-content:flex-start}#espl-project-page .espl-mobile-special-people .knowledge-person-row{display:flex;flex-wrap:nowrap;justify-content:flex-start;gap:8px;width:max-content}#espl-project-page .espl-mobile-special-people .knowledge-person__photo{width:70px;height:70px}#espl-project-page .project-outputs .publication-card .knowledge-output-media{padding:0 1.2rem 1.2rem;overflow-x:auto}#espl-project-page .project-outputs .publication-card[data-portraits] .knowledge-person__photo{width:70px;height:70px}}
+    @media(max-width:767px){
+      #espl-project-page .project-outputs .publication-card .knowledge-output-media{container-type:inline-size;--espl-mobile-circle-size:min(70px,calc((100cqw - 18px)/4))}
+      #espl-project-page .project-outputs .publication-card .knowledge-output-media{overflow:visible!important}
+      #espl-project-page .publication-card .espl-desktop-portraits{display:none!important}
+      #espl-project-page .publication-card .espl-mobile-portraits{display:flex!important;width:100%!important;max-width:100%!important}
+      #espl-project-page .publication-card .espl-mobile-portraits[data-visible-count="1"]{--espl-mobile-circle-size:min(70px,100cqw)}
+      #espl-project-page .publication-card .espl-mobile-portraits[data-visible-count="2"]{--espl-mobile-circle-size:min(70px,calc((100cqw - 6px)/2))}
+      #espl-project-page .publication-card .espl-mobile-portraits[data-visible-count="3"]{--espl-mobile-circle-size:min(70px,calc((100cqw - 12px)/3))}
+      #espl-project-page .publication-card .espl-mobile-portraits .knowledge-person-row{display:flex!important;justify-content:space-evenly!important;align-items:center!important;gap:6px!important;width:100%!important;max-width:100%!important}
+      #espl-project-page .publication-card .espl-mobile-portraits .knowledge-person{flex:0 0 var(--espl-mobile-circle-size)!important;width:var(--espl-mobile-circle-size)!important;height:var(--espl-mobile-circle-size)!important;min-width:0!important;max-width:70px!important}
+      #espl-project-page .publication-card .espl-mobile-portraits .knowledge-person__photo{display:grid!important;place-items:center!important;width:100%!important;height:100%!important}
+      #espl-project-page .espl-special-card .espl-mobile-special-people .knowledge-person__photo{width:70px!important;height:70px!important}
+    }
     @media(max-width:380px){#espl-project-page .espl-special-card .model-output-media{flex-wrap:wrap}#espl-project-page .espl-special-card .model-text-link{width:100%;font-size:11px}}
     @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
@@ -217,7 +231,7 @@
   }
   function portraitsNode(row) {
     const names=rowField(row,'Authors').replace(/,?\s+and\s+/gi,',').split(',').map(name=>name.trim()).filter(Boolean);
-    const people=document.createElement('div');people.className='knowledge-slide__people';people.dataset.authorCount=String(names.length);
+    const people=document.createElement('div');people.className='knowledge-slide__people espl-desktop-portraits';people.dataset.authorCount=String(names.length);
     const holder=document.createElement('div');holder.className='knowledge-person-row';
     const selected=names.length>5?names.slice(0,4):names.slice();
     if(names.length>5){
@@ -233,6 +247,22 @@
     }
     if(names.length>5){const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.title=names.filter(name=>!selected.includes(name)).join(', ');more.textContent=`+${names.length-selected.length}`;holder.append(more)}
     if(!holder.childElementCount)return null;
+    people.append(holder);return people;
+  }
+  function mobilePortraitsNode(row){
+    const names=rowField(row,'Authors').replace(/,?\s+and\s+/gi,',').split(',').map(name=>name.trim()).filter(Boolean);
+    if(!names.length)return null;
+    const people=document.createElement('div');people.className='knowledge-slide__people espl-mobile-portraits';people.dataset.authorCount=String(names.length);
+    const holder=document.createElement('div');holder.className='knowledge-person-row';
+    const selected=names.length>4?names.slice(0,3):names;
+    people.dataset.visibleCount=String(selected.length+(names.length>4?1:0));
+    for(const name of selected){
+      const info=authorPhoto[authorKey(name)],person=document.createElement(info?'a':'span');
+      person.className='knowledge-person';person.title=name;
+      if(info)person.href=`https://espl.ae.gatech.edu/people/#${info[0]}`;
+      const photo=document.createElement('img');photo.className='knowledge-person__photo';photo.src=info?.[1]||astronautPhoto;photo.alt=name;photo.loading='lazy';person.append(photo);holder.append(person);
+    }
+    if(names.length>4){const more=document.createElement('span');more.className='knowledge-person espl-author-overflow';more.title=names.slice(3).join(', ');more.textContent=`+${names.length-3}`;holder.append(more)}
     people.append(holder);return people;
   }
   function mobileSpecialPortraitsNode(row){
@@ -282,7 +312,7 @@
       }
     } else {
       const portraits=portraitsNode(row);
-      if(portraits){const media=document.createElement('div');media.className='knowledge-output-media';media.append(portraits);card.dataset.portraits=portraits.querySelectorAll('img').length;card.append(media)}
+      if(portraits){const media=document.createElement('div');media.className='knowledge-output-media';media.append(portraits);const mobilePortraits=mobilePortraitsNode(row);if(mobilePortraits)media.append(mobilePortraits);card.dataset.portraits=portraits.querySelectorAll('img').length;card.append(media)}
       else card.classList.add('no-portraits');
     }
     card.addEventListener('click',event=>{if(event.target.closest('a,button')||String(getSelection()||''))return;location.href=href});

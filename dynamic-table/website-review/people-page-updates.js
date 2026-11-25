@@ -48,10 +48,10 @@
     #espl-people-page #studentOverlay .student-bio a,#espl-people-page #studentOverlay .student-bio a:visited,#espl-people-page #studentOverlay .student-bio a:hover,#espl-people-page #studentOverlay .student-bio a:focus-visible{color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px}
     #espl-people-page #studentOverlay .knowledge-slide__summary a[href*="/people/"],#espl-people-page #studentOverlay .knowledge-slide__summary a[href*="/people/"]:is(:visited,:hover,:focus-visible){color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px;transition:none!important}
     @media(max-width:700px){
-      #espl-people-page #studentOverlay .profile-head{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:start!important;gap:12px!important}
-      #espl-people-page #studentOverlay .profile-head .profile-photo{flex:none!important;width:min(var(--espl-student-photo-size,218px),140px)!important;height:min(var(--espl-student-photo-size,218px),140px)!important}
-      #espl-people-page #studentOverlay .profile-head-copy{width:100%!important;min-height:0!important;padding-top:0!important}
-      #espl-people-page #studentOverlay .espl-student-socials{margin:12px 0 0!important;padding-top:0!important}
+      #espl-people-page #studentOverlay .profile-head{display:grid!important;grid-template-columns:minmax(0,1fr)!important;justify-items:center!important;align-items:start!important;gap:12px!important;text-align:center!important}
+      #espl-people-page #studentOverlay .profile-head .profile-photo{flex:none!important;width:var(--espl-student-photo-size,218px)!important;height:var(--espl-student-photo-size,218px)!important;margin:0 auto!important}
+      #espl-people-page #studentOverlay .profile-head-copy{width:100%!important;min-height:0!important;align-items:center!important;padding-top:0!important;text-align:center!important}
+      #espl-people-page #studentOverlay .espl-student-socials{justify-content:center!important;margin:12px auto 0!important;padding-top:0!important}
     }
   `;
   root.prepend(style);
@@ -84,7 +84,7 @@
     const row=records.get(name.toLowerCase());
     const card=[...root.querySelectorAll('.student-card')].find(item=>item.querySelector('.student-name')?.textContent.trim()===name);
     const cardPhoto=card?.querySelector('.student-photo');
-    if(cardPhoto){const size=Math.min(cardPhoto.getBoundingClientRect().width,innerWidth*.4);overlay.style.setProperty('--espl-student-photo-size',`${Math.round(size)}px`)}
+    if(cardPhoto){const size=cardPhoto.getBoundingClientRect().width;overlay.style.setProperty('--espl-student-photo-size',`${Math.round(size)}px`)}
     titleNode.parentElement.querySelector('.espl-student-socials')?.remove();
     if(!row)return;
     const list=document.createElement('ul');list.className='faculty-socials wp-block-social-links espl-student-socials';list.setAttribute('aria-label',`${name} contact links`);
