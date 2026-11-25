@@ -123,7 +123,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
     beginComment(anchor, (event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height, publicLabel(spotLabel(key)));
   };
   const sync = () => {
-    const m = model(), ready = !!m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(getSelectedEpisode());
+    const m = model(), ready = !!m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009"].includes(getSelectedEpisode());
     if (ready && getSelectedEpisode() === "E-005") {
       const row = document.querySelector('.episode-row[data-episode-id="E-005"]');
       if (row) row.dataset.miniSelected = m.selected === "C" ? "C" : "B";
@@ -238,7 +238,7 @@ export function createLocalReview({ getMini, getFrame, setEditing, getSelectedEp
   });
   $("miniExportSettings").addEventListener("click", () => {
     const m = model(), episodeId = getSelectedEpisode();
-    const draft = m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId) ? {
+    const draft = m && ["E-001", "E-002", "E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009"].includes(episodeId) ? {
       episodeId: publicId(episodeId), windowId: m.window.id, frameMode: m.frameMode,
       loopStartUtc: new Date(loopStart ?? m.loopStart).toISOString(),
       loopEndUtc: new Date(loopEnd ?? m.loopEnd).toISOString(), rate: m.rate,

@@ -367,7 +367,18 @@
     const href=safeURL(rowField(featuredRow,'URL'));if(!href)return;
     const model=typeOf(featuredRow)==='model',repository=typeOf(featuredRow)==='data repository';
     const label=model?'Explore the interactive model':repository?'Explore the data':'Read the publication';
-    if(native&&model){native.href=href;native.setAttribute('aria-label',label);native.style.removeProperty('visibility');native.dispatchEvent(new doc.defaultView.Event('mouseleave'));native.classList.remove('is-arrived','is-open');native.classList.add('is-arrived');doc.defaultView.requestAnimationFrame(()=>{native.dispatchEvent(new doc.defaultView.Event('mouseenter'));doc.defaultView.setTimeout(()=>native.dispatchEvent(new doc.defaultView.Event('mouseleave')),4800)});return}
+    if(native&&model){
+      native.href=href;native.setAttribute('aria-label',label);native.style.removeProperty('visibility');
+      native.dispatchEvent(new doc.defaultView.Event('mouseleave'));
+      native.classList.remove('is-arrived','is-open');
+      // Let the below-banner position paint before starting the entrance.
+      void native.offsetHeight;
+      doc.defaultView.requestAnimationFrame(()=>doc.defaultView.requestAnimationFrame(()=>{
+        native.classList.add('is-arrived');
+        doc.defaultView.setTimeout(()=>{native.dispatchEvent(new doc.defaultView.Event('mouseenter'));doc.defaultView.setTimeout(()=>native.dispatchEvent(new doc.defaultView.Event('mouseleave')),2600)},700);
+      }));
+      return;
+    }
     native?.remove();
     const banner=doc.querySelector('main.banner,.banner')||doc.body;
     if(!doc.getElementById('espl-featured-hero-style')){

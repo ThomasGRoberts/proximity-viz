@@ -25,10 +25,10 @@ if (!episodeId) {
 }
 const episodeModule = {
   "E-001": "./compare.js?v=32", "E-002": "./episode-e002.js?v=18",
-  "E-005": "./episode-e005.js?v=22", "E-003": "./episode-e003.js?v=17",
-  "E-006": "./episode-e006.js?v=24", "E-008": "./episode-e008.js?v=16",
-  "E-016": "./episode-e016.js?v=14", "E-059": "./episode-e059.js?v=16",
-  ...(localReview ? { "E-009": "./episode-e009.js?v=2" } : {}),
+  "E-005": "./episode-e005.js?v=23", "E-003": "./episode-e003.js?v=18",
+  "E-006": "./episode-e006.js?v=25", "E-008": "./episode-e008.js?v=17",
+  "E-016": "./episode-e016.js?v=15", "E-059": "./episode-e059.js?v=17",
+  ...(localReview ? { "E-009": "./episode-e009.js?v=3" } : {}),
 }[episodeId];
 if (episodeModule) import(episodeModule).then(async () => {
   if (query.get("mini") === "1") return;

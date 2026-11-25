@@ -2,10 +2,11 @@ import { emojiForOwner, flagsForOwner } from "./flag-icons.js";
 import { renderSatelliteShortcodes } from "./satellite-shortcodes.js";
 import { loadCurrentEpisodes, loadCurrentDescriptions, episodeUtcInterval, episodeChapters, cleanCospar, parseCsv } from "../shared/episode-feed.js?v=7";
 import { calculateE001 } from "../shared/e001-live-metrics.js";
-import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js";
+import { historicalEpisodeMetrics } from "../shared/historical-episode-metrics.js?v=2";
 import { safeEpisodeName, episodeNameText } from "../shared/episode-name.js";
 import { estimatedValue } from "../shared/estimated-values.js?v=3";
 import { applyMarkerCssVariables } from "../shared/marker-spec.js?v=3";
+import { launchSiteWithFlags } from "../shared/launch-site-flags.js";
 
 applyMarkerCssVariables();
 
@@ -225,7 +226,6 @@ let activeObject = null, pinnedObject = false, hideTimer = null, showTimer = nul
 function closeObject() { clearTimeout(hideTimer); clearTimeout(showTimer); if (activeObject) activeObject.setAttribute("aria-expanded", "false"); activeObject = null; pinnedObject = false; popover.hidden = true; }
 function scheduleObjectClose() { clearTimeout(hideTimer); clearTimeout(showTimer); if (!pinnedObject) hideTimer = setTimeout(() => { if (!popover.matches(":hover") && !popover.contains(document.activeElement)) closeObject(); }, 320); }
 function addMetadata(dl, label, value) { if (!value) return; const item = el("div"); item.append(el("dt", "", label), el("dd", "", value)); dl.append(item); }
-const launchFlagEmoji = { AFETR:["🇺🇸"], AFWTR:["🇺🇸"], DLS:["🇷🇺"], FRGUI:["🇫🇷"], JSC:["🇨🇳"], PKMTR:["🇷🇺"], PLMSC:["🇷🇺"], RLLB:["🇳🇿"], SRILR:["🇮🇳"], TAISC:["🇨🇳"], TANSC:["🇯🇵"], TTMTR:["🇰🇿","🇷🇺"], TYMSC:["🇰🇿","🇷🇺"], WSC:["🇨🇳"], XICLF:["🇨🇳"] };
 function buildObjectPopover(info) {
   popover.replaceChildren(); popover.append(el("strong", "object-popover-title", info.name));
   if (!info.satcat) {
@@ -245,7 +245,7 @@ function buildObjectPopover(info) {
   addMetadata(dl, "Object type", objectTypes[s.OBJECT_TYPE] || s.OBJECT_TYPE);
   addMetadata(dl, "Launch date", fullDate(s.LAUNCH || s.LAUNCH_DATE));
   const siteCode = s.SITE || s.LAUNCH_SITE;
-  if (info.launchSite) addMetadata(dl, "Launch site", `${info.launchSite.replace(/\s*\(/g, " (")}${(launchFlagEmoji[siteCode] || []).map(flag => ` ${flag}`).join("")}`);
+  if (info.launchSite) addMetadata(dl, "Launch site", launchSiteWithFlags(info.launchSite.replace(/\s*\(/g, " ("), siteCode));
   popover.append(dl);
   const sourceRow = el("div", "object-source-row"), sourceValue = el("dd");
   sourceRow.append(el("dt", "", "Data source"));
@@ -802,7 +802,7 @@ function periodNode(row) { const node = el("span", "period-label", periodInfo(ro
 function proximityNode(row, key) {
   const cell = el("div", "proximity-cell");
   const id = field(row, "ID"), metric = rowMetric(row, key);
-  if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", id === "E-001" && !state.series || id === "E-002" && !state.e002Metrics || ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(id) && !state.historicalMetrics[id] ? "Loading…" : "Unavailable")); return cell; }
+  if (!Number.isFinite(metric?.value)) { cell.append(el("span", "plot-pending", id === "E-001" && !state.series || id === "E-002" && !state.e002Metrics || ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009"].includes(id) && !state.historicalMetrics[id] ? "Loading…" : "Unavailable")); return cell; }
   const value = metric.value > 0 && metric.value < 1 ? "<1" : estimatedValue(metric.value, key === "distance" ? "separationKm" : "relativeSpeedMps", field(row, "ID"));
   cell.append(el("strong", "minimum-value", value), el("span", "minimum-unit", key === "distance" ? "km" : "m/s"));
   const pair = metric.pair?.split(":");
@@ -969,7 +969,7 @@ function stageEpisodeAssets() {
   if (matchMedia("(max-width:760px)").matches) return;
   const idle = callback => "requestIdleCallback" in window
     ? requestIdleCallback(callback, { timeout: 1500 }) : setTimeout(callback, 250);
-  const orbitalAssets = [["e003", 17], ["e005", 22], ["e006", 24], ["e008", 16], ["e016", 14], ["e059", 16]];
+  const orbitalAssets = [["e003", 18], ["e005", 23], ["e006", 25], ["e008", 17], ["e016", 15], ["e059", 17]];
   const assets = [
     "../visualization/Viz/vendor/three/three.module.js",
     "../visualization/Viz/vendor/countries-50m.json",
@@ -1242,7 +1242,7 @@ function startPreview(row) {
     settleMountedMini(warmedE005Frame, "E-005");
     return;
   }
-  if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
+  if (["E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009"].includes(episodeId)) {
     const frame = el("iframe", `e${episodeId.slice(2)}-mini`);
     revealMiniAsOneScene(frame);
     frame.src = new URL(`../visualization/Viz/compare.html?mini=1&asset=${episodeId}&table=34`, location.href).href;
@@ -1250,7 +1250,7 @@ function startPreview(row) {
     frame.tabIndex = -1; frame.setAttribute("aria-hidden", "true");
     host.replaceChildren(frame);
     miniFrame = frame; miniBackdropHost = host;
-    if (["E-003", "E-006", "E-008", "E-016", "E-059"].includes(episodeId)) {
+    if (["E-003", "E-006", "E-008", "E-016", "E-059", "E-009"].includes(episodeId)) {
       const expanded = document.querySelector(".expanded-row");
       const fillExpandedRow = () => {
         if (!expanded?.isConnected || !host.isConnected) return;
@@ -1394,7 +1394,7 @@ async function init() {
     const shell = await fetch("./review-bar.html", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error(`Local review shell returned ${response.status}`); return response.text(); });
     document.body.insertAdjacentHTML("afterbegin", shell);
     const reviewStyles = document.createElement("link"); reviewStyles.rel = "stylesheet"; reviewStyles.href = "../visualization/dev/review-nav.css"; document.head.append(reviewStyles);
-    const { createLocalReview } = await import("./local-review.js?v=8");
+    const { createLocalReview } = await import("./local-review.js?v=9");
     localReview = createLocalReview({ getMini: () => miniFrame?.contentWindow?.miniWorkshop, getFrame: () => miniFrame, setEditing: setMiniEditing, getSelectedEpisode: () => field(state.selected, "ID"), getPublicEpisode: assetId => state.live?.episodes?.find(row => row.ID === assetId)?.["Episode ID"] || assetId });
   }
   $("#preview-toggle").addEventListener("change", event => { state.usePreview = event.target.checked; state.selected = null; setStatus(); render(); });
@@ -1438,7 +1438,7 @@ async function init() {
     if (state.sort.key === "distance" || state.sort.key === "speed") render();
   });
   state.selected = initialSelection; render();
-  for (const id of ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"]) {
+  for (const id of ["E-003", "E-005", "E-006", "E-008", "E-016", "E-059", ...(localReviewMode ? ["E-009"] : [])]) {
     const row = state.live.episodes?.find(item => item.ID === id);
     if (!row) continue;
     historicalEpisodeMetrics(row, state.live.spaceTrack).then(metrics => {

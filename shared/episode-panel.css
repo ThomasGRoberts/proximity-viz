@@ -10,6 +10,15 @@ body[class*="-shared"] #ui .episode-focus .episodeDescription.story-collapsed{wi
 body[class*="-shared"] #ui .episode-focus-period{display:block;margin:4px 0 0;color:#857454;font-size:10px;line-height:1.25;font-weight:400}
 body[class*="-shared"] #ui :is(.pair-sticky,.e003-pair-sticky,.e005-pair-sticky,.e006-pair-sticky,.e008-pair-sticky,.e016-pair-sticky,.e059-pair-sticky,.e009-pair-sticky){border-bottom:1px solid #e2d4ad!important;border-left:3px solid #d6a527!important;background:#fff4cf!important}
 body[class*="-shared"] #ui :is(.pair-sticky,.e003-pair-sticky,.e005-pair-sticky,.e006-pair-sticky,.e008-pair-sticky,.e016-pair-sticky,.e059-pair-sticky,.e009-pair-sticky) b{font-size:9px!important;font-weight:700!important;line-height:1.1!important}
+/* The selected-pair cue must keep its final disclosure chevron inside the panel. */
+body[class*="-shared"] #ui #pairSticky{min-width:0;max-width:100%;overflow:visible}
+body[class*="-shared"] #ui #pairSticky>span{min-width:0!important}
+body[class*="-shared"] #ui #pairSticky :is(.pair-sticky-intro,[class$="-pair-intro"]){flex:0 1 auto!important;font-size:8px!important;letter-spacing:.02em!important}
+body[class*="-shared"] #ui #pairSticky :is(.pair-sticky-choices,[class$="-pair-choices"]){flex:0 1 auto!important;width:auto!important;max-width:50%!important}
+body[class*="-shared"] #ui #pairSticky :is(.pair-sticky-target,[class$="-pair-chaser"]){flex:1 1 0!important;overflow:hidden}
+body[class*="-shared"] #ui #pairSticky :is(.pair-sticky-toggle,[class$="-pair-toggle"]){box-sizing:border-box;width:100%!important;min-width:0!important;padding-inline:5px!important}
+body[class*="-shared"] #ui #pairSticky b{min-width:0;font-size:8px!important;overflow:hidden;text-overflow:ellipsis}
+body[class*="-shared"] #ui #pairSticky :is(.pair-sticky-chevron,[class$="-pair-chevron"]){flex:0 0 auto!important}
 body[class*="-shared"] :is(.e003-chapter-arrow,.e005-chapter-arrow,.e006-chapter-arrow,.e008-chapter-arrow,.e016-chapter-arrow,.e059-chapter-arrow){color:#b88913!important}
 @media(min-width:761px){
   body:is(.e003-shared,.e005-shared,.e006-shared,.e008-shared,.e016-shared,.e059-shared):not([class*="-multi-chapter"]):not([class*="-review"]) #ui{max-height:calc(100vh - 101px)}

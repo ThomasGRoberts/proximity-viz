@@ -18,6 +18,7 @@ import { analyzeEpisode, exclusiveQualificationIntervals } from "./e001-analysis
 import { drawOrbitalChart } from "../dev/e002-control-panel-preview/orbital-preview.js";
 import { installGlossary } from "../dev/e002-control-panel-preview/glossary.js?v=2";
 import { formatDwellDuration } from "../../shared/format-duration.js";
+import { launchSiteWithFlags } from "../../shared/launch-site-flags.js";
 import { safeEpisodeName } from "../../shared/episode-name.js";
 import { offsetCameraForPanel, watchEpisodePanelLayout } from "./episode-scene-layout.js";
 
@@ -479,11 +480,10 @@ async function start() {
         const makeSection = title => { const section = document.createElement("section"), h = document.createElement("h4"), dl = document.createElement("dl"); section.className = "e005-metadata-section"; h.textContent = title; section.append(h, dl); return { section, dl }; };
         const addRow = (dl, label, value, href) => { if (value == null || value === "") return; const row = document.createElement("div"), dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = label; if (href) { const link = document.createElement("a"); link.className = "espl-news-external"; link.href = href; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = value; link.insertAdjacentHTML("beforeend", svgLink); dd.append(link); } else dd.textContent = value; if (label === "TLE age") dd.className = "tleAgeValue"; row.append(dt, dd); dl.append(row); };
         const identity = makeSection("Satellite Details");
-        const flags = { AFETR: " 🇺🇸", FRGUI: " 🇫🇷", JSC: " 🇨🇳", WSC: " 🇨🇳", TYMSC: " 🇰🇿 🇷🇺", TTMTR: " 🇰🇿 🇷🇺", XICLF: " 🇨🇳" };
         const country = { PRC: "China (PRC) 🇨🇳", US: "United States 🇺🇸" }[record.COUNTRY] || record.COUNTRY;
         addRow(identity.dl, "COSPAR ID", item.cospar); addRow(identity.dl, "NORAD ID", item.norad);
         addRow(identity.dl, "Country / org.", country); addRow(identity.dl, "Object type", record.OBJECT_TYPE === "PAYLOAD" ? "Payload" : record.OBJECT_TYPE);
-        addRow(identity.dl, "Launch date", shortUtc(item.launchMs)); addRow(identity.dl, "Launch site", `${catalog.launchSiteNames?.[record.SITE] || record.SITE || "Unknown"}${flags[record.SITE] || ""}`);
+        addRow(identity.dl, "Launch date", shortUtc(item.launchMs)); addRow(identity.dl, "Launch site", launchSiteWithFlags(catalog.launchSiteNames?.[record.SITE], record.SITE));
         addRow(identity.dl, "Data source", "Space-Track", `https://www.space-track.org/basicspacedata/query/class/satcat/NORAD_CAT_ID/${encodeURIComponent(item.norad)}/format/json`);
         const orbital = makeSection("Orbital Details");
         addRow(orbital.dl, "Selected TLE epoch", utc(tle.ms)); addRow(orbital.dl, "TLE age", entry.card.dataset.tleAge);

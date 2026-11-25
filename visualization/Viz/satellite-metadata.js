@@ -1,4 +1,5 @@
 // SATCAT metadata in the native disclosures used by the SBI control panel.
+import { launchSiteWithFlags } from "../../shared/launch-site-flags.js";
 const host = document.getElementById("identity");
 const query = new URLSearchParams(location.search);
 const useSpaceTrack = query.get("published") === "1" || query.get("mini") === "1" || (query.get("dev") === "1" && ["localhost", "127.0.0.1"].includes(location.hostname));
@@ -17,7 +18,6 @@ const epochText = value => {
   return `${whole}${fraction ? `.${fraction}` : ""} UTC`;
 };
 const owner = code => code === "CIS" ? "Russia (CIS) 🇷🇺" : code === "FRIT" ? "France 🇫🇷 / Italy 🇮🇹" : code === "PRC" ? "China (PRC) 🇨🇳" : code;
-const siteFlags = code => ["TYMSC", "TTMTR"].includes(code) ? " 🇰🇿 🇷🇺" : code === "FRGUI" ? " 🇫🇷" : code === "WSC" ? " 🇨🇳" : "";
 function link(label, href) {
   const anchor = document.createElement("a");
   anchor.className = "espl-news-external"; anchor.href = href; anchor.target = "_blank"; anchor.rel = "noopener noreferrer";
@@ -54,7 +54,7 @@ async function render(card) {
   row(satellite, useSpaceTrack ? "Country / org." : "Country", owner(satcat.OWNER) || record.ownerName);
   row(satellite, "Object type", satcat.OBJECT_TYPE === "PAY" ? "Payload" : satcat.OBJECT_TYPE);
   row(satellite, "Launch date", dateText(satcat.LAUNCH_DATE));
-  row(satellite, "Launch site", `${(useSpaceTrack ? data.launchSiteNames : data.launchSites?.names)?.[satcat.LAUNCH_SITE] || satcat.LAUNCH_SITE}${siteFlags(satcat.LAUNCH_SITE)}`);
+  row(satellite, "Launch site", launchSiteWithFlags((useSpaceTrack ? data.launchSiteNames : data.launchSites?.names)?.[satcat.LAUNCH_SITE], satcat.LAUNCH_SITE));
   const identitySource = document.createElement("div"), identityLabel = document.createElement("dt"), identityValue = document.createElement("dd");
   identityLabel.textContent = "Data source";
   identityValue.append(useSpaceTrack

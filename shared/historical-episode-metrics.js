@@ -43,7 +43,7 @@ function norm(a, b) { return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z); }
 // Use each full visualization's chapter sampling cadence and nearest dated TLE.
 export async function historicalEpisodeMetrics(row, catalog) {
   const id = row.ID, objects = plottedObjects(row);
-  if (!["E-003", "E-005", "E-006", "E-008", "E-016", "E-059"].includes(id) || objects.length < 2) throw new Error(`No historical metric configuration for ${id}`);
+  if (!["E-003", "E-005", "E-006", "E-008", "E-016", "E-059", "E-009"].includes(id) || objects.length < 2) throw new Error(`No historical metric configuration for ${id}`);
   await satelliteLibrary();
   const libraries = Object.fromEntries(await Promise.all(objects.map(async ({ slot, cospar }) => {
     const record = catalog.records[cospar];

@@ -16,6 +16,7 @@
     #studentOverlay .project-publications .knowledge-slide__summary a[href*="/people/"],#studentOverlay .project-publications .knowledge-slide__summary a[href*="/people/"]:is(:visited,:hover,:focus-visible){color:#252525!important;text-decoration:underline!important;text-decoration-color:#252525!important;text-underline-offset:2px;transition:none!important}
     @media(min-width:768px){#espl-area-page .student-card{margin-block:8px!important}}
     #espl-area-page .espl-author-overflow{display:grid!important;place-items:center!important;flex:0 0 70px!important;width:70px!important;height:70px!important;box-sizing:border-box!important;margin:0!important;padding:0!important;border:5px solid #fff!important;border-radius:50%!important;background:#c7c7c7!important;color:#353535!important;font-weight:700!important;line-height:1!important;text-align:center!important}
+    #studentOverlay .espl-special-card{grid-template-columns:minmax(0,1fr) 380px!important}
     #studentOverlay .espl-special-card .model-output-media, #espl-area-page .espl-special-card .model-output-media{display:flex;align-items:center!important;align-self:stretch;height:100%;box-sizing:border-box;justify-content:flex-start;gap:14px;min-height:90px;padding:16px}
     #espl-area-page .espl-special-card .espl-mobile-special-summary,#espl-area-page .espl-special-card .espl-mobile-special-people{display:none!important}
     #studentOverlay .espl-special-card .model-polyhedron-link, #studentOverlay .espl-special-card .espl-table-icon-link,
@@ -24,7 +25,8 @@
     #espl-area-page .espl-special-card .model-polyhedron-canvas, #espl-area-page .espl-special-card .espl-table-icon{display:block;width:76px;height:76px;opacity:.9;transition:transform 260ms cubic-bezier(.34,1.56,.64,1),opacity .2s ease}
     #studentOverlay .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link):is(:hover,:focus-visible) :is(.model-polyhedron-canvas,.espl-table-icon),
     #espl-area-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link):is(:hover,:focus-visible) :is(.model-polyhedron-canvas,.espl-table-icon){transform:translateY(-2px) scale(1.055);opacity:1}
-    #studentOverlay .espl-special-card .model-text-link, #espl-area-page .espl-special-card .model-text-link{display:inline-flex;align-items:center;align-self:center!important;gap:8px;min-width:0;margin:0!important;color:#666;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(12px,1.15vw,16px);font-weight:400;line-height:1.25;white-space:nowrap}
+    #studentOverlay .espl-special-card .model-text-link, #espl-area-page .espl-special-card .model-text-link{display:inline-flex;align-items:center;align-self:center!important;gap:8px;min-width:0;margin:0!important;color:#666;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:clamp(14px,1.25vw,17px);font-weight:400;line-height:1.25;white-space:nowrap;transform:translateY(-2px)}
+    #studentOverlay .espl-special-card .espl-action-short,#espl-area-page .espl-special-card .espl-action-short{display:none}
     #studentOverlay .espl-special-card .model-text-link:hover, #espl-area-page .espl-special-card .model-text-link:hover{color:#666;text-decoration:none}
     #studentOverlay .espl-special-card .model-link-arrow, #espl-area-page .espl-special-card .model-link-arrow{display:inline-block}
     #studentOverlay .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.external-metadata-link),#espl-area-page .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.external-metadata-link){display:none!important}
@@ -50,12 +52,14 @@
     @media(max-width:767px){
       #espl-area-page .espl-special-card .espl-mobile-special-summary,#espl-area-page .espl-special-card .espl-mobile-special-people{display:none!important}
       #espl-area-page .espl-special-card .model-output-media{display:flex!important;min-height:0;padding:0 1.2rem 1.2rem!important}
-      #espl-area-page .espl-special-card .model-text-link,#studentOverlay .espl-special-card .model-text-link{display:inline-flex!important;font-size:13px!important;white-space:normal!important}
+      #espl-area-page .espl-special-card .model-text-link,#studentOverlay .espl-special-card .model-text-link{display:inline-flex!important;font-size:15px!important;white-space:normal!important}
       #espl-area-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}
       #studentOverlay .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.external-metadata-link){display:none!important}
-      #studentOverlay .espl-special-card .espl-type-media{display:flex!important;padding:0 1.2rem 1.2rem!important;min-height:0!important}
+      #studentOverlay .espl-special-card .knowledge-output-main{padding-bottom:.5rem!important}
+      #studentOverlay .espl-special-card .espl-type-media{display:flex!important;padding:0 1.65rem 1.2rem!important;min-height:0!important}
       #studentOverlay .espl-special-card .espl-type-media :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}
     }
+    @media(max-width:380px){#studentOverlay .espl-special-card .espl-action-full,#espl-area-page .espl-special-card .espl-action-full{display:none}#studentOverlay .espl-special-card .espl-action-short,#espl-area-page .espl-special-card .espl-action-short{display:inline}}
     #studentOverlay .publication-card .knowledge-person-row{display:flex!important;flex-wrap:nowrap!important;justify-content:flex-start!important;gap:8px!important}
     #studentOverlay .publication-card .knowledge-person__photo,#studentOverlay .publication-card .espl-author-overflow{box-sizing:border-box!important;flex:0 0 70px!important;width:70px!important;height:70px!important}
     #studentOverlay .publication-card .espl-author-overflow{display:grid!important;place-items:center!important;border:5px solid #fff!important;border-radius:50%!important;background:#c7c7c7!important;color:#353535!important}
@@ -265,7 +269,8 @@
           if(model){const canvas=document.createElement('canvas');canvas.className='model-polyhedron-canvas';canvas.setAttribute('aria-hidden','true');link.append(canvas);mountPolyhedron(canvas)}
           else link.innerHTML=tableIcon();
           const action=document.createElement('a');action.href=href;action.className='model-text-link';
-          action.textContent=model?'Explore the model':'Explore the data';
+          if(model){const full=document.createElement('span'),short=document.createElement('span');full.className='espl-action-full';short.className='espl-action-short';full.textContent='Explore the interactive model';short.textContent='Explore the model';action.append(full,short)}
+          else action.textContent='Explore the data';
           const arrow=document.createElement('span');arrow.className='model-link-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='→';action.append(arrow);
           media.append(link,action);card.append(media);
           if(model){
@@ -316,7 +321,8 @@
       action.className = 'model-text-link';
       const label = document.createElement('span');
       label.className = 'model-link-label-text';
-      label.textContent = model ? 'Explore the model' : 'Explore the data';
+      if(model){const full=document.createElement('span'),short=document.createElement('span');full.className='espl-action-full';short.className='espl-action-short';full.textContent='Explore the interactive model';short.textContent='Explore the model';label.append(full,short)}
+      else label.textContent = 'Explore the data';
       const arrow = document.createElement('span');
       arrow.className = 'model-link-arrow';
       arrow.setAttribute('aria-hidden', 'true');
