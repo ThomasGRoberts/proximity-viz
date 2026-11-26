@@ -4,6 +4,9 @@ The website review pane's Copy HTML button reads the complete `*-complete-block.
 
 | Date | Pages | Change |
 | --- | --- | --- |
+| 2026-11-25 | SBI, Proximity, Lunar projects | Tightened line spacing within collaborator names, separated names from titles, and moved mobile model/repository actions closer to their icons. Updated complete blocks to `project-page-updates.js?v=33`. |
+| 2026-11-25 | Space Security, Space Sustainability, Space Coordination | Kept four-author desktop cards in the first four of five portrait slots and moved mobile model/repository actions closer to their icons. Updated complete blocks to `special-output-cards.js?v=17`. |
+| 2026-11-25 | Proximity table | Aligned expanded desktop rows at the top of the WordPress host viewport; the complete table block now points to the refreshed iframe URL. |
 | 2026-11-25 | SBI, Proximity, Lunar projects | Kept mobile model and data repository actions beside their icons at narrow widths. Updated complete blocks to `project-page-updates.js?v=30`. |
 | 2026-11-25 | People | Made the mobile biocard's Copy link and close controls scroll with the card content. |
 | 2026-11-25 | SBI, Proximity, Lunar projects | Wait for all project collaborator portraits to load before revealing the team; narrow each collaborator hover card by 10 px. Updated full blocks to `project-page-updates.js?v=23`. |

@@ -23,6 +23,9 @@
     #espl-project-page .project-person span{margin-top:10px!important;color:#333!important;font-size:12px!important;line-height:1.4!important;white-space:pre-line!important}
     ` : ''}
     #espl-project-page .project-person strong{display:block;width:calc(100% + 20px)!important;max-width:none!important;margin-left:-10px!important}
+    #espl-project-page .project-person{gap:0!important}
+    #espl-project-page .project-person strong{line-height:1.12!important}
+    #espl-project-page .project-team .project-person span{margin-top:5px!important;line-height:1.3!important}
     #espl-project-page .project-team:not([data-espl-team-ready="true"]){visibility:hidden}
     #espl-project-page .project-team .project-person{box-sizing:border-box;width:calc(100% - 2px);margin-inline:1px}
     #espl-project-page .project-person:hover,#espl-project-page .project-person:focus-visible{border-color:transparent!important;box-shadow:0 0 0 8px #fff,0 13px 30px #00000018!important}
@@ -83,7 +86,7 @@
     #espl-project-page .project-outputs .publication-card .knowledge-slide__people[data-full-slate="true"] .knowledge-person-row{justify-content:space-evenly!important;gap:0!important;width:100%!important}
     #espl-project-page .project-outputs .publication-card .knowledge-slide__people[data-full-slate="false"] .knowledge-person-row{justify-content:flex-start!important;gap:8px!important;width:100%!important}
     #espl-project-page .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.espl-mobile-special-summary,.espl-mobile-special-people,.external-metadata-link){display:none!important}
-    @media(max-width:767px){#espl-project-page .espl-special-card .model-output-media{display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:10px!important;min-height:0;padding:0 1.2rem 1.2rem!important}#espl-project-page .espl-special-card .model-text-link{display:inline-flex!important;flex:1 1 auto;min-width:0;width:auto!important;font-size:13px!important;white-space:normal!important}#espl-project-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}}
+    @media(max-width:767px){#espl-project-page .espl-special-card .model-output-media{display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:6px!important;min-height:0;padding:0 1.2rem 1.2rem!important}#espl-project-page .espl-special-card .model-text-link{display:inline-flex!important;flex:1 1 auto;gap:4px!important;min-width:0;width:auto!important;font-size:13px!important;white-space:nowrap!important}#espl-project-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}}
     @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
   projectRoot.prepend(styles);
@@ -313,7 +316,7 @@
     const rowNode=people.querySelector('.knowledge-person-row');if(!rowNode)return;
     const gap=parseFloat(getComputedStyle(rowNode).columnGap)||0;
     const css=getComputedStyle(media),available=width-parseFloat(css.paddingLeft||0)-parseFloat(css.paddingRight||0);
-    const slots=Math.max(2,Math.floor((available+gap)/(size+gap)));
+    const slots=Math.max(2,Math.floor((available+gap+1)/(size+gap)));
     const key=`${mobile?'mobile':'desktop'}:${slots}`;if(media.dataset.esplAuthorSlots===key)return;
     media.dataset.esplAuthorSlots=key;
     if(mobile){people.replaceWith(mobilePortraitsNode(row,'espl-mobile-portraits',slots))}

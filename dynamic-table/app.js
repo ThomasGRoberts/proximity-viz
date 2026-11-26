@@ -769,6 +769,17 @@ async function toggleRow(row) {
   if (sameRow || token !== selectionToken) return;
   state.selected = row; render();
   const content = document.querySelector(".expanded-inner"); if (content) animateIn(content);
+  if (window.__esplTableEmbedded && window.parent !== window) {
+    const alignParent = () => {
+      if (token !== selectionToken) return;
+      const current = document.querySelector(`.episode-row.selected[data-episode-id="${field(row, "ID")}"]`);
+      if (current) window.parent.postMessage({ type: "espl-table-row", top: current.getBoundingClientRect().top }, "*");
+    };
+    alignParent();
+    requestAnimationFrame(alignParent);
+    setTimeout(alignParent, 280);
+    return;
+  }
   if (matchMedia("(max-width:760px)").matches) {
     const reviewBar = document.getElementById("tableReviewBar");
     const offset = reviewBar && !reviewBar.hidden ? reviewBar.getBoundingClientRect().height : 0;
@@ -776,10 +787,6 @@ async function toggleRow(row) {
       if (token !== selectionToken) return;
       const current = document.querySelector(`.episode-row.selected[data-episode-id="${field(row, "ID")}"]`);
       if (!current) return;
-      if (window.__esplTableEmbedded && window.__esplTableScrollBridge) {
-        window.parent.postMessage({ type: "espl-table-row", top: current.getBoundingClientRect().top }, "*");
-        return;
-      }
       window.scrollTo(0, Math.max(0, scrollY + current.getBoundingClientRect().top - offset - 8));
     };
     align();

@@ -25,6 +25,7 @@
   style.id = 'espl-special-output-style';
   style.textContent = `
     #espl-area-page .project-publications .publication-card,#espl-area-page .espl-special-card{grid-template-columns:minmax(0,1fr) 414px!important}
+    #espl-area-page .area-dashboard .publication-card{grid-template-columns:minmax(0,1fr) 414px!important}
     #espl-area-page .project-publications .publication-card .knowledge-output-media{justify-content:flex-start!important;padding:16px!important}
     #espl-area-page .project-publications .publication-card .knowledge-slide__people{width:100%!important;max-width:none!important}
     #espl-area-page .project-publications .publication-card .knowledge-person-row{display:flex!important;flex-wrap:nowrap!important;justify-content:flex-start!important;gap:8px!important;width:100%!important}
@@ -82,8 +83,9 @@
     }
     @media(max-width:767px){
       #espl-area-page .espl-special-card .espl-mobile-special-summary,#espl-area-page .espl-special-card .espl-mobile-special-people{display:none!important}
-      #espl-area-page .espl-special-card .model-output-media{display:flex!important;min-height:0;padding:0 1.2rem 1.2rem!important}
-      #espl-area-page .espl-special-card .model-text-link,#studentOverlay .espl-special-card .model-text-link{display:inline-flex!important;font-size:15px!important;white-space:normal!important}
+      #espl-area-page .espl-special-card .model-output-media{display:flex!important;gap:6px!important;min-height:0;padding:0 1.2rem 1.2rem!important}
+      #studentOverlay .espl-special-card .model-output-media{gap:6px!important}
+      #espl-area-page .espl-special-card .model-text-link,#studentOverlay .espl-special-card .model-text-link{display:inline-flex!important;gap:4px!important;font-size:15px!important;white-space:nowrap!important}
       #espl-area-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}
       #studentOverlay .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.external-metadata-link){display:none!important}
       #studentOverlay .espl-special-card .knowledge-output-main{padding-bottom:.5rem!important}
@@ -270,7 +272,7 @@
     const rowNode=people.querySelector('.knowledge-person-row');if(!rowNode)return;
     const gap=parseFloat(getComputedStyle(rowNode).columnGap)||0;
     const css=getComputedStyle(media),available=width-parseFloat(css.paddingLeft||0)-parseFloat(css.paddingRight||0);
-    const slots=Math.max(2,Math.floor((available+gap)/(size+gap)));
+    const slots=Math.max(2,Math.floor((available+gap+1)/(size+gap)));
     const key=`${mobile?'mobile':'desktop'}:${slots}`;if(media.dataset.esplAuthorSlots===key)return;
     media.dataset.esplAuthorSlots=key;
     people.replaceWith(authorPortraits(names,slots,preferredIndex,mobile));
