@@ -10,7 +10,7 @@
     #espl-research-projects .project-tile .people-block,#espl-people-page .project-tile .people-block,#espl-area-page .project-tile .people-block,#espl-project-page .project-tile .people-block{width:100%!important;min-height:calc(var(--espl-mini-photo,70px) + 4px)!important}
     #espl-research-projects .project-tile .portrait-link,#espl-people-page .project-tile .portrait-link,#espl-area-page .project-tile .portrait-link,#espl-project-page .project-tile .portrait-link{flex:0 0 var(--espl-mini-photo)!important;width:var(--espl-mini-photo)!important;height:var(--espl-mini-photo)!important}
     #espl-research-projects .project-tile .portrait-link img,#espl-people-page .project-tile .portrait-link img,#espl-area-page .project-tile .portrait-link img,#espl-project-page .project-tile .portrait-link img{width:100%!important;height:100%!important}
-    .project-tile .espl-mini-author-overflow{display:grid;place-items:center;flex:0 0 var(--espl-mini-photo);width:var(--espl-mini-photo);height:var(--espl-mini-photo);border-radius:50%;background:radial-gradient(circle closest-side,#d9d9d9 calc(100% - 4px),transparent calc(100% - 3px));color:#4e4e4e;font:700 11px/1 Roboto,Arial,sans-serif;transform:translateY(3px)}
+    .project-tile .espl-mini-author-overflow{display:grid;place-items:center;flex:0 0 var(--espl-mini-photo);width:var(--espl-mini-photo);height:var(--espl-mini-photo);border-radius:50%;background:radial-gradient(circle closest-side,#d9d9d9 85.6%,transparent 86%);color:#4e4e4e;font:700 11px/1 Roboto,Arial,sans-serif;transform:translateY(3px)}
     @media(max-width:767px){#espl-people-page #studentOverlay .project-tile .people-block{margin-top:12px!important}}
   `;
   document.head.append(style);

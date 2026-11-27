@@ -83,7 +83,7 @@
       #espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits) .knowledge-person__photo{display:grid!important;place-items:center!important;width:100%!important;height:100%!important}
     }
     #espl-project-page .project-outputs .publication-card .espl-author-overflow{box-sizing:border-box!important;flex:0 0 70px;width:70px;height:70px;margin:0;border:5px solid #fff;border-radius:50%;background:#c7c7c7;color:#353535}
-    #espl-project-page .project-outputs .publication-card .espl-author-overflow{border:0!important;background:radial-gradient(circle closest-side,#d9d9d9 calc(100% - 4px),transparent calc(100% - 3px))!important;color:#4e4e4e!important;font:700 11px/1 Roboto,Arial,sans-serif!important;transform:translateY(3px)}
+    #espl-project-page .project-outputs .publication-card .espl-author-overflow{border:0!important;background:radial-gradient(circle closest-side,#d9d9d9 85.6%,transparent 86%)!important;color:#4e4e4e!important;font:700 11px/1 Roboto,Arial,sans-serif!important;transform:translateY(3px)}
     #espl-project-page .project-outputs .publication-card .knowledge-slide__people[data-full-slate="true"] .knowledge-person-row{justify-content:space-evenly!important;gap:0!important;width:100%!important}
     #espl-project-page .project-outputs .publication-card .knowledge-slide__people[data-full-slate="false"] .knowledge-person-row{justify-content:flex-start!important;gap:8px!important;width:100%!important}
     #espl-project-page .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.espl-mobile-special-summary,.espl-mobile-special-people,.external-metadata-link){display:none!important}
