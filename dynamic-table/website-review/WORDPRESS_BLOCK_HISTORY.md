@@ -4,6 +4,9 @@ The website review pane's Copy HTML button reads the complete `*-complete-block.
 
 | Date | Pages | Change |
 | --- | --- | --- |
+| 2026-11-27 | Home | Added a five-portrait featured card, consistent `+N` styling, and whole-card navigation for internal models and repositories. Complete block: `home-complete-block.html` (homepage v58). |
+| 2026-11-27 | Research, People, projects, areas | Shared project mini-card portrait sizing and overflow, matched research-card `+N` circles, and balanced mobile media padding. Complete blocks in this directory contain the versioned changes. |
+| 2026-11-27 | Proximity table | Closed the off-white seam at the top of expanded rows, including rows with miniature visualizations. |
 | 2026-11-25 | SBI, Proximity, Lunar projects | Tightened line spacing within collaborator names, separated names from titles, and moved mobile model/repository actions closer to their icons. Updated complete blocks to `project-page-updates.js?v=33`. |
 | 2026-11-25 | Space Security, Space Sustainability, Space Coordination | Kept four-author desktop cards in the first four of five portrait slots and moved mobile model/repository actions closer to their icons. Updated complete blocks to `special-output-cards.js?v=17`. |
 | 2026-11-25 | Proximity table | Aligned expanded desktop rows at the top of the WordPress host viewport; the complete table block now points to the refreshed iframe URL. |

@@ -1137,3 +1137,12 @@ html.embedded-table .table-wrap .expanded-row .expanded-inner{max-height:none!im
   .table-wrap tr.expanded-row .expanded-inner::after,
   .table-wrap tr.expanded-row .expanded-inner.has-visual::after{width:4px!important}
 }
+
+/* Bridge the header and disclosure without a white seam; retain the scene below. */
+.table-wrap tr.episode-row.selected td{border-bottom:0!important;background:#fffcf6}
+.table-wrap tr.expanded-row>td{border-top:0;background:#fffcf6!important}
+@media(min-width:901px){
+  html body .table-wrap tr.expanded-row:has(.expanded-inner.has-visual)>td{background:linear-gradient(to bottom,#fffcf6 0 2px,transparent 2px)!important}
+}
+.table-wrap tr.expanded-row .expanded-inner::after,
+.table-wrap tr.expanded-row .expanded-inner.has-visual::after{top:-2px}

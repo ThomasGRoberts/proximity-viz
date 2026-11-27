@@ -41,7 +41,10 @@ SPECIAL_OUTPUT_URL = "https://thomasgroberts.github.io/proximity-viz/dynamic-tab
 
 def local_area_block(slug):
     block = (HERE / f"{slug}-complete-block.html").read_text(encoding="utf-8")
-    return block.replace(SPECIAL_OUTPUT_URL, f"http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js")
+    return block.replace(SPECIAL_OUTPUT_URL, f"http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js").replace(
+        "https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/mini-project-authors.js",
+        f"http://127.0.0.1:{PORT}/dynamic-table/website-review/mini-project-authors.js",
+    )
 
 
 def replace_live_area_block(html, slug):
@@ -108,6 +111,16 @@ class Handler(SimpleHTTPRequestHandler):
             slug = path.rsplit("/", 1)[-1]
             if slug not in PROJECT_URLS:
                 return self.send_error(404, "Unknown project preview")
+            if slug == "home":
+                block = (HERE / "home-complete-block.html").read_text(encoding="utf-8")
+                html = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://espl.ae.gatech.edu/"></head><body>' + block + '</body></html>'
+                encoded = html.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+                return
             if slug == "model-proximity":
                 block = (HERE / "model-proximity-complete-block.html").read_text(encoding="utf-8")
                 html = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{height:100%;margin:0}#espl-proximity-model{height:100vh!important}</style></head><body>' + block + '</body></html>'
@@ -129,6 +142,10 @@ class Handler(SimpleHTTPRequestHandler):
                 block = block.replace(
                     "https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/special-output-cards.js",
                     f"http://127.0.0.1:{PORT}/dynamic-table/website-review/special-output-cards.js",
+                )
+                block = block.replace(
+                    "https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/mini-project-authors.js",
+                    f"http://127.0.0.1:{PORT}/dynamic-table/website-review/mini-project-authors.js",
                 )
                 html = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><base href="https://espl.ae.gatech.edu/"></head><body>' + block + '</body></html>'
                 encoded = html.encode("utf-8")
@@ -162,6 +179,8 @@ class Handler(SimpleHTTPRequestHandler):
                         addon += f'<script src="{local_script}" data-espl-project="{slug}"></script>'
                 if slug == "research":
                     addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/research-page-updates.js?v=9"></script>'
+                if slug in {"research", "sbi", "proximity", "lunar"}:
+                    addon += f'<script src="http://127.0.0.1:{PORT}/dynamic-table/website-review/mini-project-authors.js?v=1"></script>'
                 if slug == "lunar":
                     local_block = (HERE / "lunar-project-embed-snippet.html").read_text(encoding="utf-8")
                     addon += "<style>" + local_block.split("<style>", 1)[1].split("</style>", 1)[0] + "</style>"
@@ -181,7 +200,7 @@ class Handler(SimpleHTTPRequestHandler):
                     self.send_error(502, f"Could not load live project page: {error}")
                     return
                 block = fallback.read_text(encoding="utf-8")
-                for script_name in ("project-page-updates.js", "project-news-controls.js", "special-output-cards.js"):
+                for script_name in ("project-page-updates.js", "project-news-controls.js", "special-output-cards.js", "mini-project-authors.js"):
                     block = block.replace(
                         f"https://thomasgroberts.github.io/proximity-viz/dynamic-table/website-review/{script_name}",
                         f"http://127.0.0.1:{PORT}/dynamic-table/website-review/{script_name}",

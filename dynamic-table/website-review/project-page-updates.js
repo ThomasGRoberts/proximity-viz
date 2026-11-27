@@ -83,10 +83,12 @@
       #espl-project-page :is(.espl-mobile-portraits,.espl-mobile-special-portraits) .knowledge-person__photo{display:grid!important;place-items:center!important;width:100%!important;height:100%!important}
     }
     #espl-project-page .project-outputs .publication-card .espl-author-overflow{box-sizing:border-box!important;flex:0 0 70px;width:70px;height:70px;margin:0;border:5px solid #fff;border-radius:50%;background:#c7c7c7;color:#353535}
+    #espl-project-page .project-outputs .publication-card .espl-author-overflow{border:0!important;background:radial-gradient(circle closest-side,#d9d9d9 calc(100% - 4px),transparent calc(100% - 3px))!important;color:#4e4e4e!important;font:700 11px/1 Roboto,Arial,sans-serif!important;transform:translateY(3px)}
     #espl-project-page .project-outputs .publication-card .knowledge-slide__people[data-full-slate="true"] .knowledge-person-row{justify-content:space-evenly!important;gap:0!important;width:100%!important}
     #espl-project-page .project-outputs .publication-card .knowledge-slide__people[data-full-slate="false"] .knowledge-person-row{justify-content:flex-start!important;gap:8px!important;width:100%!important}
     #espl-project-page .espl-special-card :is(.knowledge-slide__summary,.knowledge-slide__meta,.knowledge-slide__date,.knowledge-slide__people,.espl-mobile-special-summary,.espl-mobile-special-people,.external-metadata-link){display:none!important}
     @media(max-width:767px){#espl-project-page .espl-special-card .model-output-media{display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:6px!important;min-height:0;padding:0 1.2rem 1.2rem!important}#espl-project-page .espl-special-card .model-text-link{display:inline-flex!important;flex:1 1 auto;gap:4px!important;min-width:0;width:auto!important;font-size:13px!important;white-space:nowrap!important}#espl-project-page .espl-special-card :is(.model-polyhedron-link,.espl-table-icon-link,.model-polyhedron-canvas,.espl-table-icon){flex:0 0 70px!important;width:70px!important;height:70px!important;max-width:70px!important}}
+    @media(max-width:767px){#espl-project-page .project-outputs .publication-card .knowledge-output-media,#espl-project-page .espl-special-card .model-output-media{padding:1rem 1.2rem!important}}
     @media(prefers-reduced-motion:reduce){#espl-project-page .espl-special-card :is(.model-polyhedron-canvas,.espl-table-icon,.model-link-arrow,.table-scan){animation:none!important;transition:none!important}}
   `;
   projectRoot.prepend(styles);

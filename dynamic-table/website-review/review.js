@@ -61,7 +61,7 @@ const panes = {
   lunar: { surface: "Lunar Project", snippet: "./lunar-complete-block.html", copyLabel: "Copy Lunar HTML" },
   research: { surface: "Research", snippet: "./research-complete-block.html", copyLabel: "Copy Research page" },
   people: { surface: "People", snippet: "./people-complete-block.html", copyLabel: "Copy People HTML" },
-  home: { surface: "Home" },
+  home: { surface: "Home", snippet: "./home-complete-block.html", copyLabel: "Copy Home HTML" },
   opportunities: { surface: "Opportunities" },
   news: { surface: "News" },
   "space-security": { surface: "Space Security Area", group: "areas", snippet: "./space-security-complete-block.html", copyLabel: "Copy Space Security HTML" },
